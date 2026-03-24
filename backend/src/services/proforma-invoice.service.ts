@@ -1,13 +1,12 @@
 import ProformaInvoice from "../models/ProformaInvoice.model";
 import { Types } from "mongoose";
 
-// ✅ CREATE PI
+// CREATE PI
 export const createPIService = async (data: any) => {
-  // Generate PI Number
+
   const count = await ProformaInvoice.countDocuments();
   const piNumber = `PI-${String(count + 1).padStart(3, "0")}`;
 
-  // Calculate Total Amount
   const totalAmount = data.vehicleDetails.reduce(
     (sum: number, v: any) => sum + v.quantity * v.unitPrice,
     0
@@ -24,7 +23,7 @@ export const createPIService = async (data: any) => {
 
 
 
-// ✅ GET ALL PIs (with pagination + search)
+// GET ALL PIs 
 export const getPIsService = async (query: any) => {
   const { search, page = 1, limit = 5 } = query;
 
@@ -57,10 +56,10 @@ export const getPIsService = async (query: any) => {
 
 
 
-// ✅ GET PI BY ID
+// GET PI BY ID
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
-    .populate("client_id", "name clientCode email phone");
+    .populate("client_id", "name clientCode email phone country");
 
   if (!pi) {
     throw new Error("PI not found");
@@ -71,9 +70,8 @@ export const getPIByIdService = async (id: string) => {
 
 
 
-// ✅ UPDATE PI (basic update)
+// UPDATE PI 
 export const updatePIService = async (id: string, data: any) => {
-  // Recalculate total if vehicleDetails updated
   if (data.vehicleDetails) {
     data.totalAmount = data.vehicleDetails.reduce(
       (sum: number, v: any) => sum + v.quantity * v.unitPrice,
@@ -90,7 +88,7 @@ export const updatePIService = async (id: string, data: any) => {
 
 
 
-// ✅ UPDATE STATUS (important for workflow)
+// UPDATE STATUS
 export const updatePIStatusService = async (
   id: string,
   status: string
@@ -115,4 +113,14 @@ export const updatePIStatusService = async (
   );
 
   return updated;
+};
+
+export const deletePIService = async (id: string) => {
+  const deleted = await ProformaInvoice.findByIdAndDelete(id);
+
+  if (!deleted) {
+    throw new Error("PI not found");
+  }
+
+  return deleted;
 };

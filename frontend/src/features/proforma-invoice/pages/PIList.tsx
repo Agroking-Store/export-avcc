@@ -173,7 +173,9 @@ const PIList = () => {
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      {new Date(pi.createdAt).toLocaleDateString()}
+                      {pi.validityDate
+                        ? new Date(pi.validityDate).toISOString().split("T")[0]
+                        : "-"}
                     </td>
 
                     {/* ACTIONS */}

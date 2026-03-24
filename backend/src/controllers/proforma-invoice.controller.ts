@@ -8,9 +8,10 @@ import {
 } from "../services/proforma-invoice.service";
 
 import { validateCreatePI } from "../validations/proforma-invoice.validation";
+import { deletePIService } from "../services/proforma-invoice.service";
 
 
-// ✅ CREATE PI
+// CREATE PI
 export const createPI = async (req: Request, res: Response) => {
   try {
     validateCreatePI(req.body);
@@ -24,7 +25,7 @@ export const createPI = async (req: Request, res: Response) => {
 };
 
 
-// ✅ GET ALL PIs
+// GET ALL PIs
 export const getPIs = async (req: Request, res: Response) => {
   try {
     const pis = await getPIsService(req.query);
@@ -36,7 +37,7 @@ export const getPIs = async (req: Request, res: Response) => {
 };
 
 
-// ✅ GET PI BY ID
+// GET PI BY ID
 export const getPIById = async (req: Request, res: Response) => {
   try {
     const pi = await getPIByIdService(req.params.id as string);
@@ -48,7 +49,7 @@ export const getPIById = async (req: Request, res: Response) => {
 };
 
 
-// ✅ UPDATE PI
+// UPDATE PI
 export const updatePI = async (req: Request, res: Response) => {
   try {
     const updated = await updatePIService(req.params.id as string, req.body);
@@ -60,7 +61,7 @@ export const updatePI = async (req: Request, res: Response) => {
 };
 
 
-// ✅ UPDATE STATUS (IMPORTANT 🔥)
+// UPDATE STATUS
 export const updatePIStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
@@ -73,5 +74,15 @@ export const updatePIStatus = async (req: Request, res: Response) => {
     res.json(updated);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const deletePI = async (req: Request, res: Response) => {
+  try {
+    await deletePIService(req.params.id as string);
+
+    res.json({ message: "PI deleted successfully" });
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
   }
 };

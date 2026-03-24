@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import { Plus } from "lucide-react";
 
@@ -10,26 +10,21 @@ type Vehicle = {
   unitPrice: number;
 };
 
-type PIForm = {
-  client_id: string;
-  paymentTerms: string;
-  validityDate: string;
-  vehicleDetails: Vehicle[];
-};
-
-const CreatePI = () => {
+const EditPI = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState<PIForm>({
+  const [form, setForm] = useState({
     client_id: "",
     paymentTerms: "",
     validityDate: "",
     vehicleDetails: [{ model: "", quantity: 1, unitPrice: 0 }],
   });
 
+  // 🔹 Fetch clients
   useEffect(() => {
     const fetchClients = async () => {
       const res = await axios.get(`${apiConfig.baseURL}/clients`, {
@@ -40,7 +35,40 @@ const CreatePI = () => {
     fetchClients();
   }, []);
 
-  const handleVehicleChange = (index: number, field: keyof Vehicle, value: any) => {
+  // 🔹 Fetch PI data
+  useEffect(() => {
+    const fetchPI = async () => {
+      try {
+        const res = await axios.get(
+          `${apiConfig.baseURL}/proforma-invoices/${id}`
+        );
+
+        const pi = res.data;
+
+        setForm({
+          client_id: pi.client_id?._id || "",
+          paymentTerms: pi.paymentTerms || "",
+          validityDate: pi.validityDate
+            ? pi.validityDate.split("T")[0]
+            : "",
+          vehicleDetails:
+            pi.vehicleDetails?.length > 0
+              ? pi.vehicleDetails
+              : [{ model: "", quantity: 1, unitPrice: 0 }],
+        });
+      } catch (err) {
+        console.error("Error fetching PI", err);
+      }
+    };
+
+    if (id) fetchPI();
+  }, [id]);
+
+  const handleVehicleChange = (
+    index: number,
+    field: keyof Vehicle,
+    value: any
+  ) => {
     const updated = [...form.vehicleDetails];
     (updated[index] as any)[field] = value;
     setForm({ ...form, vehicleDetails: updated });
@@ -49,7 +77,10 @@ const CreatePI = () => {
   const addVehicle = () => {
     setForm({
       ...form,
-      vehicleDetails: [...form.vehicleDetails, { model: "", quantity: 1, unitPrice: 0 }],
+      vehicleDetails: [
+        ...form.vehicleDetails,
+        { model: "", quantity: 1, unitPrice: 0 },
+      ],
     });
   };
 
@@ -67,16 +98,22 @@ const CreatePI = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+
     try {
       setLoading(true);
-      await axios.post(`${apiConfig.baseURL}/proforma-invoices`, {
-        ...form,
-        totalAmount,
-      });
-      alert("PI Created ✅");
+
+      await axios.put(
+        `${apiConfig.baseURL}/proforma-invoices/${id}`,
+        {
+          ...form,
+          totalAmount,
+        }
+      );
+
+      alert("PI Updated ✅");
       navigate("/proforma-invoice");
     } catch (err: any) {
-      alert(err.response?.data?.message || "Error");
+      alert(err.response?.data?.message || "Error updating PI");
     } finally {
       setLoading(false);
     }
@@ -89,10 +126,10 @@ const CreatePI = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold text-slate-800">
-            Create Proforma Invoice
+            Edit Proforma Invoice
           </h2>
           <p className="text-sm text-slate-500">
-            Create new PI entry
+            Update PI details
           </p>
         </div>
 
@@ -104,7 +141,7 @@ const CreatePI = () => {
         </button>
       </div>
 
-      {/* FORM CARD */}
+      {/* FORM */}
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6"
@@ -182,10 +219,7 @@ const CreatePI = () => {
                 onChange={(e) =>
                   handleVehicleChange(index, "quantity", Number(e.target.value))
                 }
-                className="border px-3 py-2 rounded-md appearance-none 
-                [&::-webkit-inner-spin-button]:appearance-none 
-                [&::-webkit-outer-spin-button]:appearance-none 
-                focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border px-3 py-2 rounded-md appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
 
               <input
@@ -194,10 +228,7 @@ const CreatePI = () => {
                 onChange={(e) =>
                   handleVehicleChange(index, "unitPrice", Number(e.target.value))
                 }
-                className="border px-3 py-2 rounded-md appearance-none 
-                [&::-webkit-inner-spin-button]:appearance-none 
-                [&::-webkit-outer-spin-button]:appearance-none 
-                focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border px-3 py-2 rounded-md appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
 
               {form.vehicleDetails.length > 1 && (
@@ -243,7 +274,7 @@ const CreatePI = () => {
             type="submit"
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
           >
-            {loading ? "Creating..." : "Create PI"}
+            {loading ? "Updating..." : "Update PI"}
           </button>
 
         </div>
@@ -253,4 +284,4 @@ const CreatePI = () => {
   );
 };
 
-export default CreatePI;
+export default EditPI;
