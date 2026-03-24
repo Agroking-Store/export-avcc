@@ -12,6 +12,18 @@ import Profile from "../features/auth/pages/Profile";
 // Dashboard
 import Dashboard from "../features/dashboard/pages/Dashboard";
 
+//pages
+//client
+import ClientsList from "../features/clients/ClientsList";
+import AddClient from "../features/clients/AddClient";
+import EditClient from "../features/clients/EditClient";
+import ClientDetails from "../features/clients/ClientDetails";
+//PI
+import CreatePI from "../features/proforma-invoice/pages/CreatePI";
+import PIList from "../features/proforma-invoice/pages/PIList";
+import EditPI from "../features/proforma-invoice/pages/EditPI";
+import PIDetails from "../features/proforma-invoice/pages/PIDetails";
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -33,20 +45,18 @@ const AppRoutes: React.FC = () => {
             path="/vehicles"
             element={<div className="p-6">Vehicles Page (Coming Soon)</div>}
           />
-          <Route
-            path="/clients"
-            element={<div className="p-6">Clients Page (Coming Soon)</div>}
-          />
+          <Route path="/clients" element={<ClientsList />} />
+          <Route path="/clients/add" element={<AddClient />} />
+          <Route path="/clients/edit/:id" element={<EditClient />} />
+          <Route path="/clients/:id" element={<ClientDetails />} />
           <Route
             path="/dealers"
             element={<div className="p-6">Dealers Page (Coming Soon)</div>}
           />
-          <Route
-            path="/proforma-invoice"
-            element={
-              <div className="p-6">Proforma Invoice Page (Coming Soon)</div>
-            }
-          />
+          <Route path="/proforma-invoice/add" element={<CreatePI />} />
+          <Route path="/proforma-invoice" element={<PIList />} />
+          <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
+          <Route path="/proforma-invoice/:id" element={<PIDetails />} />
           <Route
             path="/letter-of-credit"
             element={

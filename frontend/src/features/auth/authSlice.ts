@@ -66,6 +66,19 @@ export const getProfile = createAsyncThunk(
   },
 );
 
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (data: { name: string; email: string }, { rejectWithValue }) => {
+    try {
+      const response = await authApi.updateProfile(data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Update failed");
+    }
+  },
+);
+
+
 // Slice
 const authSlice = createSlice({
   name: "auth",
@@ -137,9 +150,28 @@ const authSlice = createSlice({
       .addCase(getProfile.fulfilled, (state, action) => {
         state.user = action.payload!;
         authStorage.setUser(action.payload!);
+      })
+      .addCase(getProfile.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      // Update Profile
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        authStorage.setUser(action.payload);
+        toast.success("Profile updated successfully!");
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        toast.error(action.payload as string);
       });
   },
 });
 
 export const { clearError, setCredentials } = authSlice.actions;
 export default authSlice.reducer;
+

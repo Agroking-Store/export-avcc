@@ -6,6 +6,7 @@ import {
   registerSchema,
   loginSchema,
   refreshTokenSchema,
+  updateProfileSchema,
 } from "../validations/auth.validation";
 
 const router = Router();
@@ -23,7 +24,7 @@ router.post(
 // Protected routes
 router.post("/logout", authenticate, authController.logout);
 router.get("/profile", authenticate, authController.getProfile);
-router.put("/profile", authenticate, authController.updateProfile);
+router.put("/profile", authenticate, validate(updateProfileSchema), authController.updateProfile);
 router.put("/change-password", authenticate, authController.changePassword);
 
 export default router;
