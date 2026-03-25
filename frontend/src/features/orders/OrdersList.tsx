@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Download, Search, Filter, Plus } from "lucide-react";
+import { Eye, Pencil, Trash2, Search, Filter, Plus } from "lucide-react";
 
 const OrdersList = () => {
   const navigate = useNavigate();
@@ -213,13 +213,6 @@ const OrdersList = () => {
                           className="p-2 text-green-600 hover:bg-green-50 rounded"
                         >
                           <Pencil size={18} />
-                        </button>
-
-                        <button
-                          onClick={() => handleDownloadPDF(order._id)}
-                          className="p-2 text-orange-600 hover:bg-orange-50 rounded"
-                        >
-                          <Download size={18} />
                         </button>
 
                         <button

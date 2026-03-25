@@ -6,7 +6,6 @@ import {
   updateOrderService,
   deleteOrderService,
   updateOrderStatusService,
-  generateOrderPDFService,
 } from "../services/order.service";
 import { validateCreateOrder, validateUpdateOrder } from "../validations/order.validation";
 
@@ -60,7 +59,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
-    if (!status || !["Draft", "Confirmed", "PI Generated"].includes(status)) {
+    if (!status || !["Draft", "Confirmed"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
     
@@ -71,15 +70,4 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   }
 };
 
-export const downloadOrderPDF = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const pdfBuffer = await generateOrderPDFService(id);
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="PI_${id}.pdf"`);
-    res.send(pdfBuffer);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+

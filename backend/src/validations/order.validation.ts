@@ -1,37 +1,24 @@
 import { CreateOrderDto, UpdateOrderDto } from "../dto/order.dto";
 
 export const validateCreateOrder = (data: CreateOrderDto) => {
-  if (!data.clientId || !data.paymentTerms || !data.buyerRef || !data.vehicles || !data.bankName || !data.accountNo || !data.branch || !data.ifscCode) {
-    throw new Error("clientId, paymentTerms, buyerRef, vehicles, bankName, accountNo, branch, and ifscCode are required");
+  if (!data.clientId || !data.date || !data.vehicles?.length) {
+    throw new Error("clientId, date, vehicles required");
   }
-
-  if (!Array.isArray(data.vehicles) || data.vehicles.length === 0) {
-    throw new Error("vehicles must be a non-empty array");
-  }
-
-  // Validate each vehicle item
-  data.vehicles.forEach((vehicle, index) => {
-    if (!vehicle.slNo || !vehicle.hsnCode || !vehicle.vehicleName || !vehicle.exteriorColour || !vehicle.chassisNo || !vehicle.engineNo || !vehicle.engineCapacity || !vehicle.fuelType || !vehicle.countryOfOrigin || !vehicle.yom || !vehicle.fobAmount || !vehicle.freight || !vehicle.quantity || !vehicle.ratePerUnit || !vehicle.totalAmount) {
-      throw new Error(`Vehicle item at index ${index} is missing required fields`);
+  data.vehicles.forEach((v, i) => {
+    if (!v.name || !v.color || v.quantity < 1) {
+      throw new Error(`Vehicle ${i+1}: name, color, quantity required`);
     }
   });
 };
 
-export const validateUpdateOrder = (data: any) => {
-  if (Object.keys(data).length === 0) {
-    throw new Error("At least one field is required to update");
-  }
-
-  // If vehicles are being updated, validate them
+export const validateUpdateOrder = (data: UpdateOrderDto) => {
+  if (Object.keys(data).length === 0) throw new Error("Update data required");
   if (data.vehicles) {
-    if (!Array.isArray(data.vehicles)) {
-      throw new Error("vehicles must be an array");
-    }
-
-    data.vehicles.forEach((vehicle, index) => {
-      if (!vehicle.slNo || !vehicle.hsnCode || !vehicle.vehicleName || !vehicle.exteriorColour || !vehicle.chassisNo || !vehicle.engineNo || !vehicle.engineCapacity || !vehicle.fuelType || !vehicle.countryOfOrigin || !vehicle.yom || !vehicle.fobAmount || !vehicle.freight || !vehicle.quantity || !vehicle.ratePerUnit || !vehicle.totalAmount) {
-        throw new Error(`Vehicle item at index ${index} is missing required fields`);
+    data.vehicles.forEach((v, i) => {
+      if (!v.name || !v.color || v.quantity < 1) {
+        throw new Error(`Vehicle ${i+1}: name, color, quantity required`);
       }
     });
   }
 };
+
