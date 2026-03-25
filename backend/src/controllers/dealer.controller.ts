@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Dealer from "../models/dealer.model";
+import Dealer from "../models/Dealer.model";
 
 // Create a dealer
 export const createDealer = async (req: Request, res: Response) => {
@@ -14,8 +14,13 @@ export const createDealer = async (req: Request, res: Response) => {
 // Get all dealers
 export const getDealers = async (req: Request, res: Response) => {
   try {
-    const dealers = await Dealer.find();
-    res.status(200).json({ success: true, data: dealers });
+    const search = req.query.search as string;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+    const query = search ? { name: { $regex: search, $options: "i" } } : {};
+    const dealers = await Dealer.find(query).limit(limit).skip((page - 1) * limit);
+    const total = await Dealer.countDocuments(query);
+    res.status(200).json({ success: true, data: dealers, totalPages: Math.ceil(total / limit) });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

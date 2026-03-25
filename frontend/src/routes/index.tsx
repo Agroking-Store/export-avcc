@@ -10,6 +10,8 @@ import Register from "../features/auth/pages/Register";
 import Profile from "../features/auth/pages/Profile";
 import Dealers from "../features/dealers/pages/Dealers";
 import AddDealer from "../features/dealers/pages/AddDealer";
+import DealerDetails from "../features/dealers/pages/DealerDetails";
+import EditDealer from "../features/dealers/pages/EditDealer";
 
 // Dashboard
 import Dashboard from "../features/dashboard/pages/Dashboard";
@@ -54,6 +56,8 @@ const AppRoutes: React.FC = () => {
         
           <Route path="/dealers" element={<Dealers />} />
 <Route path="/dealers/add" element={<AddDealer />} />
+<Route path="/dealers/:id" element={<DealerDetails />} />
+<Route path="/dealers/edit/:id" element={<EditDealer />} />
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
           <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
