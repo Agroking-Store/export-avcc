@@ -6,6 +6,7 @@ import {
   updateOrderService,
   deleteOrderService,
   updateOrderStatusService,
+  generateOrderPDFService,
 } from "../services/order.service";
 import { validateCreateOrder, validateUpdateOrder } from "../validations/order.validation";
 
@@ -67,5 +68,18 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     res.json(updated);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const downloadOrderPDF = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const pdfBuffer = await generateOrderPDFService(id);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="PI_${id}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

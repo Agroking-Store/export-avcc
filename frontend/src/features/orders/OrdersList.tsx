@@ -55,9 +55,20 @@ const OrdersList = () => {
     }
   };
 
-  const handleDownloadPDF = (id: string) => {
-    console.log("Download PDF for order:", id);
-    // TODO: Implement PDF download API call
+  const handleDownloadPDF = async (id: string) => {
+    try {
+      const pdfRes = await axios.get(`http://localhost:5000/api/v1/orders/${id}/pdf`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([pdfRes.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `PI_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Error downloading PDF");
+    }
   };
 
   const getStatusColor = (status: string) => {

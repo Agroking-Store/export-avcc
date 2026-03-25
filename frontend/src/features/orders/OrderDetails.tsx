@@ -51,6 +51,7 @@ const OrderDetails = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       alert("Error downloading PDF");
     } finally {
