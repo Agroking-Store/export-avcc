@@ -115,7 +115,6 @@ const ClientsList = () => {
                 <th className="px-6 py-3 text-left">Name</th>
                 <th className="px-6 py-3 text-left">Country</th>
                 <th className="px-6 py-3 text-left">Contact</th>
-                <th className="px-6 py-3 text-left">Email</th>
                 <th className="px-6 py-3 text-center">Orders</th>
                 <th className="px-6 py-3 text-center">Last Txn</th>
                 <th className="px-6 py-3 text-right">Actions</th>
@@ -125,7 +124,7 @@ const ClientsList = () => {
             <tbody>
               {clients.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-gray-500 dark:text-gray-300">
+                  <td colSpan={7} className="text-center py-10 text-gray-500 dark:text-gray-300">
                     No clients found
                   </td>
                 </tr>
@@ -148,7 +147,6 @@ const ClientsList = () => {
 
                     <td className="px-6 py-4">{client.country}</td>
                     <td className="px-6 py-4">{client.phone}</td>
-                    <td className="px-6 py-4">{client.email || "-"}</td>
 
                     <td className="px-6 py-4 text-center">
                       {client.totalOrders || 0}
