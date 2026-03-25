@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import Navbar from "../common/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
 import { logout } from "../../features/auth/authSlice"; // Assuming your logout action is here
@@ -7,6 +9,7 @@ import { Moon, Sun, Bell, User, LogOut } from "lucide-react";
 
 const Header: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -33,7 +36,9 @@ const Header: React.FC = () => {
 
   return (
     <header className="h-20 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 transition-colors duration-200 z-10">
-      <div className="flex-1">{/* Title or Breadcrumbs can go here */}</div>
+      <div className="flex-1">
+        {(location.pathname === '/clients' || location.pathname === '/orders') && <Navbar />}
+      </div>
 
       <div className="flex items-center gap-4 relative">
         <button
