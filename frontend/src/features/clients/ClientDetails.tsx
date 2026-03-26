@@ -34,22 +34,22 @@ const ClientDetails = () => {
   const orders = data?.orders || [];
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 px-6 py-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-6">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-blue-600">
+          <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">
             Client Details
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-300">
             {client?.clientCode || "CL-000"}
           </p>
         </div>
 
         <button
           onClick={() => navigate("/clients")}
-          className="text-gray-500 hover:text-black"
+          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Clients
         </button>
@@ -57,7 +57,7 @@ const ClientDetails = () => {
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-6 text-gray-500">
+        <div className="text-center py-6 text-gray-500 dark:text-gray-300">
           Loading...
         </div>
       )}
@@ -66,52 +66,54 @@ const ClientDetails = () => {
       {!loading && client && (
         <>
           {/* SECTION 1: CLIENT INFO */}
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-6">
-            <h2 className="text-base font-semibold mb-4">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600 mb-6">
+            <h2 className="text-base font-semibold mb-4 text-gray-800 dark:text-white">
               Client Information
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Name</p>
-                <p className="text-base font-medium">{client.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Name</p>
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">{client.name}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Phone</p>
-                <p className="text-base font-medium">{client.phone}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Phone</p>
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">{client.phone}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Country</p>
-                <p className="text-base font-medium">{client.country}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Country</p>
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">{client.country}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Email</p>
-                <p className="text-base font-medium">
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Email</p>
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">
                   {client.email || "-"}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Company</p>
-                <p className="text-base font-medium">
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Company</p>
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">
                   {client.companyName || "-"}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Status</p>
-                <span className="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Status</p>
+                <span className="px-3 py-1 rounded-full text-xs 
+                 bg-green-100 dark:bg-green-900/30 
+                 text-green-700 dark:text-green-300">
                   {client.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
 
               <div className="md:col-span-2 lg:col-span-3">
-                <p className="text-sm text-gray-500 mb-1">Address</p>
-                <p className="text-base font-medium">
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Address</p>
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">
                   {client.address || "-"}
                 </p>
               </div>
@@ -120,26 +122,26 @@ const ClientDetails = () => {
           </div>
 
           {/* SECTION 2: SUMMARY */}
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-6">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600 mb-6">
             <h2 className="text-base font-semibold mb-4">
               Summary
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-500 mb-1">
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
                   Total Orders
                 </p>
-                <p className="text-lg font-semibold">
+                <p className="text-lg font-semibold text-gray-800 dark:text-white">
                   {data.totalOrders || 0}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">
+                <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
                   Last Transaction
                 </p>
-                <p className="text-base font-medium">
+                <p className="text-base font-medium text-gray-800 dark:text-gray-100">
                   {data.lastTransaction
                     ? new Date(data.lastTransaction).toLocaleDateString()
                     : "N/A"}
@@ -149,17 +151,17 @@ const ClientDetails = () => {
           </div>
 
           {/* SECTION 3: ORDERS */}
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
             <h2 className="text-base font-semibold mb-4">
               Orders
             </h2>
 
             {orders.length === 0 ? (
-              <p className="text-gray-500">No orders found</p>
+              <p className="text-gray-500 dark:text-gray-300">No orders found</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-100">
+                  <thead className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200">
                     <tr>
                       <th className="px-4 py-2 text-left">
                         Order ID
@@ -171,7 +173,7 @@ const ClientDetails = () => {
                   </thead>
                   <tbody>
                     {orders.map((order: any) => (
-                      <tr key={order._id} className="border-b">
+                      <tr key={order._id} className="border-b border-gray-200 dark:border-gray-600">
                         <td className="px-4 py-2">
                           {order._id.slice(-5)}
                         </td>
