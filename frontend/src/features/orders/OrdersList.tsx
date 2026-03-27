@@ -2,9 +2,14 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Trash2, Search, Filter, Plus } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const OrdersList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -44,14 +49,26 @@ const OrdersList = () => {
     fetchOrders();
   }, [search, statusFilter, currentPage]);
 
+  useEffect(() => {
+    if (location.state?.success) {
+      toast.success(location.state.success);
+  
+      // clear state so it doesn't repeat on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this order?")) return;
-
+    
     try {
       await axios.delete(`http://localhost:5000/api/v1/orders/${id}`);
+    
+      toast.success("Order deleted successfully 🗑️");
+    
       fetchOrders();
-    } catch {
-      alert("Delete failed");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Delete failed");
     }
   };
 
@@ -65,7 +82,8 @@ const OrdersList = () => {
   };
 
   return (
-    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded-xl">
+    <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen p-2 rounded-xl">
+      <ToastContainer position="top-right" autoClose={3000} />
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>

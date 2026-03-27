@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { apiConfig } from "../../config/apiConfig";
+import { toast } from "react-toastify";
 
 interface Vehicle {
   name: string;
@@ -96,7 +97,8 @@ const EditOrder = () => {
     vehicles.forEach((v, i) => {
       if (!v.name.trim()) e[`name_${i}`] = "Name required";
       if (!v.color.trim()) e[`color_${i}`] = "Color required";
-      if (v.quantity < 1) e[`qty_${i}`] = "Qty ≥ 1";
+      if (v.quantity === "" || Number(v.quantity) < 1)
+        e[`qty_${i}`] = "Qty ≥ 1";
     });
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -111,10 +113,11 @@ const EditOrder = () => {
         date,
         vehicles
       });
-      alert("✅ Updated!");
-      navigate("/orders");
+      navigate("/orders/list", {
+        state: { success: "Order updated successfully ✅" },
+      });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed");
+      toast.error(err.response?.data?.message || "Failed");
     } finally {
       setLoading(false);
     }
@@ -139,7 +142,7 @@ const EditOrder = () => {
         </div>
 
         <button
-          onClick={() => navigate("/orders")}
+          onClick={() => navigate("/orders/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Orders
@@ -288,11 +291,22 @@ const EditOrder = () => {
                       type="number"
                       min="1"
                       value={v.quantity}
-                      onChange={(e) => handleVehicleChange(i, "quantity", parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleVehicleChange(
+                          i,
+                          "quantity",
+                          value === "" ? "" : parseInt(value)
+                        );
+                      }}
+                      style={{ MozAppearance: "textfield" }}
                       className="w-full border border-gray-300 dark:border-gray-600 
                                  bg-white dark:bg-gray-800 
                                  text-black dark:text-white 
-                                 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none
+                                 appearance-none 
+                                 [&::-webkit-inner-spin-button]:appearance-none 
+                                 [&::-webkit-outer-spin-button]:appearance-none"
                       placeholder="1"
                       required
                     />
@@ -308,7 +322,7 @@ const EditOrder = () => {
         <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
-            onClick={() => navigate("/orders")}
+            onClick={() => navigate("/orders/list")}
             className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 
                        bg-white dark:bg-gray-700 
                        text-gray-700 dark:text-white 

@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Trash2, Search, Filter, UserPlus } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ClientsList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,19 +46,29 @@ const ClientsList = () => {
     fetchClients();
   }, [search, currentPage]);
 
+  useEffect(() => {
+  if (location.state?.success) {
+    toast.success(location.state.success);
+  }
+}, [location.state]);
+
   const handleDelete = async (id: string) => {
     if (!window.confirm("Delete this client?")) return;
-
+  
     try {
       await axios.delete(`http://localhost:5000/api/v1/clients/${id}`);
+  
+      toast.success("Client deleted successfully ✅");
+  
       fetchClients();
     } catch {
-      alert("Delete failed");
+      toast.error("Delete failed");
     }
   };
 
   return (
-    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded">
+    <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen px-2 py-2 rounded">
+      <ToastContainer position="top-right" autoClose={3000} />
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
@@ -76,8 +90,9 @@ const ClientsList = () => {
         </button>
       </div>
 
+
       {/* CARD */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
+      <div className="mt-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
 
         {/* TOOLBAR */}
         <div className="px-6 py-4 border-b bg-slate-50 dark:bg-gray-700 border-slate-200 dark:border-gray-600 flex justify-between items-center">

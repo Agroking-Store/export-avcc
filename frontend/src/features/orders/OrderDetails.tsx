@@ -94,7 +94,7 @@ const OrderDetails = () => {
         </div>
 
         <button
-          onClick={() => navigate("/orders")}
+          onClick={() => navigate("/orders/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Orders
