@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
+import toast, { Toaster } from "react-hot-toast";
 
 const PIDetails = () => {
   const { id } = useParams();
@@ -20,7 +21,7 @@ const PIDetails = () => {
 
       setData(res.data);
     } catch (err) {
-      console.error("Error fetching PI", err);
+      toast.error("Failed to load PI details ❌");
     } finally {
       setLoading(false);
     }
@@ -38,35 +39,38 @@ const PIDetails = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300";
       case "pending_approval":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300";
       case "draft":
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300";
       case "expired":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300";
       default:
-        return "bg-slate-100 text-slate-600";
+        return "bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300";
     }
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <Toaster position="top-right" />
+  
+      <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             PI Details
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-gray-300">
             {pi?.piNumber}
           </p>
         </div>
 
         <button
           onClick={() => navigate("/proforma-invoice")}
-          className="text-gray-500 hover:text-black"
+          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to PIs
         </button>
@@ -74,7 +78,7 @@ const PIDetails = () => {
 
       {/* LOADING */}
       {loading && (
-        <div className="text-center py-10 text-gray-500">
+        <div className="text-center py-10 text-gray-500 dark:text-gray-300">
           Loading...
         </div>
       )}
@@ -82,25 +86,25 @@ const PIDetails = () => {
       {!loading && pi && (
         <>
           {/* PI INFO */}
-          <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-semibold mb-4">PI Information</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">PI Information</h3>
 
             <div className="grid md:grid-cols-3 gap-4">
 
               <div>
-                <p className="text-sm text-gray-500">PI Number</p>
-                <p className="font-medium">{pi.piNumber}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">PI Number</p>
+                <p className="font-medium text-gray-800 dark:text-gray-100">{pi.piNumber}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Status</p>
                 <span className={`px-2 py-1 text-xs rounded ${getStatusColor(pi.status)}`}>
                   {pi.status}
                 </span>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Validity Date</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Validity Date</p>
                 <p>{formatDate(pi.validityDate)}</p>
               </div>
 
@@ -108,41 +112,41 @@ const PIDetails = () => {
           </div>
 
           {/* CLIENT DETAILS */}
-          <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-semibold mb-4">Client Details</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">Client Details</h3>
 
             <div className="grid md:grid-cols-2 gap-4">
 
               <div>
-                <p className="text-sm text-gray-500">Name</p>
-                <p>{pi.client_id?.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Name</p>
+                <p className="text-gray-800 dark:text-gray-100">{pi.client_id?.name}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Client Code</p>
-                <p>{pi.client_id?.clientCode}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Client Code</p>
+                <p className="text-gray-800 dark:text-gray-100">{pi.client_id?.clientCode}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Country</p>
-                <p>{pi.client_id?.country}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Country</p>
+                <p className="text-gray-800 dark:text-gray-100">{pi.client_id?.country}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Contact</p>
-                <p>{pi.client_id?.phone}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Contact</p>
+                <p className="text-gray-800 dark:text-gray-100">{pi.client_id?.phone}</p>
               </div>
 
             </div>
           </div>
 
           {/* VEHICLE DETAILS */}
-          <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-semibold mb-4">Vehicle Details</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">Vehicle Details</h3>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-gray-700 text-xs uppercase text-slate-500 dark:text-gray-200">
                   <tr>
                     <th className="px-4 py-2 text-left">Model</th>
                     <th className="px-4 py-2 text-center">Qty</th>
@@ -153,8 +157,8 @@ const PIDetails = () => {
 
                 <tbody>
                   {pi.vehicleDetails?.map((v: any, i: number) => (
-                    <tr key={i} className="border-t">
-                      <td className="px-4 py-2">{v.model}</td>
+                    <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
+                      <td className="px-4 py-2 text-gray-800 dark:text-gray-100">{v.model}</td>
                       <td className="px-4 py-2 text-center">{v.quantity}</td>
                       <td className="px-4 py-2 text-center">${v.unitPrice}</td>
                       <td className="px-4 py-2 text-center font-medium">
@@ -168,21 +172,21 @@ const PIDetails = () => {
           </div>
 
           {/* SUMMARY */}
-          <div className="bg-white rounded-xl border p-6">
-            <h3 className="font-semibold mb-4">Summary</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">Summary</h3>
 
             <div className="grid md:grid-cols-2 gap-4">
 
               <div>
-                <p className="text-sm text-gray-500">Total Amount</p>
-                <p className="text-lg font-semibold">
+                <p className="text-sm text-gray-500 dark:text-gray-300">Total Amount</p>
+                <p className="text-lg font-semibold text-gray-800 dark:text-white">
                   ${pi.totalAmount}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Created At</p>
-                <p>{formatDate(pi.createdAt)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-300">Created At</p>
+                <p className="text-gray-800 dark:text-gray-100">{formatDate(pi.createdAt)}</p>
               </div>
 
             </div>
@@ -190,6 +194,7 @@ const PIDetails = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 
