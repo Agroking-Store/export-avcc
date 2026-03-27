@@ -31,6 +31,8 @@ import OrdersList from "../features/orders/OrdersList";
 import AddOrder from "../features/orders/AddOrder";
 import EditOrder from "../features/orders/EditOrder";
 import OrderDetails from "../features/orders/OrderDetails";
+import Vehicles from "../features/vehicles/Vehicles";
+import VehicleRoutes from "./VehicleRoutes";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -48,11 +50,9 @@ const AppRoutes: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
 
-          {/* Placeholder routes */}
-          <Route
-            path="/vehicles"
-            element={<div className="p-6">Vehicles Page (Coming Soon)</div>}
-          />
+          {/* Vehicles */}
+<Route path="/vehicles/*" element={<VehicleRoutes />} />
+  <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/clients" element={<ClientsList />} />
           <Route path="/clients/add" element={<AddClient />} />
           <Route path="/clients/edit/:id" element={<EditClient />} />

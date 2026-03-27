@@ -20,12 +20,12 @@ export class ResponseUtil {
     res: Response,
     message: string = "Error",
     statusCode: number = 500,
-    error?: string,
+    data?: any,
   ): Response {
     const response: ApiResponse = {
       success: false,
       message,
-      error,
+      error: message,
     };
     return res.status(statusCode).json(response);
   }
