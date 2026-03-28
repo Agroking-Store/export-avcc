@@ -21,20 +21,22 @@ const generateVoucherNo = async (): Promise<string> => {
 };
 
 export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> => {
+if (data.clientId) {
   const client = await Client.findById(data.clientId);
   if (!client) throw new Error("Client not found");
+}
 
   const orderId = await generateOrderId();
   const voucherNo = await generateVoucherNo();
-  const vehicles = data.vehicles.map(v => v);
-  const grandTotal = vehicles.reduce((sum, v) => sum + v.quantity * 10000, 0);
+  const grandTotal = data.vehicles.reduce((sum, v) => sum + v.fobAmount + v.freight, 0);
 
   const order = new Order({
     orderId,
     voucherNo,
     date: new Date(data.date),
     clientId: data.clientId,
-    vehicles,
+    dealerId: data.dealerId || null,
+    vehicles: data.vehicles,
     grandTotal,
     status: "Draft"
   });
@@ -63,17 +65,20 @@ export const getOrdersService = async (query: any) => {
 
   const orders = await Order.aggregate([
     { $match: match },
-    { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
-    { $addFields: { clientName: { $arrayElemAt: ["$client.name", 0] } } },
-    { $project: { client: 0 } },
+   { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
+{ $lookup: { from: "dealers", localField: "dealerId", foreignField: "_id", as: "dealer" } },
+{ $addFields: { 
+    clientName: { $arrayElemAt: ["$client.name", 0] },
+    dealerName: { $arrayElemAt: ["$dealer.name", 0] }
+}},
+{ $project: { client: 0, dealer: 0 } },
     { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: Number(limit) }
   ]);
 
   const total = await Order.countDocuments(match);
-
-  return { data: orders, total, page: Number(page), totalPages: Math.ceil(total / limit) };
+  return { data: orders, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) };
 };
 
 export const getOrderByIdService = async (id: string) => {
@@ -90,14 +95,11 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
     const client = await Client.findById(data.clientId);
     if (!client) throw new Error("Client not found");
   }
-
- const updateData: any = { ...data };
+  const updateData: any = { ...data };
   if (data.vehicles) {
-    updateData.vehicles = data.vehicles;
-    updateData.grandTotal = data.vehicles.reduce((sum, v) => sum + v.quantity * 10000, 0);
+    updateData.grandTotal = data.vehicles.reduce((sum, v) => sum + v.fobAmount + v.freight, 0);
   }
   if (data.date) updateData.date = new Date(data.date);
-
   return await Order.findByIdAndUpdate(id, updateData, { new: true });
 };
 

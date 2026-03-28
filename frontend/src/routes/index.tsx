@@ -25,6 +25,8 @@ import AddDealer from "../features/dealers/pages/AddDealer";
 import DealerDetails from "../features/dealers/pages/DealerDetails";
 import EditDealer from "../features/dealers/pages/EditDealer";
 import DealerOrders from "../features/dealers/pages/DealerOrders";
+import DealerOrdersList from "../features/dealers/pages/DealerOrdersList";
+import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 
 // PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
@@ -63,15 +65,15 @@ const AppRoutes: React.FC = () => {
           <Route path="/clients/edit/:id" element={<EditClient />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
 
-          {/* Dealers — specific routes BEFORE dynamic :id */}
+{/* Dealers — specific routes BEFORE dynamic :id */}
           <Route path="/dealers" element={<Dealers />} />
           <Route path="/dealers/dashboard" element={<DealersDashboard />} />
           <Route path="/dealers/add" element={<AddDealer />} />
+          <Route path="/dealers/orders/:id" element={<DealerOrderDetails />} />
           <Route path="/dealers/edit/:id" element={<EditDealer />} />
+          <Route path="/dealers/orders" element={<DealerOrdersList />} />
           <Route path="/dealers/orders/add" element={<DealerOrders />} />
           <Route path="/dealers/:id" element={<DealerDetails />} />
-    
-          
 
           {/* Orders */}
           <Route path="/orders" element={<OrdersList />} />

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Dealer from "../models/Dealer.model";
+import { validateCreateDealer, validateUpdateDealer } from "../validations/dealer.validation";
 
 const generateDealerId = async (): Promise<string> => {
   const latest = await Dealer.findOne({ dealerId: { $exists: true } }).sort({ createdAt: -1 }).select("dealerId");
@@ -11,6 +12,7 @@ const generateDealerId = async (): Promise<string> => {
 // Create a dealer
 export const createDealer = async (req: Request, res: Response) => {
   try {
+    validateCreateDealer(req.body);
     const dealerId = await generateDealerId();
     const dealer = await Dealer.create({ ...req.body, dealerId });
     res.status(201).json({ success: true, data: dealer });
@@ -51,6 +53,7 @@ export const getDealerById = async (req: Request, res: Response) => {
 // Update a dealer
 export const updateDealer = async (req: Request, res: Response) => {
   try {
+    validateUpdateDealer(req.body);
     const dealer = await Dealer.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,

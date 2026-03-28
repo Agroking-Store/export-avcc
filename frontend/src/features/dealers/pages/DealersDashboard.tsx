@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Users, TrendingUp, CheckCircle, Clock, MoreHorizontal, Plus } from "lucide-react";
+import DealerNav from "../components/DealerNav";
 
 const DealersDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,9 @@ const DealersDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="font-sans text-gray-800 dark:text-gray-200 transition-colors duration-200 min-h-screen p-4 lg:p-8 max-w-7xl mx-auto">
+  
+<div className="font-sans text-gray-800 dark:text-gray-200 transition-colors duration-200">
+      <DealerNav />
 
       {/* Header */}
       <section className="py-6 mb-10 border-b border-gray-100 dark:border-gray-800">
@@ -36,29 +39,25 @@ const DealersDashboard: React.FC = () => {
             </span>
             Dealers Dashboard
           </h1>
-        <div className="flex gap-3">
-  <button
-    onClick={() => navigate("/dealers/orders/add")}
-    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
-  >
-    <Plus className="w-4 h-4" /> New Order
-  </button>
-  <button
-    onClick={() => navigate("/dealers/add")}
-    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
-  >
-    <Plus className="w-4 h-4" /> Add Dealer
-  </button>
-</div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/dealers/orders/add")}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
+            >
+              <Plus className="w-4 h-4" /> New Order
+            </button>
+            <button
+              onClick={() => navigate("/dealers/add")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
+            >
+              <Plus className="w-4 h-4" /> Add Dealer
+            </button>
+          </div>
         </div>
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-
-        {/* Left */}
         <div className="xl:col-span-9 space-y-10">
-
-          {/* Stats */}
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-800 dark:text-white">Overview</h2>
@@ -78,7 +77,6 @@ const DealersDashboard: React.FC = () => {
             </div>
           </section>
 
-          {/* Recent Dealers Table */}
           <section>
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
@@ -135,7 +133,6 @@ const DealersDashboard: React.FC = () => {
           </section>
         </div>
 
-        {/* Right Panel */}
         <div className="xl:col-span-3">
           <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-xl p-8 sticky top-8">
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-4">
@@ -165,7 +162,6 @@ const DealersDashboard: React.FC = () => {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import DealerNav from "../components/DealerNav";
 
 const EditDealer = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "", contact: "", email: "", address: "", gstNumber: "",
-  });
+  const [form, setForm] = useState({ name: "", contact: "", email: "", address: "", gstNumber: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,8 +18,7 @@ const EditDealer = () => {
 
   const handleSubmit = async () => {
     if (!form.name || !form.contact) {
-      toast.error("Name and Contact are required!");
-      return;
+      toast.error("Name and Contact are required!"); return;
     }
     try {
       setLoading(true);
@@ -36,16 +34,14 @@ const EditDealer = () => {
 
   return (
     <div className="space-y-6">
+      <DealerNav />
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">Edit Dealer</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Update dealer details</p>
         </div>
-        <button onClick={() => navigate("/dealers")} className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white">
-          ← Back to Dealers
-        </button>
+        <button onClick={() => navigate("/dealers")} className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white">← Back to Dealers</button>
       </div>
-
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <div className="grid grid-cols-2 gap-6">
           <div>
