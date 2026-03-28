@@ -11,6 +11,7 @@ interface Order {
   _id: string;
   orderId: string;
   clientName?: string;
+  companyName?: string;
   clientId?: string;
   clientCountry?: string;
   vehicles?: any[];
@@ -182,14 +183,19 @@ const OrdersList = () => {
                     </td>
 
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-800 dark:text-white">{order.clientName || order.clientId}</div>
+                      <div className="font-medium text-gray-800 dark:text-white">
+                        {order.clientName}
+                      </div>
+                      
                       <div className="text-xs text-gray-500 dark:text-gray-300">
-                        {order.clientCountry || "-"}
+                        {order.companyName || order.clientCountry}
                       </div>
                     </td>
 
                     <td className="px-6 py-4">
-                      {order.vehicles ? order.vehicles.length : 0}
+                      {order.vehicles
+  ? order.vehicles.reduce((sum, v) => sum + v.quantity, 0)
+  : 0}
                     </td>
 
                     <td className="px-6 py-4">

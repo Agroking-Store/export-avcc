@@ -55,7 +55,13 @@ export const getOrdersService = async (query: any) => {
   const orders = await Order.aggregate([
     { $match: match },
     { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
-    { $addFields: { clientName: { $arrayElemAt: ["$client.name", 0] } } },
+    {
+      $addFields: {
+      clientName: { $arrayElemAt: ["$client.name", 0] },
+      companyName: { $arrayElemAt: ["$client.companyName", 0] },
+      clientCountry: { $arrayElemAt: ["$client.country", 0] }
+    }
+    },
     { $project: { client: 0 } },
     { $sort: { createdAt: -1 } },
     { $skip: skip },
@@ -70,7 +76,7 @@ export const getOrdersService = async (query: any) => {
 export const getOrderByIdService = async (id: string) => {
   const order = await Order.findById(id).populate({
     path: 'clientId',
-    select: 'name companyName country phone'
+    select: 'name companyName country phone address'
   });
   if (!order) throw new Error("Order not found");
   return order;

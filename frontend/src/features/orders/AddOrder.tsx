@@ -22,7 +22,7 @@ const AddOrder = () => {
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
   useEffect(() => {
-    axios.get(`${apiConfig.baseURL}/clients`).then((res) => {
+    axios.get(`${apiConfig.baseURL}/clients?limit=1000`).then((res) => {
       setClients(res.data.data || res.data);
     });
   }, []);
@@ -119,7 +119,7 @@ const AddOrder = () => {
                 <option value="">Select Client</option>
                 {clients.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.name}
+                    {c.name} — {c.companyName} ({c.country})
                   </option>
                 ))}
               </select>
