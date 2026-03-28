@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiConfig } from "../../config/apiConfig";
+import { apiConfig } from "../../../config/apiConfig";
+import { toast } from "react-toastify";
 
 const EditClient = () => {
   const { id } = useParams();
@@ -54,7 +55,7 @@ const EditClient = () => {
     e.preventDefault();
 
     if (!form.name || !form.phone || !form.country) {
-      alert("Name, Contact Number and Country are required");
+      toast.error("Name, Contact Number and Country are required");
       return;
     }
 
@@ -66,10 +67,11 @@ const EditClient = () => {
         form
       );
 
-      alert("Client updated successfully ✅");
-      navigate("/clients");
+      navigate("/clients/list", {
+        state: { success: "Client updated successfully ✅" },
+      });
     } catch (error: any) {
-      alert(error.response?.data?.message || "Error updating client");
+      toast.error(error.response?.data?.message || "Error updating client");
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ const EditClient = () => {
         </div>
 
         <button
-          onClick={() => navigate("/clients")}
+          onClick={() => navigate("/clients/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Clients
@@ -219,7 +221,7 @@ const EditClient = () => {
 
           <button
             type="button"
-            onClick={() => navigate("/clients")}
+            onClick={() => navigate("/clients/list")}
             className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 
            bg-white dark:bg-gray-700 
            text-gray-700 dark:text-white 

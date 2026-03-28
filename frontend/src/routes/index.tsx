@@ -18,10 +18,8 @@ import Dashboard from "../features/dashboard/pages/Dashboard";
 
 //pages
 //client
-import ClientsList from "../features/clients/ClientsList";
-import AddClient from "../features/clients/AddClient";
-import EditClient from "../features/clients/EditClient";
-import ClientDetails from "../features/clients/ClientDetails";
+import ClientsModule from "../features/clients/pages/ClientsModule";
+import OrdersModule from "../features/orders/OrdersModule";
 //PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
@@ -64,10 +62,6 @@ const AppRoutes: React.FC = () => {
 <Route path="/dealers/:id" element={<DealerDetails />} />
 <Route path="/dealers/edit/:id" element={<EditDealer />} />
 
-          <Route path="/orders" element={<OrdersList />} />
-          <Route path="/orders/add" element={<AddOrder />} />
-          <Route path="/orders/edit/:id" element={<EditOrder />} />
-          <Route path="/orders/:id" element={<OrderDetails />} />
           
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
           <Route path="/proforma-invoice" element={<PIList />} />
