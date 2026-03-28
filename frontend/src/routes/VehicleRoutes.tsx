@@ -1,6 +1,5 @@
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
-import VehiclesDashboard from "../features/vehicles/VehiclesDashboard";
 import VehicleList from "../features/vehicles/VehicleList";
 import BookVehicle from "../features/vehicles/BookVehicle";
 import AddVehicle from "../features/vehicles/AddVehicle";
@@ -11,7 +10,6 @@ const VehicleRoutes = () => {
   return (
     <Routes>
       <Route index element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<VehiclesDashboard />} />
       <Route path="/list" element={<VehicleList />} />
       <Route path="/book" element={<BookVehicle />} />
       <Route path="/add" element={<AddVehicle />} />
