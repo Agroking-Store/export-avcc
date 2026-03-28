@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Eye, Pencil, Trash2, Search, Filter, Plus } from 'lucide-react';
 import { vehicleApi, Vehicle } from '../../services/vehicleApi';
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 interface PaginatedVehicles {
   data: Vehicle[];
@@ -53,16 +54,17 @@ const VehicleList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!id) {
-      alert('Invalid vehicle ID');
+      toast.error('Invalid vehicle ID');
       return;
     }
     if (!window.confirm('Delete this vehicle?')) return;
     try {
       await vehicleApi.delete(id);
+      toast.success('Vehicle deleted successfully!');
       fetchVehicles();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete error:', error);
-      alert('Delete failed');
+      toast.error(error.response?.data?.message || 'Delete failed');
     }
   };
 

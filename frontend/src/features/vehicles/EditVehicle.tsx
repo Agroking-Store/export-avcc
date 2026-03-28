@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Pencil, ArrowLeft } from "lucide-react";
 import { vehicleApi, Vehicle } from "../../services/vehicleApi";
+import { toast } from "react-toastify";
 
 const EditVehicle = () => {
   const { id } = useParams();
@@ -37,8 +38,8 @@ const EditVehicle = () => {
         quantity: vehicleData.quantity || 0,
         status: vehicleData.status || "Available",
       });
-    } catch (error) {
-      alert("Failed to load vehicle");
+    } catch (error: any) {
+      toast.error("Failed to load vehicle");
     } finally {
       setPageLoading(false);
     }
@@ -62,11 +63,11 @@ const EditVehicle = () => {
 
       const response = await vehicleApi.update(id!, form as Partial<Vehicle>);
       if (response.success) {
-        alert("Vehicle updated successfully ✅");
-        navigate("/vehicles");
+        toast.success("Vehicle updated successfully!");
+        navigate("/vehicles/list");
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || "Error updating vehicle");
+      toast.error(error.response?.data?.message || "Error updating vehicle");
     } finally {
       setLoading(false);
     }
@@ -91,11 +92,11 @@ const EditVehicle = () => {
         </div>
 
         <button
-          onClick={() => navigate("/vehicles")}
+          onClick={() => navigate("/vehicles/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-1"
         >
           <ArrowLeft size={16} />
-          Back to Vehicles
+          Back to List
         </button>
       </div>
 
@@ -253,7 +254,7 @@ const EditVehicle = () => {
             disabled={loading}
             className="px-6 py-2.5 bg-green-600 hover:bg-green-700 
                        dark:bg-green-500 dark:hover:bg-green-600 
-                       text-white rounded-lg transition"
+                       text-white rounded-lg transition shadow-md hover:shadow-lg"
           >
             {loading ? "Updating ..." : "Update Vehicle"}
           </button>

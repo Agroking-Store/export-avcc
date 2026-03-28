@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { Eye, ArrowLeft, Car } from "lucide-react";
 import { vehicleApi, Vehicle } from '../../services/vehicleApi';
+import { toast } from "react-toastify";
 
 const VehicleDetails = () => {
   const { id } = useParams();
@@ -18,11 +19,14 @@ const VehicleDetails = () => {
     try {
       setLoading(true);
       const response = await vehicleApi.getById(id!);
-      if (response.success) {
+      if (response.success && response.data) {
         setVehicle(response.data);
+      } else {
+        toast.error('Failed to load vehicle details');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching vehicle:', error);
+      toast.error('Failed to load vehicle details');
     } finally {
       setLoading(false);
     }
@@ -70,10 +74,10 @@ const VehicleDetails = () => {
           </span>
         </div>
         <button
-          onClick={() => navigate('/vehicles')}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white font-medium"
+          onClick={() => navigate("/vehicles/list")}
+          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-1"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
           Back to List
         </button>
       </div>
@@ -136,7 +140,7 @@ const VehicleDetails = () => {
       <div className="flex gap-3 pt-4">
         <button
           onClick={() => navigate(`/vehicles/edit/${vehicle._id}`)}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-sm"
+          className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all shadow-sm"
         >
           <Eye size={16} className="inline mr-2" />
           Edit Vehicle

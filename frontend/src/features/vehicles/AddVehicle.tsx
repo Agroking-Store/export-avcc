@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Plus, ArrowLeft } from "lucide-react";
 import { vehicleApi, Vehicle } from "../../services/vehicleApi";
+import { toast } from "react-toastify";
 
 const AddVehicle = () => {
   const navigate = useNavigate();
@@ -39,11 +40,11 @@ const AddVehicle = () => {
       };
       const response = await vehicleApi.create(payload as Partial<Vehicle>);
       if (response.success) {
-        alert("Vehicle added successfully ✅");
-        navigate("/vehicles");
+        toast.success("Vehicle added successfully!");
+        navigate("/vehicles/list");
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || "Error adding vehicle");
+      toast.error(error.response?.data?.message || "Error adding vehicle");
     } finally {
       setLoading(false);
     }
@@ -64,11 +65,11 @@ const AddVehicle = () => {
         </div>
 
         <button
-          onClick={() => navigate("/vehicles")}
+          onClick={() => navigate("/vehicles/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-1"
         >
           <ArrowLeft size={16} />
-          Back to Vehicles
+          Back to List
         </button>
       </div>
 
@@ -226,7 +227,7 @@ const AddVehicle = () => {
             disabled={loading}
             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 
                        dark:bg-blue-500 dark:hover:bg-blue-600 
-                       text-white rounded-lg transition"
+                       text-white rounded-lg transition shadow-md hover:shadow-lg"
           >
             {loading ? "Saving..." : "Add Vehicle"}
           </button>
