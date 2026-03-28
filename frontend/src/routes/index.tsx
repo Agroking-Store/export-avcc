@@ -25,7 +25,12 @@ import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
 import EditPI from "../features/proforma-invoice/pages/EditPI";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
-
+import OrdersList from "../features/orders/OrdersList";
+import AddOrder from "../features/orders/AddOrder";
+import EditOrder from "../features/orders/EditOrder";
+import OrderDetails from "../features/orders/OrderDetails";
+import Vehicles from "../features/vehicles/Vehicles";
+import VehicleRoutes from "./VehicleRoutes";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -43,18 +48,14 @@ const AppRoutes: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
 
-          {/* Placeholder routes */}
-          <Route
-            path="/vehicles"
-            element={<div className="p-6">Vehicles Page (Coming Soon)</div>}
-          />
-           {/* CLIENT MODULE ROUTES */}
-          <Route path="/clients" element={<Navigate to="/clients/dashboard" replace />} />
-          <Route path="/clients/*" element={<ClientsModule />} />
+          {/* Vehicles */}
+          <Route path="/vehicles/*" element={<VehicleRoutes />} />
+
           
-          {/* ORDERS MODULE ROUTES */}
-          <Route path="/orders" element={<Navigate to="/orders/list" replace />} />
-          <Route path="/orders/*" element={<OrdersModule />} />
+          <Route path="/clients" element={<ClientsList />} />
+          <Route path="/clients/add" element={<AddClient />} />
+          <Route path="/clients/edit/:id" element={<EditClient />} />
+          <Route path="/clients/:id" element={<ClientDetails />} />
 
           <Route path="/dealers" element={<Dealers />} />
 <Route path="/dealers/add" element={<AddDealer />} />

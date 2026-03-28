@@ -13,3 +13,26 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
     pages: number;
   };
 }
+
+export interface Vehicle {
+  _id?: string;
+  id?: string;
+  name: string;
+  color: string;
+  engineNo: string;
+  chassisNo: string;
+  quantity: number;
+  model?: string;
+  make?: string;
+  year?: number;
+  status: 'Available' | 'Booked';
+  price?: number;
+  bookedBy?: string;
+}
+
+export interface VehicleStats {
+  total: number;
+  booked: number;
+  available: number;
+}
+
