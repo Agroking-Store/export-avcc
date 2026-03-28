@@ -8,8 +8,18 @@ import {
   FileCheck,
   Truck,
 } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
-const Sidebar: React.FC = () => {
+const AppSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
@@ -34,41 +44,49 @@ const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col transition-colors duration-200">
+    <Sidebar collapsible="icon">
       {/* Logo Area */}
-      <div className="h-20 flex items-center px-8 border-b border-gray-50 dark:border-gray-800">
-        <Car className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-3" />
-        <span className="font-bold text-lg text-gray-900 dark:text-white">
+      <SidebarHeader className="h-20 flex flex-row items-center px-8 border-b border-sidebar-border group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-all">
+        <Car className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-3 shrink-0 group-data-[collapsible=icon]:mr-0" />
+        <span className="font-bold text-lg text-sidebar-foreground truncate group-data-[collapsible=icon]:hidden">
           Vehicle Export
         </span>
-      </div>
+      </SidebarHeader>
 
       {/* Navigation */}
-      <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => {
-          let isActive = location.pathname.includes(item.path);
-          if (item.name === "Clients") {
-            isActive = location.pathname.startsWith('/clients') || location.pathname.startsWith('/orders');
-          }
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                isActive
-                  ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-              }`}
-            >
-              {item.icon}
-              {item.name}
-            </Link>
-          );
-        })}
-
-      </nav>
-    </aside>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu className="py-4 space-y-1">
+              {menuItems.map((item) => {
+                let isActive = location.pathname.includes(item.path);
+                if (item.name === "Clients") {
+                  isActive =
+                    location.pathname.startsWith("/clients") ||
+                    location.pathname.startsWith("/orders");
+                }
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.name}
+                      className="h-12 rounded-xl font-medium text-base"
+                    >
+                      <Link to={item.path}>
+                        {item.icon}
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 };
 
-export default Sidebar;
+export default AppSidebar;

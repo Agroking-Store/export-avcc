@@ -6,6 +6,7 @@ import { useAppDispatch } from "../../app/hooks";
 import { logout } from "../../features/auth/authSlice"; // Assuming your logout action is here
 import { useTheme } from "../../context/ThemeContext";
 import { Moon, Sun, Bell, User, LogOut } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const Header: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -36,8 +37,10 @@ const Header: React.FC = () => {
 
   return (
     <header className="h-20 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 transition-colors duration-200 z-10">
-      <div className="flex-1">
-        {(location.pathname === '/clients' || location.pathname === '/orders') && <Navbar />}
+      <div className="flex-1 flex items-center gap-4">
+        <SidebarTrigger className="-ml-3" />
+        {(location.pathname === "/clients" ||
+          location.pathname === "/orders") && <Navbar />}
       </div>
 
       <div className="flex items-center gap-4 relative">
