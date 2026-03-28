@@ -84,7 +84,7 @@ const AddOrder = () => {
   };
 
   return (
-    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded">
+    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded-xl">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -97,7 +97,7 @@ const AddOrder = () => {
         </div>
         <button
           onClick={() => navigate("/orders/list")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg"
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm rounded-lg"
         >
           <ArrowLeft size={18} />
           Orders
@@ -144,7 +144,7 @@ const AddOrder = () => {
           {selectedClient && (
             <div className="p-6 bg-slate-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
               <h3 className="font-medium text-slate-800 dark:text-white mb-3">{selectedClient.name}</h3>
-              <div className="text-sm text-slate-600 space-y-1">
+              <div className="text-sm text-slate-600 dark:text-gray-300 space-y-1">
                 <div>{selectedClient.companyName}</div>
                 <div>{selectedClient.country} • {selectedClient.phone}</div>
               </div>
@@ -154,7 +154,7 @@ const AddOrder = () => {
           {/* Vehicles */}
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-slate-800">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
                 Vehicles ({vehicles.length})
               </h3>
               <button
@@ -176,7 +176,7 @@ const AddOrder = () => {
                       <button
                         type="button"
                         onClick={() => removeVehicle(i)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -198,7 +198,7 @@ const AddOrder = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Color</label>
+                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">Color</label>
                       <input
                         type="text"
                         value={v.color}
@@ -210,7 +210,7 @@ const AddOrder = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Quantity</label>
+                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">Quantity</label>
                       <input
                         type="number"
                         value={v.quantity}
@@ -247,7 +247,7 @@ const AddOrder = () => {
             <button
               type="button"
               onClick={() => navigate("/orders/list")}
-              className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/80"
             >
               Cancel
             </button>
