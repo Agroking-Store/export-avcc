@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2} from "lucide-react";
 import { apiConfig } from "../../config/apiConfig";
+import { toast } from "react-toastify";
 
 interface Vehicle {
   name: string;
@@ -14,15 +15,14 @@ const EditOrder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [clients, setClients] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
+  const [, setClients] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [clientId, setClientId] = useState("");
   const [selectedClientName, setSelectedClientName] = useState('');
   const [selectedClientCompany, setSelectedClientCompany] = useState('');
-  const [clientObj, setClientObj] = useState(null);
   const [date, setDate] = useState("");
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const EditOrder = () => {
     }
   };
 
-  const fetchOrder = async (clientList) => {
+  const fetchOrder = async (clientList: any[]) => {
     try {
       const orderRes = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
       const orderData = orderRes.data.order || orderRes.data;
@@ -53,10 +53,9 @@ const EditOrder = () => {
       setPageLoading(false);
       
       const effectiveClientId = typeof orderData.clientId === 'object' ? (orderData.clientId as any)._id : orderData.clientId;
-      const clientObj = typeof orderData.clientId === 'object' ? (orderData.clientId as any) : clientList.find((c) => c._id === effectiveClientId);
+      const clientObj = typeof orderData.clientId === 'object' ? (orderData.clientId as any) : clientList.find((c: any) => c._id === effectiveClientId);
       
       setClientId(effectiveClientId || "");
-      setClientObj(clientObj || null);
       setSelectedClientName(clientObj?.name || 'N/A');
       setSelectedClientCompany(clientObj?.companyName || '-');
 
@@ -75,7 +74,11 @@ const EditOrder = () => {
     }
   };
 
-  const handleVehicleChange = (index, field, value) => {
+  const handleVehicleChange = (
+    index: number,
+    field: keyof Vehicle,
+    value: any
+  ) => {
     const updated = [...vehicles];
     updated[index] = { ...updated[index], [field]: value };
     setVehicles(updated);
@@ -85,18 +88,19 @@ const EditOrder = () => {
     setVehicles([...vehicles, { name: "", color: "", quantity: 1 }]);
   };
 
-  const removeVehicle = (index) => {
+  const removeVehicle = (index: number) => {
     if (vehicles.length === 1) return;
     setVehicles(vehicles.filter((_, i) => i !== index));
   };
 
   const validate = () => {
-    const e = {};
+    const e: Record<string, string> = {};
     if (!date) e.date = "Date required";
     vehicles.forEach((v, i) => {
       if (!v.name.trim()) e[`name_${i}`] = "Name required";
       if (!v.color.trim()) e[`color_${i}`] = "Color required";
-      if (v.quantity < 1) e[`qty_${i}`] = "Qty ≥ 1";
+      if (Number(v.quantity) < 1)
+        e[`qty_${i}`] = "Qty ≥ 1";
     });
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -111,10 +115,11 @@ const EditOrder = () => {
         date,
         vehicles
       });
-      alert("✅ Updated!");
-      navigate("/orders");
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed");
+      navigate("/orders/list", {
+        state: { success: "Order updated successfully ✅" },
+      });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed");
     } finally {
       setLoading(false);
     }
@@ -139,7 +144,7 @@ const EditOrder = () => {
         </div>
 
         <button
-          onClick={() => navigate("/orders")}
+          onClick={() => navigate("/orders/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Orders
@@ -288,11 +293,22 @@ const EditOrder = () => {
                       type="number"
                       min="1"
                       value={v.quantity}
-                      onChange={(e) => handleVehicleChange(i, "quantity", parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleVehicleChange(
+                          i,
+                          "quantity",
+                          value === "" ? "" : parseInt(value)
+                        );
+                      }}
+                      style={{ MozAppearance: "textfield" }}
                       className="w-full border border-gray-300 dark:border-gray-600 
                                  bg-white dark:bg-gray-800 
                                  text-black dark:text-white 
-                                 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none
+                                 appearance-none 
+                                 [&::-webkit-inner-spin-button]:appearance-none 
+                                 [&::-webkit-outer-spin-button]:appearance-none"
                       placeholder="1"
                       required
                     />
@@ -308,7 +324,7 @@ const EditOrder = () => {
         <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
-            onClick={() => navigate("/orders")}
+            onClick={() => navigate("/orders/list")}
             className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 
                        bg-white dark:bg-gray-700 
                        text-gray-700 dark:text-white 

@@ -6,6 +6,7 @@ import { useAppDispatch } from "../../app/hooks";
 import { logout } from "../../features/auth/authSlice";
 import { useTheme } from "../../context/ThemeContext";
 import { Moon, Sun, Bell, User, LogOut } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const Header: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();

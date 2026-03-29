@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { Pencil, ArrowLeft } from "lucide-react";
 import { apiConfig } from "../../config/apiConfig";
 
 const OrderDetails = () => {
@@ -94,7 +93,7 @@ const OrderDetails = () => {
         </div>
 
         <button
-          onClick={() => navigate("/orders")}
+          onClick={() => navigate("/orders/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Orders

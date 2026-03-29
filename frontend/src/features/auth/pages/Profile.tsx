@@ -2,7 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { User, Mail, Shield, CheckCircle, Edit2, Save, X, ArrowLeft } from "lucide-react";
+import {
+  User,
+  Mail,
+  Shield,
+  CheckCircle,
+  Edit2,
+  Save,
+  X,
+  ArrowLeft,
+} from "lucide-react";
 import Button from "../../../components/common/Button";
 import Input from "../../../components/common/Input";
 import { updateProfile } from "../authSlice";
@@ -76,7 +85,12 @@ const Profile: React.FC = () => {
 
     setLoading(true);
     try {
-      const result = await dispatch(updateProfile({ name: formData.name.trim(), email: formData.email.trim() })).unwrap();
+      const result = await dispatch(
+        updateProfile({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+        })
+      ).unwrap();
       setIsEditing(false);
     } catch (error: any) {
       toast.error(error || "Update failed");
@@ -101,7 +115,7 @@ const Profile: React.FC = () => {
   };
 
   return (
-<div className="animate-fade-in p-4 lg:p-8 min-h-screen">
+    <div className="animate-fade-in p-4 lg:p-8 min-h-screen">
       {/* Back Button */}
       <div className="mb-6">
         <Button
@@ -115,16 +129,16 @@ const Profile: React.FC = () => {
       </div>
 
       {/* Header Card */}
-      <div className="group bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1">
+      <div className="group bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300 hover:-translate-y-1">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.3),transparent_50%)] opacity-75" />
-        
+
         <div className="relative flex items-center gap-6">
           <div className="w-28 h-28 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center ring-8 ring-white/20 shadow-2xl transition-all duration-300 group-hover:scale-105">
             <User className="w-14 h-14 text-white drop-shadow-lg" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-4xl lg:text-3xl font-black bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-3 leading-tight">
+            <h1 className="text-4xl lg:text-3xl font-black bg-linear-to-r from-white to-blue-100 bg-clip-text text-transparent mb-3 leading-tight">
               {formData.name || "Admin User"}
             </h1>
             <div className="flex items-center gap-4 mb-4">
@@ -135,7 +149,9 @@ const Profile: React.FC = () => {
                 </span>
               </div>
               <span
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-sm font-bold shadow-lg ${getRoleBadgeColor(user?.role || "admin")}`}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-sm font-bold shadow-lg ${getRoleBadgeColor(
+                  user?.role || "admin"
+                )}`}
               >
                 <Shield className="w-4 h-4" />
                 {user?.role
@@ -147,7 +163,7 @@ const Profile: React.FC = () => {
 
           {!isEditing && (
             <Button
-              className="!border-white/30 !bg-white/10 !backdrop-blur hover:!bg-white/20 !text-white !font-semibold shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 px-8 py-3 rounded-2xl flex items-center gap-2"
+              className="border-white/30! bg-white/10! backdrop-blur! hover:bg-white/20! text-white! font-semibold! shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 px-8 py-3 rounded-2xl flex items-center gap-2"
               onClick={handleEdit}
             >
               <Edit2 className="w-5 h-5" />
@@ -161,8 +177,8 @@ const Profile: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Personal Information */}
         <div className="bg-white/90 dark:bg-slate-800/95 backdrop-blur-sm rounded-3xl shadow-xl border border-white/60 dark:border-slate-700/60 p-8 transition-all duration-300 hover:shadow-2xl">
-          <h2 className="text-2xl font-black bg-gradient-to-r from-gray-900 dark:from-slate-200 to-slate-900 dark:to-slate-200 bg-clip-text text-transparent mb-8 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+          <h2 className="text-2xl font-black bg-linear-to-r from-gray-900 dark:from-slate-200 to-slate-900 dark:to-slate-200 bg-clip-text text-transparent mb-8 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
               <User className="w-7 h-7 text-white" />
             </div>
             Personal Information
@@ -199,10 +215,12 @@ const Profile: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <Button
                   type="submit"
-                  className="!bg-gradient-to-r !from-blue-600 !to-indigo-600 !hover:from-blue-700 !hover:to-indigo-700 !px-8 !py-3 !font-bold !shadow-xl !hover:shadow-2xl !transition-all !duration-200"
+                  className="bg-linear-to-r! from-blue-600! to-indigo-600! !hover:from-blue-700 !hover:to-indigo-700 !px-8 !py-3 !font-bold !shadow-xl !hover:shadow-2xl !transition-all !duration-200"
                   disabled={loading}
                 >
-                  {loading ? "Saving..." : (
+                  {loading ? (
+                    "Saving..."
+                  ) : (
                     <>
                       <Save className="w-5 h-5" />
                       Save Changes
@@ -213,7 +231,7 @@ const Profile: React.FC = () => {
                   type="button"
                   variant="outline"
                   onClick={handleCancel}
-                  className="!px-8 !py-3 !font-semibold !border-gray-300 dark:!border-gray-600 !text-gray-700 dark:!text-gray-200 hover:!bg-gray-50 dark:hover:!bg-gray-800 hover:!text-gray-900 dark:hover:!text-white"
+                  className="!px-8 !py-3 !font-semibold !border-gray-300 dark:border-gray-600! text-gray-700! dark:!text-gray-200 hover:!bg-gray-50 dark:hover:!bg-gray-800 hover:!text-gray-900 dark:hover:!text-white"
                   disabled={loading}
                 >
                   <X className="w-5 h-5" />
@@ -223,7 +241,7 @@ const Profile: React.FC = () => {
             </form>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl border border-blue-100/50 dark:border-blue-900/50 shadow-sm">
+              <div className="flex items-center gap-4 p-6 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl border border-blue-100/50 dark:border-blue-900/50 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
                   <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -236,7 +254,7 @@ const Profile: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/50 shadow-sm">
+              <div className="flex items-center gap-4 p-6 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/50 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center shrink-0">
                   <Mail className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                 </div>
@@ -269,7 +287,9 @@ const Profile: React.FC = () => {
                 Role
               </label>
               <span
-                className={`inline-block px-6 py-3 rounded-2xl font-bold text-lg shadow-lg ${getRoleBadgeColor(user?.role || "admin")}`}
+                className={`inline-block px-6 py-3 rounded-2xl font-bold text-lg shadow-lg ${getRoleBadgeColor(
+                  user?.role || "admin"
+                )}`}
               >
                 {user?.role
                   ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
@@ -294,4 +314,3 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-

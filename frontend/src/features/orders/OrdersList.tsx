@@ -2,11 +2,30 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Trash2, Search, Filter, Plus } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+interface Order {
+  _id: string;
+  orderId: string;
+  clientName?: string;
+  companyName?: string;
+  clientId?: string;
+  clientCountry?: string;
+  vehicles?: any[];
+  grandTotal?: number;
+  status?: string;
+  date?: string;
+  createdAt?: string;
+}
 
 const OrdersList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -44,18 +63,30 @@ const OrdersList = () => {
     fetchOrders();
   }, [search, statusFilter, currentPage]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this order?")) return;
+  useEffect(() => {
+    if (location.state?.success) {
+      toast.success(location.state.success);
+  
+      // clear state so it doesn't repeat on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this order?")) return;
+    
     try {
       await axios.delete(`http://localhost:5000/api/v1/orders/${id}`);
+    
+      toast.success("Order deleted successfully 🗑️");
+    
       fetchOrders();
-    } catch {
-      alert("Delete failed");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Delete failed");
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "Draft": return "bg-gray-100 text-gray-800";
       case "Confirmed": return "bg-blue-100 text-blue-800";
@@ -64,8 +95,11 @@ const OrdersList = () => {
     }
   };
 
+  
+
   return (
-    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded-xl">
+    <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen p-2 rounded-xl">
+      <ToastContainer position="top-right" autoClose={3000} />
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
@@ -149,14 +183,19 @@ const OrdersList = () => {
                     </td>
 
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-800 dark:text-white">{order.clientName || order.clientId}</div>
+                      <div className="font-medium text-gray-800 dark:text-white">
+                        {order.clientName}
+                      </div>
+                      
                       <div className="text-xs text-gray-500 dark:text-gray-300">
-                        {order.clientCountry || "-"}
+                        {order.companyName || order.clientCountry}
                       </div>
                     </td>
 
                     <td className="px-6 py-4">
-                      {order.vehicles ? order.vehicles.length : 0}
+                      {order.vehicles
+  ? order.vehicles.reduce((sum, v) => sum + v.quantity, 0)
+  : 0}
                     </td>
 
                     <td className="px-6 py-4">
@@ -164,16 +203,17 @@ const OrdersList = () => {
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status)}`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status || "")}`}>
                         {order.status}
                       </span>
                     </td>
 
                     <td className="px-6 py-4">
-                      {order.date 
+                      {order.date
                         ? new Date(order.date).toLocaleDateString()
-                        : new Date(order.createdAt).toLocaleDateString()
-                      }
+                        : order.createdAt
+                        ? new Date(order.createdAt).toLocaleDateString()
+                        : "-"}
                     </td>
 
                     <td className="px-6 py-4 text-right">

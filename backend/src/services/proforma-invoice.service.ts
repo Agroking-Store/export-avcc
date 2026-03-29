@@ -1,9 +1,8 @@
 import ProformaInvoice from "../models/ProformaInvoice.model";
-import { Types } from "mongoose";
+import { Types, PipelineStage } from "mongoose";
 
 // CREATE PI
 export const createPIService = async (data: any) => {
-
   const count = await ProformaInvoice.countDocuments();
   const piNumber = `PI-${String(count + 1).padStart(3, "0")}`;
 
@@ -21,13 +20,15 @@ export const createPIService = async (data: any) => {
   return await pi.save();
 };
 
-
-
-// GET ALL PIs 
+// GET ALL PIs
 export const getPIsService = async (query: any) => {
-  const { search, page = 1, limit = 5 } = query;
+  const { search, page = 1, limit = 5, sortBy, sortOrder, status } = query;
 
   let match: any = {};
+
+  if (status && status !== "all") {
+    match.status = status;
+  }
 
   if (search) {
     match.$or = [
@@ -37,12 +38,63 @@ export const getPIsService = async (query: any) => {
   }
 
   const skip = (Number(page) - 1) * Number(limit);
+  const limitNum = Number(limit);
+  const sortDir: 1 | -1 = sortOrder === "desc" ? -1 : 1;
+
+  // If sorting by client name, we MUST use aggregation to join the clients collection
+  if (sortBy === "client") {
+    const pipeline: PipelineStage[] = [
+      { $match: match },
+      {
+        $lookup: {
+          from: "clients", // <-- Ensure this matches your actual MongoDB collection name for clients
+          localField: "client_id",
+          foreignField: "_id",
+          as: "clientData",
+        },
+      },
+      { $unwind: { path: "$clientData", preserveNullAndEmptyArrays: true } },
+      { $sort: { "clientData.name": sortDir } },
+      { $skip: skip },
+      { $limit: limitNum },
+      {
+        $project: {
+          piNumber: 1,
+          totalAmount: 1,
+          status: 1,
+          validityDate: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          client_id: {
+            name: "$clientData.name",
+            clientCode: "$clientData.clientCode",
+          },
+        },
+      },
+    ];
+
+    const pis = await ProformaInvoice.aggregate(pipeline);
+    const total = await ProformaInvoice.countDocuments(match);
+
+    return {
+      data: pis,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limitNum),
+    };
+  }
+
+  // Default Mongoose Find for standard fields (piNumber, status, totalAmount, etc.)
+  let sortOption: any = { createdAt: -1 };
+  if (sortBy) {
+    sortOption = { [sortBy]: sortDir };
+  }
 
   const pis = await ProformaInvoice.find(match)
     .populate("client_id", "name clientCode") // 🔥 show client info
-    .sort({ createdAt: -1 })
+    .sort(sortOption)
     .skip(skip)
-    .limit(Number(limit));
+    .limit(limitNum);
 
   const total = await ProformaInvoice.countDocuments(match);
 
@@ -54,12 +106,12 @@ export const getPIsService = async (query: any) => {
   };
 };
 
-
-
 // GET PI BY ID
 export const getPIByIdService = async (id: string) => {
-  const pi = await ProformaInvoice.findById(id)
-    .populate("client_id", "name clientCode email phone country");
+  const pi = await ProformaInvoice.findById(id).populate(
+    "client_id",
+    "name clientCode email phone country"
+  );
 
   if (!pi) {
     throw new Error("PI not found");
@@ -68,9 +120,7 @@ export const getPIByIdService = async (id: string) => {
   return pi;
 };
 
-
-
-// UPDATE PI 
+// UPDATE PI
 export const updatePIService = async (id: string, data: any) => {
   if (data.vehicleDetails) {
     data.totalAmount = data.vehicleDetails.reduce(
@@ -86,13 +136,8 @@ export const updatePIService = async (id: string, data: any) => {
   return updated;
 };
 
-
-
 // UPDATE STATUS
-export const updatePIStatusService = async (
-  id: string,
-  status: string
-) => {
+export const updatePIStatusService = async (id: string, status: string) => {
   const validStatuses = [
     "draft",
     "pending_approval",

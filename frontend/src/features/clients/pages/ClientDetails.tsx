@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiConfig } from "../../config/apiConfig";
+import { apiConfig } from "../../../config/apiConfig";
 
 const ClientDetails = () => {
   const { id } = useParams();
@@ -48,7 +48,7 @@ const ClientDetails = () => {
         </div>
 
         <button
-          onClick={() => navigate("/clients")}
+          onClick={() => navigate("/clients/list")}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to Clients

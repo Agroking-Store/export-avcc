@@ -3,11 +3,12 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, Calendar, ArrowLeft } from "lucide-react";
 import { apiConfig } from "../../config/apiConfig";
+import { toast } from "react-toastify";
 
 interface Vehicle {
   name: string;
   color: string;
-  quantity: number;
+  quantity: number | "";
 }
 
 const AddOrder = () => {
@@ -21,7 +22,7 @@ const AddOrder = () => {
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
   useEffect(() => {
-    axios.get(`${apiConfig.baseURL}/clients`).then((res) => {
+    axios.get(`${apiConfig.baseURL}/clients?limit=1000`).then((res) => {
       setClients(res.data.data || res.data);
     });
   }, []);
@@ -54,7 +55,8 @@ const AddOrder = () => {
     vehicles.forEach((v, i) => {
       if (!v.name.trim()) e[`name_${i}`] = "Name required";
       if (!v.color.trim()) e[`color_${i}`] = "Color required";
-      if (v.quantity < 1) e[`qty_${i}`] = "Quantity ≥ 1";
+      if (v.quantity === "" || Number(v.quantity) < 1)
+        e[`qty_${i}`] = "Quantity ≥ 1";
     });
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -71,17 +73,18 @@ const AddOrder = () => {
     try {
       setLoading(true);
       await axios.post(`${apiConfig.baseURL}/orders`, buildPayload());
-      alert("Order saved ✅");
-      navigate("/orders");
+      navigate("/orders/list", {
+        state: { success: "Order created successfully ✅" },
+      });
     } catch (err: any) {
-      alert(err.response?.data?.message || "Error saving");
+      toast.error(err.response?.data?.message || "Error saving");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded">
+    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded-xl">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -93,8 +96,8 @@ const AddOrder = () => {
           </p>
         </div>
         <button
-          onClick={() => navigate("/orders")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg"
+          onClick={() => navigate("/orders/list")}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm rounded-lg"
         >
           <ArrowLeft size={18} />
           Orders
@@ -116,7 +119,7 @@ const AddOrder = () => {
                 <option value="">Select Client</option>
                 {clients.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.name}
+                    {c.name} — {c.companyName} ({c.country})
                   </option>
                 ))}
               </select>
@@ -141,7 +144,7 @@ const AddOrder = () => {
           {selectedClient && (
             <div className="p-6 bg-slate-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
               <h3 className="font-medium text-slate-800 dark:text-white mb-3">{selectedClient.name}</h3>
-              <div className="text-sm text-slate-600 space-y-1">
+              <div className="text-sm text-slate-600 dark:text-gray-300 space-y-1">
                 <div>{selectedClient.companyName}</div>
                 <div>{selectedClient.country} • {selectedClient.phone}</div>
               </div>
@@ -151,7 +154,7 @@ const AddOrder = () => {
           {/* Vehicles */}
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-slate-800">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
                 Vehicles ({vehicles.length})
               </h3>
               <button
@@ -173,7 +176,7 @@ const AddOrder = () => {
                       <button
                         type="button"
                         onClick={() => removeVehicle(i)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -195,7 +198,7 @@ const AddOrder = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Color</label>
+                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">Color</label>
                       <input
                         type="text"
                         value={v.color}
@@ -207,13 +210,28 @@ const AddOrder = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Quantity</label>
+                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">Quantity</label>
                       <input
                         type="number"
                         value={v.quantity}
                         min="1"
-                        onChange={(e) => handleVehicleChange(i, "quantity", parseInt(e.target.value) || 1)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                        
+                          handleVehicleChange(
+                            i,
+                            "quantity",
+                            value === "" ? "" : parseInt(value)
+                          );
+                        }}
+                        style={{ MozAppearance: "textfield" }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
+                                   bg-white dark:bg-gray-800 text-black dark:text-white 
+                                   placeholder-gray-400 dark:placeholder-gray-300 
+                                   rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                                   text-sm appearance-none 
+                                   [&::-webkit-inner-spin-button]:appearance-none 
+                                   [&::-webkit-outer-spin-button]:appearance-none"
                       />
 
                       {errors[`qty_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`qty_${i}`]}</p>}
@@ -228,8 +246,8 @@ const AddOrder = () => {
           <div className="flex justify-end gap-4 pt-6 border-t border-slate-200 dark:border-gray-700">
             <button
               type="button"
-              onClick={() => navigate("/orders")}
-              className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              onClick={() => navigate("/orders/list")}
+              className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/80"
             >
               Cancel
             </button>

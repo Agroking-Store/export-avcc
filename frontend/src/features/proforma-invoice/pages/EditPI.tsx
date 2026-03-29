@@ -111,7 +111,9 @@ const EditPI = () => {
       );
 
       alert("PI Updated ✅");
-      navigate("/proforma-invoice");
+            navigate("/proforma-invoice", {
+        state: { success: "PI updated successfully ✏️" },
+      });
     } catch (err: any) {
       alert(err.response?.data?.message || "Error updating PI");
     } finally {
@@ -120,22 +122,22 @@ const EditPI = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             Edit Proforma Invoice
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-gray-300">
             Update PI details
           </p>
         </div>
 
         <button
           onClick={() => navigate("/proforma-invoice")}
-          className="text-gray-500 hover:text-black"
+          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
         >
           ← Back to PIs
         </button>
@@ -144,23 +146,27 @@ const EditPI = () => {
       {/* FORM */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700 p-6 space-y-6"
       >
 
         {/* CLIENT DETAILS */}
-        <div className="bg-slate-50 p-6 rounded-xl border">
-          <h3 className="font-semibold mb-4">Client Details</h3>
+        <div className="bg-slate-50 dark:bg-gray-700 p-6 rounded-xl border border-slate-200 dark:border-gray-600">
+          <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">Client Details</h3>
 
           <div className="grid md:grid-cols-2 gap-4">
             
             <div>
-              <label className="text-sm">Client *</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">Client *</label>
               <select
                 value={form.client_id}
                 onChange={(e) =>
                   setForm({ ...form, client_id: e.target.value })
                 }
-                className="w-full mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                className="w-full mt-1 border rounded-md px-3 py-2 
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           border-slate-300 dark:border-gray-600
+           focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Client</option>
                 {clients.map((c) => (
@@ -172,25 +178,33 @@ const EditPI = () => {
             </div>
 
             <div>
-              <label className="text-sm">Payment Terms</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">Payment Terms</label>
               <input
                 value={form.paymentTerms}
                 onChange={(e) =>
                   setForm({ ...form, paymentTerms: e.target.value })
                 }
-                className="w-full mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                className="w-full mt-1 border rounded-md px-3 py-2 
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           border-slate-300 dark:border-gray-600
+           focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="text-sm">Validity Date</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">Validity Date</label>
               <input
                 type="date"
                 value={form.validityDate}
                 onChange={(e) =>
                   setForm({ ...form, validityDate: e.target.value })
                 }
-                className="w-full mt-1 border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                className="w-full mt-1 border rounded-md px-3 py-2 
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           border-gray-300 dark:border-gray-600
+           focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -198,7 +212,7 @@ const EditPI = () => {
         </div>
 
         {/* VEHICLE DETAILS */}
-        <div className="bg-slate-50 p-6 rounded-xl border">
+        <div className="bg-slate-50 dark:bg-gray-700 p-6 rounded-xl border border-slate-200 dark:border-gray-600">
           <h3 className="font-semibold mb-4">Vehicle Details</h3>
 
           {form.vehicleDetails.map((v, index) => (
@@ -210,7 +224,10 @@ const EditPI = () => {
                 onChange={(e) =>
                   handleVehicleChange(index, "model", e.target.value)
                 }
-                className="border px-3 py-2 rounded-md"
+                className="border px-3 py-2 rounded-md 
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           border-slate-300 dark:border-gray-600"
               />
 
               <input
@@ -219,7 +236,13 @@ const EditPI = () => {
                 onChange={(e) =>
                   handleVehicleChange(index, "quantity", Number(e.target.value))
                 }
-                className="border px-3 py-2 rounded-md appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="border px-3 py-2 rounded-md 
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           border-slate-300 dark:border-gray-600
+           appearance-none 
+           [&::-webkit-inner-spin-button]:appearance-none 
+           [&::-webkit-outer-spin-button]:appearance-none"
               />
 
               <input
@@ -228,14 +251,20 @@ const EditPI = () => {
                 onChange={(e) =>
                   handleVehicleChange(index, "unitPrice", Number(e.target.value))
                 }
-                className="border px-3 py-2 rounded-md appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="border px-3 py-2 rounded-md 
+           bg-white dark:bg-gray-800 
+           text-black dark:text-white 
+           border-slate-300 dark:border-gray-600
+           appearance-none 
+           [&::-webkit-inner-spin-button]:appearance-none 
+           [&::-webkit-outer-spin-button]:appearance-none"
               />
 
               {form.vehicleDetails.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeVehicle(index)}
-                  className="text-red-500"
+                  className="text-red-500 dark:text-red-400"
                 >
                   Remove
                 </button>
@@ -247,7 +276,7 @@ const EditPI = () => {
           <button
             type="button"
             onClick={addVehicle}
-            className="flex items-center gap-2 text-blue-600 mt-2"
+            className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mt-2"
           >
             <Plus size={16} />
             Add Vehicle
@@ -255,24 +284,29 @@ const EditPI = () => {
         </div>
 
         {/* TOTAL */}
-        <div className="text-right font-semibold text-lg">
+        <div className="text-right font-semibold text-lg text-gray-800 dark:text-white">
           Total: ${totalAmount}
         </div>
 
         {/* ACTIONS */}
-        <div className="flex justify-end gap-4 border-t pt-4">
+        <div className="flex justify-end gap-4 border-t border-slate-200 dark:border-gray-700 pt-4">
           
           <button
             type="button"
             onClick={() => navigate("/proforma-invoice")}
-            className="px-4 py-2 border rounded-md"
+            className="px-4 py-2 border rounded-md 
+           bg-white dark:bg-gray-700 
+           text-black dark:text-white 
+           border-slate-300 dark:border-gray-600"
           >
             Cancel
           </button>
 
           <button
             type="submit"
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 
+           dark:bg-blue-500 dark:hover:bg-blue-600 
+           text-white rounded-md"
           >
             {loading ? "Updating..." : "Update PI"}
           </button>
