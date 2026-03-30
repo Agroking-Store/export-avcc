@@ -41,28 +41,13 @@ const vehicleItemSchema = new Schema<IVehicleItem>({
   freight: { type: Number, required: true },
 });
 
-const orderSchema = new Schema<IOrder>({
-  orderId: { type: String, unique: true, required: true },
-  voucherNo: { type: String, unique: true, required: true },
-  date: { type: Date, required: true },
- clientId: { type: Schema.Types.ObjectId, ref: "Client", required: false, default: null },
-  dealerId: { type: Schema.Types.ObjectId, ref: "Dealer", default: null },
-  vehicles: { type: [vehicleItemSchema], required: true },
-  grandTotal: { type: Number, required: true },
-  status: { type: String, enum: ["Draft", "Confirmed"], default: "Draft" },
-}, {
-  timestamps: true,
-  toJSON: {
-    transform: (doc, ret) => {
-      delete ret.__v;
-      return ret;
-    }
 const orderSchema = new Schema<IOrder>(
   {
     orderId: { type: String, unique: true, required: true },
     voucherNo: { type: String, unique: true, required: true },
     date: { type: Date, required: true },
-    clientId: { type: Schema.Types.ObjectId, ref: "Client", required: true },
+    clientId: { type: Schema.Types.ObjectId, ref: "Client", default: null },
+    dealerId: { type: Schema.Types.ObjectId, ref: "Dealer", default: null },
     vehicles: { type: [vehicleItemSchema], required: true },
     grandTotal: { type: Number, required: true },
     status: { type: String, enum: ["Draft", "Confirmed"], default: "Draft" },
@@ -70,16 +55,16 @@ const orderSchema = new Schema<IOrder>(
   {
     timestamps: true,
     toJSON: {
-      transform: (doc, ret) => {
+      transform: (_doc, ret) => {
         delete ret.__v;
         return ret;
       },
     },
-  }
+  },
 );
 
+// Indexes
 orderSchema.index({ clientId: 1 });
 orderSchema.index({ status: 1 });
 
-export const Order = mongoose.model<IOrder>("Order", orderSchema);
 export const Order = mongoose.model<IOrder>("Order", orderSchema);

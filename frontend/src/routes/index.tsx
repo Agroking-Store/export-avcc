@@ -13,10 +13,10 @@ import Profile from "../features/auth/pages/Profile";
 import Dashboard from "../features/dashboard/pages/Dashboard";
 
 // Clients
-import ClientsList from "../features/clients/ClientsList";
-import AddClient from "../features/clients/AddClient";
-import EditClient from "../features/clients/EditClient";
-import ClientDetails from "../features/clients/ClientDetails";
+import ClientsList from "../features/clients/pages/ClientsList";
+import AddClient from "../features/clients/pages/AddClient";
+import EditClient from "../features/clients/pages/EditClient";
+import ClientDetails from "../features/clients/pages/ClientDetails";
 
 // Dealers
 import DealersDashboard from "../features/dealers/pages/DealersDashboard";
@@ -40,6 +40,9 @@ import AddOrder from "../features/orders/AddOrder";
 import EditOrder from "../features/orders/EditOrder";
 import OrderDetails from "../features/orders/OrderDetails";
 
+// Vehicles
+import VehicleRoutes from "./VehicleRoutes";
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -57,7 +60,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
 
           {/* Vehicles */}
-          <Route path="/vehicles" element={<div className="p-6">Vehicles Page (Coming Soon)</div>} />
+          <Route path="/vehicles/*" element={<VehicleRoutes />} />
 
           {/* Clients */}
           <Route path="/clients" element={<ClientsList />} />
@@ -65,7 +68,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/clients/edit/:id" element={<EditClient />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
 
-{/* Dealers — specific routes BEFORE dynamic :id */}
+          {/* Dealers — specific routes BEFORE dynamic :id */}
           <Route path="/dealers" element={<Dealers />} />
           <Route path="/dealers/dashboard" element={<DealersDashboard />} />
           <Route path="/dealers/add" element={<AddDealer />} />
@@ -88,16 +91,36 @@ const AppRoutes: React.FC = () => {
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
 
           {/* Coming Soon */}
-          <Route path="/letter-of-credit" element={<div className="p-6">Letter of Credit Page (Coming Soon)</div>} />
-          <Route path="/invoices" element={<div className="p-6">Invoices Page (Coming Soon)</div>} />
-          <Route path="/documents" element={<div className="p-6">Documents Page (Coming Soon)</div>} />
-          <Route path="/verification" element={<div className="p-6">Verification Page (Coming Soon)</div>} />
-          <Route path="/reports" element={<div className="p-6">Reports Page (Coming Soon)</div>} />
+          <Route
+            path="/letter-of-credit"
+            element={
+              <div className="p-6">Letter of Credit Page (Coming Soon)</div>
+            }
+          />
+          <Route
+            path="/invoices"
+            element={<div className="p-6">Invoices Page (Coming Soon)</div>}
+          />
+          <Route
+            path="/documents"
+            element={<div className="p-6">Documents Page (Coming Soon)</div>}
+          />
+          <Route
+            path="/verification"
+            element={<div className="p-6">Verification Page (Coming Soon)</div>}
+          />
+          <Route
+            path="/reports"
+            element={<div className="p-6">Reports Page (Coming Soon)</div>}
+          />
         </Route>
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<div className="p-6">404 - Page Not Found</div>} />
+      <Route
+        path="*"
+        element={<div className="p-6">404 - Page Not Found</div>}
+      />
     </Routes>
   );
 };
