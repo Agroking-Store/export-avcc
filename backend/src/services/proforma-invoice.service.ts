@@ -108,10 +108,12 @@ export const getPIsService = async (query: any) => {
 
 // GET PI BY ID
 export const getPIByIdService = async (id: string) => {
-  const pi = await ProformaInvoice.findById(id).populate(
-    "client_id",
-    "name clientCode email phone country"
-  );
+  const pi = await ProformaInvoice.findById(id)
+    .populate(
+      "client_id",
+      "name clientCode email phone country address companyName"
+    )
+    .populate("dealer_id", "name contact email address gstNumber");
 
   if (!pi) {
     throw new Error("PI not found");

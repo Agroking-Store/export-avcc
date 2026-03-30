@@ -31,7 +31,6 @@ import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 // PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
-import EditPI from "../features/proforma-invoice/pages/EditPI";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
 // Orders
@@ -87,7 +86,8 @@ const AppRoutes: React.FC = () => {
           {/* Proforma Invoice */}
           <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
-          <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
+          <Route path="/proforma-invoice" element={<PIList />} />
+          <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
 
           {/* Coming Soon */}

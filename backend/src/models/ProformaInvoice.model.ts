@@ -4,11 +4,36 @@ export interface IProformaInvoice extends Document {
   piNumber: string;
 
   client_id: mongoose.Types.ObjectId; // buyer
+  dealer_id?: mongoose.Types.ObjectId; // exporter details
+
+  clientDetails?: {
+    name: string;
+    companyName: string;
+    address: string;
+    country: string;
+    state: string;
+  };
+
+  dealerDetails?: {
+    name: string;
+    address: string;
+    state: string;
+    stateCode: string;
+    gstin: string;
+  };
 
   vehicleDetails: {
-    model: string;
+    vehicle_id?: mongoose.Types.ObjectId;
+    model?: string;
+    color?: string;
+    engineNo?: string;
+    chassisNo?: string;
     quantity: number;
     unitPrice: number;
+    hsn?: string;
+    fob?: string;
+    freight?: string;
+    yom?: string;
   }[];
 
   totalAmount: number;
@@ -17,6 +42,12 @@ export interface IProformaInvoice extends Document {
   paymentTerms?: string;
 
   validityDate?: Date;
+
+  bankDetails?: {
+    bankName: string;
+    accountNo: string;
+    branchIfsc: string;
+  };
 
   status:
     | "draft"
@@ -43,11 +74,40 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       required: true,
     },
 
+    dealer_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Dealer",
+    },
+
+    clientDetails: {
+      name: { type: String },
+      companyName: { type: String },
+      address: { type: String },
+      country: { type: String },
+      state: { type: String },
+    },
+
+    dealerDetails: {
+      name: { type: String },
+      address: { type: String },
+      state: { type: String },
+      stateCode: { type: String },
+      gstin: { type: String },
+    },
+
     vehicleDetails: [
       {
-        model: { type: String, required: true },
+        vehicle_id: { type: Schema.Types.ObjectId, ref: "Vehicle" },
+        model: { type: String },
+        color: { type: String },
+        engineNo: { type: String },
+        chassisNo: { type: String },
         quantity: { type: Number, required: true },
         unitPrice: { type: Number, required: true },
+        hsn: { type: String },
+        fob: { type: String },
+        freight: { type: String },
+        yom: { type: String },
       },
     ],
 
@@ -67,6 +127,12 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
 
     validityDate: {
       type: Date,
+    },
+
+    bankDetails: {
+      bankName: { type: String },
+      accountNo: { type: String },
+      branchIfsc: { type: String },
     },
 
     status: {

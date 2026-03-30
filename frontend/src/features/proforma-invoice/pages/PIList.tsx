@@ -12,6 +12,10 @@ import {
   MoveRight,
   Plus,
   Inbox,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  Download,
 } from "lucide-react";
 import {
   flexRender,
@@ -89,6 +93,7 @@ const PIList = () => {
 
   const [data, setData] = useState<ProformaInvoice[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   // Table Server-Side States
   const [pageCount, setPageCount] = useState(-1);
@@ -206,6 +211,56 @@ const PIList = () => {
     [fetchPIs]
   );
 
+  const handlePdfAction = async (
+    id: string,
+    piNumber: string,
+    action: "view" | "download"
+  ) => {
+    try {
+      setPdfLoading(id);
+      let token =
+        localStorage.getItem("token") || localStorage.getItem("accessToken");
+      if (!token && localStorage.getItem("user")) {
+        try {
+          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+          token = userObj.token || userObj.accessToken;
+        } catch (e) {}
+      }
+      if (token && token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1);
+      }
+
+      const res = await axios.get(
+        `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
+        {
+          responseType: "blob",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      const url = window.URL.createObjectURL(
+        new Blob([res.data], { type: "application/pdf" })
+      );
+
+      if (action === "view") {
+        window.open(url, "_blank");
+      } else {
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `${piNumber}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        toast.success("PDF Downloaded successfully!");
+      }
+    } catch (error) {
+      console.error("PDF Action Error", error);
+      toast.error("Failed to process PDF");
+    } finally {
+      setPdfLoading(null);
+    }
+  };
+
   const columns = useMemo<ColumnDef<ProformaInvoice>[]>(
     () => [
       {
@@ -263,7 +318,11 @@ const PIList = () => {
         ),
         cell: ({ row }) => (
           <div className="text-center font-semibold text-slate-700">
-            ${row.original.totalAmount}
+            $
+            {row.original.totalAmount.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
         ),
       },
@@ -332,6 +391,66 @@ const PIList = () => {
                     size="sm"
                     className="h-10 w-10 p-0 cursor-pointer"
                     onClick={() =>
+                      handlePdfAction(
+                        row.original._id,
+                        row.original.piNumber,
+                        "view"
+                      )
+                    }
+                    disabled={pdfLoading === row.original._id}
+                  >
+                    <Eye
+                      className={`h-5 w-5 ${
+                        pdfLoading === row.original._id
+                          ? "text-gray-400 animate-pulse"
+                          : "text-slate-600"
+                      } cursor-pointer`}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="text-xs">View PDF</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-10 w-10 p-0 cursor-pointer"
+                    onClick={() =>
+                      handlePdfAction(
+                        row.original._id,
+                        row.original.piNumber,
+                        "download"
+                      )
+                    }
+                    disabled={pdfLoading === row.original._id}
+                  >
+                    <Download
+                      className={`h-5 w-5 ${
+                        pdfLoading === row.original._id
+                          ? "text-gray-400 animate-pulse"
+                          : "text-emerald-600"
+                      } cursor-pointer`}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="text-xs">
+                  Download PDF
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-10 w-10 p-0 cursor-pointer"
+                    onClick={() =>
                       navigate(`/proforma-invoice/edit/${row.original._id}`)
                     }
                   >
@@ -361,7 +480,13 @@ const PIList = () => {
         ),
       },
     ],
-    [navigate, handleDelete, pagination.pageIndex, pagination.pageSize]
+    [
+      navigate,
+      handleDelete,
+      pagination.pageIndex,
+      pagination.pageSize,
+      pdfLoading,
+    ]
   );
 
   const table = useReactTable({
@@ -380,6 +505,34 @@ const PIList = () => {
     manualFiltering: true,
   });
 
+  // Mock Data for KPI Cards - Replace with actual API data later
+  const kpiData = [
+    {
+      title: "Active Pipeline Value",
+      value: "$2.4M",
+      trend: "+12.5%",
+      trendUp: true,
+    },
+    {
+      title: "Pending Approval",
+      value: "14 Deals",
+      trend: "-2.4%",
+      trendUp: false,
+    },
+    {
+      title: "Secured Deals (LC)",
+      value: "45 Deals",
+      trend: "+8.2%",
+      trendUp: true,
+    },
+    {
+      title: "At-Risk / Expiring",
+      value: "6 PIs",
+      trend: "+1.2%",
+      trendUp: false, // For expiring deals, an upward trend is negative
+    },
+  ];
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-400 mx-auto space-y-4 md:space-y-6">
       {/* HEADER */}
@@ -387,6 +540,47 @@ const PIList = () => {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
           Proforma Invoices
         </h1>
+      </div>
+
+      {/* PREMIUM KPI CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {kpiData.map((kpi, idx) => (
+          <div
+            key={idx}
+            className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col hover:shadow-md transition-shadow duration-200"
+          >
+            {/* Row 1: Title */}
+            <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">
+              {kpi.title}
+            </h3>
+
+            {/* Row 2: Value */}
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight mb-3">
+              {kpi.value}
+            </p>
+
+            {/* Row 3: Trend Rate Pill */}
+            <div className="flex items-center mt-auto">
+              <div
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  kpi.trendUp
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {kpi.trendUp ? (
+                  <TrendingUp className="h-3.5 w-3.5" />
+                ) : (
+                  <TrendingDown className="h-3.5 w-3.5" />
+                )}
+                {kpi.trend}
+              </div>
+              <span className="text-xs text-gray-400 ml-2 font-medium">
+                vs last month
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* UNIFIED CONTAINER FOR FILTERS AND TABLE */}

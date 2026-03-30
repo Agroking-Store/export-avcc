@@ -8,8 +8,10 @@ export const validateCreatePI = (data: any) => {
   }
 
   data.vehicleDetails.forEach((v: any, index: number) => {
-    if (!v.model) {
-      throw new Error(`Vehicle ${index + 1}: Model is required`);
+    if (!v.model && !v.vehicle_id) {
+      throw new Error(
+        `Vehicle ${index + 1}: Model or Vehicle selection is required`
+      );
     }
 
     if (!v.quantity || v.quantity <= 0) {
@@ -17,7 +19,9 @@ export const validateCreatePI = (data: any) => {
     }
 
     if (!v.unitPrice || v.unitPrice <= 0) {
-      throw new Error(`Vehicle ${index + 1}: Unit price must be greater than 0`);
+      throw new Error(
+        `Vehicle ${index + 1}: Unit price must be greater than 0`
+      );
     }
   });
 };
