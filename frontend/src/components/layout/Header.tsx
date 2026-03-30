@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import Navbar from "../common/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
-import { logout } from "../../features/auth/authSlice"; // Assuming your logout action is here
+import { logout } from "../../features/auth/authSlice";
 import { useTheme } from "../../context/ThemeContext";
 import { Moon, Sun, Bell, User, LogOut } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -16,7 +16,6 @@ const Header: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -37,10 +36,10 @@ const Header: React.FC = () => {
 
   return (
     <header className="h-20 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 transition-colors duration-200 z-10">
-      <div className="flex-1 flex items-center gap-4">
-        <SidebarTrigger className="-ml-3" />
-        {(location.pathname === "/clients" ||
-          location.pathname === "/orders") && <Navbar />}
+      <div className="flex-1">
+{(location.pathname === '/clients' ||
+  location.pathname.startsWith('/clients') ||
+  location.pathname === '/orders') && <Navbar />}
       </div>
 
       <div className="flex items-center gap-4 relative">
@@ -56,7 +55,6 @@ const Header: React.FC = () => {
           <Bell size={20} />
         </button>
 
-        {/* Profile Dropdown Wrapper */}
         <div ref={dropdownRef} className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -65,7 +63,6 @@ const Header: React.FC = () => {
             <User size={20} />
           </button>
 
-          {/* Dropdown Menu */}
           {isDropdownOpen && (
             <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 overflow-hidden animate-fade-in py-1">
               <Link

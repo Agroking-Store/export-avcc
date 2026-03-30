@@ -1,27 +1,52 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, FileText } from 'lucide-react';
+import { Users, FileText, LayoutDashboard, Store } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
 
-  const navItems = [
-    {
-      name: 'Clients',
-      icon: <Users size={18} />,
-      path: '/clients',
-    },
-    {
-      name: 'Orders',
-      icon: <FileText size={18} />,
-      path: '/orders',
-    },
+  const clientNavItems = [
+    { name: 'Clients', icon: <Users size={18} />, path: '/clients' },
+    { name: 'Orders', icon: <FileText size={18} />, path: '/orders' },
   ];
+
+  const dealerNavItems = [
+    { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/dealers/dashboard' },
+    { name: 'Dealers', icon: <Store size={18} />, path: '/dealers' },
+    { name: 'Orders', icon: <FileText size={18} />, path: '/dealers/orders/add' },
+  ];
+
+  const isDealer = location.pathname.startsWith('/dealers');
+  const navItems = isDealer ? dealerNavItems : clientNavItems;
+
+  const getIsActive = (itemPath: string) => {
+    if (itemPath === '/dealers/dashboard') {
+      return location.pathname === '/dealers/dashboard';
+    }
+    if (itemPath === '/dealers') {
+      return (
+        location.pathname === '/dealers' ||
+        location.pathname.startsWith('/dealers/add') ||
+        location.pathname.startsWith('/dealers/edit') ||
+        /^\/dealers\/[a-f0-9]+$/.test(location.pathname)
+      );
+    }
+    if (itemPath === '/dealers/orders/add') {
+      return location.pathname.startsWith('/dealers/orders');
+    }
+    if (itemPath === '/clients') {
+      return location.pathname.startsWith('/clients');
+    }
+    if (itemPath === '/orders') {
+      return location.pathname.startsWith('/orders');
+    }
+    return location.pathname === itemPath;
+  };
 
   return (
     <nav className="flex bg-transparent ml-2 rounded-r-2xl border-b border-gray-200/50 dark:border-gray-700/50">
       {navItems.map((item, index) => {
-        const isActive = location.pathname === item.path;
+        const isActive = getIsActive(item.path);
         return (
           <Link
             key={item.name}
