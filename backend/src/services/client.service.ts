@@ -1,7 +1,6 @@
 import { Client } from "../models/Client.model";
 import { CreateClientDto, UpdateClientDto } from "../dto/client.dto";
-import ProformaInvoice from "../models/ProformaInvoice.model";
-
+import { Order } from "../models/Order.model";
 
 // Create
 export const createClientService = async (data: CreateClientDto) => {
@@ -11,11 +10,18 @@ export const createClientService = async (data: CreateClientDto) => {
     throw new Error("Client already exists with this phone");
   }
 
-  // Count existing clients
-  const count = await Client.countDocuments();
-
-  // Generate client code
-  const clientCode = `CL-${String(count + 1).padStart(3, "0")}`;
+  // Get last created client
+  const lastClient = await Client.findOne().sort({ createdAt: -1 });
+  
+  let nextNumber = 1;
+  
+  if (lastClient && lastClient.clientCode) {
+    const lastNumber = parseInt(lastClient.clientCode.split("-")[1]);
+    nextNumber = lastNumber + 1;
+  }
+  
+  // Generate new client code
+  const clientCode = `CL-${String(nextNumber).padStart(3, "0")}`;
 
   const client = new Client({
     ...data,
@@ -48,9 +54,9 @@ export const getClientsService = async (query: any) => {
 
     {
       $lookup: {
-        from: "proformainvoices", // Mongo collection name
+        from: "orders",
         localField: "_id",
-        foreignField: "client_id",
+        foreignField: "clientId",
         as: "orders",
       },
     },
@@ -91,7 +97,7 @@ export const getClientByIdService = async (id: string) => {
     throw new Error("Client not found");
   }
 
-  const orders = await ProformaInvoice.find({ client_id: id })
+  const orders = await Order.find({ clientId: id })
     .sort({ createdAt: -1 });
 
   return {

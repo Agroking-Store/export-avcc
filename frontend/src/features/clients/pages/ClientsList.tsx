@@ -53,7 +53,7 @@ const ClientsList = () => {
 }, [location.state]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this client?")) return;
+    if (!confirm("Are you sure you want to delete this order?")) return;
   
     try {
       await axios.delete(`http://localhost:5000/api/v1/clients/${id}`);
@@ -126,13 +126,13 @@ const ClientsList = () => {
             
             <thead className="bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-200 text-xs uppercase">
               <tr>
-                <th className="px-6 py-3 text-left">Client ID</th>
-                <th className="px-6 py-3 text-left">Name</th>
-                <th className="px-6 py-3 text-left">Country</th>
-                <th className="px-6 py-3 text-left">Contact</th>
+                <th className="px-6 py-3 text-center">Client ID</th>
+                <th className="px-6 py-3 text-center">Name</th>
+                <th className="px-6 py-3 text-center">Country</th>
+                <th className="px-6 py-3 text-center">Contact</th>
                 <th className="px-6 py-3 text-center">Orders</th>
-                <th className="px-6 py-3 text-center">Last Txn</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-6 py-3 text-center">Last Order</th>
+                <th className="px-6 py-3 text-center">Actions</th>
               </tr>
             </thead>
 
@@ -147,21 +147,21 @@ const ClientsList = () => {
                 clients.map((client) => (
                   <tr key={client._id} className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700">
                     
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <span className="bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-200 px-2 py-1 rounded text-xs">
                         {client.clientCode || client._id.slice(-4)}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <div className="font-medium">{client.name}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-300">
                         {client.companyName || "-"}
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">{client.country}</td>
-                    <td className="px-6 py-4">{client.phone}</td>
+                    <td className="px-6 py-4 text-center">{client.country}</td>
+                    <td className="px-6 py-4 text-center">{client.phone}</td>
 
                     <td className="px-6 py-4 text-center">
                       {client.totalOrders || 0}
@@ -170,12 +170,12 @@ const ClientsList = () => {
                     <td className="px-6 py-4 text-center">
                       {client.lastTransaction
                         ? new Date(client.lastTransaction).toLocaleDateString()
-                        : "-"}
+                        : "No Orders"}
                     </td>
 
                     {/* ACTIONS */}
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center gap-2">
 
                         <button
                           onClick={() => navigate(`/clients/${client._id}`)}

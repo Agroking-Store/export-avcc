@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../config/apiConfig";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -35,10 +37,11 @@ const OrderDetails = () => {
       setUpdatingStatus(true);
       await axios.put(`${apiConfig.baseURL}/orders/${id}`, { status: newStatus });
       setStatus(newStatus);
-      alert("Status updated");
-      fetchOrder();
+      navigate("/orders/list", {
+        state: { success: "Order status updated successfully ✅" }
+      });
     } catch (err: any) {
-      alert(err.response?.data?.message || "Error updating status");
+      toast.error(err.response?.data?.message || "Error updating status ❌");
     } finally {
       setUpdatingStatus(false);
     }
@@ -56,6 +59,7 @@ const OrderDetails = () => {
   if (loading) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-6">
+        <ToastContainer position="top-right" autoClose={3000} />
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">
             Loading...
@@ -197,7 +201,7 @@ const OrderDetails = () => {
                     <th className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
                       Color
                     </th>
-                    <th className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-right text-xs font-medium uppercase tracking-wider">
+                    <th className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
                       Quantity
                     </th>
                   </tr>
@@ -216,7 +220,7 @@ const OrderDetails = () => {
                           {v.color}
                         </span>
                       </td>
-                      <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-sm font-semibold text-right text-gray-900 dark:text-gray-100">
+                      <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-sm font-semibold text-left text-gray-900 dark:text-gray-100">
                         {v.quantity}
                       </td>
                     </tr>

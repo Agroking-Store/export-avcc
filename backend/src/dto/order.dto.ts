@@ -12,7 +12,7 @@ export interface CreateOrderDto {
 
 export interface UpdateOrderDto {
   clientId?: string;
-  date?: string;
+  date?: string | Date;
   vehicles?: IVehicleItem[];
 }
 

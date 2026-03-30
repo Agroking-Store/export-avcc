@@ -26,7 +26,6 @@ export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> 
   const orderId = await generateOrderId();
   const voucherNo = await generateVoucherNo();
   const vehicles = data.vehicles.map(v => v);
-  const grandTotal = vehicles.reduce((sum, v) => sum + v.quantity * 10000, 0);
 
   const order = new Order({
     orderId,
@@ -34,7 +33,6 @@ export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> 
     date: new Date(data.date),
     clientId: data.clientId,
     vehicles,
-    grandTotal,
     status: "Draft"
   });
 
@@ -91,7 +89,6 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
   let updateData = { ...data };
   if (data.vehicles) {
     updateData.vehicles = data.vehicles;
-    updateData.grandTotal = data.vehicles.reduce((sum, v) => sum + v.quantity * 10000, 0);
   }
   if (data.date) updateData.date = new Date(data.date);
 

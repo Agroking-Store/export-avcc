@@ -33,7 +33,6 @@ interface Order {
   clientName: string;
   companyName?: string;
   vehicles: Vehicle[];
-  grandTotal: number;
   status: string;
   createdAt: string;
 }
@@ -79,7 +78,6 @@ const ClientsDashboard = () => {
       return sum + qty;
     }, 0);
   }, [orders]);
-  const totalRevenue = orders.reduce((sum, o) => sum + o.grandTotal, 0);
   const draftOrders = orders.filter(o => o.status === "Draft").length;
   const confirmedOrders = orders.filter(o => o.status === "Confirmed").length;
 
@@ -98,25 +96,6 @@ const ClientsDashboard = () => {
   const topClients = [...clients]
     .sort((a, b) => (b.totalOrders || 0) - (a.totalOrders || 0))
     .slice(0, 5);
-
-  const revenueChart = useMemo(() => {
-  const revenueByMonth: Record<string, number> = {};
-  
-    orders.forEach((o) => {
-      const month = new Date(o.createdAt).toLocaleString("default", {
-        month: "short",
-      });
-  
-      if (!revenueByMonth[month]) revenueByMonth[month] = 0;
-  
-      revenueByMonth[month] += o.grandTotal;
-    });
-
-  return Object.keys(revenueByMonth).map((m) => ({
-      month: m,
-      revenue: revenueByMonth[m],
-    }));
-  }, [orders]);
 
   const ordersByMonth: any = {};
   orders.forEach((o) => {
@@ -151,8 +130,6 @@ const ClientsDashboard = () => {
       );
     }
 
-    const isDark = document.documentElement.classList.contains("dark");
-
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-gray-950 p-6 lg:p-10 transition-colors duration-300">
       
@@ -179,7 +156,7 @@ const ClientsDashboard = () => {
           { label: "Total Clients", val: totalClients, color: "text-blue-600", bg: "bg-blue-50" },
           { label: "Total Orders", val: totalOrders, color: "text-purple-600", bg: "bg-purple-50" },
           { label: "Vehicles Exported", val: totalVehicles, color: "text-orange-600", bg: "bg-orange-50" },
-          { label: "Total Revenue", val: `$${totalRevenue.toLocaleString()}`, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Confirmed Orders", val: confirmedOrders,  color: "text-emerald-600",  bg: "bg-emerald-50"},
         ].map((kpi, i) => (
           <div key={i} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{kpi.label}</p>
@@ -191,30 +168,48 @@ const ClientsDashboard = () => {
       {/* MAIN CHARTS SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Revenue Performance</h3>
-            <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded">Live Trend</span>
-          </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={revenueChart}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5f5" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "none",
-                  borderRadius: "10px",
-                  color: "#f1f5f9",
-                  boxShadow: "0 10px 15px rgba(0,0,0,0.3)"
-                }}
-                labelStyle={{ color: "#94a3b8" }}
-                itemStyle={{ color: "#34d399" }}
-              />
-              <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={4} dot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+  <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">
+    Orders Trend
+  </h3>
+
+  <ResponsiveContainer width="100%" height={320}>
+    <LineChart data={ordersChart}>
+      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5f5" />
+
+      <XAxis
+        dataKey="month"
+        axisLine={false}
+        tickLine={false}
+        tick={{ fill: "#94a3b8", fontSize: 12 }}
+      />
+
+      <YAxis
+        axisLine={false}
+        tickLine={false}
+        tick={{ fill: "#94a3b8", fontSize: 12 }}
+      />
+
+      <Tooltip
+        cursor={{ fill: "rgba(148,163,184,0.15)" }}
+        contentStyle={{
+          backgroundColor: "#1e293b",
+          border: "none",
+          borderRadius: "10px",
+          color: "#f1f5f9",
+        }}
+        labelStyle={{ color: "#94a3b8" }}
+      />
+
+      <Line
+        type="monotone"
+        dataKey="orders"
+        stroke="#10b981"
+        strokeWidth={3}
+        dot={{ r: 4 }}
+      />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Orders Volume</h3>
@@ -322,7 +317,6 @@ const ClientsDashboard = () => {
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">ID</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Client Details</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Units</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Grand Total</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Status</th>
               </tr>
             </thead>
@@ -339,9 +333,6 @@ const ClientsDashboard = () => {
                       <div className="text-xs text-gray-400">{o.companyName}</div>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold dark:text-gray-300">{qty}</td>
-                    <td className="px-6 py-4 text-sm font-black text-gray-900 dark:text-white">
-                      ${o.grandTotal.toLocaleString()}
-                    </td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-bold ${

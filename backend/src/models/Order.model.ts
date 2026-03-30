@@ -12,7 +12,6 @@ export interface IOrder extends Document {
   date: Date;
   clientId: mongoose.Types.ObjectId;
   vehicles: IVehicleItem[];
-  grandTotal: number;
   status: "Draft" | "Confirmed";
   createdAt: Date;
   updatedAt: Date;
@@ -30,7 +29,6 @@ const orderSchema = new Schema<IOrder>({
   date: { type: Date, required: true },
   clientId: { type: Schema.Types.ObjectId, ref: "Client", required: true },
   vehicles: { type: [vehicleItemSchema], required: true },
-  grandTotal: { type: Number, required: true },
   status: { type: String, enum: ["Draft", "Confirmed"], default: "Draft" },
 }, {
   timestamps: true,

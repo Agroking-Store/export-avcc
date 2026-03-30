@@ -163,24 +163,41 @@ const ClientDetails = () => {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200">
                     <tr>
-                      <th className="px-4 py-2 text-left">
-                        Order ID
-                      </th>
-                      <th className="px-4 py-2 text-left">
-                        Date
-                      </th>
+                      <th className="px-4 py-2 text-left">Order ID</th>
+                      <th className="px-4 py-2 text-left">Vehicles</th>
+                      <th className="px-4 py-2 text-left">Status</th>
+                      <th className="px-4 py-2 text-left">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map((order: any) => (
-                      <tr key={order._id} className="border-b border-gray-200 dark:border-gray-600">
-                        <td className="px-4 py-2">
-                          {order._id.slice(-5)}
+                      <tr
+                        key={order._id}
+                        onClick={() => navigate(`/orders/${order._id}`)}
+                        className="cursor-pointer border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                      >
+                        <td className="px-4 py-2 font-semibold text-blue-600">
+                          {order.orderId}
                         </td>
+                  
                         <td className="px-4 py-2">
-                          {new Date(
-                            order.createdAt
-                          ).toLocaleDateString()}
+                          {order.vehicles.reduce((sum: number, v: any) => sum + v.quantity, 0)}
+                        </td>
+                  
+                        <td className="px-4 py-2">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              order.status === "Confirmed"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                  
+                        <td className="px-4 py-2">
+                          {new Date(order.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
                     ))}
