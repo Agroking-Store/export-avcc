@@ -19,15 +19,18 @@ import EditClient from "../features/clients/pages/EditClient";
 import ClientDetails from "../features/clients/pages/ClientDetails";
 
 // Dealers
+import DealersDashboard from "../features/dealers/pages/DealersDashboard";
 import Dealers from "../features/dealers/pages/Dealers";
 import AddDealer from "../features/dealers/pages/AddDealer";
 import DealerDetails from "../features/dealers/pages/DealerDetails";
 import EditDealer from "../features/dealers/pages/EditDealer";
+import DealerOrders from "../features/dealers/pages/DealerOrders";
+import DealerOrdersList from "../features/dealers/pages/DealerOrdersList";
+import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 
 // PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
-import EditPI from "../features/proforma-invoice/pages/EditPI";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
 // Orders

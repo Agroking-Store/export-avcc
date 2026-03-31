@@ -7,7 +7,6 @@ import routes from "./routes";
 import { errorHandler, notFound } from "./middleware/error.middleware";
 import dealerRoutes from "./routes/dealer.route";
 
-
 const app: Application = express();
 
 // Security middleware
@@ -16,7 +15,7 @@ app.use(
   cors({
     origin: config.CORS_ORIGIN,
     credentials: true,
-  }),
+  })
 );
 
 // Body parsing middleware
@@ -24,9 +23,9 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Logging middleware
-if (config.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
+// if (config.NODE_ENV === "development") {
+//   app.use(morgan("dev"));
+// }
 
 // Health check
 app.get("/health", (req, res) => {
