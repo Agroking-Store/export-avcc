@@ -19,15 +19,18 @@ import EditClient from "../features/clients/pages/EditClient";
 import ClientDetails from "../features/clients/pages/ClientDetails";
 
 // Dealers
+import DealersDashboard from "../features/dealers/pages/DealersDashboard";
 import Dealers from "../features/dealers/pages/Dealers";
 import AddDealer from "../features/dealers/pages/AddDealer";
 import DealerDetails from "../features/dealers/pages/DealerDetails";
 import EditDealer from "../features/dealers/pages/EditDealer";
+import DealerOrders from "../features/dealers/pages/DealerOrders";
+import DealerOrdersList from "../features/dealers/pages/DealerOrdersList";
+import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 
 // PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
-import EditPI from "../features/proforma-invoice/pages/EditPI";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
 // Orders
@@ -65,10 +68,14 @@ const AppRoutes: React.FC = () => {
           <Route path="/clients/edit/:id" element={<EditClient />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
 
-          {/* Dealers */}
+          {/* Dealers — specific routes BEFORE dynamic :id */}
           <Route path="/dealers" element={<Dealers />} />
+          <Route path="/dealers/dashboard" element={<DealersDashboard />} />
           <Route path="/dealers/add" element={<AddDealer />} />
+          <Route path="/dealers/orders/:id" element={<DealerOrderDetails />} />
           <Route path="/dealers/edit/:id" element={<EditDealer />} />
+          <Route path="/dealers/orders" element={<DealerOrdersList />} />
+          <Route path="/dealers/orders/add" element={<DealerOrders />} />
           <Route path="/dealers/:id" element={<DealerDetails />} />
 
           {/* Orders */}
@@ -80,7 +87,8 @@ const AppRoutes: React.FC = () => {
           {/* Proforma Invoice */}
           <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
-          <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
+          <Route path="/proforma-invoice" element={<PIList />} />
+          <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
 
           {/* Coming Soon */}

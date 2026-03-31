@@ -15,7 +15,7 @@ export interface IClient extends Document {
 
 const clientSchema = new Schema<IClient>(
   {
-      clientCode: {
+    clientCode: {
       type: String,
       unique: true,
     },
@@ -72,7 +72,6 @@ const clientSchema = new Schema<IClient>(
 );
 
 // Indexes (like User model)
-clientSchema.index({ phone: 1 });
 clientSchema.index({ email: 1 });
 
 export const Client = mongoose.model<IClient>("Client", clientSchema);
