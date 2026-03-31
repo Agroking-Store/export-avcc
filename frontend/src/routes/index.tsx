@@ -19,7 +19,7 @@ import Dashboard from "../features/dashboard/pages/Dashboard";
 //pages
 //client
 import ClientsModule from "../features/clients/pages/ClientsModule";
-import OrdersModule from "../features/orders/OrdersModule";
+
 //PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
@@ -51,10 +51,8 @@ const AppRoutes: React.FC = () => {
           {/* Vehicles */}
           <Route path="/vehicles/*" element={<VehicleRoutes />} />
 
-          <Route path="/clients" element={<ClientsList />} />
-          <Route path="/clients/add" element={<AddClient />} />
-          <Route path="/clients/edit/:id" element={<EditClient />} />
-          <Route path="/clients/:id" element={<ClientDetails />} />
+          {/* Clients */}
+          <Route path="/clients/*" element={<ClientsModule />} />
 
 
 
@@ -65,10 +63,8 @@ const AppRoutes: React.FC = () => {
 <Route path="/dealers/edit/:id" element={<EditDealer />} />
 
           
-          <Route path="/proforma-invoice/add" element={<CreatePI />} />
+          <Route path="/orders/*" element={<OrdersList />} />
           <Route path="/proforma-invoice" element={<PIList />} />
-          <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
-          <Route path="/proforma-invoice/:id" element={<PIDetails />} />
           <Route
             path="/letter-of-credit"
             element={
