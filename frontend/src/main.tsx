@@ -5,7 +5,7 @@ import { ToastContainer } from "react-toastify";
 import App from "./App.tsx";
 import { store } from "./app/store.ts";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
-import "./styles/globals.css";
+import "./index.css";
 import "react-toastify/dist/ReactToastify.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -16,5 +16,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </ThemeProvider>
     </Provider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

@@ -8,24 +8,39 @@ import MainLayout from "../components/layout/MainLayout";
 import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
 import Profile from "../features/auth/pages/Profile";
-import Dealers from "../features/dealers/pages/Dealers";
-import AddDealer from "../features/dealers/pages/AddDealer";
-import DealerDetails from "../features/dealers/pages/DealerDetails";
-import EditDealer from "../features/dealers/pages/EditDealer";
 
 // Dashboard
 import Dashboard from "../features/dashboard/pages/Dashboard";
 
-//pages
-//client
-import ClientsModule from "../features/clients/pages/ClientsModule";
-import OrdersModule from "../features/orders/OrdersModule";
-//PI
+// Clients
+import ClientsList from "../features/clients/pages/ClientsList";
+import AddClient from "../features/clients/pages/AddClient";
+import EditClient from "../features/clients/pages/EditClient";
+import ClientDetails from "../features/clients/pages/ClientDetails";
+
+// Dealers
+import DealersDashboard from "../features/dealers/pages/DealersDashboard";
+import Dealers from "../features/dealers/pages/Dealers";
+import AddDealer from "../features/dealers/pages/AddDealer";
+import DealerDetails from "../features/dealers/pages/DealerDetails";
+import EditDealer from "../features/dealers/pages/EditDealer";
+import DealerOrders from "../features/dealers/pages/DealerOrders";
+import DealerOrdersList from "../features/dealers/pages/DealerOrdersList";
+import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
+
+// PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
-import EditPI from "../features/proforma-invoice/pages/EditPI";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
+// Orders
+import OrdersList from "../features/orders/OrdersList";
+import AddOrder from "../features/orders/AddOrder";
+import EditOrder from "../features/orders/EditOrder";
+import OrderDetails from "../features/orders/OrderDetails";
+
+// Vehicles
+import VehicleRoutes from "./VehicleRoutes";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -43,29 +58,39 @@ const AppRoutes: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
 
-          {/* Placeholder routes */}
-          <Route
-            path="/vehicles"
-            element={<div className="p-6">Vehicles Page (Coming Soon)</div>}
-          />
-           {/* CLIENT MODULE ROUTES */}
-          <Route path="/clients" element={<Navigate to="/clients/dashboard" replace />} />
-          <Route path="/clients/*" element={<ClientsModule />} />
-          
-          {/* ORDERS MODULE ROUTES */}
-          <Route path="/orders" element={<Navigate to="/orders/list" replace />} />
-          <Route path="/orders/*" element={<OrdersModule />} />
+          {/* Vehicles */}
+          <Route path="/vehicles/*" element={<VehicleRoutes />} />
 
+          {/* Clients */}
+          <Route path="/clients" element={<ClientsList />} />
+          <Route path="/clients/add" element={<AddClient />} />
+          <Route path="/clients/edit/:id" element={<EditClient />} />
+          <Route path="/clients/:id" element={<ClientDetails />} />
+
+          {/* Dealers — specific routes BEFORE dynamic :id */}
           <Route path="/dealers" element={<Dealers />} />
-<Route path="/dealers/add" element={<AddDealer />} />
-<Route path="/dealers/:id" element={<DealerDetails />} />
-<Route path="/dealers/edit/:id" element={<EditDealer />} />
+          <Route path="/dealers/dashboard" element={<DealersDashboard />} />
+          <Route path="/dealers/add" element={<AddDealer />} />
+          <Route path="/dealers/orders/:id" element={<DealerOrderDetails />} />
+          <Route path="/dealers/edit/:id" element={<EditDealer />} />
+          <Route path="/dealers/orders" element={<DealerOrdersList />} />
+          <Route path="/dealers/orders/add" element={<DealerOrders />} />
+          <Route path="/dealers/:id" element={<DealerDetails />} />
 
-          
+          {/* Orders */}
+          <Route path="/orders" element={<OrdersList />} />
+          <Route path="/orders/add" element={<AddOrder />} />
+          <Route path="/orders/edit/:id" element={<EditOrder />} />
+          <Route path="/orders/:id" element={<OrderDetails />} />
+
+          {/* Proforma Invoice */}
+          <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
           <Route path="/proforma-invoice" element={<PIList />} />
-          <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
+          <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
+
+          {/* Coming Soon */}
           <Route
             path="/letter-of-credit"
             element={
