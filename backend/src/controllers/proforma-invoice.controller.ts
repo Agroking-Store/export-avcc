@@ -7,15 +7,11 @@ import {
   updatePIStatusService,
 } from "../services/proforma-invoice.service";
 
-import { validateCreatePI } from "../validations/proforma-invoice.validation";
 import { deletePIService } from "../services/proforma-invoice.service";
-
 
 // CREATE PI
 export const createPI = async (req: Request, res: Response) => {
   try {
-    validateCreatePI(req.body);
-
     const pi = await createPIService(req.body);
 
     res.status(201).json(pi);
@@ -23,7 +19,6 @@ export const createPI = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
-
 
 // GET ALL PIs
 export const getPIs = async (req: Request, res: Response) => {
@@ -36,7 +31,6 @@ export const getPIs = async (req: Request, res: Response) => {
   }
 };
 
-
 // GET PI BY ID
 export const getPIById = async (req: Request, res: Response) => {
   try {
@@ -48,7 +42,6 @@ export const getPIById = async (req: Request, res: Response) => {
   }
 };
 
-
 // UPDATE PI
 export const updatePI = async (req: Request, res: Response) => {
   try {
@@ -59,7 +52,6 @@ export const updatePI = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
-
 
 // UPDATE STATUS
 export const updatePIStatus = async (req: Request, res: Response) => {

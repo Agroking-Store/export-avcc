@@ -3,7 +3,15 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import { toast } from "react-toastify";
-import { Download, Eye } from "lucide-react";
+import {
+  Download,
+  Eye,
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  FileText,
+} from "lucide-react";
 
 const PIDetails = () => {
   const { id } = useParams();
@@ -86,34 +94,108 @@ const PIDetails = () => {
   const pi = data;
 
   const formatDate = (date: string) =>
-    new Date(date).toISOString().split("T")[0];
+    new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case "approved":
-        return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300";
+        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20";
       case "pending_approval":
-        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300";
+        return "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20";
       case "draft":
-        return "bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-300";
+        return "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700";
       case "expired":
-        return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300";
+        return "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20";
       default:
-        return "bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300";
+        return "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700";
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return <CheckCircle2 className="w-3.5 h-3.5" />;
+      case "pending_approval":
+        return <Clock className="w-3.5 h-3.5" />;
+      case "expired":
+        return <XCircle className="w-3.5 h-3.5" />;
+      default:
+        return <FileText className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const formatAddress = (addr: any) => {
+    if (!addr) return null;
+    // Handle legacy string addresses
+    if (typeof addr === "string")
+      return <p className="text-sm text-zinc-600 dark:text-zinc-400">{addr}</p>;
+
+    // Handle new address object
+    return (
+      <>
+        {addr.houseBuilding && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {addr.houseBuilding}
+          </p>
+        )}
+        {addr.streetArea && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {addr.streetArea}
+          </p>
+        )}
+        {addr.cityTown && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {addr.cityTown}
+          </p>
+        )}
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          {[addr.state, addr.pincode].filter(Boolean).join(" - ")}
+        </p>
+        {addr.country && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {addr.country}
+          </p>
+        )}
+      </>
+    );
+  };
+
   return (
-    <>
-      <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* HEADER */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-              PI Details
+            <button
+              onClick={() => navigate("/proforma-invoice")}
+              className="flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors mb-3"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to PIs
+            </button>
+            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
+              Proforma Invoice
+              {pi && (
+                <span
+                  className={`px-2.5 py-1 text-xs rounded-full border flex items-center gap-1.5 font-medium ${getStatusColor(
+                    pi.status
+                  )}`}
+                >
+                  {getStatusIcon(pi.status)}
+                  <span className="capitalize">
+                    {pi.status?.replace("_", " ")}
+                  </span>
+                </span>
+              )}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-gray-300">
-              {pi?.piNumber}
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Ref:{" "}
+              <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                {pi?.piNumber}
+              </span>
             </p>
           </div>
 
@@ -121,193 +203,249 @@ const PIDetails = () => {
             <button
               onClick={() => handlePdfAction("view")}
               disabled={!pi || downloading}
-              className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-300 dark:border-gray-600 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-white hover:bg-zinc-50 dark:bg-[#18181B] dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-zinc-200 dark:border-zinc-800 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
             >
               <Eye size={16} /> {downloading ? "Loading..." : "View PDF"}
             </button>
             <button
               onClick={() => handlePdfAction("download")}
               disabled={!pi || downloading}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
             >
               <Download size={16} />{" "}
               {downloading ? "Generating..." : "Download PDF"}
-            </button>
-            <button
-              onClick={() => navigate("/proforma-invoice")}
-              className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white text-sm font-medium"
-            >
-              ← Back
             </button>
           </div>
         </div>
 
         {/* LOADING */}
         {loading && (
-          <div className="text-center py-10 text-gray-500 dark:text-gray-300">
-            Loading...
+          <div className="flex justify-center py-20">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-8 w-8 border-2 border-zinc-900 border-t-transparent dark:border-white dark:border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-sm text-zinc-500">Loading document...</p>
+            </div>
           </div>
         )}
 
         {!loading && pi && (
-          <>
-            {/* PI INFO */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">
-                PI Information
-              </h3>
+          <div className="bg-white dark:bg-[#0E0E10] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+            {/* TOP DOCUMENT INFO */}
+            <div className="p-8 sm:p-10 border-b border-zinc-100 dark:border-zinc-800/60 flex flex-col sm:flex-row justify-between gap-8 bg-zinc-50/50 dark:bg-zinc-900/20">
+              {/* From/Exporter Info */}
+              <div className="flex-1">
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
+                  Exporter Details
+                </h3>
+                {pi.dealerDetails?.name ? (
+                  <div className="space-y-1">
+                    <p className="text-base font-medium text-zinc-900 dark:text-white">
+                      {pi.dealerDetails.name}
+                    </p>
+                    {formatAddress(pi.dealerDetails.address)}
+                    {pi.dealerDetails.gstin && (
+                      <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-2">
+                        GSTIN:{" "}
+                        <span className="font-mono">
+                          {pi.dealerDetails.gstin}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-400 italic">Not specified</p>
+                )}
+              </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              {/* To/Client Info */}
+              <div className="flex-1 sm:text-right">
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
+                  Billed To
+                </h3>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    PI Number
+                  <p className="text-base font-medium text-zinc-900 dark:text-white">
+                    {pi.clientDetails?.name || pi.client_id?.name}
                   </p>
-                  <p className="font-medium text-gray-800 dark:text-gray-100">
-                    {pi.piNumber}
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {pi.clientDetails?.companyName || pi.client_id?.companyName}
                   </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Status
+                  {formatAddress(pi.clientDetails?.address)}
+                  <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">
+                    Code:{" "}
+                    <span className="font-mono">
+                      {pi.client_id?.clientCode}
+                    </span>
                   </p>
-                  <span
-                    className={`px-2 py-1 text-xs rounded ${getStatusColor(
-                      pi.status
-                    )}`}
-                  >
-                    {pi.status}
-                  </span>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Validity Date
-                  </p>
-                  <p>{formatDate(pi.validityDate)}</p>
                 </div>
               </div>
             </div>
 
-            {/* CLIENT DETAILS */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">
-                Client Details
-              </h3>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Name
-                  </p>
-                  <p className="text-gray-800 dark:text-gray-100">
-                    {pi.client_id?.name}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Client Code
-                  </p>
-                  <p className="text-gray-800 dark:text-gray-100">
-                    {pi.client_id?.clientCode}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Country
-                  </p>
-                  <p className="text-gray-800 dark:text-gray-100">
-                    {pi.client_id?.country}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Contact
-                  </p>
-                  <p className="text-gray-800 dark:text-gray-100">
-                    {pi.client_id?.phone}
-                  </p>
-                </div>
+            {/* DATES & TERMS */}
+            <div className="px-8 sm:px-10 py-6 border-b border-zinc-100 dark:border-zinc-800/60 grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                  Issue Date
+                </p>
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  {formatDate(pi.createdAt)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                  Validity Date
+                </p>
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  {formatDate(pi.validityDate)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                  Payment Terms
+                </p>
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  {pi.paymentTerms || "Not specified"}
+                </p>
+              </div>
+              <div className="md:col-span-3 mt-4">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                  Terms of Delivery
+                </p>
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  {pi.termsOfDelivery || "Not specified"}
+                </p>
               </div>
             </div>
 
             {/* VEHICLE DETAILS */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">
-                Vehicle Details
-              </h3>
-
-              <div className="overflow-x-auto">
+            <div className="p-8 sm:p-10">
+              <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 dark:bg-gray-700 text-xs uppercase text-slate-500 dark:text-gray-200">
+                  <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                     <tr>
-                      <th className="px-4 py-2 text-left">Model</th>
-                      <th className="px-4 py-2 text-center">Qty</th>
-                      <th className="px-4 py-2 text-center">Unit Price</th>
-                      <th className="px-4 py-2 text-center">Total</th>
+                      <th className="px-6 py-4 text-left font-semibold">
+                        Description / Model
+                      </th>
+                      <th className="px-6 py-4 text-center font-semibold">
+                        Qty
+                      </th>
+                      <th className="px-6 py-4 text-right font-semibold">
+                        Rate
+                      </th>
+                      <th className="px-6 py-4 text-right font-semibold">
+                        Amount
+                      </th>
                     </tr>
                   </thead>
 
-                  <tbody>
-                    {pi.vehicleDetails?.map((v: any, i: number) => (
-                      <tr
-                        key={i}
-                        className="border-t border-gray-200 dark:border-gray-700"
-                      >
-                        <td className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                          {v.model}
-                        </td>
-                        <td className="px-4 py-2 text-center">{v.quantity}</td>
-                        <td className="px-4 py-2 text-center">
-                          ${v.unitPrice}
-                        </td>
-                        <td className="px-4 py-2 text-center font-medium">
-                          ${v.quantity * v.unitPrice}
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                    {pi.vehicleDetails?.map((v: any, i: number) => {
+                      const rate =
+                        (Number(v.fob) || 0) + (Number(v.freight) || 0);
+                      const amount = v.quantity * rate;
+                      return (
+                        <tr
+                          key={i}
+                          className="group hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                              {v.model}
+                            </p>
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+                              {v.chassisNo && <span>VIN: {v.chassisNo}</span>}
+                              {v.engineNo && <span>Eng: {v.engineNo}</span>}
+                              {v.color && <span>Clr: {v.color}</span>}
+                              {v.engineCapacity && (
+                                <span>Cap: {v.engineCapacity}cc</span>
+                              )}
+                              {v.fuelType && <span>Fuel: {v.fuelType}</span>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center text-zinc-700 dark:text-zinc-300">
+                            {v.quantity}
+                          </td>
+                          <td className="px-6 py-4 text-right text-zinc-700 dark:text-zinc-300 font-mono">
+                            $
+                            {rate.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="px-6 py-4 text-right font-medium text-zinc-900 dark:text-zinc-100 font-mono">
+                            $
+                            {amount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
+                  <tfoot className="bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800">
+                    <tr>
+                      <td
+                        colSpan={2}
+                        className="px-6 py-4 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400"
+                      >
+                        <span className="text-[11px] font-semibold uppercase tracking-widest">
+                          Amount in Words
+                        </span>
+                        <p className="font-sans normal-case text-zinc-700 dark:text-zinc-300 mt-1">
+                          {pi.amountInWords}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                        Grand Total
+                      </td>
+                      <td className="px-6 py-4 text-right text-lg font-semibold text-zinc-900 dark:text-white font-mono tracking-tight">
+                        $
+                        {pi.totalAmount.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
 
-            {/* SUMMARY */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="font-semibold mb-4 text-gray-800 dark:text-white">
-                Summary
-              </h3>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Total Amount
-                  </p>
-                  <p className="text-lg font-semibold text-gray-800 dark:text-white">
-                    $
-                    {pi.totalAmount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    Created At
-                  </p>
-                  <p className="text-gray-800 dark:text-gray-100">
-                    {formatDate(pi.createdAt)}
-                  </p>
+            {/* BANK DETAILS FOOTER */}
+            {(pi.bankDetails?.bankName || pi.bankDetails?.accountNo) && (
+              <div className="px-8 sm:px-10 py-6 bg-zinc-50/50 dark:bg-[#121214] border-t border-zinc-100 dark:border-zinc-800/60 rounded-b-2xl">
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
+                  Bank Details
+                </h3>
+                <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+                  {pi.bankDetails.bankName && (
+                    <p>
+                      <span className="text-zinc-500 mr-2">Bank:</span>
+                      <span className="font-medium">
+                        {pi.bankDetails.bankName}
+                      </span>
+                    </p>
+                  )}
+                  {pi.bankDetails.accountNo && (
+                    <p>
+                      <span className="text-zinc-500 mr-2">A/C No:</span>
+                      <span className="font-mono font-medium">
+                        {pi.bankDetails.accountNo}
+                      </span>
+                    </p>
+                  )}
+                  {pi.bankDetails.branchIfsc && (
+                    <p>
+                      <span className="text-zinc-500 mr-2">Branch/IFSC:</span>
+                      <span className="font-mono font-medium">
+                        {pi.bankDetails.branchIfsc}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          </>
+            )}
+          </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

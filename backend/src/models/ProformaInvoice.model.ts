@@ -1,5 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+interface IAddressDetails {
+  houseBuilding?: string;
+  streetArea?: string;
+  cityTown?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+}
+
 export interface IProformaInvoice extends Document {
   piNumber: string;
 
@@ -7,19 +16,15 @@ export interface IProformaInvoice extends Document {
   dealer_id?: mongoose.Types.ObjectId; // exporter details
 
   clientDetails?: {
-    name: string;
-    companyName: string;
-    address: string;
-    country: string;
-    state: string;
+    name?: string;
+    companyName?: string;
+    address?: IAddressDetails;
   };
 
   dealerDetails?: {
-    name: string;
-    address: string;
-    state: string;
-    stateCode: string;
-    gstin: string;
+    name?: string;
+    gstin?: string;
+    address?: IAddressDetails;
   };
 
   vehicleDetails: {
@@ -29,17 +34,21 @@ export interface IProformaInvoice extends Document {
     engineNo?: string;
     chassisNo?: string;
     quantity: number;
-    unitPrice: number;
+    fob: number;
+    freight: number;
     hsn?: string;
-    fob?: string;
-    freight?: string;
     yom?: string;
+    fuelType?: string;
+    countryOfOrigin?: string;
+    engineCapacity?: string;
   }[];
 
   totalAmount: number;
+  amountInWords?: string;
 
   currency: string; // USD
   paymentTerms?: string;
+  termsOfDelivery?: string;
 
   validityDate?: Date;
 
@@ -60,6 +69,18 @@ export interface IProformaInvoice extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const addressDetailsSchema = new Schema<IAddressDetails>(
+  {
+    houseBuilding: { type: String },
+    streetArea: { type: String },
+    cityTown: { type: String },
+    state: { type: String },
+    pincode: { type: String },
+    country: { type: String },
+  },
+  { _id: false }
+);
 
 const proformaInvoiceSchema = new Schema<IProformaInvoice>(
   {
@@ -82,17 +103,13 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
     clientDetails: {
       name: { type: String },
       companyName: { type: String },
-      address: { type: String },
-      country: { type: String },
-      state: { type: String },
+      address: addressDetailsSchema,
     },
 
     dealerDetails: {
       name: { type: String },
-      address: { type: String },
-      state: { type: String },
-      stateCode: { type: String },
       gstin: { type: String },
+      address: addressDetailsSchema,
     },
 
     vehicleDetails: [
@@ -103,11 +120,13 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
         engineNo: { type: String },
         chassisNo: { type: String },
         quantity: { type: Number, required: true },
-        unitPrice: { type: Number, required: true },
+        fob: { type: Number, default: 0 },
+        freight: { type: Number, default: 0 },
         hsn: { type: String },
-        fob: { type: String },
-        freight: { type: String },
         yom: { type: String },
+        fuelType: { type: String },
+        countryOfOrigin: { type: String },
+        engineCapacity: { type: String },
       },
     ],
 
@@ -116,12 +135,20 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       default: 0,
     },
 
+    amountInWords: {
+      type: String,
+    },
+
     currency: {
       type: String,
       default: "USD",
     },
 
     paymentTerms: {
+      type: String,
+    },
+
+    termsOfDelivery: {
       type: String,
     },
 

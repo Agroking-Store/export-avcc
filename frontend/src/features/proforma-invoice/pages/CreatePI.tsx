@@ -6,46 +6,67 @@ import {
   Plus,
   Trash2,
   ArrowLeft,
-  Car,
-  Building2,
-  CreditCard,
   Landmark,
+  AlertCircle,
+  ChevronDown,
+  Eye,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+};
 
 type VehicleLineItem = {
   vehicle_id: string;
   model: string;
-  color: string;
+  color: string; // Used for Exterior Color
   engineNo: string;
   chassisNo: string;
   quantity: number;
-  unitPrice: number;
+  fob: number | "";
+  freight: number | "";
   hsn: string;
-  fob: string;
-  freight: string;
   yom: string;
+  fuelType: string;
+  countryOfOrigin: string;
+  engineCapacity: string;
+};
+
+type AddressDetails = {
+  houseBuilding: string;
+  streetArea: string;
+  cityTown: string;
+  state: string;
+  pincode: string;
+  country: string;
 };
 
 type PIForm = {
+  piNumber: string;
   client_id: string;
   dealer_id: string;
   clientDetails: {
     name: string;
     companyName: string;
-    address: string;
-    country: string;
-    state: string;
+    address: AddressDetails;
   };
   dealerDetails: {
     name: string;
-    address: string;
-    state: string;
-    stateCode: string;
     gstin: string;
+    address: AddressDetails;
   };
   paymentTerms: string;
   validityDate: string;
+  termsOfDelivery: string;
   bankDetails: {
     bankName: string;
     accountNo: string;
@@ -62,26 +83,41 @@ const CreatePI = () => {
   const [dealers, setDealers] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Search states for comboboxes
+  const [clientSearch, setClientSearch] = useState("");
+  const [dealerSearch, setDealerSearch] = useState("");
+  const [vehicleSearch, setVehicleSearch] = useState("");
+
+  const defaultAddress: AddressDetails = {
+    houseBuilding: "",
+    streetArea: "",
+    cityTown: "",
+    state: "",
+    pincode: "",
+    country: "",
+  };
 
   const [form, setForm] = useState<PIForm>({
+    piNumber: "",
     client_id: "",
     dealer_id: "",
     clientDetails: {
       name: "",
       companyName: "",
-      address: "",
-      country: "",
-      state: "",
+      address: { ...defaultAddress },
     },
     dealerDetails: {
       name: "",
-      address: "",
-      state: "",
-      stateCode: "",
       gstin: "",
+      address: { ...defaultAddress },
     },
     paymentTerms: "",
     validityDate: "",
+    termsOfDelivery: "",
     bankDetails: { bankName: "", accountNo: "", branchIfsc: "" },
     vehicleDetails: [
       {
@@ -91,21 +127,41 @@ const CreatePI = () => {
         engineNo: "",
         chassisNo: "",
         quantity: 1,
-        unitPrice: 0,
         hsn: "",
         fob: "",
         freight: "",
         yom: "",
+        fuelType: "",
+        countryOfOrigin: "",
+        engineCapacity: "",
       },
     ],
   });
 
+  const debouncedClientSearch = useDebounce(clientSearch, 500);
+  const debouncedDealerSearch = useDebounce(dealerSearch, 500);
+  const debouncedVehicleSearch = useDebounce(vehicleSearch, 500);
+
+  const getAuthToken = () => {
+    let token =
+      localStorage.getItem("token") || localStorage.getItem("accessToken");
+    if (!token && localStorage.getItem("user")) {
+      try {
+        const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+        token = userObj.token || userObj.accessToken;
+      } catch (e) {}
+    }
+    if (token && token.startsWith('"') && token.endsWith('"')) {
+      token = token.slice(1, -1);
+    }
+    return token;
+  };
+
   useEffect(() => {
-    // Fetch Clients independently
     const fetchClients = async () => {
       try {
         const res = await axios.get(`${apiConfig.baseURL}/clients`, {
-          params: { limit: 1000 },
+          params: { limit: 10, search: debouncedClientSearch },
         });
         console.log("Clients Response:", res.data);
         const data = res.data?.data || res.data;
@@ -114,12 +170,10 @@ const CreatePI = () => {
         console.error("Failed to fetch clients:", error);
       }
     };
-
-    // Fetch Dealers independently
     const fetchDealers = async () => {
       try {
         const res = await axios.get(`${apiConfig.baseURL}/dealers`, {
-          params: { limit: 1000 },
+          params: { limit: 10, search: debouncedDealerSearch },
         });
         console.log("Dealers Response:", res.data);
         const data = res.data?.data || res.data;
@@ -128,32 +182,16 @@ const CreatePI = () => {
         console.error("Failed to fetch dealers:", error);
       }
     };
-
-    // Fetch Vehicles independently
     const fetchVehicles = async () => {
       try {
-        // Check common token keys
-        let token =
-          localStorage.getItem("token") || localStorage.getItem("accessToken");
-
-        // Fallback: If token is nested inside a stringified "user" object
-        if (!token && localStorage.getItem("user")) {
-          try {
-            const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-            token = userObj.token || userObj.accessToken;
-          } catch (e) {}
-        }
-
-        // Remove extra quotes if token was saved directly via JSON.stringify
-        if (token && token.startsWith('"') && token.endsWith('"')) {
-          token = token.slice(1, -1);
-        }
-
+        const token = getAuthToken();
         const res = await axios.get(`${apiConfig.baseURL}/vehicles`, {
-          params: { limit: 1000, status: "Available" },
-          headers: {
-            Authorization: `Bearer ${token}`,
+          params: {
+            limit: 10,
+            status: "Available",
+            search: debouncedVehicleSearch,
           },
+          headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Vehicles Response:", res.data);
         const data = res.data?.data?.data || res.data?.data || res.data;
@@ -162,12 +200,10 @@ const CreatePI = () => {
         console.error("Failed to fetch vehicles:", error);
       }
     };
-
-    // Run all fetches
     fetchClients();
     fetchDealers();
     fetchVehicles();
-  }, []);
+  }, [debouncedClientSearch, debouncedDealerSearch, debouncedVehicleSearch]);
 
   // Fetch existing PI if in edit mode
   useEffect(() => {
@@ -179,24 +215,37 @@ const CreatePI = () => {
         );
         const pi = res.data;
         setForm({
+          piNumber: pi.piNumber || "",
           client_id: pi.client_id?._id || pi.client_id || "",
           dealer_id: pi.dealer_id?._id || pi.dealer_id || "",
           clientDetails: pi.clientDetails || {
             name: "",
             companyName: "",
-            address: "",
-            country: "",
-            state: "",
+            address: {
+              ...defaultAddress,
+              streetArea:
+                typeof pi.clientDetails?.address === "string"
+                  ? pi.clientDetails.address
+                  : "",
+              state: pi.clientDetails?.state || "",
+              country: pi.clientDetails?.country || "",
+            },
           },
           dealerDetails: pi.dealerDetails || {
             name: "",
-            address: "",
-            state: "",
-            stateCode: "",
             gstin: "",
+            address: {
+              ...defaultAddress,
+              streetArea:
+                typeof pi.dealerDetails?.address === "string"
+                  ? pi.dealerDetails.address
+                  : "",
+              state: pi.dealerDetails?.state || "",
+            },
           },
           paymentTerms: pi.paymentTerms || "",
           validityDate: pi.validityDate ? pi.validityDate.split("T")[0] : "",
+          termsOfDelivery: pi.termsOfDelivery || "",
           bankDetails: pi.bankDetails || {
             bankName: "",
             accountNo: "",
@@ -216,11 +265,13 @@ const CreatePI = () => {
                     engineNo: "",
                     chassisNo: "",
                     quantity: 1,
-                    unitPrice: 0,
                     hsn: "",
                     fob: "",
                     freight: "",
                     yom: "",
+                    fuelType: "",
+                    countryOfOrigin: "",
+                    engineCapacity: "",
                   },
                 ],
         });
@@ -239,6 +290,11 @@ const CreatePI = () => {
     const updated = [...form.vehicleDetails];
     (updated[index] as any)[field] = value;
     setForm({ ...form, vehicleDetails: updated });
+
+    // Clear error for this specific field if it exists
+    if (errors[`v_${index}_${field}`]) {
+      setErrors((prev) => ({ ...prev, [`v_${index}_${field}`]: "" }));
+    }
   };
 
   const handleClientSelect = (clientId: string) => {
@@ -249,11 +305,17 @@ const CreatePI = () => {
       clientDetails: {
         name: selected?.name || "",
         companyName: selected?.companyName || "",
-        address: selected?.address || "",
-        country: selected?.country || "",
-        state: selected?.state || "",
+        address: {
+          ...form.clientDetails.address,
+          streetArea: selected?.address || "",
+          state: selected?.state || "",
+          country: selected?.country || "",
+        },
       },
     }));
+    if (errors.client_id) {
+      setErrors((prev) => ({ ...prev, client_id: "" }));
+    }
   };
 
   const handleDealerSelect = (dealerId: string) => {
@@ -263,10 +325,12 @@ const CreatePI = () => {
       dealer_id: dealerId,
       dealerDetails: {
         name: selected?.name || "",
-        address: selected?.address || "",
-        state: selected?.state || "",
-        stateCode: selected?.stateCode || "",
         gstin: selected?.gstNumber || "",
+        address: {
+          ...form.dealerDetails.address,
+          streetArea: selected?.address || "",
+          state: selected?.state || "",
+        },
       },
     }));
   };
@@ -298,11 +362,13 @@ const CreatePI = () => {
           engineNo: "",
           chassisNo: "",
           quantity: 1,
-          unitPrice: 0,
           hsn: "",
           fob: "",
           freight: "",
           yom: "",
+          fuelType: "",
+          countryOfOrigin: "",
+          engineCapacity: "",
         },
       ],
     });
@@ -315,13 +381,106 @@ const CreatePI = () => {
     });
   };
 
+  const toggleRow = (index: number) => {
+    setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const getRate = (v: VehicleLineItem) =>
+    (Number(v.fob) || 0) + (Number(v.freight) || 0);
+  const getAmount = (v: VehicleLineItem) =>
+    getRate(v) * (Number(v.quantity) || 0);
+
   const totalAmount = form.vehicleDetails.reduce(
-    (sum, v) => sum + v.quantity * v.unitPrice,
+    (sum, v) => sum + getAmount(v),
     0
   );
 
+  const numberToWords = (num: number): string => {
+    if (num === 0) return "Zero";
+    const a = [
+      "",
+      "One",
+      "Two",
+      "Three",
+      "Four",
+      "Five",
+      "Six",
+      "Seven",
+      "Eight",
+      "Nine",
+      "Ten",
+      "Eleven",
+      "Twelve",
+      "Thirteen",
+      "Fourteen",
+      "Fifteen",
+      "Sixteen",
+      "Seventeen",
+      "Eighteen",
+      "Nineteen",
+    ];
+    const b = [
+      "",
+      "",
+      "Twenty",
+      "Thirty",
+      "Forty",
+      "Fifty",
+      "Sixty",
+      "Seventy",
+      "Eighty",
+      "Ninety",
+    ];
+    const convert = (n: number): string => {
+      if (n < 20) return a[n];
+      if (n < 100)
+        return b[Math.floor(n / 10)] + (n % 10 !== 0 ? " " + a[n % 10] : "");
+      if (n < 1000)
+        return (
+          a[Math.floor(n / 100)] +
+          " Hundred" +
+          (n % 100 !== 0 ? " " + convert(n % 100) : "")
+        );
+      if (n < 1000000)
+        return (
+          convert(Math.floor(n / 1000)) +
+          " Thousand" +
+          (n % 1000 !== 0 ? " " + convert(n % 1000) : "")
+        );
+      if (n < 1000000000)
+        return (
+          convert(Math.floor(n / 1000000)) +
+          " Million" +
+          (n % 1000000 !== 0 ? " " + convert(n % 1000000) : "")
+        );
+      return "";
+    };
+    return "USD " + convert(Math.floor(num)) + " Only";
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!form.client_id) newErrors.client_id = "Client is required";
+
+    form.vehicleDetails.forEach((v, index) => {
+      if (!v.model.trim()) newErrors[`v_${index}_model`] = "Model is required";
+      if (v.quantity < 1)
+        newErrors[`v_${index}_quantity`] = "Quantity must be at least 1";
+      if (getRate(v) <= 0) newErrors[`v_${index}_rate`] = "Rate must be > 0";
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form ⚠️");
+      return;
+    }
 
     // Clean up payload (remove empty IDs so mongoose doesn't crash)
     const payload: any = {
@@ -333,7 +492,10 @@ const CreatePI = () => {
 
     payload.vehicleDetails = payload.vehicleDetails.map((v: any) => {
       const { vehicle_id, ...rest } = v;
-      return vehicle_id ? { vehicle_id, ...rest } : rest;
+      // Include unitPrice for backward compatibility on backend if needed
+      return vehicle_id
+        ? { vehicle_id, unitPrice: getRate(v), ...rest }
+        : { unitPrice: getRate(v), ...rest };
     });
 
     try {
@@ -361,573 +523,838 @@ const CreatePI = () => {
     }
   };
 
+  const handlePreview = async () => {
+    if (!id) {
+      toast.info("Please save the invoice first to enable preview.");
+      return;
+    }
+    try {
+      setPreviewLoading(true);
+      const token = getAuthToken();
+
+      const res = await axios.get(
+        `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
+        {
+          responseType: "blob",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      const url = window.URL.createObjectURL(
+        new Blob([res.data], { type: "application/pdf" })
+      );
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("PDF Preview error", error);
+      toast.error("Failed to generate PDF preview");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const inputClass =
+    "w-full h-12 px-4 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-base shadow-sm";
+  const getInputClass = (errKey?: string) =>
+    `w-full h-12 px-4 bg-white border ${
+      errKey && errors[errKey]
+        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+        : "border-gray-300 focus:border-blue-600 focus:ring-blue-600"
+    } rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 transition-all text-base shadow-sm`;
+  const labelClass = "block text-sm font-medium text-gray-700 mb-2";
+  const sectionTitleClass = "text-xl font-medium text-gray-900 mb-6";
+  const divider = <hr className="border-gray-200 my-10" />;
+
   return (
-    <div className="space-y-6 bg-slate-50 dark:bg-gray-900 min-h-screen p-4 sm:p-6 lg:p-8 rounded-xl">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            {id ? "Edit Proforma Invoice" : "Create Proforma Invoice"}
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-gray-300">
-            {id
-              ? "Update PI details"
-              : "Draft a new proforma invoice for your clients"}
-          </p>
-        </div>
-
-        <button
-          onClick={() => navigate("/proforma-invoice")}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to PIs
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* PARTIES SECTION */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-blue-500" />
-              Parties
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Buyer (Client) *
-                </label>
-                <select
-                  required
-                  value={form.client_id}
-                  onChange={(e) => handleClientSelect(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2.5 bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value="">Select a Client</option>
-                  {clients.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name} ({c.clientCode})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Edit Client Details manually */}
-              <div className="grid grid-cols-2 gap-3 mt-2 p-3 bg-slate-50 dark:bg-gray-900/50 rounded-lg border border-slate-100 dark:border-gray-700">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Company Name
-                  </label>
-                  <input
-                    value={form.clientDetails.companyName}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        clientDetails: {
-                          ...form.clientDetails,
-                          companyName: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Contact Name
-                  </label>
-                  <input
-                    value={form.clientDetails.name}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        clientDetails: {
-                          ...form.clientDetails,
-                          name: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Address
-                  </label>
-                  <input
-                    value={form.clientDetails.address}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        clientDetails: {
-                          ...form.clientDetails,
-                          address: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Country
-                  </label>
-                  <input
-                    value={form.clientDetails.country}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        clientDetails: {
-                          ...form.clientDetails,
-                          country: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    State Name
-                  </label>
-                  <input
-                    value={form.clientDetails.state}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        clientDetails: {
-                          ...form.clientDetails,
-                          state: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-              </div>
+    <div className="min-h-screen bg-white text-gray-900 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <form onSubmit={handleSubmit}>
+          {/* HEADER */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-10">
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                onClick={() => navigate("/proforma-invoice")}
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {id ? "Edit Proforma Invoice" : "Create Proforma Invoice"}
+              </h1>
             </div>
-
-            <hr className="my-4 border-slate-200 dark:border-gray-700" />
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Exporter (Dealer)
-                </label>
-                <select
-                  value={form.dealer_id}
-                  onChange={(e) => handleDealerSelect(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2.5 bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value="">Select a Dealer (Optional)</option>
-                  {dealers.map((d) => (
-                    <option key={d._id} value={d._id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Edit Dealer Details manually */}
-              <div className="grid grid-cols-2 gap-3 mt-2 p-3 bg-slate-50 dark:bg-gray-900/50 rounded-lg border border-slate-100 dark:border-gray-700">
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Company Name
-                  </label>
-                  <input
-                    value={form.dealerDetails.name}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        dealerDetails: {
-                          ...form.dealerDetails,
-                          name: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Address
-                  </label>
-                  <input
-                    value={form.dealerDetails.address}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        dealerDetails: {
-                          ...form.dealerDetails,
-                          address: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    State Name
-                  </label>
-                  <input
-                    value={form.dealerDetails.state}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        dealerDetails: {
-                          ...form.dealerDetails,
-                          state: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    State Code
-                  </label>
-                  <input
-                    value={form.dealerDetails.stateCode}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        dealerDetails: {
-                          ...form.dealerDetails,
-                          stateCode: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    GSTIN
-                  </label>
-                  <input
-                    value={form.dealerDetails.gstin}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        dealerDetails: {
-                          ...form.dealerDetails,
-                          gstin: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-md px-2 py-1.5 text-sm bg-white dark:bg-gray-800 border-slate-300 dark:border-gray-600"
-                  />
-                </div>
-              </div>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePreview}
+                disabled={!id || previewLoading || loading}
+                className="h-12 px-6"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                {previewLoading ? "Loading..." : "Preview PDF"}
+              </Button>
+              <Button type="submit" disabled={loading} className="h-12 px-8">
+                {loading
+                  ? "Processing..."
+                  : id
+                  ? "Save Changes"
+                  : "Generate PI"}
+              </Button>
             </div>
           </div>
 
-          {/* TERMS & BANK SECTION */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-500" />
-              Terms & Bank
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4">
+          {/* DOCUMENT DETAILS */}
+          <div>
+            <h3 className={sectionTitleClass}>Document Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Validity Date
-                </label>
+                <label className={labelClass}>Voucher No (PI Number)</label>
                 <input
-                  type="date"
-                  value={form.validityDate}
+                  value={form.piNumber}
                   onChange={(e) =>
-                    setForm({ ...form, validityDate: e.target.value })
+                    setForm({ ...form, piNumber: e.target.value })
                   }
-                  className="w-full border rounded-lg px-3 py-2.5 bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className={inputClass}
+                  placeholder="e.g. PI-2026-001"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Payment Terms
-                </label>
+                <label className={labelClass}>Validity Date</label>
+                <DatePicker
+                  date={
+                    form.validityDate ? new Date(form.validityDate) : undefined
+                  }
+                  setDate={(date) =>
+                    setForm({
+                      ...form,
+                      validityDate: date
+                        ? date.toISOString().split("T")[0]
+                        : "",
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label className={labelClass}>Payment Terms</label>
                 <input
-                  placeholder="e.g. 100% Advance"
                   value={form.paymentTerms}
                   onChange={(e) =>
                     setForm({ ...form, paymentTerms: e.target.value })
                   }
-                  className="w-full border rounded-lg px-3 py-2.5 bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className={inputClass}
+                  placeholder="e.g. 100% Advance"
                 />
               </div>
-              <div className="col-span-2 mt-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Landmark className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Bank Details (Optional)
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    placeholder="Bank Name"
-                    value={form.bankDetails.bankName}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        bankDetails: {
-                          ...form.bankDetails,
-                          bankName: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                  <input
-                    placeholder="Account No"
-                    value={form.bankDetails.accountNo}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        bankDetails: {
-                          ...form.bankDetails,
-                          accountNo: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                  <input
-                    placeholder="Branch / IFSC"
-                    value={form.bankDetails.branchIfsc}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        bankDetails: {
-                          ...form.bankDetails,
-                          branchIfsc: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+              <div>
+                <label className={labelClass}>Terms of Delivery</label>
+                <input
+                  value={form.termsOfDelivery}
+                  onChange={(e) =>
+                    setForm({ ...form, termsOfDelivery: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="e.g. CIF, Ex-Works"
+                />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* VEHICLE DETAILS */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-              <Car className="h-5 w-5 text-blue-500" />
-              Vehicle Line Items
-            </h3>
-            <button
-              type="button"
-              onClick={addVehicle}
-              className="flex items-center gap-1.5 text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg transition-colors font-medium"
-            >
-              <Plus size={16} /> Add Vehicle
-            </button>
-          </div>
+          {divider}
 
-          {form.vehicleDetails.map((v, index) => (
-            <div
-              key={index}
-              className="relative bg-slate-50 dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-700 mb-4 transition-all"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                {/* Core Details */}
-                <div className="md:col-span-4">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Select Inventory Vehicle
-                  </label>
-                  <select
-                    value={v.vehicle_id}
-                    onChange={(e) => handleVehicleSelect(index, e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  >
-                    <option value="">-- Custom/Manual Entry --</option>
-                    {vehicles.map((veh) => (
-                      <option key={veh._id || veh.id} value={veh._id || veh.id}>
-                        {veh.name} ({veh.chassisNo})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="md:col-span-4">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Model / Description *
-                  </label>
-                  <input
-                    required
-                    placeholder="Vehicle Model"
-                    value={v.model}
-                    onChange={(e) =>
-                      handleVehicleChange(index, "model", e.target.value)
-                    }
-                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Quantity *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={v.quantity}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "quantity",
-                        Number(e.target.value)
-                      )
-                    }
-                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-center"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Unit Price ($) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={v.unitPrice}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "unitPrice",
-                        Number(e.target.value)
-                      )
-                    }
-                    className="w-full border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-right"
-                  />
-                </div>
-
-                {/* Advanced Details Row */}
-                <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mt-2 pt-4 border-t border-slate-200 dark:border-gray-700/50">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Color
-                    </label>
-                    <input
-                      placeholder="Color"
-                      value={v.color}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "color", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Engine No
-                    </label>
-                    <input
-                      placeholder="Engine No"
-                      value={v.engineNo}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "engineNo", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Chassis No
-                    </label>
-                    <input
-                      placeholder="Chassis No"
-                      value={v.chassisNo}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "chassisNo", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      YOM
-                    </label>
-                    <input
-                      placeholder="Year"
-                      value={v.yom}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "yom", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      HSN/SAC
-                    </label>
-                    <input
-                      placeholder="HSN Code"
-                      value={v.hsn}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "hsn", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      FOB
-                    </label>
-                    <input
-                      placeholder="FOB Point"
-                      value={v.fob}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "fob", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Freight
-                    </label>
-                    <input
-                      placeholder="Freight Info"
-                      value={v.freight}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "freight", e.target.value)
-                      }
-                      className="w-full border rounded-md px-2.5 py-1.5 bg-white dark:bg-gray-800 text-slate-900 dark:text-white border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 outline-none text-xs"
-                    />
-                  </div>
-                </div>
+          {/* BUYER / CLIENT */}
+          <div>
+            <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className={labelClass}>Buyer (Client) *</label>
+                <SearchableCombobox
+                  data={clients}
+                  value={form.client_id}
+                  onValueChange={handleClientSelect}
+                  onSearchChange={setClientSearch}
+                  displayField="name"
+                  valueField="_id"
+                  placeholder="Select a client..."
+                  searchPlaceholder="Search clients..."
+                  emptyMessage="No clients found."
+                  error={!!errors.client_id}
+                />
+                {errors.client_id && (
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.client_id}
+                  </p>
+                )}
               </div>
 
-              {form.vehicleDetails.length > 1 && (
-                <div className="absolute -top-3 -right-3">
-                  <button
-                    type="button"
-                    onClick={() => removeVehicle(index)}
-                    className="bg-white dark:bg-gray-800 p-1.5 rounded-full border border-slate-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors shadow-sm"
-                    title="Remove item"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )}
+              <div>
+                <label className={labelClass}>Company Name</label>
+                <input
+                  value={form.clientDetails.companyName}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        companyName: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Contact Name</label>
+                <input
+                  value={form.clientDetails.name}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        name: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>House/Building</label>
+                <input
+                  value={form.clientDetails.address.houseBuilding}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        address: {
+                          ...form.clientDetails.address,
+                          houseBuilding: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Street/Locality/Area</label>
+                <input
+                  value={form.clientDetails.address.streetArea}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        address: {
+                          ...form.clientDetails.address,
+                          streetArea: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>City/Town</label>
+                <input
+                  value={form.clientDetails.address.cityTown}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        address: {
+                          ...form.clientDetails.address,
+                          cityTown: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>State</label>
+                <input
+                  value={form.clientDetails.address.state}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        address: {
+                          ...form.clientDetails.address,
+                          state: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Pincode / ZIP</label>
+                <input
+                  value={form.clientDetails.address.pincode}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        address: {
+                          ...form.clientDetails.address,
+                          pincode: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Country</label>
+                <input
+                  value={form.clientDetails.address.country}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      clientDetails: {
+                        ...form.clientDetails,
+                        address: {
+                          ...form.clientDetails.address,
+                          country: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
             </div>
-          ))}
+          </div>
 
-          <div className="flex justify-end mt-4">
-            <div className="bg-slate-50 dark:bg-gray-900 px-6 py-3 rounded-lg border border-slate-200 dark:border-gray-700 text-right min-w-50">
-              <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">
+          {divider}
+
+          {/* EXPORTER / COMPANY DATA */}
+          <div>
+            <h3 className={sectionTitleClass}>Exporter / Company Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className={labelClass}>Exporter (Dealer)</label>
+                <SearchableCombobox
+                  data={dealers}
+                  value={form.dealer_id}
+                  onValueChange={handleDealerSelect}
+                  onSearchChange={setDealerSearch}
+                  displayField="name"
+                  valueField="_id"
+                  placeholder="Select a dealer..."
+                  searchPlaceholder="Search dealers..."
+                  emptyMessage="No dealers found."
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Company Name</label>
+                <input
+                  value={form.dealerDetails.name}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        name: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>GSTIN</label>
+                <input
+                  value={form.dealerDetails.gstin}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        gstin: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>House/Building</label>
+                <input
+                  value={form.dealerDetails.address.houseBuilding}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        address: {
+                          ...form.dealerDetails.address,
+                          houseBuilding: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Street/Locality/Area</label>
+                <input
+                  value={form.dealerDetails.address.streetArea}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        address: {
+                          ...form.dealerDetails.address,
+                          streetArea: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>City/Town</label>
+                <input
+                  value={form.dealerDetails.address.cityTown}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        address: {
+                          ...form.dealerDetails.address,
+                          cityTown: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>State</label>
+                <input
+                  value={form.dealerDetails.address.state}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        address: {
+                          ...form.dealerDetails.address,
+                          state: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Pincode / ZIP</label>
+                <input
+                  value={form.dealerDetails.address.pincode}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        address: {
+                          ...form.dealerDetails.address,
+                          pincode: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Country</label>
+                <input
+                  value={form.dealerDetails.address.country}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dealerDetails: {
+                        ...form.dealerDetails,
+                        address: {
+                          ...form.dealerDetails.address,
+                          country: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Landmark className="h-5 w-5 text-gray-500" />
+                <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                  Bank Details (Optional)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <input
+                  placeholder="Bank Name"
+                  value={form.bankDetails.bankName}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      bankDetails: {
+                        ...form.bankDetails,
+                        bankName: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+                <input
+                  placeholder="Account No"
+                  value={form.bankDetails.accountNo}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      bankDetails: {
+                        ...form.bankDetails,
+                        accountNo: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+                <input
+                  placeholder="Branch / IFSC"
+                  value={form.bankDetails.branchIfsc}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      bankDetails: {
+                        ...form.bankDetails,
+                        branchIfsc: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+
+          {divider}
+
+          {/* VEHICLE LINE ITEMS */}
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={sectionTitleClass + " mb-0!"}>
+                Vehicle Line Items
+              </h3>
+              <Button
+                type="button"
+                onClick={addVehicle}
+                variant="outline"
+                className="h-10"
+              >
+                <Plus size={18} /> Add Vehicle
+              </Button>
+            </div>
+
+            <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
+              {/* Table Header */}
+              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+                <div className="col-span-4">Model / Description</div>
+                <div className="col-span-1 text-center">Qty</div>
+                <div className="col-span-2 text-right">FOB ($)</div>
+                <div className="col-span-1 text-right">Freight ($)</div>
+                <div className="col-span-1 text-right">Rate ($)</div>
+                <div className="col-span-2 text-right">Amount ($)</div>
+                <div className="col-span-1 text-right"></div>
+              </div>
+
+              {/* Rows */}
+              {form.vehicleDetails.map((v, index) => (
+                <div
+                  key={index}
+                  className="border-b border-gray-200 last:border-0"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 py-4 items-center">
+                    <div className="col-span-1 lg:col-span-4">
+                      <div className="mb-3">
+                        <SearchableCombobox
+                          data={vehicles}
+                          value={v.vehicle_id}
+                          onValueChange={(val) =>
+                            handleVehicleSelect(index, val)
+                          }
+                          onSearchChange={setVehicleSearch}
+                          displayField="name"
+                          valueField="_id"
+                          placeholder="Select an inventory vehicle..."
+                          searchPlaceholder="Search by name/chassis..."
+                          emptyMessage="No vehicles found."
+                        />
+                      </div>
+                      <input
+                        placeholder="Vehicle Model"
+                        value={v.model}
+                        onChange={(e) =>
+                          handleVehicleChange(index, "model", e.target.value)
+                        }
+                        className={getInputClass(`v_${index}_model`)}
+                      />
+                    </div>
+                    <div className="col-span-1 lg:col-span-1">
+                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
+                        Qty
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={v.quantity}
+                        onChange={(e) =>
+                          handleVehicleChange(
+                            index,
+                            "quantity",
+                            Number(e.target.value)
+                          )
+                        }
+                        className={`${getInputClass(
+                          `v_${index}_quantity`
+                        )} text-center`}
+                      />
+                    </div>
+                    <div className="col-span-1 lg:col-span-2">
+                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
+                        FOB ($)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={v.fob}
+                        onChange={(e) =>
+                          handleVehicleChange(
+                            index,
+                            "fob",
+                            e.target.value ? Number(e.target.value) : ""
+                          )
+                        }
+                        className={`${inputClass} text-right font-mono`}
+                      />
+                    </div>
+                    <div className="col-span-1 lg:col-span-1">
+                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
+                        Freight ($)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={v.freight}
+                        onChange={(e) =>
+                          handleVehicleChange(
+                            index,
+                            "freight",
+                            e.target.value ? Number(e.target.value) : ""
+                          )
+                        }
+                        className={`${inputClass} text-right font-mono`}
+                      />
+                    </div>
+                    <div className="col-span-1 lg:col-span-1 text-right font-mono text-gray-600">
+                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
+                        Rate ($)
+                      </label>
+                      <span
+                        className={
+                          errors[`v_${index}_rate`] ? "text-red-500" : ""
+                        }
+                      >
+                        ${getRate(v).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="col-span-1 lg:col-span-2 text-right font-mono font-medium text-gray-900">
+                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
+                        Amount ($)
+                      </label>
+                      ${getAmount(v).toLocaleString()}
+                    </div>
+                    <div className="col-span-1 lg:col-span-1 flex justify-end items-center gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => toggleRow(index)}
+                        variant="ghost"
+                        size="icon"
+                        title="Toggle Advanced Fields"
+                      >
+                        <ChevronDown
+                          className={`w-5 h-5 transition-transform ${
+                            expandedRows[index] ? "rotate-180" : ""
+                          }`}
+                        />
+                      </Button>
+                      {form.vehicleDetails.length > 1 && (
+                        <Button
+                          type="button"
+                          onClick={() => removeVehicle(index)}
+                          variant="ghost"
+                          size="icon"
+                          title="Remove Vehicle"
+                        >
+                          <Trash2 className="w-5 h-5 text-red-500" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expanded Fields */}
+                  {expandedRows[index] && (
+                    <div className="px-6 py-6 bg-gray-50 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div>
+                        <label className={labelClass}>Exterior Color</label>
+                        <input
+                          value={v.color}
+                          onChange={(e) =>
+                            handleVehicleChange(index, "color", e.target.value)
+                          }
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Engine No</label>
+                        <input
+                          value={v.engineNo}
+                          onChange={(e) =>
+                            handleVehicleChange(
+                              index,
+                              "engineNo",
+                              e.target.value
+                            )
+                          }
+                          className={`${inputClass} font-mono`}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Chassis No (VIN)</label>
+                        <input
+                          value={v.chassisNo}
+                          onChange={(e) =>
+                            handleVehicleChange(
+                              index,
+                              "chassisNo",
+                              e.target.value
+                            )
+                          }
+                          className={`${inputClass} font-mono`}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>
+                          Year of Manufacture
+                        </label>
+                        <input
+                          value={v.yom}
+                          onChange={(e) =>
+                            handleVehicleChange(index, "yom", e.target.value)
+                          }
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>HSN / SAC</label>
+                        <input
+                          value={v.hsn}
+                          onChange={(e) =>
+                            handleVehicleChange(index, "hsn", e.target.value)
+                          }
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Fuel Type</label>
+                        <input
+                          value={v.fuelType}
+                          onChange={(e) =>
+                            handleVehicleChange(
+                              index,
+                              "fuelType",
+                              e.target.value
+                            )
+                          }
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Country of Origin</label>
+                        <input
+                          value={v.countryOfOrigin}
+                          onChange={(e) =>
+                            handleVehicleChange(
+                              index,
+                              "countryOfOrigin",
+                              e.target.value
+                            )
+                          }
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Engine Capacity</label>
+                        <input
+                          value={v.engineCapacity}
+                          onChange={(e) =>
+                            handleVehicleChange(
+                              index,
+                              "engineCapacity",
+                              e.target.value
+                            )
+                          }
+                          className={inputClass}
+                          placeholder="e.g. 2000cc"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {divider}
+
+          {/* SUMMARY */}
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
+            <div className="w-full sm:w-1/2">
+              <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                Amount Chargeable (in words)
+              </p>
+              <p className="text-base font-medium text-gray-900">
+                {numberToWords(totalAmount)}
+              </p>
+            </div>
+            <div className="w-full sm:w-auto sm:text-right">
+              <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
                 Grand Total
               </p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-white">
+              <p className="text-4xl font-light text-gray-900 tracking-tight font-mono">
                 $
                 {totalAmount.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
@@ -936,33 +1363,8 @@ const CreatePI = () => {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* ACTIONS */}
-        <div className="flex justify-end gap-4">
-          <button
-            type="button"
-            onClick={() => navigate("/proforma-invoice")}
-            className="px-6 py-2.5 border rounded-lg bg-white dark:bg-gray-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
-          >
-            {loading
-              ? id
-                ? "Updating..."
-                : "Creating..."
-              : id
-              ? "Update PI"
-              : "Create PI"}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

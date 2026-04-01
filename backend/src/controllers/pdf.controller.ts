@@ -23,6 +23,22 @@ const formatDate = (dateString: string | Date) => {
   }-${d.getFullYear()}`;
 };
 
+const formatAddress = (addr: any) => {
+  if (!addr) return "-";
+  // Handle legacy string addresses
+  if (typeof addr === "string") return addr;
+
+  // Handle new address object
+  const addressParts = [
+    addr.houseBuilding,
+    addr.streetArea,
+    addr.cityTown,
+    [addr.state, addr.pincode].filter(Boolean).join(" - "),
+    addr.country,
+  ].filter(Boolean);
+  return addressParts.join("\n");
+};
+
 export const downloadProformaInvoice = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -42,19 +58,27 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
       totalQty += v.quantity;
       return {
         slNo: index + 1,
-        description: v.model || "Vehicle",
-        hsn: v.hsn || "-",
+        description: v.model || "N/A",
         qty: v.quantity,
-        rate: v.unitPrice.toFixed(2),
-        per: "Unit",
-        amount: (v.quantity * v.unitPrice).toFixed(2),
+        rate: ((Number(v.fob) || 0) + (Number(v.freight) || 0)).toFixed(2),
+        per: "No",
+        amount: (
+          v.quantity *
+          ((Number(v.fob) || 0) + (Number(v.freight) || 0))
+        ).toFixed(2),
         specs: {
           color: v.color,
           chassisNo: v.chassisNo,
           engineNo: v.engineNo,
           yom: v.yom,
-          fob: v.fob,
-          freight: v.freight,
+          fuelType: v.fuelType,
+          countryOfOrigin: v.countryOfOrigin,
+          engineCapacity: v.engineCapacity
+            ? `${v.engineCapacity}cc`
+            : undefined,
+          hsn: v.hsn,
+          fob: (Number(v.fob) || 0).toFixed(2),
+          freight: (Number(v.freight) || 0).toFixed(2),
         },
       };
     });
@@ -65,18 +89,19 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
       date: pi.validityDate
         ? formatDate(pi.validityDate)
         : formatDate(pi.createdAt),
-      modeOfPayment: pi.paymentTerms || "As agreed",
+      paymentTerms: pi.paymentTerms || "As agreed",
+      termsOfDelivery: pi.termsOfDelivery || "-",
       buyersRef: "-",
       otherRef: "-",
       exporter: {
         name: pi.dealerDetails?.name || dealer?.name || "Your Company Name",
         address:
-          pi.dealerDetails?.address ||
+          formatAddress(pi.dealerDetails?.address) ||
           dealer?.address ||
           "Your Company Address",
         gstin: pi.dealerDetails?.gstin || dealer?.gstNumber || "-",
-        state: pi.dealerDetails?.state || "-",
-        stateCode: pi.dealerDetails?.stateCode || "-",
+        state: pi.dealerDetails?.address?.state || "-",
+        stateCode: pi.dealerDetails?.address?.pincode || "-", // Using pincode as a proxy if stateCode is not available
       },
       buyer: {
         name:
@@ -86,11 +111,11 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
           client?.name ||
           "-",
         address:
-          pi.clientDetails?.address ||
+          formatAddress(pi.clientDetails?.address) ||
           client?.address ||
           client?.country ||
           "-",
-        state: pi.clientDetails?.state || "-",
+        state: pi.clientDetails?.address?.state || "-",
       },
       consignee: {
         name:
@@ -100,24 +125,18 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
           client?.name ||
           "-",
         address:
-          pi.clientDetails?.address ||
+          formatAddress(pi.clientDetails?.address) ||
           client?.address ||
           client?.country ||
           "-",
-        state: pi.clientDetails?.state || "-",
+        state: pi.clientDetails?.address?.state || "-",
       },
       dispatchedThrough: "-",
       destination: client?.country || "-",
-      incoterm: "-",
-      portOfLoading: "-",
-      portOfDischarge: "-",
       items,
       totalQty,
       totalAmount: pi.totalAmount.toFixed(2),
-      amountInWords: `USD ${pi.totalAmount.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })} Only`,
+      amountInWords: pi.amountInWords || "N/A",
       bankDetails: pi.bankDetails || {
         bankName: "-",
         accountNo: "-",
