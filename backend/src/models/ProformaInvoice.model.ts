@@ -49,6 +49,9 @@ export interface IProformaInvoice extends Document {
   currency: string; // USD
   paymentTerms?: string;
   termsOfDelivery?: string;
+  incoterm?: string;
+  portOfLoading?: string;
+  portOfDischarge?: string;
 
   validityDate?: Date;
 
@@ -149,6 +152,18 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
     },
 
     termsOfDelivery: {
+      type: String,
+    },
+
+    incoterm: {
+      type: String,
+    },
+
+    portOfLoading: {
+      type: String,
+    },
+
+    portOfDischarge: {
       type: String,
     },
 

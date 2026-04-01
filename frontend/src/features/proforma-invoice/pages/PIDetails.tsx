@@ -11,7 +11,10 @@ import {
   Clock,
   XCircle,
   FileText,
+  Edit,
+  Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const PIDetails = () => {
   const { id } = useParams();
@@ -168,68 +171,97 @@ const PIDetails = () => {
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
-          <div>
-            <button
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              type="button"
               onClick={() => navigate("/proforma-invoice")}
-              className="flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors mb-3"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
-              <ArrowLeft className="h-4 w-4" /> Back to PIs
-            </button>
-            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
-              Proforma Invoice
-              {pi && (
-                <span
-                  className={`px-2.5 py-1 text-xs rounded-full border flex items-center gap-1.5 font-medium ${getStatusColor(
-                    pi.status
-                  )}`}
-                >
-                  {getStatusIcon(pi.status)}
-                  <span className="capitalize">
-                    {pi.status?.replace("_", " ")}
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
+                Proforma Invoice
+                {pi && (
+                  <span
+                    className={`px-2.5 py-1 text-xs rounded-full border flex items-center gap-1.5 font-medium ${getStatusColor(
+                      pi.status
+                    )}`}
+                  >
+                    {getStatusIcon(pi.status)}
+                    <span className="capitalize">
+                      {pi.status?.replace("_", " ")}
+                    </span>
                   </span>
+                )}
+              </h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Ref:{" "}
+                <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                  {pi?.piNumber}
                 </span>
-              )}
-            </h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Ref:{" "}
-              <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                {pi?.piNumber}
-              </span>
-            </p>
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => navigate(`/proforma-invoice/edit/${id}`)}
+              variant="outline"
+              className="h-10 px-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <Edit className="w-4 h-4 mr-2" /> Edit PI
+            </Button>
+            <Button
               onClick={() => handlePdfAction("view")}
               disabled={!pi || downloading}
-              className="flex items-center gap-2 bg-white hover:bg-zinc-50 dark:bg-[#18181B] dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border border-zinc-200 dark:border-zinc-800 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              variant="outline"
+              className="h-10 px-4 border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-500 dark:hover:bg-blue-950/30 cursor-pointer transition-colors shadow-sm"
             >
-              <Eye size={16} /> {downloading ? "Loading..." : "View PDF"}
-            </button>
-            <button
+              {downloading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Eye className="w-4 h-4 mr-2" />
+              )}
+              {downloading ? "Loading..." : "View PDF"}
+            </Button>
+            <Button
               onClick={() => handlePdfAction("download")}
               disabled={!pi || downloading}
-              className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer transition-colors shadow-sm"
             >
-              <Download size={16} />{" "}
+              {downloading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
               {downloading ? "Generating..." : "Download PDF"}
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* LOADING */}
         {loading && (
-          <div className="flex justify-center py-20">
-            <div className="animate-pulse flex flex-col items-center">
-              <div className="h-8 w-8 border-2 border-zinc-900 border-t-transparent dark:border-white dark:border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-sm text-zinc-500">Loading document...</p>
+          <div className="flex justify-center items-center py-32">
+            <div className="flex flex-col items-center gap-4 bg-white/50 dark:bg-zinc-900/50 p-8 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-800 backdrop-blur-sm">
+              <Loader2 className="h-10 w-10 text-blue-600 dark:text-blue-500 animate-spin" />
+              <div className="space-y-1 text-center">
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                  Loading Document
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Fetching proforma invoice details...
+                </p>
+              </div>
             </div>
           </div>
         )}
 
         {!loading && pi && (
-          <div className="bg-white dark:bg-[#0E0E10] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-[#0E0E10] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 overflow-hidden">
             {/* TOP DOCUMENT INFO */}
             <div className="p-8 sm:p-10 border-b border-zinc-100 dark:border-zinc-800/60 flex flex-col sm:flex-row justify-between gap-8 bg-zinc-50/50 dark:bg-zinc-900/20">
               {/* From/Exporter Info */}
@@ -306,13 +338,39 @@ const PIDetails = () => {
                   {pi.paymentTerms || "Not specified"}
                 </p>
               </div>
-              <div className="md:col-span-3 mt-4">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
-                  Terms of Delivery
-                </p>
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                  {pi.termsOfDelivery || "Not specified"}
-                </p>
+              <div className="col-span-2 md:col-span-3 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                    Terms of Delivery
+                  </p>
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    {pi.termsOfDelivery || "Not specified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                    Incoterm
+                  </p>
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    {pi.incoterm || "Not specified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                    Port of Loading
+                  </p>
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    {pi.portOfLoading || "Not specified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">
+                    Port of Discharge
+                  </p>
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    {pi.portOfDischarge || "Not specified"}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -345,7 +403,7 @@ const PIDetails = () => {
                       return (
                         <tr
                           key={i}
-                          className="group hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+                          className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors cursor-pointer"
                         >
                           <td className="px-6 py-4">
                             <p className="font-medium text-zinc-900 dark:text-zinc-100">

@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 
@@ -26,7 +25,7 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
         <Button
           variant={"outline"}
           className={cn(
-            "w-full h-12 justify-start text-left font-normal border-gray-300 shadow-sm",
+            "w-full h-12 justify-start cursor-pointer text-left font-normal border-gray-300 shadow-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600 hover:bg-blue-50 transition-colors",
             !date && "text-muted-foreground",
             className
           )}

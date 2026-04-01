@@ -90,18 +90,21 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
         ? formatDate(pi.validityDate)
         : formatDate(pi.createdAt),
       paymentTerms: pi.paymentTerms || "As agreed",
-      termsOfDelivery: pi.termsOfDelivery || "-",
-      buyersRef: "-",
-      otherRef: "-",
+      termsOfDelivery: pi.termsOfDelivery || " ",
+      incoterm: pi.incoterm || " ",
+      portOfLoading: pi.portOfLoading || " ",
+      portOfDischarge: pi.portOfDischarge || " ",
+      buyersRef: " ",
+      otherRef: " ",
       exporter: {
         name: pi.dealerDetails?.name || dealer?.name || "Your Company Name",
         address:
           formatAddress(pi.dealerDetails?.address) ||
           dealer?.address ||
           "Your Company Address",
-        gstin: pi.dealerDetails?.gstin || dealer?.gstNumber || "-",
-        state: pi.dealerDetails?.address?.state || "-",
-        stateCode: pi.dealerDetails?.address?.pincode || "-", // Using pincode as a proxy if stateCode is not available
+        gstin: pi.dealerDetails?.gstin || dealer?.gstNumber || " ",
+        state: pi.dealerDetails?.address?.state || " ",
+        stateCode: pi.dealerDetails?.address?.pincode || " ", // Using pincode as a proxy if stateCode is not available
       },
       buyer: {
         name:
@@ -109,13 +112,13 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
           pi.clientDetails?.name ||
           client?.companyName ||
           client?.name ||
-          "-",
+          " ",
         address:
           formatAddress(pi.clientDetails?.address) ||
           client?.address ||
           client?.country ||
-          "-",
-        state: pi.clientDetails?.address?.state || "-",
+          "",
+        state: pi.clientDetails?.address?.state || " ",
       },
       consignee: {
         name:
@@ -123,24 +126,27 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
           pi.clientDetails?.name ||
           client?.companyName ||
           client?.name ||
-          "-",
+          " ",
         address:
           formatAddress(pi.clientDetails?.address) ||
           client?.address ||
           client?.country ||
-          "-",
-        state: pi.clientDetails?.address?.state || "-",
+          "",
+        state: pi.clientDetails?.address?.state || " ",
       },
-      dispatchedThrough: "-",
-      destination: client?.country || "-",
+      dispatchedThrough: " ",
+      destination: client?.country || " ",
       items,
       totalQty,
-      totalAmount: pi.totalAmount.toFixed(2),
+      totalAmount: pi.totalAmount.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
       amountInWords: pi.amountInWords || "N/A",
       bankDetails: pi.bankDetails || {
-        bankName: "-",
-        accountNo: "-",
-        branchIfsc: "-",
+        bankName: " ",
+        accountNo: " ",
+        branchIfsc: " ",
       },
     };
 

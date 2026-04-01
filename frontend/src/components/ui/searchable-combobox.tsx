@@ -64,7 +64,7 @@ export function SearchableCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full h-12 justify-between border-gray-300 shadow-sm",
+            "w-full h-12 justify-between cursor-pointer border-gray-300 shadow-sm",
             !value && "text-muted-foreground",
             error && "border-red-500"
           )}
@@ -92,7 +92,7 @@ export function SearchableCombobox({
               {data.map((item) => (
                 <CommandItem
                   key={item[valueField]}
-                  value={item[displayField]}
+                  value={`${item[displayField]} ${item[valueField]}`}
                   onSelect={() => {
                     onValueChange(
                       item[valueField] === value ? "" : item[valueField]

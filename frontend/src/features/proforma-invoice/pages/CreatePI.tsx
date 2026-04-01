@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+import { format } from "date-fns";
 
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -67,6 +68,9 @@ type PIForm = {
   paymentTerms: string;
   validityDate: string;
   termsOfDelivery: string;
+  incoterm: string;
+  portOfLoading: string;
+  portOfDischarge: string;
   bankDetails: {
     bankName: string;
     accountNo: string;
@@ -118,6 +122,9 @@ const CreatePI = () => {
     paymentTerms: "",
     validityDate: "",
     termsOfDelivery: "",
+    incoterm: "",
+    portOfLoading: "",
+    portOfDischarge: "",
     bankDetails: { bankName: "", accountNo: "", branchIfsc: "" },
     vehicleDetails: [
       {
@@ -218,34 +225,38 @@ const CreatePI = () => {
           piNumber: pi.piNumber || "",
           client_id: pi.client_id?._id || pi.client_id || "",
           dealer_id: pi.dealer_id?._id || pi.dealer_id || "",
-          clientDetails: pi.clientDetails || {
-            name: "",
-            companyName: "",
+          clientDetails: {
+            name: pi.clientDetails?.name || "",
+            companyName: pi.clientDetails?.companyName || "",
             address: {
               ...defaultAddress,
-              streetArea:
-                typeof pi.clientDetails?.address === "string"
-                  ? pi.clientDetails.address
-                  : "",
-              state: pi.clientDetails?.state || "",
-              country: pi.clientDetails?.country || "",
+              ...(typeof pi.clientDetails?.address === "object" &&
+              pi.clientDetails.address
+                ? pi.clientDetails.address
+                : typeof pi.clientDetails?.address === "string"
+                ? { streetArea: pi.clientDetails.address }
+                : {}),
             },
           },
-          dealerDetails: pi.dealerDetails || {
-            name: "",
-            gstin: "",
+          dealerDetails: {
+            name: pi.dealerDetails?.name || "",
+            gstin: pi.dealerDetails?.gstin || "",
             address: {
               ...defaultAddress,
-              streetArea:
-                typeof pi.dealerDetails?.address === "string"
-                  ? pi.dealerDetails.address
-                  : "",
-              state: pi.dealerDetails?.state || "",
+              ...(typeof pi.dealerDetails?.address === "object" &&
+              pi.dealerDetails.address
+                ? pi.dealerDetails.address
+                : typeof pi.dealerDetails?.address === "string"
+                ? { streetArea: pi.dealerDetails.address }
+                : {}),
             },
           },
           paymentTerms: pi.paymentTerms || "",
           validityDate: pi.validityDate ? pi.validityDate.split("T")[0] : "",
           termsOfDelivery: pi.termsOfDelivery || "",
+          incoterm: pi.incoterm || "",
+          portOfLoading: pi.portOfLoading || "",
+          portOfDischarge: pi.portOfDischarge || "",
           bankDetails: pi.bankDetails || {
             bankName: "",
             accountNo: "",
@@ -307,7 +318,9 @@ const CreatePI = () => {
         companyName: selected?.companyName || "",
         address: {
           ...form.clientDetails.address,
-          streetArea: selected?.address || "",
+          ...(typeof selected?.address === "object" && selected.address
+            ? selected.address
+            : { streetArea: selected?.address || "" }),
           state: selected?.state || "",
           country: selected?.country || "",
         },
@@ -328,7 +341,9 @@ const CreatePI = () => {
         gstin: selected?.gstNumber || "",
         address: {
           ...form.dealerDetails.address,
-          streetArea: selected?.address || "",
+          ...(typeof selected?.address === "object" && selected.address
+            ? selected.address
+            : { streetArea: selected?.address || "" }),
           state: selected?.state || "",
         },
       },
@@ -576,7 +591,7 @@ const CreatePI = () => {
                 onClick={() => navigate("/proforma-invoice")}
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10"
+                className="h-10 w-10 hover:bg-blue-50 hover:text-blue-600 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -590,12 +605,16 @@ const CreatePI = () => {
                 variant="outline"
                 onClick={handlePreview}
                 disabled={!id || previewLoading || loading}
-                className="h-12 px-6"
+                className="h-12 px-6 text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors"
               >
                 <Eye className="mr-2 h-4 w-4" />
                 {previewLoading ? "Loading..." : "Preview PDF"}
               </Button>
-              <Button type="submit" disabled={loading} className="h-12 px-8">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm"
+              >
                 {loading
                   ? "Processing..."
                   : id
@@ -624,14 +643,14 @@ const CreatePI = () => {
                 <label className={labelClass}>Validity Date</label>
                 <DatePicker
                   date={
-                    form.validityDate ? new Date(form.validityDate) : undefined
+                    form.validityDate
+                      ? new Date(form.validityDate + "T00:00:00")
+                      : undefined
                   }
                   setDate={(date) =>
                     setForm({
                       ...form,
-                      validityDate: date
-                        ? date.toISOString().split("T")[0]
-                        : "",
+                      validityDate: date ? format(date, "yyyy-MM-dd") : "",
                     })
                   }
                 />
@@ -658,6 +677,42 @@ const CreatePI = () => {
                   }
                   className={inputClass}
                   placeholder="e.g. CIF, Ex-Works"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Incoterm</label>
+                <input
+                  value={form.incoterm}
+                  onChange={(e) =>
+                    setForm({ ...form, incoterm: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="e.g. CIF"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Port of Loading</label>
+                <input
+                  value={form.portOfLoading}
+                  onChange={(e) =>
+                    setForm({ ...form, portOfLoading: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="e.g. Mundra, India"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Port of Discharge</label>
+                <input
+                  value={form.portOfDischarge}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      portOfDischarge: e.target.value,
+                    })
+                  }
+                  className={inputClass}
+                  placeholder="e.g. Jebel Ali, UAE"
                 />
               </div>
             </div>
@@ -1073,9 +1128,9 @@ const CreatePI = () => {
                 type="button"
                 onClick={addVehicle}
                 variant="outline"
-                className="h-10"
+                className="h-10 text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors"
               >
-                <Plus size={18} /> Add Vehicle
+                <Plus size={18} className="mr-1" /> Add Vehicle
               </Button>
             </div>
 
