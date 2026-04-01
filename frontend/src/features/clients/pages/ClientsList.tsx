@@ -201,7 +201,13 @@ const ClientsList = () => {
               className="px-3 py-1 border rounded 
                          bg-white dark:bg-gray-700 
                          text-black dark:text-white 
-                         border-slate-300 dark:border-gray-600"
+                         border-slate-300 dark:border-gray-600
+                         
+                         hover:bg-blue-500 hover:text-white
+                         dark:hover:bg-blue-700 dark:hover:text-white
+                         
+                         transition-all duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Prev
             </button>
@@ -212,7 +218,13 @@ const ClientsList = () => {
               className="px-3 py-1 border rounded 
                          bg-white dark:bg-gray-700 
                          text-black dark:text-white 
-                         border-slate-300 dark:border-gray-600"
+                         border-slate-300 dark:border-gray-600
+                         
+                         hover:bg-blue-500 hover:text-white
+                         dark:hover:bg-blue-700 dark:hover:text-white
+                         
+                         transition-all duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>

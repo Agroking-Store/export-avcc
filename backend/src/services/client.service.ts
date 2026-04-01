@@ -120,8 +120,3 @@ export const updateClientService = async (
 
   return updated;
 };
-
-// Delete
-export const deleteClientService = async (id: string) => {
-  await Client.findByIdAndDelete(id);
-};

@@ -4,7 +4,6 @@ import {
   getOrdersService,
   getOrderByIdService,
   updateOrderService,
-  deleteOrderService,
   updateOrderStatusService,
 } from "../services/order.service";
 import { validateCreateOrder, validateUpdateOrder } from "../validations/order.validation";
@@ -42,15 +41,6 @@ export const updateOrder = async (req: Request, res: Response) => {
     validateUpdateOrder(req.body);
     const updated = await updateOrderService(req.params.id as string, req.body);
     res.json(updated);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const deleteOrder = async (req: Request, res: Response) => {
-  try {
-    await deleteOrderService(req.params.id as string);
-    res.json({ message: "Order deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

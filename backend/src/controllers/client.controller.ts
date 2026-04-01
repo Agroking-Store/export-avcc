@@ -4,7 +4,6 @@ import {
   getClientsService,
   getClientByIdService,
   updateClientService,
-  deleteClientService,
 } from "../services/client.service";
 import {
   validateCreateClient,
@@ -49,11 +48,4 @@ export const updateClient = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteClient = async (req: Request, res: Response) => {
-  try {
-    await deleteClientService(req.params.id as string);
-    res.json({ message: "Client deleted successfully" });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
+

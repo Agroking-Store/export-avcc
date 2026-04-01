@@ -122,11 +122,6 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
   return await Order.findByIdAndUpdate(id, updateData, { new: true });
 };
 
-export const deleteOrderService = async (id: string): Promise<void> => {
-  const order = await Order.findByIdAndDelete(id);
-  if (!order) throw new Error("Order not found");
-};
-
 export const updateOrderStatusService = async (id: string, status: "Draft" | "Confirmed"): Promise<IOrder | null> => {
   return await Order.findByIdAndUpdate(id, { status }, { new: true });
 };
