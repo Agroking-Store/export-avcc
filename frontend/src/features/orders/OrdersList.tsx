@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Search, Filter, Plus } from "lucide-react";
+import { Eye, Pencil, Search, Filter, Plus } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
@@ -71,20 +71,6 @@ const OrdersList = () => {
     }
   }, [location.state]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this order?")) return;
-    
-    try {
-      await axios.delete(`http://localhost:5000/api/v1/orders/${id}`);
-    
-      toast.success("Order deleted successfully 🗑️");
-    
-      fetchOrders();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Delete failed");
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Draft": return "bg-gray-100 text-gray-800";
@@ -93,8 +79,6 @@ const OrdersList = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
-
-  
 
   return (
     <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen p-2 rounded-xl">
@@ -226,12 +210,6 @@ const OrdersList = () => {
                           <Pencil size={18} />
                         </button>
 
-                        <button
-                          onClick={() => handleDelete(order._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                        >
-                          <Trash2 size={18} />
-                        </button>
                       </div>
                     </td>
                   </tr>

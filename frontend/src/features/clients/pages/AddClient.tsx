@@ -27,17 +27,34 @@ const AddClient = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validate = () => {
+    if (!form.name.trim()) return "Client name required";
+    if (!form.phone.trim()) return "Phone required";
+    if (!form.country.trim()) return "Country required";
+    if (!form.email.trim()) return "Email required";
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      return "Invalid email format";
+    }
+    if (!form.companyName.trim()) return "Company name required";
+    if (!form.address.trim()) return "Address required";
+  
+    return null;
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const error = validate();
+    if (error) {
+      toast.error(error);
+      return;
+    }
+  
     try {
       setLoading(true);
-
-      await axios.post(
-        `${apiConfig.baseURL}/clients`,
-        form
-      );
-
+  
+      await axios.post(`${apiConfig.baseURL}/clients`, form);
+  
       navigate("/clients/list", {
         state: { success: "Client added successfully ✅" },
       });
@@ -84,7 +101,7 @@ const AddClient = () => {
             {/* Name */}
             <div>
               <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-                Client Name *
+                Client Name 
               </label>
               <input
                 type="text"
@@ -104,7 +121,7 @@ const AddClient = () => {
             {/* Phone */}
             <div>
               <label className="block text-sm mb-1">
-                Contact Number *
+                Contact Number 
               </label>
               <input
                 type="text"
@@ -124,7 +141,7 @@ const AddClient = () => {
             {/* Country */}
             <div>
               <label className="block text-sm mb-1">
-                Country *
+                Country 
               </label>
               <input
                 type="text"
@@ -149,6 +166,7 @@ const AddClient = () => {
               <input
                 type="email"
                 name="email"
+                required 
                 value={form.email}
                 onChange={handleChange}
                 placeholder="Enter email"
@@ -168,6 +186,7 @@ const AddClient = () => {
               <input
                 type="text"
                 name="companyName"
+                required 
                 value={form.companyName}
                 onChange={handleChange}
                 placeholder="Enter company name"
@@ -186,6 +205,7 @@ const AddClient = () => {
               </label>
               <textarea
                 name="address"
+                required 
                 value={form.address}
                 onChange={handleChange}
                 placeholder="Enter address"

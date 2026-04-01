@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Search, Filter, UserPlus } from "lucide-react";
+import { Eye, Pencil, Search, Filter, UserPlus } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -43,28 +43,14 @@ const ClientsList = () => {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, [search, currentPage]);
-
-  useEffect(() => {
-  if (location.state?.success) {
-    toast.success(location.state.success);
-  }
-}, [location.state]);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this order?")) return;
-  
-    try {
-      await axios.delete(`http://localhost:5000/api/v1/clients/${id}`);
-  
-      toast.success("Client deleted successfully ✅");
-  
       fetchClients();
-    } catch {
-      toast.error("Delete failed");
+    }, [search, currentPage]);
+  
+    useEffect(() => {
+    if (location.state?.success) {
+      toast.success(location.state.success);
     }
-  };
+  }, [location.state]);
 
   return (
     <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen px-2 py-2 rounded">
@@ -189,13 +175,6 @@ const ClientsList = () => {
                           className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
                         >
                           <Pencil size={18} />
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete(client._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
-                        >
-                          <Trash2 size={18} />
                         </button>
 
                       </div>
