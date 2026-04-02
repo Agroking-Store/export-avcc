@@ -1,31 +1,29 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
 
 const VehicleView = () => {
-const { id: orderId, vehicleIndex } = useParams();
+  const { id: orderId, vehicleIndex } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // Get vehicle data from URL state or query params (passed from VehicleDetails)
-  const vehicleName = searchParams.get('name') || 'Swift';
-  const vehicleColor = searchParams.get('color') || 'Red';
-  const srNo = searchParams.get('srNo') || '1';
+
+  const vehicleName = searchParams.get('name') || '';
+  const vehicleColor = searchParams.get('color') || '';
+  const srNo = searchParams.get('srNo') || '';
+  // expandedIndex is the unique slot number — used to identify this specific vehicle copy
+  const expandedIndex = searchParams.get('expandedIndex') || vehicleIndex || '0';
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/vehicles/view/${orderId}`, { replace: true })}
           className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-1"
         >
           <ArrowLeft size={16} />
           Back
         </button>
-        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-          Vehicle Details
-        </h1>
+        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">Vehicle Details</h1>
       </div>
 
       {/* Vehicle Card */}
@@ -57,20 +55,31 @@ const { id: orderId, vehicleIndex } = useParams();
           <div>
             <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Color</label>
             <div className="inline-flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
-              <div className="w-4 h-4 rounded-full border-2 border-slate-300" style={{ backgroundColor: 'red' }}></div>
+              <div
+                className="w-4 h-4 rounded-full border-2 border-slate-300"
+                style={{ backgroundColor: vehicleColor.toLowerCase() }}
+              />
               <span className="font-semibold">{vehicleColor}</span>
             </div>
           </div>
 
           <div className="flex gap-3 pt-4">
             <button
-onClick={() => navigate(`/vehicles/view/${orderId}/edit-vehicle/${vehicleIndex}?name=${encodeURIComponent(vehicleName)}&color=${encodeURIComponent(vehicleColor)}&srNo=${encodeURIComponent(srNo)}`)}
+              onClick={() => {
+                const params = new URLSearchParams({
+                  name: vehicleName,
+                  color: vehicleColor,
+                  srNo,
+                  expandedIndex,
+                });
+                navigate(`/vehicles/view/${orderId}/edit-vehicle/${expandedIndex}?${params.toString()}`);
+              }}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Edit Vehicle
             </button>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(`/vehicles/view/${orderId}`, { replace: true })}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Close
@@ -83,4 +92,3 @@ onClick={() => navigate(`/vehicles/view/${orderId}/edit-vehicle/${vehicleIndex}?
 };
 
 export default VehicleView;
-

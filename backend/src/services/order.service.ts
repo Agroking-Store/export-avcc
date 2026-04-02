@@ -30,14 +30,15 @@ export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> 
     throw new Error("At least one vehicle is required");
   }
 
-  const orderId = await generateOrderId();
-  const voucherNo = await generateVoucherNo();
-
   const vehicles = data.vehicles.map(v => ({
     name: v.name,
     color: v.color,
     quantity: v.quantity,
+    srNo: v.srNo || null,
   }));
+
+  const orderId = await generateOrderId();
+  const voucherNo = await generateVoucherNo();
 
   const order = new Order({
     orderId,
@@ -46,6 +47,7 @@ export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> 
     clientId: data.clientId || null,
     dealerId: data.dealerId || null,
     vehicles,
+    vehicleColors: [], // initialize empty
     status: "Draft",
   });
 
@@ -73,14 +75,14 @@ export const getOrdersService = async (query: any) => {
 
   const orders = await Order.aggregate([
     { $match: match },
-   { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
-   { $lookup: { from: "dealers", localField: "dealerId", foreignField: "_id", as: "dealer" } },
+    { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
+    { $lookup: { from: "dealers", localField: "dealerId", foreignField: "_id", as: "dealer" } },
     {
       $addFields: {
-      clientName: { $arrayElemAt: ["$client.name", 0] },
-      companyName: { $arrayElemAt: ["$client.companyName", 0] },
-      clientCountry: { $arrayElemAt: ["$client.country", 0] }
-    }
+        clientName: { $arrayElemAt: ["$client.name", 0] },
+        companyName: { $arrayElemAt: ["$client.companyName", 0] },
+        clientCountry: { $arrayElemAt: ["$client.country", 0] }
+      }
     },
     { $project: { client: 0 } },
     { $sort: { createdAt: -1 } },
@@ -106,57 +108,79 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
     const client = await Client.findById(data.clientId);
     if (!client) throw new Error("Client not found");
   }
-  
-  const updateData: any = { ...data };
-  
-  // Handle vehiclesUpdate for updating a specific vehicle
-  if (data.vehiclesUpdate) {
-    const { index, color, name, srNo } = data.vehiclesUpdate;
-    
-    // Build the update object for the specific vehicle fields
-    const vehicleUpdate: any = {};
-    if (color !== undefined) vehicleUpdate[`vehicles.${index}.exteriorColour`] = color;
-    if (name !== undefined) vehicleUpdate[`vehicles.${index}.vehicleName`] = name;
-    if (srNo !== undefined) vehicleUpdate[`vehicles.${index}.chassisNo`] = srNo;
-    
-    // Use findByIdAndUpdate with $set to update specific fields
-    const updatedOrder = await Order.findByIdAndUpdate(
-      id,
-      { $set: vehicleUpdate },
-      { returnDocument: 'after', runValidators: false }
-    );
-    
-    if (!updatedOrder) {
-      throw new Error("Order not found");
-    }
-    
-    return updatedOrder;
-  }
-  
-  // Handle other updates
+
+  const updateData: any = {};
+  if (data.date) updateData.date = new Date(data.date);
+  if (data.clientId !== undefined) updateData.clientId = data.clientId || null;
+  if (data.dealerId !== undefined) updateData.dealerId = data.dealerId || null;
   if (data.vehicles) {
     if (data.vehicles.length === 0) {
       throw new Error("At least one vehicle is required");
     }
-  
     updateData.vehicles = data.vehicles.map(v => ({
       name: v.name,
       color: v.color,
       quantity: v.quantity,
+      srNo: v.srNo || null,
     }));
   }
-  if (data.date) updateData.date = new Date(data.date);
-  
-  // Remove vehiclesUpdate from updateData if present
-  delete updateData.vehiclesUpdate;
-  
-  // Only update if there are other fields to update
-  if (Object.keys(updateData).length > 0) {
-    return await Order.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: false });
+
+  // ─── Handle vehicleColorUpdate ───────────────────────────────────────────────
+  // Updates color for a single expanded vehicle slot (e.g. BMW copy #3)
+  // Does NOT touch the vehicles[] array at all
+  if (data.vehicleColorUpdate) {
+    const { expandedIndex, color } = data.vehicleColorUpdate;
+
+    const order = await Order.findById(id);
+    if (!order) throw new Error("Order not found");
+
+    const existing = order.vehicleColors.find(vc => vc.expandedIndex === expandedIndex);
+    if (existing) {
+      // Update existing color override
+      existing.color = color;
+    } else {
+      // Add new color override for this slot
+      order.vehicleColors.push({ expandedIndex, color });
+    }
+
+    return await order.save();
   }
-  
-  // Return the order as-is if no updates
-  return await Order.findById(id);
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ─── Handle vehiclesUpdate (name/srNo edits on vehicles[] array) ─────────────
+  let vehicleUpdate: any = {};
+  let needsVehicleFetch = false;
+
+  if (data.vehiclesUpdate) {
+    const { index, color, name, srNo } = data.vehiclesUpdate;
+    if (index < 0) throw new Error("Invalid vehicle index");
+
+    needsVehicleFetch = true;
+
+    if (color !== undefined) vehicleUpdate[`vehicles.${index}.color`] = color;
+    if (name !== undefined) vehicleUpdate[`vehicles.${index}.name`] = name;
+    if (srNo !== undefined) vehicleUpdate[`vehicles.${index}.srNo`] = srNo;
+  }
+
+  let order: IOrder | null = null;
+  if (needsVehicleFetch) {
+    order = await Order.findById(id);
+    if (!order) throw new Error("Order not found");
+    if (data.vehiclesUpdate!.index >= order.vehicles.length) {
+      throw new Error("Vehicle index out of bounds");
+    }
+  }
+
+  const finalUpdate: any = { ...updateData };
+  if (Object.keys(vehicleUpdate).length > 0) {
+    finalUpdate.$set = vehicleUpdate;
+  }
+
+  if (Object.keys(finalUpdate).length === 0 && Object.keys(vehicleUpdate).length === 0) {
+    return order || await Order.findById(id);
+  }
+
+  return await Order.findByIdAndUpdate(id, finalUpdate, { returnDocument: 'after', runValidators: true });
 };
 
 export const updateOrderStatusService = async (id: string, status: "Draft" | "Confirmed"): Promise<IOrder | null> => {

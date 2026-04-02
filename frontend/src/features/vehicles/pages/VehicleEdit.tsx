@@ -9,87 +9,72 @@ const VehicleEdit = () => {
   const { id: orderId, vehicleIndex } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   const [loading, setLoading] = useState(false);
-  const [order, setOrder] = useState<any>(null);
-  
-  // Get data from URL query params first (passed from VehicleView)
+
   const [name, setName] = useState(searchParams.get('name') || '');
   const [color, setColor] = useState(searchParams.get('color') || '');
-  const [srNo, setSrNo] = useState(searchParams.get('srNo') || '');
+  const [srNo] = useState(searchParams.get('srNo') || '');
 
-  // Debug params
-  console.log('VehicleEdit params:', { orderId, vehicleIndex, name, color, srNo });
+  // expandedIndex = unique slot number for this vehicle copy — this is what backend uses
+  const expandedIndex = searchParams.get('expandedIndex') || vehicleIndex || '0';
 
   useEffect(() => {
-    // First, set data from URL params if available
-    if (searchParams.get('name')) {
-      setName(searchParams.get('name') || '');
-      setColor(searchParams.get('color') || '');
-      setSrNo(searchParams.get('srNo') || '');
-    }
+    // If params missing (e.g. direct URL access), fetch from API
+    if (!searchParams.get('name') && orderId) {
+      const fetchOrder = async () => {
+        try {
+          const res = await axios.get(`${apiConfig.baseURL}/orders/${orderId}`);
+          const data = res.data.order || res.data;
 
-    // Then, try to fetch from API to ensure data is accurate
-    const fetchOrder = async () => {
-      if (!orderId) return;
-      
-      try {
-        const res = await axios.get(`${apiConfig.baseURL}/orders/${orderId}`);
-        const data = res.data.order || res.data;
-        setOrder(data);
-        
-        // Only update if we don't have data from URL params
-        if (!searchParams.get('name') && vehicleIndex !== undefined && data.vehicles) {
-          const index = parseInt(vehicleIndex);
-          const vehicle = data.vehicles[index];
-          if (vehicle) {
-            setName(vehicle.name || '');
-            setColor(vehicle.color || '');
-            setSrNo(vehicle.srNo || '');
+          // Rebuild expanded list to find this slot
+          let idx = 0;
+          const targetIdx = parseInt(expandedIndex);
+          for (const v of (data.vehicles || [])) {
+            const qty = v.quantity ?? 1;
+            for (let q = 0; q < qty; q++) {
+              if (idx === targetIdx) {
+                const colorOverride = data.vehicleColors?.find((vc: any) => vc.expandedIndex === idx);
+                setName(v.name || '');
+                setColor(colorOverride ? colorOverride.color : (v.color || ''));
+                return;
+              }
+              idx++;
+            }
           }
-        }
-      } catch (error) {
-        console.error('Failed to fetch order:', error);
-        // Don't show error if we have data from URL params
-        if (!searchParams.get('name')) {
+        } catch (error) {
+          console.error('Failed to fetch order:', error);
           toast.error('Failed to load vehicle data');
         }
-      }
-    };
-
-    fetchOrder();
-  }, [orderId, vehicleIndex, searchParams]);
+      };
+      fetchOrder();
+    }
+  }, [orderId, expandedIndex, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    if (!orderId || vehicleIndex === undefined) {
-      toast.error('Invalid order or vehicle data. Please go back to order details.');
-      setLoading(false);
+    if (!orderId) {
+      toast.error('Invalid order. Please go back.');
       return;
     }
-
-    console.log('Submitting update:', { orderId, vehicleIndex, color, name, srNo });
+    setLoading(true);
 
     try {
-      // Update order.vehicles[vehicleIndex] - map frontend fields to backend fields
-      const response = await axios.put(`${apiConfig.baseURL}/orders/${orderId}`, {
-        vehiclesUpdate: {
-          index: parseInt(vehicleIndex),
-          color: color,           // maps to exteriorColour
-          name: name,             // maps to vehicleName
-          srNo: srNo              // maps to chassisNo
-        }
+      // Send vehicleColorUpdate with expandedIndex — backend saves this to vehicleColors[]
+      // This only updates THIS specific vehicle copy's color, nothing else changes
+      await axios.put(`${apiConfig.baseURL}/orders/${orderId}`, {
+        vehicleColorUpdate: {
+          expandedIndex: parseInt(expandedIndex),
+          color,
+        },
       });
 
-      console.log('Update response:', response.data);
       toast.success('Vehicle updated successfully!');
-      navigate(-1); // Back to VehicleDetails
+      // Seedha VehicleDetails table pe wapas — edit page history se bhi hata do
+      navigate(`/vehicles/view/${orderId}`, { replace: true });
     } catch (error: any) {
       console.error('Update error:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to update vehicle';
-      toast.error(errorMsg);
+      toast.error(error.response?.data?.message || 'Failed to update vehicle');
     } finally {
       setLoading(false);
     }
@@ -106,43 +91,38 @@ const VehicleEdit = () => {
           <ArrowLeft size={16} />
           Back
         </button>
-        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-          Edit Vehicle
-        </h1>
+        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">Edit Vehicle</h1>
       </div>
 
-      {/* Form Card */}
       <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-50 dark:bg-gray-700 rounded-xl p-8 border border-gray-200 dark:border-gray-600">
         <div className="space-y-6">
+
+          {/* Sr No - read only */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Sr No
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sr No</label>
             <input
               type="text"
               value={srNo}
-              onChange={(e) => setSrNo(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              disabled
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white cursor-not-allowed"
             />
           </div>
 
+          {/* Vehicle Name - read only */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vehicle Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vehicle Name</label>
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              disabled
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white cursor-not-allowed"
             />
           </div>
 
+          {/* Color - editable */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Color <span className="text-sm text-red-500">*</span>
+              Color <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -171,6 +151,7 @@ const VehicleEdit = () => {
               Cancel
             </button>
           </div>
+
         </div>
       </form>
     </div>
@@ -178,4 +159,3 @@ const VehicleEdit = () => {
 };
 
 export default VehicleEdit;
-
