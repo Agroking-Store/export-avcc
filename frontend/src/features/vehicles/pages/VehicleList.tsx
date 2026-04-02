@@ -120,7 +120,7 @@ const VehicleList = () => {
                 <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">ORDER ID</th>
                 <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Client Name</th>
                 <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">No. of Vehicles</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Grand Total (USD)</th>
+                
                 <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Status</th>
                 <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Date</th>
                 <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-right font-medium">Actions</th>
@@ -130,7 +130,7 @@ const VehicleList = () => {
             <tbody>
               {orders.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-gray-500 dark:text-gray-300">
+<td colSpan={6} className="text-center py-10 text-gray-500 dark:text-gray-300">
                     No orders found
                   </td>
                 </tr>
@@ -157,9 +157,7 @@ const VehicleList = () => {
 {order.vehicles?.filter(Boolean).reduce((sum, v) => sum + (v?.quantity ?? 0), 0) || order.vehicles?.length || 0}
                     </td>
 
-                    <td className="px-6 py-4">
-                      ${order.grandTotal?.toLocaleString() || "0"}
-                    </td>
+                    
 
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status || "")}`}>
