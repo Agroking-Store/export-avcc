@@ -13,10 +13,9 @@ import Profile from "../features/auth/pages/Profile";
 import Dashboard from "../features/dashboard/pages/Dashboard";
 
 // Clients
-import ClientsList from "../features/clients/pages/ClientsList";
-import AddClient from "../features/clients/pages/AddClient";
-import EditClient from "../features/clients/pages/EditClient";
-import ClientDetails from "../features/clients/pages/ClientDetails";
+import ClientsModule from "../features/clients/pages/ClientsModule";
+// Orders
+import OrdersModule from "../features/orders/OrdersModule";
 
 // Dealers
 import DealersDashboard from "../features/dealers/pages/DealersDashboard";
@@ -33,12 +32,6 @@ import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 import EditPI from "../features/proforma-invoice/pages/EditPI";
-
-// Orders
-import OrdersList from "../features/orders/OrdersList";
-import AddOrder from "../features/orders/AddOrder";
-import EditOrder from "../features/orders/EditOrder";
-import OrderDetails from "../features/orders/OrderDetails";
 
 // Vehicles
 import Vehicles from "../features/vehicles/Vehicles";
@@ -64,22 +57,15 @@ const AppRoutes: React.FC = () => {
           <Route path="/vehicles/*" element={<VehicleRoutes />} />
 
           {/* Clients */}
-          <Route path="/clients" element={<ClientsList />} />
-          <Route path="/clients/add" element={<AddClient />} />
-          <Route path="/clients/edit/:id" element={<EditClient />} />
-          <Route path="/clients/:id" element={<ClientDetails />} />
+          <Route path="/clients/*" element={<ClientsModule />} />
+          {/* Orders */}
+          <Route path="/orders/*" element={<OrdersModule />} />
 
           {/* Dealers */}
           <Route path="/dealers" element={<Dealers />} />
           <Route path="/dealers/add" element={<AddDealer />} />
           <Route path="/dealers/edit/:id" element={<EditDealer />} />
           <Route path="/dealers/:id" element={<DealerDetails />} />
-
-          {/* Orders */}
-          <Route path="/orders" element={<OrdersList />} />
-          <Route path="/orders/add" element={<AddOrder />} />
-          <Route path="/orders/edit/:id" element={<EditOrder />} />
-          <Route path="/orders/:id" element={<OrderDetails />} />
 
           {/* Proforma Invoice */}
           <Route path="/proforma-invoice" element={<PIList />} />
