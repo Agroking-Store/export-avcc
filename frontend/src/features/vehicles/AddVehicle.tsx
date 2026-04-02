@@ -13,7 +13,6 @@ const AddVehicle = () => {
     color: "",
     engineNo: "",
     chassisNo: "",
-    quantity: "",
     status: "Available" as 'Available' | 'Booked',
   });
 
@@ -36,7 +35,6 @@ const AddVehicle = () => {
 
       const payload = {
         ...form,
-        quantity: parseInt(form.quantity) || 0,
       };
       const response = await vehicleApi.create(payload as Partial<Vehicle>);
       if (response.success) {
@@ -164,26 +162,7 @@ const AddVehicle = () => {
               />
             </div>
 
-            {/* Quantity */}
-            <div>
-              <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-                Quantity *
-              </label>
-              <input
-                type="number"
-                name="quantity"
-                value={form.quantity}
-                onChange={handleChange}
-                min="0"
-                placeholder="Enter quantity"
-                className="w-full border border-gray-300 dark:border-gray-600 
-                           bg-white dark:bg-gray-800 
-                           text-black dark:text-white 
-                           placeholder-gray-400 dark:placeholder-gray-300
-                           rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+
 
             {/* Status */}
             <div>

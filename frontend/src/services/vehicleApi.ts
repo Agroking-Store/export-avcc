@@ -22,8 +22,7 @@ export const vehicleApi = {
 
   bookVehicle: async (data: {
     vehicleId: string;
-    clientId: string;
-    quantity: number;
+    clientId?: string;
     amount: number;
     date: string;
     notes?: string;

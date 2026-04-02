@@ -5,7 +5,6 @@ export interface IVehicle extends Document {
   color: string;
   engineNo: string;
   chassisNo: string;
-  quantity: number;
   status: 'Available' | 'Booked';
   createdAt: Date;
   updatedAt: Date;
@@ -16,12 +15,13 @@ const vehicleSchema = new Schema<IVehicle>({
   color: { type: String, required: true },
   engineNo: { type: String, required: true, unique: true },
   chassisNo: { type: String, required: true, unique: true },
-  quantity: { type: Number, required: true, min: 0 },
   status: { 
     type: String, 
     enum: ['Available', 'Booked'], 
     default: 'Available' 
-  }
+  },
+  bookedBy: { type: Schema.Types.ObjectId, ref: 'Client', default: null }
+
 }, {
   timestamps: true,
   toJSON: { 

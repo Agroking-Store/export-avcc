@@ -112,10 +112,6 @@ const VehicleDetails = () => {
               <p className="font-semibold text-slate-900 dark:text-white">{vehicle.color}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500 dark:text-gray-400">Quantity</p>
-              <p className="font-semibold text-slate-900 dark:text-white">{vehicle.quantity}</p>
-            </div>
-            <div>
               <p className="text-sm text-slate-500 dark:text-gray-400">Booked By</p>
               <p className="font-semibold text-slate-900 dark:text-white">
                 {vehicle.status === 'Booked' 

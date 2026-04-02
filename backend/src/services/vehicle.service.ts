@@ -104,13 +104,9 @@ export const bookVehicleService = async (data: BookVehicleDto): Promise<IVehicle
     
     if (vehicle.status === 'Booked') throw new Error('Vehicle already booked');
     
-    const newQuantity = vehicle.quantity - data.quantity;
-    
     vehicle.status = 'Booked';
-    vehicle.quantity = Math.max(0, newQuantity);
     vehicle.bookedBy = data.clientId;
     vehicle.updatedAt = new Date();
-    // Save date/notes if needed
     
     return await vehicle.save();
   } catch (mongooseError) {

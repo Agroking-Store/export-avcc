@@ -32,6 +32,7 @@ import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
+import EditPI from "../features/proforma-invoice/pages/EditPI";
 
 // Orders
 import OrdersList from "../features/orders/OrdersList";
@@ -40,6 +41,7 @@ import EditOrder from "../features/orders/EditOrder";
 import OrderDetails from "../features/orders/OrderDetails";
 
 // Vehicles
+import Vehicles from "../features/vehicles/Vehicles";
 import VehicleRoutes from "./VehicleRoutes";
 
 const AppRoutes: React.FC = () => {
@@ -67,14 +69,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/clients/edit/:id" element={<EditClient />} />
           <Route path="/clients/:id" element={<ClientDetails />} />
 
-          {/* Dealers — specific routes BEFORE dynamic :id */}
+          {/* Dealers */}
           <Route path="/dealers" element={<Dealers />} />
-          <Route path="/dealers/dashboard" element={<DealersDashboard />} />
           <Route path="/dealers/add" element={<AddDealer />} />
-          <Route path="/dealers/orders/:id" element={<DealerOrderDetails />} />
           <Route path="/dealers/edit/:id" element={<EditDealer />} />
-          <Route path="/dealers/orders" element={<DealerOrdersList />} />
-          <Route path="/dealers/orders/add" element={<DealerOrders />} />
           <Route path="/dealers/:id" element={<DealerDetails />} />
 
           {/* Orders */}
@@ -86,8 +84,7 @@ const AppRoutes: React.FC = () => {
           {/* Proforma Invoice */}
           <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
-          <Route path="/proforma-invoice" element={<PIList />} />
-          <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
+          <Route path="/proforma-invoice/edit/:id" element={<EditPI />} />
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
 
           {/* Coming Soon */}

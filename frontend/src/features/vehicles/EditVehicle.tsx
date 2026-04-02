@@ -13,7 +13,6 @@ const EditVehicle = () => {
     color: "",
     engineNo: "",
     chassisNo: "",
-    quantity: 0,
     status: "Available" as 'Available' | 'Booked',
   });
 
@@ -35,7 +34,6 @@ const EditVehicle = () => {
         color: vehicleData.color || "",
         engineNo: vehicleData.engineNo || "",
         chassisNo: vehicleData.chassisNo || "",
-        quantity: vehicleData.quantity || 0,
         status: vehicleData.status || "Available",
       });
     } catch (error: any) {
@@ -48,10 +46,9 @@ const EditVehicle = () => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const value = e.target.name === 'quantity' ? Number(e.target.value) : e.target.value;
     setForm({
       ...form,
-      [e.target.name]: value,
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -191,26 +188,7 @@ const EditVehicle = () => {
               />
             </div>
 
-            {/* Quantity */}
-            <div>
-              <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-                Quantity *
-              </label>
-              <input
-                type="number"
-                name="quantity"
-                value={form.quantity}
-                onChange={handleChange}
-                min="0"
-                placeholder="Enter quantity"
-                className="w-full border border-gray-300 dark:border-gray-600 
-                           bg-white dark:bg-gray-800 
-                           text-black dark:text-white 
-                           placeholder-gray-400 dark:placeholder-gray-300
-                           rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500"
-                required
-              />
-            </div>
+
 
             {/* Status */}
             <div>

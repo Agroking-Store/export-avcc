@@ -135,7 +135,6 @@ const VehicleList: React.FC = () => {
                 <th className="px-6 py-4 text-left font-semibold">Color</th>
                 <th className="px-6 py-4 text-left font-semibold">Engine No</th>
                 <th className="px-6 py-4 text-left font-semibold">Chassis No</th>
-                <th className="px-6 py-4 text-center font-semibold">Quantity</th>
                 <th className="px-6 py-4 text-left font-semibold">Status</th>
                 <th className="px-6 py-4 text-right font-semibold">Actions</th>
               </tr>
@@ -158,9 +157,6 @@ const VehicleList: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 font-mono text-sm text-slate-900 dark:text-white">{vehicle.engineNo}</td>
                     <td className="px-6 py-4 font-mono text-sm text-slate-900 dark:text-white">{vehicle.chassisNo}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-bold text-slate-900 dark:text-white">{vehicle.quantity}</span>
-                    </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(vehicle.status)}`}>
                         {vehicle.status}

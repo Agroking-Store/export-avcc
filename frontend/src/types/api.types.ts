@@ -21,7 +21,6 @@ export interface Vehicle {
   color: string;
   engineNo: string;
   chassisNo: string;
-  quantity: number;
   model?: string;
   make?: string;
   year?: number;
