@@ -1,20 +1,19 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiConfig } from "../../../config/apiConfig";
-import {
-  ArrowLeft,
-  Landmark,
-  AlertCircle,
-  ChevronDown,
-  Eye,
-} from "lucide-react";
+import { ArrowLeft, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
-import { SearchableCombobox } from "@/components/ui/searchable-combobox";
-import { format } from "date-fns";
-import { Switch } from "@/components/ui/switch";
+import { piApi } from "../components/piApi";
+import {
+  defaultAddress,
+  defaultPIForm,
+  getRate,
+  getAmount,
+  validatePIForm,
+  numberToWords,
+} from "../components/piValidation";
+import { PIForm, VehicleLineItem } from "../components/pi.types";
+import PIFormFields from "../components/PIFormFields"; // Import the new component
 
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -23,60 +22,6 @@ const useDebounce = <T,>(value: T, delay: number): T => {
     return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
-};
-
-type VehicleLineItem = {
-  vehicle_id: string;
-  model: string;
-  color: string; // Used for Exterior Color
-  engineNo: string;
-  chassisNo: string;
-  quantity: number;
-  fob: number | "";
-  freight: number | "";
-  hsn: string;
-  yom: string;
-  fuelType: string;
-  countryOfOrigin: string;
-  engineCapacity: string;
-  selected?: boolean; // New property to track checkbox status
-};
-
-type AddressDetails = {
-  houseBuilding: string;
-  streetArea: string;
-  cityTown: string;
-  state: string;
-  pincode: string;
-  country: string;
-};
-
-type PIForm = {
-  piNumber: string;
-  client_id: string;
-  dealer_id: string;
-  clientDetails: {
-    name: string;
-    companyName: string;
-    address: AddressDetails;
-  };
-  dealerDetails: {
-    name: string;
-    gstin: string;
-    address: AddressDetails;
-  };
-  paymentTerms: string;
-  validityDate: string;
-  termsOfDelivery: string;
-  incoterm: string;
-  portOfLoading: string;
-  portOfDischarge: string;
-  bankDetails: {
-    bankName: string;
-    accountNo: string;
-    branchIfsc: string;
-  };
-  vehicleDetails: VehicleLineItem[];
 };
 
 const CreatePI = () => {
@@ -99,66 +44,15 @@ const CreatePI = () => {
   const [clientSearch, setClientSearch] = useState("");
   const [dealerSearch, setDealerSearch] = useState("");
 
-  const defaultAddress: AddressDetails = {
-    houseBuilding: "",
-    streetArea: "",
-    cityTown: "",
-    state: "",
-    pincode: "",
-    country: "",
-  };
-
-  const [form, setForm] = useState<PIForm>({
-    piNumber: "",
-    client_id: "",
-    dealer_id: "",
-    clientDetails: {
-      name: "",
-      companyName: "",
-      address: { ...defaultAddress },
-    },
-    dealerDetails: {
-      name: "",
-      gstin: "",
-      address: { ...defaultAddress },
-    },
-    paymentTerms: "",
-    validityDate: "",
-    termsOfDelivery: "",
-    incoterm: "",
-    portOfLoading: "",
-    portOfDischarge: "",
-    bankDetails: { bankName: "", accountNo: "", branchIfsc: "" },
-    vehicleDetails: [],
-  });
-
+  const [form, setForm] = useState<PIForm>({ ...defaultPIForm });
   const debouncedClientSearch = useDebounce(clientSearch, 500);
   const debouncedDealerSearch = useDebounce(dealerSearch, 500);
   const debouncedOrderSearch = useDebounce(orderSearch, 500);
 
-  const getAuthToken = () => {
-    let token =
-      localStorage.getItem("token") || localStorage.getItem("accessToken");
-    if (!token && localStorage.getItem("user")) {
-      try {
-        const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-        token = userObj.token || userObj.accessToken;
-      } catch (e) {}
-    }
-    if (token && token.startsWith('"') && token.endsWith('"')) {
-      token = token.slice(1, -1);
-    }
-    return token;
-  };
-
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get(`${apiConfig.baseURL}/clients`, {
-          params: { limit: 10, search: debouncedClientSearch },
-        });
-        console.log("Clients Response:", res.data);
-        const data = res.data?.data || res.data;
+        const data = await piApi.getClients(debouncedClientSearch);
         setClients(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to fetch clients:", error);
@@ -166,11 +60,7 @@ const CreatePI = () => {
     };
     const fetchDealers = async () => {
       try {
-        const res = await axios.get(`${apiConfig.baseURL}/dealers`, {
-          params: { limit: 10, search: debouncedDealerSearch },
-        });
-        console.log("Dealers Response:", res.data);
-        const data = res.data?.data || res.data;
+        const data = await piApi.getDealers(debouncedDealerSearch);
         setDealers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to fetch dealers:", error);
@@ -184,10 +74,7 @@ const CreatePI = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(`${apiConfig.baseURL}/orders`, {
-          params: { limit: 20, search: debouncedOrderSearch },
-        });
-        setOrders(res.data.data || res.data || []);
+        setOrders(await piApi.getOrders(debouncedOrderSearch));
       } catch (err) {
         console.error("Failed to fetch orders:", err);
       }
@@ -200,10 +87,7 @@ const CreatePI = () => {
     if (!id) return;
     const fetchPI = async () => {
       try {
-        const res = await axios.get(
-          `${apiConfig.baseURL}/proforma-invoices/${id}`
-        );
-        const pi = res.data;
+        const pi = await piApi.getPIById(id);
         setForm({
           piNumber: pi.piNumber || "",
           client_id: pi.client_id?._id || pi.client_id || "",
@@ -322,8 +206,7 @@ const CreatePI = () => {
   const handleSelectOrder = async (orderId: string) => {
     if (!orderId) return;
     try {
-      const res = await axios.get(`${apiConfig.baseURL}/orders/${orderId}`);
-      const orderData = res.data;
+      const orderData = await piApi.getOrderById(orderId);
       setSelectedOrder(orderData);
 
       // Map all vehicles from order
@@ -352,8 +235,7 @@ const CreatePI = () => {
           handleDealerSelect(dId);
         } else {
           try {
-            const dRes = await axios.get(`${apiConfig.baseURL}/dealers/${dId}`);
-            const d = dRes.data.data;
+            const d = await piApi.getDealerById(dId);
             setForm((prev) => ({
               ...prev,
               dealer_id: dId,
@@ -397,106 +279,19 @@ const CreatePI = () => {
     setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-  const getRate = (v: VehicleLineItem) =>
-    (Number(v.fob) || 0) + (Number(v.freight) || 0);
-  const getAmount = (v: VehicleLineItem) =>
-    getRate(v) * (Number(v.quantity) || 0);
-
   const totalAmount = form.vehicleDetails.reduce(
     (sum, v) => (v.selected !== false ? sum + getAmount(v) : sum),
     0
   );
 
-  const numberToWords = (num: number): string => {
-    if (num === 0) return "Zero";
-    const a = [
-      "",
-      "One",
-      "Two",
-      "Three",
-      "Four",
-      "Five",
-      "Six",
-      "Seven",
-      "Eight",
-      "Nine",
-      "Ten",
-      "Eleven",
-      "Twelve",
-      "Thirteen",
-      "Fourteen",
-      "Fifteen",
-      "Sixteen",
-      "Seventeen",
-      "Eighteen",
-      "Nineteen",
-    ];
-    const b = [
-      "",
-      "",
-      "Twenty",
-      "Thirty",
-      "Forty",
-      "Fifty",
-      "Sixty",
-      "Seventy",
-      "Eighty",
-      "Ninety",
-    ];
-    const convert = (n: number): string => {
-      if (n < 20) return a[n];
-      if (n < 100)
-        return b[Math.floor(n / 10)] + (n % 10 !== 0 ? " " + a[n % 10] : "");
-      if (n < 1000)
-        return (
-          a[Math.floor(n / 100)] +
-          " Hundred" +
-          (n % 100 !== 0 ? " " + convert(n % 100) : "")
-        );
-      if (n < 1000000)
-        return (
-          convert(Math.floor(n / 1000)) +
-          " Thousand" +
-          (n % 1000 !== 0 ? " " + convert(n % 1000) : "")
-        );
-      if (n < 1000000000)
-        return (
-          convert(Math.floor(n / 1000000)) +
-          " Million" +
-          (n % 1000000 !== 0 ? " " + convert(n % 1000000) : "")
-        );
-      return "";
-    };
-    return "USD " + convert(Math.floor(num)) + " Only";
-  };
-
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!form.client_id) newErrors.client_id = "Client is required";
-
-    const includedVehicles = form.vehicleDetails.filter(
-      (v) => v.selected !== false
-    );
-    if (includedVehicles.length === 0) {
-      toast.error(
-        "At least one vehicle must be included. Please import an order."
-      );
+    const { isValid, errors: newErrors, errorMessage } = validatePIForm(form);
+    if (!isValid && errorMessage) {
+      toast.error(errorMessage);
       return false;
     }
-
-    includedVehicles.forEach((v) => {
-      // Find original index for error key
-      const index = form.vehicleDetails.indexOf(v);
-
-      if (!v.model.trim()) newErrors[`v_${index}_model`] = "Model is required";
-      if (v.quantity < 1)
-        newErrors[`v_${index}_quantity`] = "Quantity must be at least 1";
-      if (getRate(v) <= 0) newErrors[`v_${index}_rate`] = "Rate must be > 0";
-    });
-
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   const handleSubmit = async (e: any) => {
@@ -528,19 +323,13 @@ const CreatePI = () => {
     try {
       setLoading(true);
       if (id) {
-        await axios.put(
-          `${apiConfig.baseURL}/proforma-invoices/${id}`,
-          payload
-        );
+        await piApi.updatePI(id, payload);
         toast.success("PI updated successfully ✅");
         navigate(`/proforma-invoice/${id}`);
       } else {
-        const res = await axios.post(
-          `${apiConfig.baseURL}/proforma-invoices`,
-          payload
-        );
+        const res = await piApi.createPI(payload);
         toast.success("PI created successfully ✅");
-        navigate(`/proforma-invoice/${res.data._id || res.data.id}`);
+        navigate(`/proforma-invoice/${res._id || res.id}`);
       }
     } catch (err) {
       console.error("Error submitting PI", err);
@@ -557,15 +346,7 @@ const CreatePI = () => {
     }
     try {
       setPreviewLoading(true);
-      const token = getAuthToken();
-
-      const res = await axios.get(
-        `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
-        {
-          responseType: "blob",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      const res = await piApi.previewPDF(id);
 
       const url = window.URL.createObjectURL(
         new Blob([res.data], { type: "application/pdf" })
@@ -597,20 +378,8 @@ const CreatePI = () => {
     };
   });
 
-  const inputClass =
-    "w-full h-12 px-4 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-base shadow-sm";
-  const getInputClass = (errKey?: string) =>
-    `w-full h-12 px-4 bg-white border ${
-      errKey && errors[errKey]
-        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-        : "border-gray-300 focus:border-blue-600 focus:ring-blue-600"
-    } rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 transition-all text-base shadow-sm`;
-  const labelClass = "block text-sm font-medium text-gray-700 mb-2";
-  const sectionTitleClass = "text-xl font-medium text-gray-900 mb-6";
-  const divider = <hr className="border-gray-200 my-10" />;
-
   return (
-    <div className="min-h-screen bg-white text-gray-900 pb-24">
+    <div className="bg-white text-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <form onSubmit={handleSubmit}>
           {/* HEADER */}
@@ -654,867 +423,28 @@ const CreatePI = () => {
             </div>
           </div>
 
-          {/* LINK ORDER */}
-          <div>
-            <h3 className={sectionTitleClass}>Link Dealer Order</h3>
-            <div className="max-w-md">
-              <div>
-                <label className={labelClass}>
-                  Select Order (Auto-fills Dealer & Vehicles)
-                </label>
-                <SearchableCombobox
-                  data={ordersWithDisplay}
-                  value={selectedOrder?._id || ""}
-                  onValueChange={handleSelectOrder}
-                  onSearchChange={setOrderSearch}
-                  displayField="displayName"
-                  valueField="_id"
-                  placeholder="Search and select an order..."
-                  searchPlaceholder="Search by Order ID..."
-                  emptyMessage="No orders found."
-                  renderItem={(item, index) => (
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="w-5 text-xs text-gray-400 font-mono">
-                          {index + 1}.
-                        </span>
-                        <span className="font-medium truncate">
-                          {item.orderId} - {item.dealerName || "Unknown"}
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                        {item.date
-                          ? new Date(item.date).toLocaleDateString()
-                          : "-"}
-                      </span>
-                    </div>
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-
-          {divider}
-
-          {/* DOCUMENT DETAILS */}
-          <div>
-            <h3 className={sectionTitleClass}>Document Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className={labelClass}>Voucher No (PI Number)</label>
-                <input
-                  value={form.piNumber}
-                  onChange={(e) =>
-                    setForm({ ...form, piNumber: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="e.g. PI-2026-001"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Validity Date</label>
-                <DatePicker
-                  date={
-                    form.validityDate
-                      ? new Date(form.validityDate + "T00:00:00")
-                      : undefined
-                  }
-                  setDate={(date) =>
-                    setForm({
-                      ...form,
-                      validityDate: date ? format(date, "yyyy-MM-dd") : "",
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div>
-                <label className={labelClass}>Payment Terms</label>
-                <input
-                  value={form.paymentTerms}
-                  onChange={(e) =>
-                    setForm({ ...form, paymentTerms: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="e.g. 100% Advance"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Terms of Delivery</label>
-                <input
-                  value={form.termsOfDelivery}
-                  onChange={(e) =>
-                    setForm({ ...form, termsOfDelivery: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="e.g. CIF, Ex-Works"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Incoterm</label>
-                <input
-                  value={form.incoterm}
-                  onChange={(e) =>
-                    setForm({ ...form, incoterm: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="e.g. CIF"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Port of Loading</label>
-                <input
-                  value={form.portOfLoading}
-                  onChange={(e) =>
-                    setForm({ ...form, portOfLoading: e.target.value })
-                  }
-                  className={inputClass}
-                  placeholder="e.g. Mundra, India"
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Port of Discharge</label>
-                <input
-                  value={form.portOfDischarge}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      portOfDischarge: e.target.value,
-                    })
-                  }
-                  className={inputClass}
-                  placeholder="e.g. Jebel Ali, UAE"
-                />
-              </div>
-            </div>
-          </div>
-
-          {divider}
-
-          {/* BUYER / CLIENT */}
-          <div>
-            <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className={labelClass}>Buyer (Client) *</label>
-                <SearchableCombobox
-                  data={clients}
-                  value={form.client_id}
-                  onValueChange={handleClientSelect}
-                  onSearchChange={setClientSearch}
-                  displayField="name"
-                  valueField="_id"
-                  placeholder="Select a client..."
-                  searchPlaceholder="Search clients..."
-                  emptyMessage="No clients found."
-                  error={!!errors.client_id}
-                  renderItem={(item, index) => (
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="w-5 text-xs text-gray-400 font-mono">
-                          {index + 1}.
-                        </span>
-                        <span className="font-medium truncate">
-                          {item.name}
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                        {item.phone || "-"}
-                      </span>
-                    </div>
-                  )}
-                />
-                {errors.client_id && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> {errors.client_id}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className={labelClass}>Company Name</label>
-                <input
-                  value={form.clientDetails.companyName}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        companyName: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Contact Name</label>
-                <input
-                  value={form.clientDetails.name}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        name: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>House/Building</label>
-                <input
-                  value={form.clientDetails.address.houseBuilding}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        address: {
-                          ...form.clientDetails.address,
-                          houseBuilding: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Street/Locality/Area</label>
-                <input
-                  value={form.clientDetails.address.streetArea}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        address: {
-                          ...form.clientDetails.address,
-                          streetArea: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>City/Town</label>
-                <input
-                  value={form.clientDetails.address.cityTown}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        address: {
-                          ...form.clientDetails.address,
-                          cityTown: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>State</label>
-                <input
-                  value={form.clientDetails.address.state}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        address: {
-                          ...form.clientDetails.address,
-                          state: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Pincode / ZIP</label>
-                <input
-                  value={form.clientDetails.address.pincode}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        address: {
-                          ...form.clientDetails.address,
-                          pincode: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Country</label>
-                <input
-                  value={form.clientDetails.address.country}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      clientDetails: {
-                        ...form.clientDetails,
-                        address: {
-                          ...form.clientDetails.address,
-                          country: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-
-          {divider}
-
-          {/* EXPORTER / COMPANY DATA */}
-          <div>
-            <h3 className={sectionTitleClass}>Exporter / Company Data</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className={labelClass}>Exporter (Dealer)</label>
-                <SearchableCombobox
-                  data={dealers}
-                  value={form.dealer_id}
-                  onValueChange={handleDealerSelect}
-                  onSearchChange={setDealerSearch}
-                  displayField="name"
-                  valueField="_id"
-                  placeholder="Select a dealer..."
-                  searchPlaceholder="Search dealers..."
-                  emptyMessage="No dealers found."
-                  renderItem={(item, index) => (
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="w-5 text-xs text-gray-400 font-mono">
-                          {index + 1}.
-                        </span>
-                        <span className="font-medium truncate">
-                          {item.name}
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                        {item.contact || "-"}
-                      </span>
-                    </div>
-                  )}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Company Name</label>
-                <input
-                  value={form.dealerDetails.name}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        name: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>GSTIN</label>
-                <input
-                  value={form.dealerDetails.gstin}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        gstin: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>House/Building</label>
-                <input
-                  value={form.dealerDetails.address.houseBuilding}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        address: {
-                          ...form.dealerDetails.address,
-                          houseBuilding: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Street/Locality/Area</label>
-                <input
-                  value={form.dealerDetails.address.streetArea}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        address: {
-                          ...form.dealerDetails.address,
-                          streetArea: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>City/Town</label>
-                <input
-                  value={form.dealerDetails.address.cityTown}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        address: {
-                          ...form.dealerDetails.address,
-                          cityTown: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>State</label>
-                <input
-                  value={form.dealerDetails.address.state}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        address: {
-                          ...form.dealerDetails.address,
-                          state: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Pincode / ZIP</label>
-                <input
-                  value={form.dealerDetails.address.pincode}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        address: {
-                          ...form.dealerDetails.address,
-                          pincode: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Country</label>
-                <input
-                  value={form.dealerDetails.address.country}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      dealerDetails: {
-                        ...form.dealerDetails,
-                        address: {
-                          ...form.dealerDetails.address,
-                          country: e.target.value,
-                        },
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Landmark className="h-5 w-5 text-gray-500" />
-                <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                  Bank Details (Optional)
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <input
-                  placeholder="Bank Name"
-                  value={form.bankDetails.bankName}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      bankDetails: {
-                        ...form.bankDetails,
-                        bankName: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-                <input
-                  placeholder="Account No"
-                  value={form.bankDetails.accountNo}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      bankDetails: {
-                        ...form.bankDetails,
-                        accountNo: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-                <input
-                  placeholder="Branch / IFSC"
-                  value={form.bankDetails.branchIfsc}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      bankDetails: {
-                        ...form.bankDetails,
-                        branchIfsc: e.target.value,
-                      },
-                    })
-                  }
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-
-          {divider}
-
-          {/* VEHICLE LINE ITEMS */}
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className={sectionTitleClass + " mb-0!"}>
-                Vehicle Line Items
-              </h3>
-            </div>
-
-            <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
-              {/* Table Header */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
-                <div className="col-span-4 flex items-center gap-3">
-                  <Switch
-                    checked={
-                      form.vehicleDetails.length > 0 &&
-                      form.vehicleDetails.every((v) => v.selected !== false)
-                    }
-                    onCheckedChange={(checked) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        vehicleDetails: prev.vehicleDetails.map((v) => ({
-                          ...v,
-                          selected: !!checked,
-                        })),
-                      }));
-                    }}
-                    className="scale-125 ml-1 data-[state=checked]:bg-blue-600"
-                  />
-                  Model / Description
-                </div>
-                <div className="col-span-1 text-center">Qty</div>
-                <div className="col-span-2 text-right">FOB ($)</div>
-                <div className="col-span-1 text-right">Freight ($)</div>
-                <div className="col-span-1 text-right">Rate ($)</div>
-                <div className="col-span-2 text-right">Amount ($)</div>
-                <div className="col-span-1 text-right"></div>
-              </div>
-
-              {/* Rows */}
-              {form.vehicleDetails.map((v, index) => (
-                <div
-                  key={index}
-                  className="border-b border-gray-200 last:border-0"
-                >
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 py-4 items-center">
-                    <div className="col-span-1 lg:col-span-4 flex gap-3 items-start">
-                      <div className="pt-3">
-                        <Switch
-                          checked={v.selected !== false}
-                          onCheckedChange={(checked) =>
-                            handleVehicleChange(index, "selected", !!checked)
-                          }
-                          className="scale-125 ml-1 data-[state=checked]:bg-blue-600"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <input
-                          placeholder="Vehicle Model"
-                          value={v.model}
-                          onChange={(e) =>
-                            handleVehicleChange(index, "model", e.target.value)
-                          }
-                          className={getInputClass(`v_${index}_model`)}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-span-1 lg:col-span-1">
-                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
-                        Qty
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={v.quantity}
-                        onChange={(e) =>
-                          handleVehicleChange(
-                            index,
-                            "quantity",
-                            Number(e.target.value)
-                          )
-                        }
-                        className={`${getInputClass(
-                          `v_${index}_quantity`
-                        )} text-center`}
-                      />
-                    </div>
-                    <div className="col-span-1 lg:col-span-2">
-                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
-                        FOB ($)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={v.fob}
-                        onChange={(e) =>
-                          handleVehicleChange(
-                            index,
-                            "fob",
-                            e.target.value ? Number(e.target.value) : ""
-                          )
-                        }
-                        className={`${inputClass} text-right font-mono`}
-                      />
-                    </div>
-                    <div className="col-span-1 lg:col-span-1">
-                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
-                        Freight ($)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={v.freight}
-                        onChange={(e) =>
-                          handleVehicleChange(
-                            index,
-                            "freight",
-                            e.target.value ? Number(e.target.value) : ""
-                          )
-                        }
-                        className={`${inputClass} text-right font-mono`}
-                      />
-                    </div>
-                    <div className="col-span-1 lg:col-span-1 text-right font-mono text-gray-600">
-                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
-                        Rate ($)
-                      </label>
-                      <span
-                        className={
-                          errors[`v_${index}_rate`] ? "text-red-500" : ""
-                        }
-                      >
-                        ${getRate(v).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="col-span-1 lg:col-span-2 text-right font-mono font-medium text-gray-900">
-                      <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
-                        Amount ($)
-                      </label>
-                      ${getAmount(v).toLocaleString()}
-                    </div>
-                    <div className="col-span-1 lg:col-span-1 flex justify-end items-center gap-2">
-                      <Button
-                        type="button"
-                        onClick={() => toggleRow(index)}
-                        variant="ghost"
-                        size="icon"
-                        title="Toggle Advanced Fields"
-                      >
-                        <ChevronDown
-                          className={`w-5 h-5 transition-transform ${
-                            expandedRows[index] ? "rotate-180" : ""
-                          }`}
-                        />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Expanded Fields */}
-                  {expandedRows[index] && (
-                    <div className="px-6 py-6 bg-gray-50 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div>
-                        <label className={labelClass}>Exterior Color</label>
-                        <input
-                          value={v.color}
-                          onChange={(e) =>
-                            handleVehicleChange(index, "color", e.target.value)
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Engine No</label>
-                        <input
-                          value={v.engineNo}
-                          onChange={(e) =>
-                            handleVehicleChange(
-                              index,
-                              "engineNo",
-                              e.target.value
-                            )
-                          }
-                          className={`${inputClass} font-mono`}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Chassis No (VIN)</label>
-                        <input
-                          value={v.chassisNo}
-                          onChange={(e) =>
-                            handleVehicleChange(
-                              index,
-                              "chassisNo",
-                              e.target.value
-                            )
-                          }
-                          className={`${inputClass} font-mono`}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>
-                          Year of Manufacture
-                        </label>
-                        <input
-                          value={v.yom}
-                          onChange={(e) =>
-                            handleVehicleChange(index, "yom", e.target.value)
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>HSN / SAC</label>
-                        <input
-                          value={v.hsn}
-                          onChange={(e) =>
-                            handleVehicleChange(index, "hsn", e.target.value)
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Fuel Type</label>
-                        <input
-                          value={v.fuelType}
-                          onChange={(e) =>
-                            handleVehicleChange(
-                              index,
-                              "fuelType",
-                              e.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Country of Origin</label>
-                        <input
-                          value={v.countryOfOrigin}
-                          onChange={(e) =>
-                            handleVehicleChange(
-                              index,
-                              "countryOfOrigin",
-                              e.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Engine Capacity</label>
-                        <input
-                          value={v.engineCapacity}
-                          onChange={(e) =>
-                            handleVehicleChange(
-                              index,
-                              "engineCapacity",
-                              e.target.value
-                            )
-                          }
-                          className={inputClass}
-                          placeholder="e.g. 2000cc"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {divider}
-
-          {/* SUMMARY */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
-            <div className="w-full sm:w-1/2">
-              <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
-                Amount Chargeable (in words)
-              </p>
-              <p className="text-base font-medium text-gray-900">
-                {numberToWords(totalAmount)}
-              </p>
-            </div>
-            <div className="w-full sm:w-auto sm:text-right">
-              <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
-                Grand Total
-              </p>
-              <p className="text-4xl font-light text-gray-900 tracking-tight font-mono">
-                $
-                {totalAmount.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
-            </div>
-          </div>
+          <PIFormFields
+            form={form}
+            setForm={setForm}
+            errors={errors}
+            clients={clients}
+            dealers={dealers}
+            ordersWithDisplay={ordersWithDisplay}
+            selectedOrder={selectedOrder}
+            setClientSearch={setClientSearch}
+            setDealerSearch={setDealerSearch}
+            setOrderSearch={setOrderSearch}
+            handleSelectOrder={handleSelectOrder}
+            handleVehicleChange={handleVehicleChange}
+            handleClientSelect={handleClientSelect}
+            handleDealerSelect={handleDealerSelect}
+            expandedRows={expandedRows}
+            toggleRow={toggleRow}
+            totalAmount={totalAmount}
+            numberToWords={numberToWords}
+            getRate={getRate}
+            getAmount={getAmount}
+          />
         </form>
       </div>
     </div>
