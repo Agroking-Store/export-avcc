@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Search, Filter, UserPlus } from "lucide-react";
+import { Eye, Pencil, Search, Filter, UserPlus } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -43,28 +43,14 @@ const ClientsList = () => {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, [search, currentPage]);
-
-  useEffect(() => {
-  if (location.state?.success) {
-    toast.success(location.state.success);
-  }
-}, [location.state]);
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this client?")) return;
-  
-    try {
-      await axios.delete(`http://localhost:5000/api/v1/clients/${id}`);
-  
-      toast.success("Client deleted successfully ✅");
-  
       fetchClients();
-    } catch {
-      toast.error("Delete failed");
+    }, [search, currentPage]);
+  
+    useEffect(() => {
+    if (location.state?.success) {
+      toast.success(location.state.success);
     }
-  };
+  }, [location.state]);
 
   return (
     <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen px-2 py-2 rounded">
@@ -126,13 +112,13 @@ const ClientsList = () => {
             
             <thead className="bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-200 text-xs uppercase">
               <tr>
-                <th className="px-6 py-3 text-left">Client ID</th>
-                <th className="px-6 py-3 text-left">Name</th>
-                <th className="px-6 py-3 text-left">Country</th>
-                <th className="px-6 py-3 text-left">Contact</th>
+                <th className="px-6 py-3 text-center">Client ID</th>
+                <th className="px-6 py-3 text-center">Name</th>
+                <th className="px-6 py-3 text-center">Country</th>
+                <th className="px-6 py-3 text-center">Contact</th>
                 <th className="px-6 py-3 text-center">Orders</th>
-                <th className="px-6 py-3 text-center">Last Txn</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-6 py-3 text-center">Last Order</th>
+                <th className="px-6 py-3 text-center">Actions</th>
               </tr>
             </thead>
 
@@ -147,21 +133,21 @@ const ClientsList = () => {
                 clients.map((client) => (
                   <tr key={client._id} className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700">
                     
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <span className="bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-200 px-2 py-1 rounded text-xs">
                         {client.clientCode || client._id.slice(-4)}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <div className="font-medium">{client.name}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-300">
                         {client.companyName || "-"}
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">{client.country}</td>
-                    <td className="px-6 py-4">{client.phone}</td>
+                    <td className="px-6 py-4 text-center">{client.country}</td>
+                    <td className="px-6 py-4 text-center">{client.phone}</td>
 
                     <td className="px-6 py-4 text-center">
                       {client.totalOrders || 0}
@@ -170,12 +156,12 @@ const ClientsList = () => {
                     <td className="px-6 py-4 text-center">
                       {client.lastTransaction
                         ? new Date(client.lastTransaction).toLocaleDateString()
-                        : "-"}
+                        : "No Orders"}
                     </td>
 
                     {/* ACTIONS */}
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center gap-2">
 
                         <button
                           onClick={() => navigate(`/clients/${client._id}`)}
@@ -189,13 +175,6 @@ const ClientsList = () => {
                           className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
                         >
                           <Pencil size={18} />
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete(client._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
-                        >
-                          <Trash2 size={18} />
                         </button>
 
                       </div>
@@ -222,7 +201,13 @@ const ClientsList = () => {
               className="px-3 py-1 border rounded 
                          bg-white dark:bg-gray-700 
                          text-black dark:text-white 
-                         border-slate-300 dark:border-gray-600"
+                         border-slate-300 dark:border-gray-600
+                         
+                         hover:bg-blue-500 hover:text-white
+                         dark:hover:bg-blue-700 dark:hover:text-white
+                         
+                         transition-all duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Prev
             </button>
@@ -233,7 +218,13 @@ const ClientsList = () => {
               className="px-3 py-1 border rounded 
                          bg-white dark:bg-gray-700 
                          text-black dark:text-white 
-                         border-slate-300 dark:border-gray-600"
+                         border-slate-300 dark:border-gray-600
+                         
+                         hover:bg-blue-500 hover:text-white
+                         dark:hover:bg-blue-700 dark:hover:text-white
+                         
+                         transition-all duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Search, Filter, Plus } from "lucide-react";
+import { Eye, Pencil, Search, Filter, Plus } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
@@ -15,7 +15,6 @@ interface Order {
   clientId?: string;
   clientCountry?: string;
   vehicles?: any[];
-  grandTotal?: number;
   status?: string;
   date?: string;
   createdAt?: string;
@@ -72,20 +71,6 @@ const OrdersList = () => {
     }
   }, [location.state]);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this order?")) return;
-    
-    try {
-      await axios.delete(`http://localhost:5000/api/v1/orders/${id}`);
-    
-      toast.success("Order deleted successfully 🗑️");
-    
-      fetchOrders();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Delete failed");
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Draft": return "bg-gray-100 text-gray-800";
@@ -94,8 +79,6 @@ const OrdersList = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
-
-  
 
   return (
     <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen p-2 rounded-xl">
@@ -156,33 +139,32 @@ const OrdersList = () => {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-200 text-xs uppercase">
               <tr>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">ORDER ID</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Client Name</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">No. of Vehicles</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Grand Total (USD)</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Status</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-left font-medium">Date</th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-right font-medium">Actions</th>
+                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">ORDER ID</th>
+                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">Client Name</th>
+                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">No. of Vehicles</th>
+                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">Status</th>
+                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">Date</th>
+                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">Actions</th>
               </tr>
             </thead>
 
             <tbody>
               {orders.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-gray-500 dark:text-gray-300">
+                  <td colSpan={6} className="text-center py-10 text-gray-500 dark:text-gray-300">
                     No orders found
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
                   <tr key={order._id} className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <span className="bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-medium">
                         {order.orderId}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <div className="font-medium text-gray-800 dark:text-white">
                         {order.clientName}
                       </div>
@@ -192,21 +174,19 @@ const OrdersList = () => {
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">
-{order.vehicles?.filter(Boolean).reduce((sum, v) => sum + (v?.quantity ?? 0), 0) || order.vehicles?.length || 0}
+                    <td className="px-6 py-4 text-center">
+                      {order.vehicles
+                        ? order.vehicles.reduce((sum, v) => sum + v.quantity, 0)
+                        : 0}
                     </td>
 
-                    <td className="px-6 py-4">
-                      ${order.grandTotal?.toLocaleString() || "0"}
-                    </td>
-
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status || "")}`}>
                         {order.status}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       {order.date
                         ? new Date(order.date).toLocaleDateString()
                         : order.createdAt
@@ -214,8 +194,8 @@ const OrdersList = () => {
                         : "-"}
                     </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center gap-2">
                         <button
                           onClick={() => navigate(`/orders/${order._id}`)}
                           className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
@@ -230,12 +210,6 @@ const OrdersList = () => {
                           <Pencil size={18} />
                         </button>
 
-                        <button
-                          onClick={() => handleDelete(order._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                        >
-                          <Trash2 size={18} />
-                        </button>
                       </div>
                     </td>
                   </tr>

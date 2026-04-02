@@ -1,17 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IVehicleItem {
-  hsnCode: string;
-  vehicleName: string;
-  exteriorColour: string;
-  chassisNo: string;
-  engineNo: string;
-  engineCapacity: string;
-  fuelType: string;
-  countryOfOrigin: string;
-  yom: number;
-  fobAmount: number;
-  freight: number;
+  name: string;
+  color: string;
+  quantity: number;
 }
 
 export interface IOrder extends Document {
@@ -21,25 +13,15 @@ export interface IOrder extends Document {
   clientId?: mongoose.Types.ObjectId;
   dealerId?: mongoose.Types.ObjectId;
   vehicles: IVehicleItem[];
-  grandTotal: number;
   status: "Draft" | "Confirmed";
   createdAt: Date;
   updatedAt: Date;
 }
 
 const vehicleItemSchema = new Schema<IVehicleItem>({
-  hsnCode: { type: String, required: true },
-  vehicleName: { type: String, required: true },
-  exteriorColour: { type: String, required: true },
-  chassisNo: { type: String, required: true },
-  engineNo: { type: String, required: true },
-  engineCapacity: { type: String, required: true },
-  fuelType: { type: String, required: true },
-  countryOfOrigin: { type: String, required: true },
-  yom: { type: Number, required: true },
-  fobAmount: { type: Number, required: true },
-  freight: { type: Number, required: true },
-  quantity: { type: Number, default: 1 },
+  name: { type: String, required: true },
+  color: { type: String, required: true },
+  quantity: { type: Number, required: true },
 });
 
 const orderSchema = new Schema<IOrder>(
@@ -50,7 +32,6 @@ const orderSchema = new Schema<IOrder>(
     clientId: { type: Schema.Types.ObjectId, ref: "Client", default: null },
     dealerId: { type: Schema.Types.ObjectId, ref: "Dealer", default: null },
     vehicles: { type: [vehicleItemSchema], required: true },
-    grandTotal: { type: Number, required: true },
     status: { type: String, enum: ["Draft", "Confirmed"], default: "Draft" },
   },
   {

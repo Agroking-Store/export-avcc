@@ -3,11 +3,11 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IClient extends Document {
   clientCode: string;
   name: string;
-  email?: string;
+  email: string;
   phone: string;
   country: string;
-  companyName?: string;
-  address?: string;
+  companyName: string;
+  address: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,8 +28,10 @@ const clientSchema = new Schema<IClient>(
     },
     email: {
       type: String,
+      required: [true, "Email is required"],
       lowercase: true,
       trim: true,
+      unique: true, 
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         "Please provide a valid email",
@@ -49,10 +51,12 @@ const clientSchema = new Schema<IClient>(
     },
     companyName: {
       type: String,
+      required: [true, "Company name is required"],
       trim: true,
     },
     address: {
       type: String,
+      required: [true, "Address is required"],
       trim: true,
     },
     isActive: {

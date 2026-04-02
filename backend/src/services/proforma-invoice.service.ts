@@ -1,20 +1,90 @@
 import ProformaInvoice from "../models/ProformaInvoice.model";
 import { Types, PipelineStage } from "mongoose";
 
+const numberToWords = (num: number): string => {
+  if (num === 0) return "Zero";
+  const a = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const b = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+  const convert = (n: number): string => {
+    if (n < 20) return a[n];
+    if (n < 100)
+      return b[Math.floor(n / 10)] + (n % 10 !== 0 ? " " + a[n % 10] : "");
+    if (n < 1000)
+      return (
+        a[Math.floor(n / 100)] +
+        " Hundred" +
+        (n % 100 !== 0 ? " " + convert(n % 100) : "")
+      );
+    if (n < 1000000)
+      return (
+        convert(Math.floor(n / 1000)) +
+        " Thousand" +
+        (n % 1000 !== 0 ? " " + convert(n % 1000) : "")
+      );
+    if (n < 1000000000)
+      return (
+        convert(Math.floor(n / 1000000)) +
+        " Million" +
+        (n % 1000000 !== 0 ? " " + convert(n % 1000000) : "")
+      );
+    return "";
+  };
+  const mainPart = convert(Math.floor(num));
+  const cents = Math.round((num - Math.floor(num)) * 100);
+  const centsPart = cents > 0 ? " and " + convert(cents) + " Cents" : "";
+  return `USD ${mainPart}${centsPart} Only`;
+};
+
 // CREATE PI
 export const createPIService = async (data: any) => {
   const count = await ProformaInvoice.countDocuments();
-  const piNumber = `PI-${String(count + 1).padStart(3, "0")}`;
+  const piNumber = data.piNumber || `PI-${String(count + 1).padStart(3, "0")}`;
 
   const totalAmount = data.vehicleDetails.reduce(
-    (sum: number, v: any) => sum + v.quantity * v.unitPrice,
+    (sum: number, v: any) =>
+      sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
     0
   );
+
+  const amountInWords = numberToWords(totalAmount);
 
   const pi = new ProformaInvoice({
     ...data,
     piNumber,
     totalAmount,
+    amountInWords,
   });
 
   return await pi.save();
@@ -126,9 +196,12 @@ export const getPIByIdService = async (id: string) => {
 export const updatePIService = async (id: string, data: any) => {
   if (data.vehicleDetails) {
     data.totalAmount = data.vehicleDetails.reduce(
-      (sum: number, v: any) => sum + v.quantity * v.unitPrice,
+      (sum: number, v: any) =>
+        sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
       0
     );
+
+    data.amountInWords = numberToWords(data.totalAmount);
   }
 
   const updated = await ProformaInvoice.findByIdAndUpdate(id, data, {

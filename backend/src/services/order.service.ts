@@ -21,24 +21,32 @@ const generateVoucherNo = async (): Promise<string> => {
 };
 
 export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> => {
-if (data.clientId) {
-  const client = await Client.findById(data.clientId);
-  if (!client) throw new Error("Client not found");
-}
+  if (data.clientId) {
+    const client = await Client.findById(data.clientId);
+    if (!client) throw new Error("Client not found");
+  }
+
+  if (!data.vehicles || data.vehicles.length === 0) {
+    throw new Error("At least one vehicle is required");
+  }
 
   const orderId = await generateOrderId();
   const voucherNo = await generateVoucherNo();
-  const grandTotal = data.vehicles.reduce((sum, v) => sum + v.fobAmount + v.freight, 0);
+
+  const vehicles = data.vehicles.map(v => ({
+    name: v.name,
+    color: v.color,
+    quantity: v.quantity,
+  }));
 
   const order = new Order({
     orderId,
     voucherNo,
     date: new Date(data.date),
-    clientId: data.clientId,
+    clientId: data.clientId || null,
     dealerId: data.dealerId || null,
-    vehicles: data.vehicles,
-    grandTotal,
-    status: "Draft"
+    vehicles,
+    status: "Draft",
   });
 
   return await order.save();
@@ -66,13 +74,7 @@ export const getOrdersService = async (query: any) => {
   const orders = await Order.aggregate([
     { $match: match },
    { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
-{ $lookup: { from: "dealers", localField: "dealerId", foreignField: "_id", as: "dealer" } },
-{ $addFields: { 
-    clientName: { $arrayElemAt: ["$client.name", 0] },
-    dealerName: { $arrayElemAt: ["$dealer.name", 0] }
-}},
-{ $project: { client: 0, dealer: 0 } },
-    { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
+   { $lookup: { from: "dealers", localField: "dealerId", foreignField: "_id", as: "dealer" } },
     {
       $addFields: {
       clientName: { $arrayElemAt: ["$client.name", 0] },
@@ -133,7 +135,15 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
   
   // Handle other updates
   if (data.vehicles) {
-    updateData.grandTotal = data.vehicles.reduce((sum, v) => sum + v.fobAmount + v.freight, 0);
+    if (data.vehicles.length === 0) {
+      throw new Error("At least one vehicle is required");
+    }
+  
+    updateData.vehicles = data.vehicles.map(v => ({
+      name: v.name,
+      color: v.color,
+      quantity: v.quantity,
+    }));
   }
   if (data.date) updateData.date = new Date(data.date);
   
@@ -147,11 +157,6 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
   
   // Return the order as-is if no updates
   return await Order.findById(id);
-};
-
-export const deleteOrderService = async (id: string): Promise<void> => {
-  const order = await Order.findByIdAndDelete(id);
-  if (!order) throw new Error("Order not found");
 };
 
 export const updateOrderStatusService = async (id: string, status: "Draft" | "Confirmed"): Promise<IOrder | null> => {

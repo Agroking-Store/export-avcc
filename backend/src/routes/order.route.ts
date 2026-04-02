@@ -4,7 +4,6 @@ import {
   getOrders,
   getOrderById,
   updateOrder,
-  deleteOrder,
   updateOrderStatus,
 
 } from "../controllers/order.controller";
@@ -15,6 +14,5 @@ router.post("/", createOrder);
 router.get("/", getOrders);
 router.get("/:id", getOrderById);
 router.put("/:id", updateOrder);
-router.delete("/:id", deleteOrder);
 router.patch("/:id/status", updateOrderStatus);
 export default router;

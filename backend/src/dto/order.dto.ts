@@ -1,16 +1,7 @@
 export interface IVehicleItem {
-  hsnCode: string;
-  vehicleName: string;
-  exteriorColour: string;
-  chassisNo: string;
-  engineNo: string;
-  engineCapacity: string;
-  fuelType: string;
-  countryOfOrigin: string;
-  yom: number;
-  fobAmount: number;
-  freight: number;
-  quantity?: number;
+  name: string;
+  color: string;
+  quantity: number;
 }
 
 export interface CreateOrderDto {
@@ -22,8 +13,8 @@ export interface CreateOrderDto {
 
 export interface UpdateOrderDto {
   clientId?: string;
+  date?: string | Date;
   dealerId?: string;
-  date?: string;
   vehicles?: IVehicleItem[];
   vehiclesUpdate?: {
     index: number;
