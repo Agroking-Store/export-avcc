@@ -32,6 +32,7 @@ import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
+import EditPI from "../features/proforma-invoice/pages/EditPI";
 
 // Orders
 import OrdersList from "../features/orders/OrdersList";
