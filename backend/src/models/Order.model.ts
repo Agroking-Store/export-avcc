@@ -39,6 +39,7 @@ const vehicleItemSchema = new Schema<IVehicleItem>({
   yom: { type: Number, required: true },
   fobAmount: { type: Number, required: true },
   freight: { type: Number, required: true },
+  quantity: { type: Number, default: 1 },
 });
 
 const orderSchema = new Schema<IOrder>(

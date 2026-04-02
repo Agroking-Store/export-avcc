@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiConfig } from "../../config/apiConfig";
+import { apiConfig } from "../../../config/apiConfig";
+import { ArrowLeft, Eye, Edit2 } from "lucide-react";
+import { toast } from "react-toastify";
 
-const OrderDetails = () => {
+const VehicleDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchOrder();
@@ -25,24 +26,22 @@ const OrderDetails = () => {
       setStatus(data.status || "Draft");
     } catch (error) {
       console.error("Error fetching order", error);
+      toast.error("Order not found");
     } finally {
       setLoading(false);
     }
   };
 
-  const updateStatus = async (newStatus: string) => {
-    try {
-      setUpdatingStatus(true);
-      await axios.put(`${apiConfig.baseURL}/orders/${id}`, { status: newStatus });
-      setStatus(newStatus);
-      alert("Status updated");
-      fetchOrder();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Error updating status");
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
+  // Expand vehicles into individual rows
+  const expandedVehicles = order?.vehicles?.filter(Boolean).flatMap((v: any) =>
+    Array(v?.quantity ?? 1).fill(0).map((_, index) => ({
+      srNo: v.srNo || '',
+      name: v.name || '',
+      color: v.color || '',
+      originalIndex: index,
+      vehicle: v
+    }))
+  ) || [];
 
   const getStatusColor = (s: string) => {
     switch (s) {
@@ -51,6 +50,11 @@ const OrderDetails = () => {
       case "PI Generated": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
       default: return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
     }
+  };
+
+  const handleEditVehicle = (vehicle: any) => {
+    // Navigate to vehicle edit page passing order ID and vehicle index
+    navigate(`/vehicles/edit-vehicle/${order._id}/vehicle/${vehicle.originalIndex}`);
   };
 
   if (loading) {
@@ -93,10 +97,11 @@ const OrderDetails = () => {
         </div>
 
         <button
-          onClick={() => navigate("/orders/list")}
-          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
+          onClick={() => navigate("/vehicles/list")}
+          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-1"
         >
-          ← Back to Orders
+          <ArrowLeft size={16} />
+          Back to List
         </button>
       </div>
 
@@ -112,34 +117,6 @@ const OrderDetails = () => {
             <span className="text-sm text-gray-500 dark:text-gray-300">
               Voucher: <span className="font-medium">{order.voucherNo}</span>
             </span>
-            <div className="ml-auto flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Update Status:
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                disabled={updatingStatus}
-                className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 
-                           bg-white dark:bg-gray-800 
-                           text-black dark:text-white 
-                           rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              >
-
-                <option value="Draft">Draft</option>
-                <option value="Confirmed">Confirmed</option>
-
-              </select>
-              <button
-                onClick={() => updateStatus(status)}
-                disabled={updatingStatus}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 
-                           dark:bg-blue-500 dark:hover:bg-blue-600 
-                           text-white rounded-lg transition"
-              >
-                Update
-              </button>
-            </div>
           </div>
         </div>
 
@@ -177,19 +154,19 @@ const OrderDetails = () => {
           </div>
         </div>
 
-        {/* SECTION 3: VEHICLES */}
+        {/* SECTION 3: VEHICLES - EXPANDED BY QUANTITY */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
           <h2 className="text-base font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2">
-            Vehicles ({order.vehicles?.length || 0})
+            Vehicles ({expandedVehicles.length})
           </h2>
 
-          {order.vehicles && order.vehicles.length > 0 ? (
+          {expandedVehicles.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200">
                   <tr>
                     <th className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
-                      #
+                      Sr No
                     </th>
                     <th className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
                       Vehicle Name
@@ -198,15 +175,15 @@ const OrderDetails = () => {
                       Color
                     </th>
                     <th className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-right text-xs font-medium uppercase tracking-wider">
-                      Quantity
+                      Action
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                  {order.vehicles.map((v: any, i: number) => (
-                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  {expandedVehicles.map((v: any, i: number) => (
+                    <tr key={`${v.originalIndex}-${i}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {i + 1}
+                        {v.srNo || (i + 1)}
                       </td>
                       <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                         {v.name}
@@ -216,8 +193,37 @@ const OrderDetails = () => {
                           {v.color}
                         </span>
                       </td>
-                      <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-sm font-semibold text-right text-gray-900 dark:text-gray-100">
-{v?.quantity ?? 1}
+                      <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+title="View Details"
+                            onClick={() => {
+                              const params = new URLSearchParams({
+                                name: v.name,
+                                color: v.color,
+                                srNo: v.srNo || ''
+                              });
+navigate(`/vehicles/view/${id}/view-vehicle/${v.originalIndex}?${params.toString()}`);
+                            }}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+onClick={() => {
+                              const params = new URLSearchParams({
+                                name: v.name,
+                                color: v.color,
+                                srNo: v.srNo || ''
+                              });
+navigate(`/vehicles/view/${id}/edit-vehicle/${v.originalIndex}?${params.toString()}`);
+                            }}
+                            className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                            title="Edit Vehicle"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -235,5 +241,4 @@ const OrderDetails = () => {
   );
 };
 
-export default OrderDetails;
-
+export default VehicleDetails;

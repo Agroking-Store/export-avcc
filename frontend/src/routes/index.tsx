@@ -40,8 +40,12 @@ import EditOrder from "../features/orders/EditOrder";
 import OrderDetails from "../features/orders/OrderDetails";
 
 // Vehicles
-import Vehicles from "../features/vehicles/Vehicles";
-import VehicleRoutes from "./VehicleRoutes";
+import VehicleNavbar from "../features/vehicles/components/VehicleNavbar";
+import Vehicles from "../features/vehicles/pages/Vehicles";
+import VehicleList from "../features/vehicles/pages/VehicleList";
+import VehicleDetails from "../features/vehicles/pages/VehicleDetails";
+import VehicleView from "../features/vehicles/pages/VehicleView";
+import VehicleEdit from "../features/vehicles/pages/VehicleEdit";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -60,7 +64,14 @@ const AppRoutes: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
 
           {/* Vehicles */}
-          <Route path="/vehicles/*" element={<VehicleRoutes />} />
+          <Route path="/vehicles" element={<VehicleNavbar />}>
+            <Route index element={<Vehicles />} />
+            <Route path="list" element={<VehicleList />} />
+
+            <Route path="view/:id" element={<VehicleDetails />} />
+            <Route path="view/:id/view-vehicle/:vehicleIndex" element={<VehicleView />} />
+            <Route path="view/:id/edit-vehicle/:vehicleIndex" element={<VehicleEdit />} />
+          </Route>
 
           {/* Clients */}
           <Route path="/clients" element={<ClientsList />} />
@@ -87,7 +98,6 @@ const AppRoutes: React.FC = () => {
           {/* Proforma Invoice */}
           <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
-          <Route path="/proforma-invoice" element={<PIList />} />
           <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
 
@@ -127,3 +137,4 @@ const AppRoutes: React.FC = () => {
 };
 
 export default AppRoutes;
+

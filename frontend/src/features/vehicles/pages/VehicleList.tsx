@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Trash2, Search, Filter, Plus } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Eye, Search, Filter } from "lucide-react";
 import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 interface Order {
   _id: string;
@@ -21,9 +18,8 @@ interface Order {
   createdAt?: string;
 }
 
-const OrdersList = () => {
+const VehicleList = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,6 +50,7 @@ const OrdersList = () => {
       setTotalPages(res.data.totalPages);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -63,61 +60,27 @@ const OrdersList = () => {
     fetchOrders();
   }, [search, statusFilter, currentPage]);
 
-  useEffect(() => {
-    if (location.state?.success) {
-      toast.success(location.state.success);
-  
-      // clear state so it doesn't repeat on refresh
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this order?")) return;
-    
-    try {
-      await axios.delete(`http://localhost:5000/api/v1/orders/${id}`);
-    
-      toast.success("Order deleted successfully 🗑️");
-    
-      fetchOrders();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Delete failed");
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Draft": return "bg-gray-100 text-gray-800";
-      case "Confirmed": return "bg-blue-100 text-blue-800";
-      case "PI Generated": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "Draft": return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
+      case "Confirmed": return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400";
+      case "PI Generated": return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400";
+      default: return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
     }
   };
-
-  
 
   return (
     <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen p-2 rounded-xl">
-      <ToastContainer position="top-right" autoClose={3000} />
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Orders
+            Vehicle Orders
           </h2>
           <p className="text-sm text-slate-500 dark:text-gray-300">
-            Manage all your export orders
+            Export orders for vehicles
           </p>
         </div>
-
-        <button
-          onClick={() => navigate("/orders/add")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
-        >
-          <Plus size={18} />
-          Create New Order
-        </button>
       </div>
 
       {/* MAIN CARD */}
@@ -131,11 +94,9 @@ const OrdersList = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
             >
-
               <option value="All">All</option>
               <option value="Draft">Draft</option>
               <option value="Confirmed">Confirmed</option>
-
             </select>
           </div>
 
@@ -217,24 +178,11 @@ const OrdersList = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => navigate(`/orders/${order._id}`)}
+onClick={() => navigate(`/vehicles/view/${order._id}`)}
                           className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                          title="View Order"
                         >
                           <Eye size={18} />
-                        </button>
-
-                        <button
-                          onClick={() => navigate(`/orders/edit/${order._id}`)}
-                          className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
-                        >
-                          <Pencil size={18} />
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete(order._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                        >
-                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -255,7 +203,7 @@ const OrdersList = () => {
             <button
               onClick={() => setCurrentPage((p) => p - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-600"
+              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-600 disabled:opacity-50"
             >
               Prev
             </button>
@@ -263,7 +211,7 @@ const OrdersList = () => {
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-600"
+              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-600 disabled:opacity-50"
             >
               Next
             </button>
@@ -274,5 +222,4 @@ const OrdersList = () => {
   );
 };
 
-export default OrdersList;
-
+export default VehicleList;

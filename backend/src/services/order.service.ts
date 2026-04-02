@@ -104,12 +104,49 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
     const client = await Client.findById(data.clientId);
     if (!client) throw new Error("Client not found");
   }
+  
   const updateData: any = { ...data };
+  
+  // Handle vehiclesUpdate for updating a specific vehicle
+  if (data.vehiclesUpdate) {
+    const { index, color, name, srNo } = data.vehiclesUpdate;
+    
+    // Build the update object for the specific vehicle fields
+    const vehicleUpdate: any = {};
+    if (color !== undefined) vehicleUpdate[`vehicles.${index}.exteriorColour`] = color;
+    if (name !== undefined) vehicleUpdate[`vehicles.${index}.vehicleName`] = name;
+    if (srNo !== undefined) vehicleUpdate[`vehicles.${index}.chassisNo`] = srNo;
+    
+    // Use findByIdAndUpdate with $set to update specific fields
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { $set: vehicleUpdate },
+      { returnDocument: 'after', runValidators: false }
+    );
+    
+    if (!updatedOrder) {
+      throw new Error("Order not found");
+    }
+    
+    return updatedOrder;
+  }
+  
+  // Handle other updates
   if (data.vehicles) {
     updateData.grandTotal = data.vehicles.reduce((sum, v) => sum + v.fobAmount + v.freight, 0);
   }
   if (data.date) updateData.date = new Date(data.date);
-  return await Order.findByIdAndUpdate(id, updateData, { new: true });
+  
+  // Remove vehiclesUpdate from updateData if present
+  delete updateData.vehiclesUpdate;
+  
+  // Only update if there are other fields to update
+  if (Object.keys(updateData).length > 0) {
+    return await Order.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: false });
+  }
+  
+  // Return the order as-is if no updates
+  return await Order.findById(id);
 };
 
 export const deleteOrderService = async (id: string): Promise<void> => {
@@ -118,5 +155,5 @@ export const deleteOrderService = async (id: string): Promise<void> => {
 };
 
 export const updateOrderStatusService = async (id: string, status: "Draft" | "Confirmed"): Promise<IOrder | null> => {
-  return await Order.findByIdAndUpdate(id, { status }, { new: true });
+  return await Order.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
 };

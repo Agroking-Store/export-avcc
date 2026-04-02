@@ -10,6 +10,7 @@ export interface IVehicleItem {
   yom: number;
   fobAmount: number;
   freight: number;
+  quantity?: number;
 }
 
 export interface CreateOrderDto {
@@ -24,4 +25,10 @@ export interface UpdateOrderDto {
   dealerId?: string;
   date?: string;
   vehicles?: IVehicleItem[];
+  vehiclesUpdate?: {
+    index: number;
+    color?: string;
+    name?: string;
+    srNo?: string;
+  };
 }
