@@ -32,6 +32,7 @@ interface ComboboxProps {
   loading?: boolean;
   disabled?: boolean;
   error?: boolean;
+  renderItem?: (item: any, index: number) => React.ReactNode;
 }
 
 export function SearchableCombobox({
@@ -47,6 +48,7 @@ export function SearchableCombobox({
   loading = false,
   disabled = false,
   error = false,
+  renderItem,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -89,7 +91,7 @@ export function SearchableCombobox({
               <CommandEmpty>{emptyMessage}</CommandEmpty>
             )}
             <CommandGroup>
-              {data.map((item) => (
+              {data.map((item, index) => (
                 <CommandItem
                   key={item[valueField]}
                   value={`${item[displayField]} ${item[valueField]}`}
@@ -106,7 +108,13 @@ export function SearchableCombobox({
                       value === item[valueField] ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {item[displayField]}
+                  {renderItem ? (
+                    <div className="flex-1 min-w-0">
+                      {renderItem(item, index)}
+                    </div>
+                  ) : (
+                    item[displayField]
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>

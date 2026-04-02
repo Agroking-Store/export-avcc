@@ -4,9 +4,11 @@ import { Client } from "../models/Client.model";
 import mongoose from "mongoose";
 
 const generateOrderId = async (): Promise<string> => {
-  const latest = await Order.findOne().sort({ createdAt: -1 }).select('orderId');
-  if (!latest) return 'ORD-001';
-  const num = parseInt(latest.orderId.split('-')[1]) + 1;
+  const latest = await Order.findOne()
+    .sort({ createdAt: -1 })
+    .select("orderId");
+  if (!latest) return "ORD-001";
+  const num = parseInt(latest.orderId.split("-")[1]) + 1;
   return `ORD-${String(num).padStart(3, "0")}`;
 };
 
@@ -14,13 +16,17 @@ const generateVoucherNo = async (): Promise<string> => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   const yearSuffix = `${currentYear}-${nextYear.toString().slice(2)}`;
-  const latest = await Order.findOne().sort({ createdAt: -1 }).select('voucherNo');
+  const latest = await Order.findOne()
+    .sort({ createdAt: -1 })
+    .select("voucherNo");
   if (!latest) return `AN/${yearSuffix}/1`;
-  const num = parseInt(latest.voucherNo.split('/').pop() || '0') + 1;
+  const num = parseInt(latest.voucherNo.split("/").pop() || "0") + 1;
   return `AN/${yearSuffix}/${num}`;
 };
 
-export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> => {
+export const createOrderService = async (
+  data: CreateOrderDto
+): Promise<IOrder> => {
   if (data.clientId) {
     const client = await Client.findById(data.clientId);
     if (!client) throw new Error("Client not found");
@@ -33,7 +39,7 @@ export const createOrderService = async (data: CreateOrderDto): Promise<IOrder> 
   const orderId = await generateOrderId();
   const voucherNo = await generateVoucherNo();
 
-  const vehicles = data.vehicles.map(v => ({
+  const vehicles = data.vehicles.map((v) => ({
     name: v.name,
     color: v.color,
     quantity: v.quantity,
@@ -59,7 +65,7 @@ export const getOrdersService = async (query: any) => {
   if (search) {
     match.$or = [
       { orderId: { $regex: search, $options: "i" } },
-      { voucherNo: { $regex: search, $options: "i" } }
+      { voucherNo: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -73,35 +79,58 @@ export const getOrdersService = async (query: any) => {
 
   const orders = await Order.aggregate([
     { $match: match },
-   { $lookup: { from: "clients", localField: "clientId", foreignField: "_id", as: "client" } },
-   { $lookup: { from: "dealers", localField: "dealerId", foreignField: "_id", as: "dealer" } },
+    {
+      $lookup: {
+        from: "clients",
+        localField: "clientId",
+        foreignField: "_id",
+        as: "client",
+      },
+    },
+    {
+      $lookup: {
+        from: "dealers",
+        localField: "dealerId",
+        foreignField: "_id",
+        as: "dealer",
+      },
+    },
     {
       $addFields: {
-      clientName: { $arrayElemAt: ["$client.name", 0] },
-      companyName: { $arrayElemAt: ["$client.companyName", 0] },
-      clientCountry: { $arrayElemAt: ["$client.country", 0] }
-    }
+        clientName: { $arrayElemAt: ["$client.name", 0] },
+        companyName: { $arrayElemAt: ["$client.companyName", 0] },
+        clientCountry: { $arrayElemAt: ["$client.country", 0] },
+        dealerName: { $arrayElemAt: ["$dealer.name", 0] },
+      },
     },
     { $project: { client: 0 } },
     { $sort: { createdAt: -1 } },
     { $skip: skip },
-    { $limit: Number(limit) }
+    { $limit: Number(limit) },
   ]);
 
   const total = await Order.countDocuments(match);
-  return { data: orders, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) };
+  return {
+    data: orders,
+    total,
+    page: Number(page),
+    totalPages: Math.ceil(total / Number(limit)),
+  };
 };
 
 export const getOrderByIdService = async (id: string) => {
   const order = await Order.findById(id).populate({
-    path: 'clientId',
-    select: 'name companyName country phone address'
+    path: "clientId",
+    select: "name companyName country phone address",
   });
   if (!order) throw new Error("Order not found");
   return order;
 };
 
-export const updateOrderService = async (id: string, data: UpdateOrderDto): Promise<IOrder | null> => {
+export const updateOrderService = async (
+  id: string,
+  data: UpdateOrderDto
+): Promise<IOrder | null> => {
   if (data.clientId) {
     const client = await Client.findById(data.clientId);
     if (!client) throw new Error("Client not found");
@@ -111,8 +140,8 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
     if (data.vehicles.length === 0) {
       throw new Error("At least one vehicle is required");
     }
-  
-    updateData.vehicles = data.vehicles.map(v => ({
+
+    updateData.vehicles = data.vehicles.map((v) => ({
       name: v.name,
       color: v.color,
       quantity: v.quantity,
@@ -122,6 +151,9 @@ export const updateOrderService = async (id: string, data: UpdateOrderDto): Prom
   return await Order.findByIdAndUpdate(id, updateData, { new: true });
 };
 
-export const updateOrderStatusService = async (id: string, status: "Draft" | "Confirmed"): Promise<IOrder | null> => {
+export const updateOrderStatusService = async (
+  id: string,
+  status: "Draft" | "Confirmed"
+): Promise<IOrder | null> => {
   return await Order.findByIdAndUpdate(id, { status }, { new: true });
 };

@@ -3,8 +3,6 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import {
-  Plus,
-  Trash2,
   ArrowLeft,
   Landmark,
   AlertCircle,
@@ -16,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { format } from "date-fns";
+import { Switch } from "@/components/ui/switch";
 
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -40,6 +39,7 @@ type VehicleLineItem = {
   fuelType: string;
   countryOfOrigin: string;
   engineCapacity: string;
+  selected?: boolean; // New property to track checkbox status
 };
 
 type AddressDetails = {
@@ -85,16 +85,19 @@ const CreatePI = () => {
 
   const [clients, setClients] = useState<any[]>([]);
   const [dealers, setDealers] = useState<any[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
 
+  // Import from Order states
+  const [orders, setOrders] = useState<any[]>([]);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+
   // Search states for comboboxes
   const [clientSearch, setClientSearch] = useState("");
   const [dealerSearch, setDealerSearch] = useState("");
-  const [vehicleSearch, setVehicleSearch] = useState("");
 
   const defaultAddress: AddressDetails = {
     houseBuilding: "",
@@ -126,28 +129,12 @@ const CreatePI = () => {
     portOfLoading: "",
     portOfDischarge: "",
     bankDetails: { bankName: "", accountNo: "", branchIfsc: "" },
-    vehicleDetails: [
-      {
-        vehicle_id: "",
-        model: "",
-        color: "",
-        engineNo: "",
-        chassisNo: "",
-        quantity: 1,
-        hsn: "",
-        fob: "",
-        freight: "",
-        yom: "",
-        fuelType: "",
-        countryOfOrigin: "",
-        engineCapacity: "",
-      },
-    ],
+    vehicleDetails: [],
   });
 
   const debouncedClientSearch = useDebounce(clientSearch, 500);
   const debouncedDealerSearch = useDebounce(dealerSearch, 500);
-  const debouncedVehicleSearch = useDebounce(vehicleSearch, 500);
+  const debouncedOrderSearch = useDebounce(orderSearch, 500);
 
   const getAuthToken = () => {
     let token =
@@ -189,28 +176,24 @@ const CreatePI = () => {
         console.error("Failed to fetch dealers:", error);
       }
     };
-    const fetchVehicles = async () => {
-      try {
-        const token = getAuthToken();
-        const res = await axios.get(`${apiConfig.baseURL}/vehicles`, {
-          params: {
-            limit: 10,
-            status: "Available",
-            search: debouncedVehicleSearch,
-          },
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("Vehicles Response:", res.data);
-        const data = res.data?.data?.data || res.data?.data || res.data;
-        setVehicles(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to fetch vehicles:", error);
-      }
-    };
     fetchClients();
     fetchDealers();
-    fetchVehicles();
-  }, [debouncedClientSearch, debouncedDealerSearch, debouncedVehicleSearch]);
+  }, [debouncedClientSearch, debouncedDealerSearch]);
+
+  // Fetch orders for the combobox
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await axios.get(`${apiConfig.baseURL}/orders`, {
+          params: { limit: 20, search: debouncedOrderSearch },
+        });
+        setOrders(res.data.data || res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch orders:", err);
+      }
+    };
+    fetchOrders();
+  }, [debouncedOrderSearch]);
 
   // Fetch existing PI if in edit mode
   useEffect(() => {
@@ -267,24 +250,9 @@ const CreatePI = () => {
               ? pi.vehicleDetails.map((v: any) => ({
                   ...v,
                   vehicle_id: v.vehicle_id?._id || v.vehicle_id || "",
+                  selected: true,
                 }))
-              : [
-                  {
-                    vehicle_id: "",
-                    model: "",
-                    color: "",
-                    engineNo: "",
-                    chassisNo: "",
-                    quantity: 1,
-                    hsn: "",
-                    fob: "",
-                    freight: "",
-                    yom: "",
-                    fuelType: "",
-                    countryOfOrigin: "",
-                    engineCapacity: "",
-                  },
-                ],
+              : [],
         });
       } catch (error) {
         console.error("Error fetching PI", error);
@@ -350,50 +318,79 @@ const CreatePI = () => {
     }));
   };
 
-  const handleVehicleSelect = (index: number, vehicleId: string) => {
-    const selected = vehicles.find(
-      (v) => v.id === vehicleId || v._id === vehicleId
-    );
-    const updated = [...form.vehicleDetails];
-    updated[index].vehicle_id = vehicleId;
-    if (selected) {
-      updated[index].model = selected.name; // Auto-fill model name
-      updated[index].color = selected.color || "";
-      updated[index].engineNo = selected.engineNo || "";
-      updated[index].chassisNo = selected.chassisNo || "";
+  // Import from Order Logic
+  const handleSelectOrder = async (orderId: string) => {
+    if (!orderId) return;
+    try {
+      const res = await axios.get(`${apiConfig.baseURL}/orders/${orderId}`);
+      const orderData = res.data;
+      setSelectedOrder(orderData);
+
+      // Map all vehicles from order
+      const mappedVehicles = (orderData.vehicles || []).map((v: any) => ({
+        vehicle_id: v.vehicle_id || v._id || "",
+        model: v.name || v.vehicleName || "",
+        color: v.color || v.exteriorColour || "",
+        engineNo: v.engineNo || "",
+        chassisNo: v.chassisNo || "",
+        quantity: Number(v.quantity) || Number(v.qty) || 1,
+        hsn: v.hsnCode || "",
+        fob: v.fobAmount || 0,
+        freight: v.freight || 0,
+        yom: v.yom ? String(v.yom) : "",
+        fuelType: v.fuelType || "",
+        countryOfOrigin: v.countryOfOrigin || "",
+        engineCapacity: v.engineCapacity || "",
+        selected: true,
+      }));
+
+      // Populate Dealer
+      const dId = orderData.dealerId?._id || orderData.dealerId;
+      if (dId) {
+        const dealerInState = dealers.find((d) => d._id === dId);
+        if (dealerInState) {
+          handleDealerSelect(dId);
+        } else {
+          try {
+            const dRes = await axios.get(`${apiConfig.baseURL}/dealers/${dId}`);
+            const d = dRes.data.data;
+            setForm((prev) => ({
+              ...prev,
+              dealer_id: dId,
+              dealerDetails: {
+                name: d.name || "",
+                gstin: d.gstNumber || "",
+                address: {
+                  ...prev.dealerDetails.address,
+                  ...(typeof d.address === "object" && d.address
+                    ? d.address
+                    : { streetArea: d.address || "" }),
+                  state: d.state || "",
+                },
+              },
+            }));
+          } catch (e) {
+            setForm((prev) => ({
+              ...prev,
+              dealer_id: dId,
+              dealerDetails: {
+                ...prev.dealerDetails,
+                name: orderData.dealerName || "",
+              },
+            }));
+          }
+        }
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        vehicleDetails: mappedVehicles,
+      }));
+
+      toast.success("Order details imported successfully!");
+    } catch (err) {
+      toast.error("Failed to load order details");
     }
-    setForm({ ...form, vehicleDetails: updated });
-  };
-
-  const addVehicle = () => {
-    setForm({
-      ...form,
-      vehicleDetails: [
-        ...form.vehicleDetails,
-        {
-          vehicle_id: "",
-          model: "",
-          color: "",
-          engineNo: "",
-          chassisNo: "",
-          quantity: 1,
-          hsn: "",
-          fob: "",
-          freight: "",
-          yom: "",
-          fuelType: "",
-          countryOfOrigin: "",
-          engineCapacity: "",
-        },
-      ],
-    });
-  };
-
-  const removeVehicle = (index: number) => {
-    setForm({
-      ...form,
-      vehicleDetails: form.vehicleDetails.filter((_, i) => i !== index),
-    });
   };
 
   const toggleRow = (index: number) => {
@@ -406,7 +403,7 @@ const CreatePI = () => {
     getRate(v) * (Number(v.quantity) || 0);
 
   const totalAmount = form.vehicleDetails.reduce(
-    (sum, v) => sum + getAmount(v),
+    (sum, v) => (v.selected !== false ? sum + getAmount(v) : sum),
     0
   );
 
@@ -478,7 +475,20 @@ const CreatePI = () => {
 
     if (!form.client_id) newErrors.client_id = "Client is required";
 
-    form.vehicleDetails.forEach((v, index) => {
+    const includedVehicles = form.vehicleDetails.filter(
+      (v) => v.selected !== false
+    );
+    if (includedVehicles.length === 0) {
+      toast.error(
+        "At least one vehicle must be included. Please import an order."
+      );
+      return false;
+    }
+
+    includedVehicles.forEach((v) => {
+      // Find original index for error key
+      const index = form.vehicleDetails.indexOf(v);
+
       if (!v.model.trim()) newErrors[`v_${index}_model`] = "Model is required";
       if (v.quantity < 1)
         newErrors[`v_${index}_quantity`] = "Quantity must be at least 1";
@@ -505,13 +515,15 @@ const CreatePI = () => {
 
     if (!payload.dealer_id) delete payload.dealer_id;
 
-    payload.vehicleDetails = payload.vehicleDetails.map((v: any) => {
-      const { vehicle_id, ...rest } = v;
-      // Include unitPrice for backward compatibility on backend if needed
-      return vehicle_id
-        ? { vehicle_id, unitPrice: getRate(v), ...rest }
-        : { unitPrice: getRate(v), ...rest };
-    });
+    payload.vehicleDetails = payload.vehicleDetails
+      .filter((v: any) => v.selected !== false)
+      .map((v: any) => {
+        const { vehicle_id, selected, ...rest } = v;
+        // Include unitPrice for backward compatibility on backend if needed
+        return vehicle_id
+          ? { vehicle_id, unitPrice: getRate(v), ...rest }
+          : { unitPrice: getRate(v), ...rest };
+      });
 
     try {
       setLoading(true);
@@ -567,6 +579,24 @@ const CreatePI = () => {
     }
   };
 
+  const ordersWithDisplay = orders.map((o) => {
+    let extractedDealerName = o.dealerName || o.dealer?.[0]?.name;
+    if (!extractedDealerName && o.dealerId) {
+      const dId = typeof o.dealerId === "object" ? o.dealerId._id : o.dealerId;
+      const foundDealer = dealers.find((d) => d._id === dId);
+      if (foundDealer) extractedDealerName = foundDealer.name;
+    }
+    extractedDealerName = extractedDealerName || "Unknown";
+
+    return {
+      ...o,
+      dealerName: extractedDealerName,
+      displayName: `${o.orderId} - ${extractedDealerName} (${
+        o.date ? new Date(o.date).toLocaleDateString() : "-"
+      })`,
+    };
+  });
+
   const inputClass =
     "w-full h-12 px-4 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-base shadow-sm";
   const getInputClass = (errKey?: string) =>
@@ -589,9 +619,9 @@ const CreatePI = () => {
               <Button
                 type="button"
                 onClick={() => navigate("/proforma-invoice")}
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="h-10 w-10 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                className="h-10 w-10 rounded-full border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all duration-200"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -623,6 +653,48 @@ const CreatePI = () => {
               </Button>
             </div>
           </div>
+
+          {/* LINK ORDER */}
+          <div>
+            <h3 className={sectionTitleClass}>Link Dealer Order</h3>
+            <div className="max-w-md">
+              <div>
+                <label className={labelClass}>
+                  Select Order (Auto-fills Dealer & Vehicles)
+                </label>
+                <SearchableCombobox
+                  data={ordersWithDisplay}
+                  value={selectedOrder?._id || ""}
+                  onValueChange={handleSelectOrder}
+                  onSearchChange={setOrderSearch}
+                  displayField="displayName"
+                  valueField="_id"
+                  placeholder="Search and select an order..."
+                  searchPlaceholder="Search by Order ID..."
+                  emptyMessage="No orders found."
+                  renderItem={(item, index) => (
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="w-5 text-xs text-gray-400 font-mono">
+                          {index + 1}.
+                        </span>
+                        <span className="font-medium truncate">
+                          {item.orderId} - {item.dealerName || "Unknown"}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap text-right">
+                        {item.date
+                          ? new Date(item.date).toLocaleDateString()
+                          : "-"}
+                      </span>
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          {divider}
 
           {/* DOCUMENT DETAILS */}
           <div>
@@ -737,6 +809,21 @@ const CreatePI = () => {
                   searchPlaceholder="Search clients..."
                   emptyMessage="No clients found."
                   error={!!errors.client_id}
+                  renderItem={(item, index) => (
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="w-5 text-xs text-gray-400 font-mono">
+                          {index + 1}.
+                        </span>
+                        <span className="font-medium truncate">
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap text-right">
+                        {item.phone || "-"}
+                      </span>
+                    </div>
+                  )}
                 />
                 {errors.client_id && (
                   <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
@@ -912,6 +999,21 @@ const CreatePI = () => {
                   placeholder="Select a dealer..."
                   searchPlaceholder="Search dealers..."
                   emptyMessage="No dealers found."
+                  renderItem={(item, index) => (
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="w-5 text-xs text-gray-400 font-mono">
+                          {index + 1}.
+                        </span>
+                        <span className="font-medium truncate">
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap text-right">
+                        {item.contact || "-"}
+                      </span>
+                    </div>
+                  )}
                 />
               </div>
               <div>
@@ -1124,20 +1226,30 @@ const CreatePI = () => {
               <h3 className={sectionTitleClass + " mb-0!"}>
                 Vehicle Line Items
               </h3>
-              <Button
-                type="button"
-                onClick={addVehicle}
-                variant="outline"
-                className="h-10 text-blue-600 border-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                <Plus size={18} className="mr-1" /> Add Vehicle
-              </Button>
             </div>
 
             <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
               {/* Table Header */}
               <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
-                <div className="col-span-4">Model / Description</div>
+                <div className="col-span-4 flex items-center gap-3">
+                  <Switch
+                    checked={
+                      form.vehicleDetails.length > 0 &&
+                      form.vehicleDetails.every((v) => v.selected !== false)
+                    }
+                    onCheckedChange={(checked) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        vehicleDetails: prev.vehicleDetails.map((v) => ({
+                          ...v,
+                          selected: !!checked,
+                        })),
+                      }));
+                    }}
+                    className="scale-125 ml-1 data-[state=checked]:bg-blue-600"
+                  />
+                  Model / Description
+                </div>
                 <div className="col-span-1 text-center">Qty</div>
                 <div className="col-span-2 text-right">FOB ($)</div>
                 <div className="col-span-1 text-right">Freight ($)</div>
@@ -1153,30 +1265,26 @@ const CreatePI = () => {
                   className="border-b border-gray-200 last:border-0"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 py-4 items-center">
-                    <div className="col-span-1 lg:col-span-4">
-                      <div className="mb-3">
-                        <SearchableCombobox
-                          data={vehicles}
-                          value={v.vehicle_id}
-                          onValueChange={(val) =>
-                            handleVehicleSelect(index, val)
+                    <div className="col-span-1 lg:col-span-4 flex gap-3 items-start">
+                      <div className="pt-3">
+                        <Switch
+                          checked={v.selected !== false}
+                          onCheckedChange={(checked) =>
+                            handleVehicleChange(index, "selected", !!checked)
                           }
-                          onSearchChange={setVehicleSearch}
-                          displayField="name"
-                          valueField="_id"
-                          placeholder="Select an inventory vehicle..."
-                          searchPlaceholder="Search by name/chassis..."
-                          emptyMessage="No vehicles found."
+                          className="scale-125 ml-1 data-[state=checked]:bg-blue-600"
                         />
                       </div>
-                      <input
-                        placeholder="Vehicle Model"
-                        value={v.model}
-                        onChange={(e) =>
-                          handleVehicleChange(index, "model", e.target.value)
-                        }
-                        className={getInputClass(`v_${index}_model`)}
-                      />
+                      <div className="flex-1 min-w-0">
+                        <input
+                          placeholder="Vehicle Model"
+                          value={v.model}
+                          onChange={(e) =>
+                            handleVehicleChange(index, "model", e.target.value)
+                          }
+                          className={getInputClass(`v_${index}_model`)}
+                        />
+                      </div>
                     </div>
                     <div className="col-span-1 lg:col-span-1">
                       <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
@@ -1266,17 +1374,6 @@ const CreatePI = () => {
                           }`}
                         />
                       </Button>
-                      {form.vehicleDetails.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => removeVehicle(index)}
-                          variant="ghost"
-                          size="icon"
-                          title="Remove Vehicle"
-                        >
-                          <Trash2 className="w-5 h-5 text-red-500" />
-                        </Button>
-                      )}
                     </div>
                   </div>
 
