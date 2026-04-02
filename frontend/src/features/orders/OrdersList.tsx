@@ -176,7 +176,7 @@ const OrdersList = () => {
 
                     <td className="px-6 py-4 text-center">
                       {order.vehicles
-                        ? order.vehicles.reduce((sum, v) => sum + v.quantity, 0)
+                        ? order.vehicles.filter(v => v != null).reduce((sum, v) => sum + (v.quantity ?? 0), 0) ?? 0
                         : 0}
                     </td>
 
