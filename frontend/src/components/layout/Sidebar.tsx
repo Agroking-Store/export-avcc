@@ -43,12 +43,14 @@ const AppSidebar: React.FC = () => {
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
           const isActive =
-            item.name === "Dealers"
+            item.name === "Vehicles"
+              ? location.pathname.startsWith("/vehicles")
+              : item.name === "Dealers"
               ? location.pathname.startsWith("/dealers")
               : item.name === "Clients"
-                ? location.pathname.startsWith("/clients") ||
-                  location.pathname.startsWith("/orders")
-                : location.pathname === item.path;
+              ? location.pathname.startsWith("/clients") ||
+                location.pathname.startsWith("/orders")
+              : location.pathname === item.path;
 
           return (
             <Link
@@ -56,8 +58,8 @@ const AppSidebar: React.FC = () => {
               to={item.path}
               className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
                 isActive
-                  ? "bg-blue-100 text-blue-600"
-                  : "text-gray-500 hover:bg-gray-100"
+                  ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400"
+                  : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               {item.icon}

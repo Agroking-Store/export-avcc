@@ -33,7 +33,12 @@ import PIList from "../features/proforma-invoice/pages/PIList";
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
 // Vehicles
-import VehicleRoutes from "./VehicleRoutes";
+import VehicleNavbar from "../features/vehicles/components/VehicleNavbar";
+import Vehicles from "../features/vehicles/pages/Vehicles";
+import VehicleList from "../features/vehicles/pages/VehicleList";
+import VehicleDetails from "../features/vehicles/pages/VehicleDetails";
+import VehicleView from "../features/vehicles/pages/VehicleView";
+import VehicleEdit from "../features/vehicles/pages/VehicleEdit";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -52,7 +57,14 @@ const AppRoutes: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
 
           {/* Vehicles */}
-          <Route path="/vehicles/*" element={<VehicleRoutes />} />
+          <Route path="/vehicles" element={<VehicleNavbar />}>
+            <Route index element={<Vehicles />} />
+            <Route path="list" element={<VehicleList />} />
+
+            <Route path="view/:id" element={<VehicleDetails />} />
+            <Route path="view/:id/view-vehicle/:vehicleIndex" element={<VehicleView />} />
+            <Route path="view/:id/edit-vehicle/:vehicleIndex" element={<VehicleEdit />} />
+          </Route>
 
           {/* Clients */}
           <Route path="/clients/*" element={<ClientsModule />} />
@@ -111,3 +123,4 @@ const AppRoutes: React.FC = () => {
 };
 
 export default AppRoutes;
+

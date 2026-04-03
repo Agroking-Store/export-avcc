@@ -20,16 +20,7 @@ export const vehicleApi = {
     return response.data;
   },
 
-  bookVehicle: async (data: {
-    vehicleId: string;
-    clientId?: string;
-    amount: number;
-    date: string;
-    notes?: string;
-  }): Promise<ApiResponse<any>> => {
-    const response = await api.post("/vehicles/book", data);
-    return response.data;
-  },
+
 
   getById: async (id: string): Promise<ApiResponse<Vehicle>> => {
     const response = await api.get(`/vehicles/${id}`);
