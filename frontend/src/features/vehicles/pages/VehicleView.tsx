@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Car, Edit3, Hash, Palette } from 'lucide-react';
 
 const VehicleView = () => {
   const { id: orderId, vehicleIndex } = useParams();
@@ -9,61 +9,132 @@ const VehicleView = () => {
   const vehicleName = searchParams.get('name') || '';
   const vehicleColor = searchParams.get('color') || '';
   const srNo = searchParams.get('srNo') || '';
-  // expandedIndex is the unique slot number — used to identify this specific vehicle copy
   const expandedIndex = searchParams.get('expandedIndex') || vehicleIndex || '0';
 
+  // Generate a nice gradient based on color
+  const getColorGradient = (color: string) => {
+    const colorLower = color.toLowerCase();
+    const gradients: Record<string, string> = {
+      red: 'from-red-500 to-red-600',
+      blue: 'from-blue-500 to-blue-600',
+      green: 'from-green-500 to-green-600',
+      black: 'from-gray-700 to-gray-900',
+      white: 'from-gray-300 to-gray-400',
+      silver: 'from-gray-400 to-gray-500',
+      grey: 'from-gray-500 to-gray-600',
+      gray: 'from-gray-500 to-gray-600',
+      yellow: 'from-yellow-500 to-yellow-600',
+      orange: 'from-orange-500 to-orange-600',
+      purple: 'from-purple-500 to-purple-600',
+      brown: 'from-amber-700 to-amber-800',
+      beige: 'from-amber-200 to-amber-300',
+      gold: 'from-amber-500 to-amber-600',
+      pink: 'from-pink-500 to-pink-600',
+    };
+    return gradients[colorLower] || 'from-slate-500 to-slate-600';
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6">
+      {/* Back Button */}
+      <div className="mb-6">
         <button
           onClick={() => navigate(`/vehicles/view/${orderId}`, { replace: true })}
-          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-1"
+          className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
         >
-          <ArrowLeft size={16} />
-          Back
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <ArrowLeft size={18} />
+          </div>
+          <span className="font-medium">Back to Order</span>
         </button>
-        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">Vehicle Details</h1>
       </div>
 
-      {/* Vehicle Card */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-8 border border-gray-200 dark:border-gray-600 max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h10l2-2zM13 6l3 5h3l1 2v3h-2" />
-            </svg>
+      {/* Main Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden max-w-2xl mx-auto">
+        {/* Header with gradient */}
+        <div className={`bg-gradient-to-r ${getColorGradient(vehicleColor)} p-6 relative overflow-hidden`}>
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="relative flex items-center justify-between">
+            <div>
+              <p className="text-white/80 text-sm font-medium mb-1">Vehicle Details</p>
+              <h1 className="text-2xl font-bold text-white">{vehicleName}</h1>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+              <Car className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <div className="relative mt-4 flex items-center gap-4 text-white/90 text-sm">
+            <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+              Sr No: {srNo}
+            </span>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-4 h-4 rounded-full border-2 border-white/50"
+                style={{ backgroundColor: vehicleColor.toLowerCase() }}
+              />
+              <span className="capitalize">{vehicleColor}</span>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Sr No</label>
-            <div className="bg-white dark:bg-gray-600 px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600">
-              {srNo}
+        {/* Content */}
+        <div className="p-6">
+          <div className="space-y-4">
+            {/* Serial Number */}
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+              <div className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg">
+                <Hash className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                  Serial Number
+                </p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white mt-0.5">
+                  {srNo}
+                </p>
+              </div>
+            </div>
+
+            {/* Vehicle Name */}
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
+                <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                  Vehicle Name
+                </p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white mt-0.5">
+                  {vehicleName}
+                </p>
+              </div>
+            </div>
+
+            {/* Color */}
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+              <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
+                <Palette className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                  Color
+                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <div
+                    className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-500 shadow-sm"
+                    style={{ backgroundColor: vehicleColor.toLowerCase() }}
+                  />
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                    {vehicleColor}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Vehicle Name</label>
-            <div className="bg-white dark:bg-gray-600 px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 font-semibold">
-              {vehicleName}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Color</label>
-            <div className="inline-flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
-              <div
-                className="w-4 h-4 rounded-full border-2 border-slate-300"
-                style={{ backgroundColor: vehicleColor.toLowerCase() }}
-              />
-              <span className="font-semibold">{vehicleColor}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-4">
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => {
                 const params = new URLSearchParams({
@@ -72,15 +143,18 @@ const VehicleView = () => {
                   srNo,
                   expandedIndex,
                 });
-                navigate(`/vehicles/view/${orderId}/edit-vehicle/${expandedIndex}?${params.toString()}`);
+                navigate(
+                  `/vehicles/view/${orderId}/edit-vehicle/${expandedIndex}?${params.toString()}`
+                );
               }}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md"
             >
+              <Edit3 size={18} />
               Edit Vehicle
             </button>
             <button
               onClick={() => navigate(`/vehicles/view/${orderId}`, { replace: true })}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
               Close
             </button>
