@@ -1,14 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, FileText, LayoutDashboard, Store } from 'lucide-react';
+import { FileText, LayoutDashboard, Store } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
 
-  const clientNavItems = [
-    { name: 'Clients', icon: <Users size={18} />, path: '/clients' },
-    { name: 'Orders', icon: <FileText size={18} />, path: '/orders' },
-  ];
+  const clientNavItems: any[] = [];
 
   const dealerNavItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/dealers/dashboard' },
