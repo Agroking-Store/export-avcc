@@ -7,16 +7,16 @@ import {
   TableHeader,
 } from "@/components/ui/table";
 import { flexRender, Table as ReactTableType } from "@tanstack/react-table"; // Re-added flexRender
-import { Inbox, MoveLeft, MoveRight } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // Corrected import for useNavigate
+import { Inbox, MoveLeft, MoveRight } from "lucide-react"; // Keep these for the table body/pagination
+import { useNavigate } from "react-router-dom";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/select"; // Keep these for pagination
+import { Button } from "@/components/ui/button"; // Keep these for pagination
 import React from "react";
 
 export interface ProformaInvoice {

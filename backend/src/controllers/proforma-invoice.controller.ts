@@ -4,7 +4,9 @@ import {
   getPIsService,
   getPIByIdService,
   updatePIService,
+  getOrdersWithPIStatusService,
   updatePIStatusService,
+  getOrderDetailsWithVehiclePIStatusService,
 } from "../services/proforma-invoice.service";
 
 import { deletePIService } from "../services/proforma-invoice.service";
@@ -26,6 +28,31 @@ export const getPIs = async (req: Request, res: Response) => {
     const pis = await getPIsService(req.query);
 
     res.json(pis);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET ORDERS WITH PI STATUS
+export const getOrdersWithPIStatus = async (req: Request, res: Response) => {
+  try {
+    const ordersWithPIStatus = await getOrdersWithPIStatusService(req.query);
+    res.json(ordersWithPIStatus);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET ORDER DETAILS WITH VEHICLE PI STATUS
+export const getOrderDetailsWithVehiclePIStatus = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const orderDetails = await getOrderDetailsWithVehiclePIStatusService(
+      req.params.orderId as string
+    );
+    res.json(orderDetails);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

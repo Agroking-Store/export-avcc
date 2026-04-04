@@ -30,6 +30,7 @@ import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 // PI
 import CreatePI from "../features/proforma-invoice/pages/CreatePI";
 import PIList from "../features/proforma-invoice/pages/PIList";
+import PIOrderDetail from "../features/proforma-invoice/pages/PIOrderDetail"; // Import the renamed PIOrderDetail component
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
 // Vehicles
@@ -56,7 +57,7 @@ const AppRoutes: React.FC = () => {
 
           {/* Clients */}
           <Route path="/clients/*" element={<ClientsModule />} />
-          {/* Orders */}
+          {/* Orders - Main module route (general order management) */}
           <Route path="/orders/*" element={<OrdersModule />} />
 
           {/* Dealers — specific routes BEFORE dynamic :id */}
@@ -74,6 +75,10 @@ const AppRoutes: React.FC = () => {
           <Route path="/proforma-invoice/add" element={<CreatePI />} />
           <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
           <Route path="/proforma-invoice/:id" element={<PIDetails />} />
+          <Route
+            path="/proforma-invoice/orders/:orderId"
+            element={<PIOrderDetail />}
+          />
 
           {/* Coming Soon */}
           <Route

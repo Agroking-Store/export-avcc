@@ -12,6 +12,7 @@ interface IAddressDetails {
 export interface IProformaInvoice extends Document {
   piNumber: string;
 
+  order_id?: mongoose.Types.ObjectId; // New field to link to an Order
   client_id: mongoose.Types.ObjectId; // buyer
   dealer_id?: mongoose.Types.ObjectId; // exporter details
 
@@ -92,6 +93,11 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       unique: true,
     },
 
+    order_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Order",
+      default: null,
+    },
     client_id: {
       type: Schema.Types.ObjectId,
       ref: "Client",
@@ -202,7 +208,8 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
 );
 
 // Index
-proformaInvoiceSchema.index({ client_id: 1 });
+proformaInvoiceSchema.index({ client_id: 1 }); // Existing index
+proformaInvoiceSchema.index({ order_id: 1 }); // New index for order_id
 
 export default mongoose.model<IProformaInvoice>(
   "ProformaInvoice",
