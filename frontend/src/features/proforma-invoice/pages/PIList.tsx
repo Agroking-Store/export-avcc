@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import {
   FilePenLine,
-  Trash2,
   ChevronsUpDown,
   SlidersHorizontal,
   Check,
@@ -49,7 +48,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify";
-import Swal from "sweetalert2";
 import PIListTable, { ProformaInvoice } from "../components/PIListTable";
 import OrderListTable, {
   OrderWithPIStatus,
@@ -268,31 +266,6 @@ const PIList = () => {
         return "bg-gray-400";
     }
   };
-
-  const handleDelete = useCallback(
-    async (id: string) => {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#dc2626",
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: "Yes, delete it!",
-      });
-
-      if (!result.isConfirmed) return;
-
-      try {
-        await axios.delete(`${apiConfig.baseURL}/proforma-invoices/${id}`);
-        toast.success("Proforma Invoice deleted successfully");
-        fetchPIs();
-      } catch {
-        toast.error("Failed to delete Proforma Invoice");
-      }
-    },
-    [fetchPIs]
-  );
 
   const handlePiPdfAction = async (
     id: string,
@@ -548,27 +521,11 @@ const PIList = () => {
                 <TooltipContent className="text-xs">Edit PI</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-10 w-10 p-0 cursor-pointer"
-                    onClick={() => handleDelete(row.original._id)}
-                  >
-                    <Trash2 className="h-6 w-6 text-red-500 cursor-pointer" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="text-xs">Delete PI</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
         ),
       },
     ],
-    [navigate, handleDelete, piPdfLoading, getStatusColor, handlePiPdfAction]
+    [navigate, piPdfLoading, getStatusColor, handlePiPdfAction]
   );
 
   const table = useReactTable<ProformaInvoice>({

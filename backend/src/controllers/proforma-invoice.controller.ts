@@ -9,8 +9,6 @@ import {
   getOrderDetailsWithVehiclePIStatusService,
 } from "../services/proforma-invoice.service";
 
-import { deletePIService } from "../services/proforma-invoice.service";
-
 // CREATE PI
 export const createPI = async (req: Request, res: Response) => {
   try {
@@ -93,15 +91,5 @@ export const updatePIStatus = async (req: Request, res: Response) => {
     res.json(updated);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
-  }
-};
-
-export const deletePI = async (req: Request, res: Response) => {
-  try {
-    await deletePIService(req.params.id as string);
-
-    res.json({ message: "PI deleted successfully" });
-  } catch (error: any) {
-    res.status(404).json({ message: error.message });
   }
 };

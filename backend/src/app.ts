@@ -6,6 +6,7 @@ import { config } from "./config/env";
 import routes from "./routes";
 import { errorHandler, notFound } from "./middleware/error.middleware";
 import dealerRoutes from "./routes/dealer.route";
+import companyRoutes from "./routes/company.routes"; // Import company routes
 
 const app: Application = express();
 
@@ -39,6 +40,7 @@ app.get("/health", (req, res) => {
 // API routes
 app.use("/api/v1", routes);
 app.use("/api/v1/dealers", dealerRoutes);
+app.use("/api/v1/companies", companyRoutes); // Register company routes
 
 // Error handling
 app.use(notFound);

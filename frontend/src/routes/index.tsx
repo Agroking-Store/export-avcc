@@ -33,6 +33,11 @@ import PIList from "../features/proforma-invoice/pages/PIList";
 import PIOrderDetail from "../features/proforma-invoice/pages/PIOrderDetail"; // Import the renamed PIOrderDetail component
 import PIDetails from "../features/proforma-invoice/pages/PIDetails";
 
+// Companies
+import CompanyList from "../features/company/pages/CompanyList";
+import CreateCompany from "../features/company/pages/CreateCompany";
+import CompanyDetails from "../features/company/pages/CompanyDetails";
+
 // Vehicles
 import VehicleRoutes from "./VehicleRoutes";
 
@@ -79,6 +84,12 @@ const AppRoutes: React.FC = () => {
             path="/proforma-invoice/orders/:orderId"
             element={<PIOrderDetail />}
           />
+
+          {/* Companies */}
+          <Route path="/companies" element={<CompanyList />} />
+          <Route path="/companies/add" element={<CreateCompany />} />
+          <Route path="/companies/edit/:id" element={<CreateCompany />} />
+          <Route path="/companies/:id" element={<CompanyDetails />} />
 
           {/* Coming Soon */}
           <Route

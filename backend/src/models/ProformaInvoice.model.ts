@@ -69,6 +69,7 @@ export interface IProformaInvoice extends Document {
     | "sent_to_buyer"
     | "lc_received"
     | "expired";
+  __v?: number; // Mongoose version key
 
   createdAt: Date;
   updatedAt: Date;

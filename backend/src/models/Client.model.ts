@@ -9,6 +9,7 @@ export interface IClient extends Document {
   companyName: string;
   address: string;
   isActive: boolean;
+  __v?: number; // Mongoose version key
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +32,7 @@ const clientSchema = new Schema<IClient>(
       required: [true, "Email is required"],
       lowercase: true,
       trim: true,
-      unique: true, 
+      unique: true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         "Please provide a valid email",

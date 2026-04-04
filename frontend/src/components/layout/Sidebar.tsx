@@ -31,6 +31,7 @@ const AppSidebar: React.FC = () => {
       path: "/letter-of-credit",
     },
     { name: "Dealers", icon: <Truck size={20} />, path: "/dealers/dashboard" },
+    { name: "Companies", icon: <Users size={20} />, path: "/companies" },
   ];
 
   return (
@@ -46,9 +47,11 @@ const AppSidebar: React.FC = () => {
             item.name === "Dealers"
               ? location.pathname.startsWith("/dealers")
               : item.name === "Clients"
-                ? location.pathname.startsWith("/clients") ||
-                  location.pathname.startsWith("/orders")
-                : location.pathname === item.path;
+              ? location.pathname.startsWith("/clients") ||
+                location.pathname.startsWith("/orders")
+              : item.name === "Companies"
+              ? location.pathname.startsWith("/companies")
+              : location.pathname === item.path;
 
           return (
             <Link

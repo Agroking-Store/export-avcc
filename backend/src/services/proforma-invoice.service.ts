@@ -369,16 +369,6 @@ export const updatePIStatusService = async (id: string, status: string) => {
   return updated;
 };
 
-export const deletePIService = async (id: string) => {
-  const deleted = await ProformaInvoice.findByIdAndDelete(id);
-
-  if (!deleted) {
-    throw new Error("PI not found");
-  }
-
-  return deleted;
-};
-
 // GET ORDER DETAILS WITH VEHICLE PI STATUS
 export const getOrderDetailsWithVehiclePIStatusService = async (
   orderId: string
