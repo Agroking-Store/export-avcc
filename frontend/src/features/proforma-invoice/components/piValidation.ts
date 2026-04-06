@@ -19,6 +19,10 @@ export const defaultPIForm: PIForm = {
   incoterm: "",
   portOfLoading: "",
   portOfDischarge: "",
+  buyersRef: "",
+  otherRef: "",
+  dispatchedThrough: "",
+  destination: "",
   vehicleDetails: [],
 };
 

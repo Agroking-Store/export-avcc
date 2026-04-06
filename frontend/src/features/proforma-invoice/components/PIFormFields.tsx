@@ -217,6 +217,46 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               placeholder="e.g. Jebel Ali, UAE"
             />
           </div>
+          <div>
+            <label className={labelClass}>Buyer's Ref./Order No.</label>
+            <input
+              value={form.buyersRef}
+              onChange={(e) => setForm({ ...form, buyersRef: e.target.value })}
+              className={inputClass}
+              placeholder="e.g. PO-12345"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Other References</label>
+            <input
+              value={form.otherRef}
+              onChange={(e) => setForm({ ...form, otherRef: e.target.value })}
+              className={inputClass}
+              placeholder="e.g. Contract No. ABC"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Dispatched Through</label>
+            <input
+              value={form.dispatchedThrough}
+              onChange={(e) =>
+                setForm({ ...form, dispatchedThrough: e.target.value })
+              }
+              className={inputClass}
+              placeholder="e.g. DHL, FedEx"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Destination</label>
+            <input
+              value={form.destination}
+              onChange={(e) =>
+                setForm({ ...form, destination: e.target.value })
+              }
+              className={inputClass}
+              placeholder="e.g. Dubai, UAE"
+            />
+          </div>
         </div>
       </div>
 

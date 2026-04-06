@@ -60,6 +60,10 @@ export const createPIValidationSchema = Joi.object({
   incoterm: Joi.string().allow("").optional(),
   portOfLoading: Joi.string().allow("").optional(),
   portOfDischarge: Joi.string().allow("").optional(),
+  buyersRef: Joi.string().allow("").optional(),
+  otherRef: Joi.string().allow("").optional(),
+  dispatchedThrough: Joi.string().allow("").optional(),
+  destination: Joi.string().allow("").optional(),
   vehicleDetails: Joi.array().items(vehicleDetailSchema).min(1).required(),
   totalAmount: Joi.number().optional(), // This is calculated on backend, but sent from frontend
   clientSnapshot: clientSnapshotSchema.optional(),

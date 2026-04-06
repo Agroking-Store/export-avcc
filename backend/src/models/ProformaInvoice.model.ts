@@ -32,6 +32,10 @@ export interface IProformaInvoice extends Document {
   incoterm?: string;
   portOfLoading?: string;
   portOfDischarge?: string;
+  buyersRef?: string;
+  otherRef?: string;
+  dispatchedThrough?: string;
+  destination?: string;
 
   validityDate?: Date;
 
@@ -156,6 +160,19 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
     },
 
     portOfDischarge: {
+      type: String,
+    },
+
+    buyersRef: {
+      type: String,
+    },
+    otherRef: {
+      type: String,
+    },
+    dispatchedThrough: {
+      type: String,
+    },
+    destination: {
       type: String,
     },
 

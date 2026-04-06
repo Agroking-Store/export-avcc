@@ -96,8 +96,8 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
       incoterm: pi.incoterm || " ",
       portOfLoading: pi.portOfLoading || "N/A",
       portOfDischarge: pi.portOfDischarge || "N/A",
-      buyersRef: " ",
-      otherRef: " ",
+      buyersRef: pi.buyersRef || " ",
+      otherRef: pi.otherRef || " ",
       exporter: {
         name: companyForPdf?.name || "N/A",
         address: formatAddress(companyForPdf?.address) || "N/A",
@@ -120,8 +120,8 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
           formatAddress(clientForPdf?.address) || clientForPdf?.country || "",
         state: clientForPdf?.address?.state || " ",
       },
-      dispatchedThrough: " ",
-      destination: clientForPdf?.country || " ",
+      dispatchedThrough: pi.dispatchedThrough || " ",
+      destination: pi.destination || clientForPdf?.country || " ",
       items,
       totalQty,
       totalAmount: pi.totalAmount.toLocaleString("en-US", {

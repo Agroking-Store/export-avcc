@@ -128,6 +128,20 @@ const CreatePI = () => {
           incoterm: pi.incoterm || "",
           clientSnapshot: (() => {
             if (pi.clientSnapshot) {
+              // Ensure address is an object if it was a string in the snapshot
+              if (
+                pi.clientSnapshot.address &&
+                typeof pi.clientSnapshot.address === "string"
+              ) {
+                pi.clientSnapshot.address = {
+                  streetArea: pi.clientSnapshot.address,
+                  houseBuilding: "",
+                  cityTown: "",
+                  state: "",
+                  pincode: "",
+                  country: "",
+                };
+              }
               return pi.clientSnapshot;
             }
             if (typeof pi.client_id === "object") {
@@ -168,7 +182,11 @@ const CreatePI = () => {
           })(),
           companySnapshot:
             pi.companySnapshot ||
-            (typeof pi.company_id === "object" ? pi.company_id : undefined),
+            (typeof pi.company_id === "object" ? pi.company_id : undefined), // Ensure address and bankDetails are objects if they were strings
+          buyersRef: pi.buyersRef || "",
+          otherRef: pi.otherRef || "",
+          dispatchedThrough: pi.dispatchedThrough || "",
+          destination: pi.destination || "",
           portOfLoading: pi.portOfLoading || "",
           portOfDischarge: pi.portOfDischarge || "",
           vehicleDetails:

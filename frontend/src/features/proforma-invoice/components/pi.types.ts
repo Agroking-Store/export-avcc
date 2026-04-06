@@ -39,6 +39,10 @@ export type PIForm = {
   termsOfDelivery: string;
   incoterm: string;
   portOfLoading: string;
+  buyersRef: string;
+  otherRef: string;
+  dispatchedThrough: string;
+  destination: string;
   portOfDischarge: string;
   vehicleDetails: VehicleLineItem[];
   // Snapshot of client details for independent editing within the PI
@@ -114,6 +118,10 @@ export interface ProformaInvoiceAPI {
   paymentTerms?: string;
   termsOfDelivery?: string;
   incoterm?: string;
+  buyersRef?: string;
+  otherRef?: string;
+  dispatchedThrough?: string;
+  destination?: string;
   portOfLoading?: string;
   portOfDischarge?: string;
   validityDate?: string; // API might return as string
