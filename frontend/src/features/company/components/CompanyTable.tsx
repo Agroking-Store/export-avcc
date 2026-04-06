@@ -262,7 +262,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                           : "hover:bg-gray-50"
                       }`}
                     >
-                      <span className="text-lg">
+                      <span className="text-sm">
                         {getColumnLabel(column.id)}
                       </span>
                       {column.getIsVisible() && (
