@@ -1,6 +1,7 @@
 import ProformaInvoice from "../models/ProformaInvoice.model";
 import { Order } from "../models/Order.model";
 import { Types, PipelineStage } from "mongoose";
+import { Company } from "../models/Company.model"; // Import Company model
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
@@ -68,22 +69,97 @@ const numberToWords = (num: number): string => {
   return `USD ${mainPart}${centsPart} Only`;
 };
 
+// Helper to generate the next PI number based on company/year/sequential
+const generateNextPiNumber = async (companyId: string): Promise<string> => {
+  if (!companyId) {
+    throw new Error("Company (Exporter) is required to generate PI number.");
+  }
+  const company = await Company.findById(companyId);
+  if (!company) {
+    throw new Error("Company (Exporter) not found.");
+  }
+
+  const companyShortCode = getCompanyShortCode(company.name);
+  const financialYear = getFinancialYear(new Date()); // Use current date for PI generation
+
+  const piNumberPrefix = `${companyShortCode}/${financialYear}/`;
+
+  const lastPI = await ProformaInvoice.findOne({
+    company_id: companyId, // Filter by specific company
+    piNumber: { $regex: `^${piNumberPrefix}\\d+$` }, // Match PI numbers starting with the prefix and ending with digits
+  }).sort({ piNumber: -1 }); // Sort by piNumber descending to get the highest sequential number
+
+  let nextSequentialNumber = 1;
+  if (lastPI && lastPI.piNumber) {
+    const lastPart = lastPI.piNumber.split("/").pop(); // Get the last part (e.g., "10")
+    if (lastPart && !isNaN(Number(lastPart))) {
+      nextSequentialNumber = Number(lastPart) + 1;
+    }
+  }
+
+  return `${piNumberPrefix}${String(nextSequentialNumber).padStart(2, "0")}`; // Pad with leading zero if needed, e.g., 01, 02, ..., 10
+};
+
+// New service to get the suggested next PI number
+export const getSuggestedNextPiNumberService = async (companyId: string) => {
+  return await generateNextPiNumber(companyId);
+};
+
+// Helper to get financial year from a date
+const getFinancialYear = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-indexed (0 for Jan, 11 for Dec)
+
+  if (month >= 3) {
+    // April (3) to December (11)
+    return `${year}-${String(year + 1).slice(2)}`;
+  } else {
+    // January (0) to March (2)
+    return `${year - 1}-${String(year).slice(2)}`;
+  }
+};
+
+// Helper to derive company short code
+const getCompanyShortCode = (companyName: string): string => {
+  if (!companyName) return "XX";
+  const words = companyName.split(" ");
+  if (words.length > 0 && words[0].length >= 2) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return companyName.substring(0, 2).toUpperCase(); // Fallback for single-word names less than 2 chars
+};
+
 // CREATE PI
 export const createPIService = async (data: any) => {
-  const count = await ProformaInvoice.countDocuments();
-  const piNumber = data.piNumber || `PI-${String(count + 1).padStart(3, "0")}`;
-
   const totalAmount = data.vehicleDetails.reduce(
     (sum: number, v: any) =>
       sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
     0
   );
-
   const amountInWords = numberToWords(totalAmount);
+
+  let finalPiNumber = data.piNumber; // Use provided piNumber if available
+
+  if (!finalPiNumber || finalPiNumber.trim() === "") {
+    // If piNumber is not provided or empty, generate it
+    finalPiNumber = await generateNextPiNumber(data.company_id);
+  } else {
+    // If a piNumber is provided, check for uniqueness if it's not an update operation
+    // This check is important to prevent duplicate PI numbers if the user manually enters one.
+    const existingPi = await ProformaInvoice.findOne({
+      piNumber: finalPiNumber,
+    });
+    if (existingPi && existingPi._id.toString() !== data._id?.toString()) {
+      // Allow update of same PI with same number
+      throw new Error(
+        `Proforma Invoice with number ${finalPiNumber} already exists.`
+      );
+    }
+  }
 
   const pi = new ProformaInvoice({
     ...data,
-    piNumber,
+    piNumber: finalPiNumber, // Use the final PI number
     totalAmount,
     amountInWords,
   });
@@ -313,10 +389,17 @@ export const getPIsService = async (query: any) => {
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
     .populate(
-      "client_id",
-      "name clientCode email phone country address companyName"
+      "client_id", // Populate client_id to get original details if no snapshot
+      "name clientCode email phone country address companyName" // Select fields to populate
     )
-    .populate("dealer_id", "name contact email address gstNumber");
+    .populate(
+      "company_id", // Populate company_id to get original details if no snapshot
+      "name email phone address gstNumber bankDetails"
+    ); // Select fields to populate
+
+  // If company_id is not populated, and dealer_id was previously used,
+  // we might need a fallback or a migration strategy.
+  // For now, assuming company_id will be correctly set.
 
   if (!pi) {
     throw new Error("PI not found");

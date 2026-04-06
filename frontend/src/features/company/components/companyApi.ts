@@ -23,10 +23,11 @@ export const companyApi = {
     page: number = 1,
     limit: number = 10,
     sortBy: string = "createdAt",
-    sortOrder: "asc" | "desc" = "desc"
+    sortOrder: "asc" | "desc" = "desc",
+    status: "all" | "active" | "inactive" = "all" // Added status parameter
   ) => {
     const res = await axios.get(`${apiConfig.baseURL}/companies`, {
-      params: { search, page, limit, sortBy, sortOrder },
+      params: { search, page, limit, sortBy, sortOrder, status }, // Include status in params
       headers: getAuthToken()
         ? { Authorization: `Bearer ${getAuthToken()}` }
         : {},

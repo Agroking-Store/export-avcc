@@ -30,7 +30,14 @@ export const createCompanyService = async (data: CreateCompanyDto) => {
 
 // Get all companies with search and pagination
 export const getCompaniesService = async (query: any) => {
-  const { search, page = 1, limit = 10 } = query;
+  const {
+    search,
+    page = 1,
+    limit = 10,
+    status = "all",
+    sortBy = "createdAt", // Default sort by createdAt
+    sortOrder = "desc", // Default sort order descending
+  } = query; // Added status, sortBy, sortOrder
 
   let filter: any = {};
 
@@ -39,16 +46,23 @@ export const getCompaniesService = async (query: any) => {
     filter.$or = [
       { name: { $regex: search, $options: "i" } },
       { companyId: { $regex: search, $options: "i" } },
-      { country: { $regex: search, $options: "i" } },
+      { "address.country": { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
       { gstNumber: { $regex: search, $options: "i" } },
     ];
   }
 
+  // Apply status filter
+  if (status === "active") {
+    filter.isActive = true;
+  } else if (status === "inactive") {
+    filter.isActive = false;
+  }
+
   const skip = (Number(page) - 1) * Number(limit);
 
   const companies = await Company.find(filter)
-    .sort({ createdAt: -1 }) // Sort by creation date descending
+    .sort({ [sortBy]: sortOrder === "desc" ? -1 : 1 }) // Use dynamic sortBy and sortOrder
     .skip(skip)
     .limit(Number(limit));
 

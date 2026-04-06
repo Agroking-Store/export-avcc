@@ -10,21 +10,26 @@ interface PIFormFieldsProps {
   form: PIForm;
   setForm: React.Dispatch<React.SetStateAction<PIForm>>;
   errors: Record<string, string>;
-  clients: any[];
-  dealers: any[];
+  clients: any[]; // Keep clients
+  companies: any[]; // Renamed from dealers
   ordersWithDisplay: any[];
   selectedOrder: any | null;
   setClientSearch: React.Dispatch<React.SetStateAction<string>>;
-  setDealerSearch: React.Dispatch<React.SetStateAction<string>>;
+  setCompanySearch: React.Dispatch<React.SetStateAction<string>>; // Renamed from setDealerSearch
   setOrderSearch: React.Dispatch<React.SetStateAction<string>>;
+  handlePiNumberChange: (value: string) => void; // New prop for piNumber changes
   handleSelectOrder: (orderId: string) => Promise<void>;
   handleVehicleChange: (
     index: number,
     field: keyof VehicleLineItem,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     value: any
   ) => void;
   handleClientSelect: (clientId: string) => void;
-  handleDealerSelect: (dealerId: string) => void;
+  handleCompanySelect: (companyId: string) => void; // Renamed from handleDealerSelect
+  handleClientSnapshotChange: (field: string, value: any) => void;
+  handleCompanySnapshotChange: (field: string, value: any) => void;
   expandedRows: Record<number, boolean>;
   toggleRow: (index: number) => void;
   totalAmount: number;
@@ -38,21 +43,26 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   setForm,
   errors,
   clients,
-  dealers,
+  companies, // Changed from dealers
   ordersWithDisplay,
   selectedOrder,
   setClientSearch,
-  setDealerSearch,
+  setCompanySearch, // Changed from setDealerSearch
   setOrderSearch,
+  handlePiNumberChange, // Destructure the new prop
   handleSelectOrder,
   handleVehicleChange,
   handleClientSelect,
-  handleDealerSelect,
+  handleCompanySelect, // Changed from handleDealerSelect
+  handleClientSnapshotChange,
+  handleCompanySnapshotChange,
   expandedRows,
   toggleRow,
   totalAmount,
   numberToWords,
   getRate,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   getAmount,
 }) => {
   const inputClass =
@@ -66,6 +76,17 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   const labelClass = "block text-sm font-medium text-gray-700 mb-2";
   const sectionTitleClass = "text-xl font-medium text-gray-900 mb-6";
   const divider = <hr className="border-gray-200 my-10" />;
+
+  // Find the selected client and company from the provided arrays
+  // These are now used for initial population if snapshots are empty, or as fallback
+  const initialSelectedClient = clients.find((c) => c._id === form.client_id);
+  const initialSelectedCompany = companies.find(
+    (c) => c._id === form.company_id
+  );
+
+  // Use snapshot for display if available, otherwise fallback to initial selected
+  const displayClient = form.clientSnapshot || initialSelectedClient;
+  const displayCompany = form.companySnapshot || initialSelectedCompany;
 
   return (
     <>
@@ -117,8 +138,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             <label className={labelClass}>Voucher No (PI Number)</label>
             <input
               value={form.piNumber}
-              onChange={(e) => setForm({ ...form, piNumber: e.target.value })}
-              className={inputClass}
+              onChange={(e) => handlePiNumberChange(e.target.value)} // Allow editing
+              className={inputClass} // Use standard input class
               placeholder="e.g. PI-2026-001"
             />
           </div>
@@ -240,147 +261,103 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>Company Name</label>
+            <label className={labelClass}>Company Name</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.companyName}
+              value={displayClient?.companyName || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    companyName: e.target.value,
-                  },
-                })
+                handleClientSnapshotChange("companyName", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Contact Name</label>
+            <label className={labelClass}>Contact Name</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.name}
+              value={displayClient?.name || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    name: e.target.value,
-                  },
-                })
+                handleClientSnapshotChange("name", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>House/Building</label>
+            <label className={labelClass}>House/Building</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.address.houseBuilding}
+              value={displayClient?.address?.houseBuilding || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    address: {
-                      ...form.clientDetails.address,
-                      houseBuilding: e.target.value,
-                    },
-                  },
-                })
+                handleClientSnapshotChange(
+                  "address.houseBuilding",
+                  e.target.value
+                )
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Street/Locality/Area</label>
+            <label className={labelClass}>Street/Locality/Area</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.address.streetArea}
+              value={displayClient?.address?.streetArea || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    address: {
-                      ...form.clientDetails.address,
-                      streetArea: e.target.value,
-                    },
-                  },
-                })
+                handleClientSnapshotChange("address.streetArea", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>City/Town</label>
+            <label className={labelClass}>City/Town</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.address.cityTown}
+              value={displayClient?.address?.cityTown || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    address: {
-                      ...form.clientDetails.address,
-                      cityTown: e.target.value,
-                    },
-                  },
-                })
+                handleClientSnapshotChange("address.cityTown", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>State</label>
+            <label className={labelClass}>State</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.address.state}
+              value={displayClient?.address?.state || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    address: {
-                      ...form.clientDetails.address,
-                      state: e.target.value,
-                    },
-                  },
-                })
+                handleClientSnapshotChange("address.state", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Pincode / ZIP</label>
+            <label className={labelClass}>Email</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.address.pincode}
+              value={displayClient?.email || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    address: {
-                      ...form.clientDetails.address,
-                      pincode: e.target.value,
-                    },
-                  },
-                })
+                handleClientSnapshotChange("email", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Country</label>
+            <label className={labelClass}>Pincode / ZIP</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.clientDetails.address.country}
+              value={displayClient?.address?.pincode || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  clientDetails: {
-                    ...form.clientDetails,
-                    address: {
-                      ...form.clientDetails.address,
-                      country: e.target.value,
-                    },
-                  },
-                })
+                handleClientSnapshotChange("address.pincode", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Country</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.country || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("address.country", e.target.value)
               }
               className={inputClass}
             />
@@ -392,20 +369,20 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
 
       {/* EXPORTER / COMPANY DATA */}
       <div>
-        <h3 className={sectionTitleClass}>Exporter / Company Data</h3>
+        <h3 className={sectionTitleClass}>Company Details (Exporter)</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className={labelClass}>Exporter (Dealer)</label>
+            <label className={labelClass}>Exporter (Company)</label>
             <SearchableCombobox
-              data={dealers}
-              value={form.dealer_id}
-              onValueChange={handleDealerSelect}
-              onSearchChange={setDealerSearch}
-              displayField="name"
+              data={companies} // Use companies data
+              value={form.company_id} // Use company_id
+              onValueChange={handleCompanySelect} // Use handleCompanySelect
+              onSearchChange={setCompanySearch} // Use setCompanySearch
+              displayField="name" // Display company name
               valueField="_id"
-              placeholder="Select a dealer..."
-              searchPlaceholder="Search dealers..."
-              emptyMessage="No dealers found."
+              placeholder="Select a company..."
+              searchPlaceholder="Search companies..."
+              emptyMessage="No companies found."
               renderItem={(item, index) => (
                 <div className="flex items-center justify-between w-full gap-4">
                   <div className="flex items-center gap-2 truncate">
@@ -415,154 +392,113 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     <span className="font-medium truncate">{item.name}</span>
                   </div>
                   <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                    {item.contact || "-"}
+                    {item.phone || "-"} {/* Use phone from Company type */}
                   </span>
                 </div>
               )}
             />
           </div>
           <div>
-            <label className={labelClass}>Company Name</label>
+            <label className={labelClass}>Company Name</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.name}
+              value={displayCompany?.name || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    name: e.target.value,
-                  },
-                })
+                handleCompanySnapshotChange("name", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>GSTIN</label>
+            <label className={labelClass}>GST Number</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.gstin}
+              value={displayCompany?.gstNumber || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    gstin: e.target.value,
-                  },
-                })
+                handleCompanySnapshotChange("gstNumber", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>House/Building</label>
+            <label className={labelClass}>House/Building</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.address.houseBuilding}
+              value={displayCompany?.address?.houseBuilding || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    address: {
-                      ...form.dealerDetails.address,
-                      houseBuilding: e.target.value,
-                    },
-                  },
-                })
+                handleCompanySnapshotChange(
+                  "address.houseBuilding",
+                  e.target.value
+                )
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Street/Locality/Area</label>
+            <label className={labelClass}>Street/Locality/Area</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.address.streetArea}
+              value={displayCompany?.address?.streetArea || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    address: {
-                      ...form.dealerDetails.address,
-                      streetArea: e.target.value,
-                    },
-                  },
-                })
+                handleCompanySnapshotChange(
+                  "address.streetArea",
+                  e.target.value
+                )
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>City/Town</label>
+            <label className={labelClass}>City/Town</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.address.cityTown}
+              value={displayCompany?.address?.cityTown || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    address: {
-                      ...form.dealerDetails.address,
-                      cityTown: e.target.value,
-                    },
-                  },
-                })
+                handleCompanySnapshotChange("address.cityTown", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>State</label>
+            <label className={labelClass}>State</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.address.state}
+              value={displayCompany?.address?.state || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    address: {
-                      ...form.dealerDetails.address,
-                      state: e.target.value,
-                    },
-                  },
-                })
+                handleCompanySnapshotChange("address.state", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Pincode / ZIP</label>
+            <label className={labelClass}>Pincode / ZIP</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.address.pincode}
+              value={displayCompany?.address?.pincode || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    address: {
-                      ...form.dealerDetails.address,
-                      pincode: e.target.value,
-                    },
-                  },
-                })
+                handleCompanySnapshotChange("address.pincode", e.target.value)
               }
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Country</label>
+            <label className={labelClass}>Email</label>{" "}
+            {/* Read-only display */}
             <input
-              value={form.dealerDetails.address.country}
+              value={displayCompany?.email || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  dealerDetails: {
-                    ...form.dealerDetails,
-                    address: {
-                      ...form.dealerDetails.address,
-                      country: e.target.value,
-                    },
-                  },
-                })
+                handleCompanySnapshotChange("email", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Country</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayCompany?.address?.country || ""} // Use displayCompany
+              onChange={(e) =>
+                handleCompanySnapshotChange("address.country", e.target.value)
               }
               className={inputClass}
             />
@@ -579,49 +515,46 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <input
               placeholder="Bank Name"
-              value={form.bankDetails.bankName}
+              value={displayCompany?.bankDetails?.bankName || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  bankDetails: {
-                    ...form.bankDetails,
-                    bankName: e.target.value,
-                  },
-                })
+                handleCompanySnapshotChange(
+                  "bankDetails.bankName",
+                  e.target.value
+                )
               }
               className={inputClass}
             />
             <input
               placeholder="Account No"
-              value={form.bankDetails.accountNo}
+              value={displayCompany?.bankDetails?.accountNo || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  bankDetails: {
-                    ...form.bankDetails,
-                    accountNo: e.target.value,
-                  },
-                })
+                handleCompanySnapshotChange(
+                  "bankDetails.accountNo",
+                  e.target.value
+                )
               }
               className={inputClass}
             />
             <input
               placeholder="Branch / IFSC"
-              value={form.bankDetails.branchIfsc}
+              value={displayCompany?.bankDetails?.branchIfsc || ""} // Use displayCompany
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  bankDetails: {
-                    ...form.bankDetails,
-                    branchIfsc: e.target.value,
-                  },
-                })
+                handleCompanySnapshotChange(
+                  "bankDetails.branchIfsc",
+                  e.target.value
+                )
               }
               className={inputClass}
             />
           </div>
         </div>
       </div>
+
+      {divider}
+
+      {divider}
+
+      {/* SUMMARY */}
 
       {divider}
 

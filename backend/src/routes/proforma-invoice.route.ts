@@ -3,6 +3,7 @@ import {
   createPI,
   getPIs,
   getPIById,
+  getSuggestedNextPiNumber, // Import the new controller
   updatePI,
   getOrdersWithPIStatus, // Keep this for the PIList page's "Order Perspective" tab
   updatePIStatus,
@@ -14,6 +15,7 @@ import { createPIValidationSchema } from "../validations/proforma-invoice.valida
 
 const router = Router();
 router.post("/", validate(createPIValidationSchema), createPI); // Route to create a new PI
+router.get("/next-pi-number", getSuggestedNextPiNumber); // New route for suggested PI number
 router.get("/orders-with-pi-status", getOrdersWithPIStatus); // Route to get a list of orders with their overall PI status (for the PIList page)
 router.get("/", getPIs);
 router.get("/:id/pdf", downloadProformaInvoice);

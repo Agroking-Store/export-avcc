@@ -12,16 +12,13 @@ export const defaultAddress: AddressDetails = {
 export const defaultPIForm: PIForm = {
   piNumber: "",
   client_id: "",
-  dealer_id: "",
-  clientDetails: { name: "", companyName: "", address: { ...defaultAddress } },
-  dealerDetails: { name: "", gstin: "", address: { ...defaultAddress } },
+  company_id: "",
   paymentTerms: "",
   validityDate: "",
   termsOfDelivery: "",
   incoterm: "",
   portOfLoading: "",
   portOfDischarge: "",
-  bankDetails: { bankName: "", accountNo: "", branchIfsc: "" },
   vehicleDetails: [],
 };
 

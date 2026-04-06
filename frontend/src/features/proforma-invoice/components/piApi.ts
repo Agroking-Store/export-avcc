@@ -1,6 +1,7 @@
 import axios from "axios";
 import { apiConfig } from "../../../config/apiConfig";
 import { PIForm } from "./pi.types";
+import { companyApi } from "../../company/components/companyApi"; // Import existing companyApi
 
 const getAuthToken = () => {
   let token =
@@ -25,18 +26,15 @@ export const piApi = {
     return res.data?.data || res.data;
   },
 
-  getDealers: async (search: string) => {
-    const res = await axios.get(`${apiConfig.baseURL}/dealers`, {
-      params: { limit: 10, search },
-    });
-    return res.data?.data || res.data;
+  // Reusing existing companyApi for fetching companies
+  getCompanies: async (search: string) => {
+    const res = await companyApi.getCompanies(search, 1, 10, "name", "asc"); // Assuming getCompanies takes these params
+    return res.data || []; // Correctly access the 'data' array from the paginated response
   },
 
-  getDealerById: async (id: string) => {
-    const res = await axios.get(`${apiConfig.baseURL}/dealers/${id}`);
-    return res.data.data; // Assuming the dealer data is nested under 'data'
+  getCompanyById: async (id: string) => {
+    return companyApi.getCompanyById(id);
   },
-
   getOrders: async (search: string) => {
     const res = await axios.get(`${apiConfig.baseURL}/orders`, {
       params: { limit: 20, search },
@@ -80,5 +78,15 @@ export const piApi = {
         ? { Authorization: `Bearer ${getAuthToken()}` }
         : {},
     });
+  },
+
+  getSuggestedNextPiNumber: async (companyId: string) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/next-pi-number`,
+      {
+        params: { companyId },
+      }
+    );
+    return res.data.piNumber;
   },
 };

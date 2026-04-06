@@ -7,6 +7,20 @@ export interface IAddressDetails {
   country?: string;
 }
 
+export interface IBankDetails {
+  // Exported interface
+  bankName?: string;
+  accountNo?: string;
+  branchIfsc?: string;
+}
+
+export const defaultBankDetails: IBankDetails = {
+  // Exported default value
+  bankName: "",
+  accountNo: "",
+  branchIfsc: "",
+};
+
 export interface Company {
   _id: string;
   companyId: string;
@@ -15,6 +29,7 @@ export interface Company {
   phone?: string;
   // country?: string; // Removed as it's part of address now
   address?: IAddressDetails;
+  bankDetails?: IBankDetails; // Added bankDetails to Company interface
   gstNumber?: string;
   isActive: boolean;
   createdAt: string; // Dates are typically strings when received from the API
@@ -27,6 +42,7 @@ export interface CreateCompanyForm {
   phone?: string; // Made optional as per PI form
   // country: string; // Removed as it's part of address now
   address: IAddressDetails;
+  bankDetails: IBankDetails; // Made required for CreateCompanyForm as default is provided
   gstNumber: string;
 }
 
@@ -36,5 +52,6 @@ export interface UpdateCompanyForm {
   phone?: string;
   // country?: string; // Removed as it's part of address now
   address?: IAddressDetails;
+  bankDetails?: IBankDetails; // Added bankDetails to UpdateCompanyForm
   gstNumber?: string;
 }

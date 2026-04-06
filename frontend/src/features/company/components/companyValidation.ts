@@ -43,13 +43,11 @@ export const validateUpdateCompanyForm = (
 ): { isValid: boolean; errors: Record<string, string> } => {
   const errors: Record<string, string> = {};
 
-  let hasAtLeastOneField = false;
-
   if (form.name !== undefined) {
-    hasAtLeastOneField = true;
     if (!form.name.trim()) {
       errors.name = "Company name cannot be empty.";
     } else if (form.name.trim().length < 2) {
+      // Corrected indentation
       errors.name = "Company name must be at least 2 characters long.";
     } else if (form.name.trim().length > 100) {
       errors.name = "Company name cannot exceed 100 characters.";
@@ -57,14 +55,12 @@ export const validateUpdateCompanyForm = (
   }
 
   if (form.email !== undefined) {
-    hasAtLeastOneField = true;
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
       errors.email = "Please provide a valid email address.";
     }
   }
 
   if (form.phone !== undefined) {
-    hasAtLeastOneField = true;
     if (form.phone && !/^[0-9]{10,15}$/.test(form.phone)) {
       errors.phone = "Phone number must be 10-15 digits.";
     }

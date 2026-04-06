@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"; // Keep toast for general messages
 import { Company } from "../components/company.types"; // Keep Company type
 import CompanyTable from "../components/CompanyTable"; // Import CompanyTable
-import { Plus, ChevronsUpDown, Eye, FilePenLine } from "lucide-react"; // Keep Plus for the Add Company button
+import { Plus, ChevronsUpDown, FilePenLine } from "lucide-react"; // Keep Plus for the Add Company button
 import { Button } from "@/components/ui/button"; // Keep Button for the Add Company button
 import { companyApi } from "../components/companyApi";
 import {
@@ -35,44 +35,52 @@ const CompanyList: React.FC = () => {
     pageSize: 10,
   });
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    // Default column visibility settings
     serialNumber: true,
     companyId: true,
     name: true,
-    email: true,
+    email: false, // Changed to false for default
     actions: true,
     phone: false,
-    country: false,
-    isActive: false,
+    "address.country": false,
+    isActive: true, // Changed to true for default
+    bankDetails: false, // Add bankDetails to default hidden columns
   });
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all"); // New state for status filter
 
   // Function to generate pagination numbers with ellipsis
-  const generatePagination = (currentPage: number, totalPages: number) => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (currentPage <= 3) {
-      return [1, 2, 3, 4, "...", totalPages];
-    }
-    if (currentPage >= totalPages - 2) {
+  const generatePagination = useCallback(
+    (currentPage: number, totalPages: number) => {
+      if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      if (currentPage <= 3) {
+        return [1, 2, 3, 4, "...", totalPages];
+      }
+      if (currentPage >= totalPages - 2) {
+        return [
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages,
+        ];
+      }
       return [
         1,
         "...",
-        totalPages - 3,
-        totalPages - 2,
-        totalPages - 1,
+        currentPage - 1,
+        currentPage,
+        currentPage + 1,
+        "...",
         totalPages,
       ];
-    }
-    return [
-      1,
-      "...",
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      "...",
-      totalPages,
-    ];
-  };
+    },
+    []
+  );
 
   const fetchCompanies = useCallback(
     async (
@@ -80,7 +88,8 @@ const CompanyList: React.FC = () => {
       page: number,
       limit: number,
       sortBy: string,
-      sortOrder: "asc" | "desc"
+      sortOrder: "asc" | "desc",
+      status: "all" | "active" | "inactive" // Added status parameter
     ) => {
       setLoading(true);
       try {
@@ -89,10 +98,11 @@ const CompanyList: React.FC = () => {
           page,
           limit,
           sortBy,
-          sortOrder
+          sortOrder,
+          status // Pass status to the API call
         );
-        setCompanies(res.data.data || []); // Ensure companies is always an array
-        setPageCount(res.data.totalPages || 1);
+        setCompanies(res.data || []); // Correctly access the array of companies
+        setPageCount(res.totalPages || 1); // Correctly access totalPages
       } catch (error) {
         console.error("Failed to fetch companies:", error);
         toast.error("Failed to fetch companies.");
@@ -119,7 +129,7 @@ const CompanyList: React.FC = () => {
           </div>
         ),
         enableSorting: false,
-        enableHiding: false, // Serial number should always be visible
+        enableHiding: false,
       },
       {
         accessorKey: "companyId",
@@ -208,7 +218,7 @@ const CompanyList: React.FC = () => {
         cell: ({ row }) => (
           <div className="flex justify-center">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
                 row.original.isActive
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
@@ -226,24 +236,6 @@ const CompanyList: React.FC = () => {
         ),
         cell: ({ row }) => (
           <div className="flex justify-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-10 w-10 p-0 cursor-pointer"
-                    onClick={() => navigate(`/companies/${row.original._id}`)}
-                  >
-                    <Eye className="h-5 w-5 text-slate-600 cursor-pointer" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="text-xs">
-                  View Company
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -281,7 +273,8 @@ const CompanyList: React.FC = () => {
       pagination.pageIndex + 1,
       pagination.pageSize,
       sortParam,
-      sortOrder
+      sortOrder,
+      statusFilter // Pass statusFilter to fetchCompanies
     );
   }, [
     fetchCompanies,
@@ -289,6 +282,7 @@ const CompanyList: React.FC = () => {
     pagination.pageIndex,
     pagination.pageSize,
     sorting,
+    statusFilter, // Add statusFilter to dependencies
   ]);
 
   useEffect(() => {
@@ -302,6 +296,7 @@ const CompanyList: React.FC = () => {
   const table = useReactTable({
     data: companies, // Pass companies data
     columns: columns, // Use the defined columns
+    getRowId: (row) => row._id, // Explicitly tell react-table to use _id as row ID
     pageCount: pageCount,
     state: { pagination, sorting, globalFilter, columnVisibility },
     onPaginationChange: setPagination,
@@ -312,6 +307,9 @@ const CompanyList: React.FC = () => {
     manualPagination: true,
     manualSorting: true,
   });
+
+  console.log("Companies state:", companies);
+  console.log("Table row model rows:", table.getRowModel().rows);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 mx-auto space-y-4 md:space-y-6">
@@ -344,6 +342,8 @@ const CompanyList: React.FC = () => {
         setColumnVisibility={setColumnVisibility}
         generatePagination={generatePagination}
         loading={loading}
+        statusFilter={statusFilter} // Pass statusFilter
+        setStatusFilter={setStatusFilter} // Pass setStatusFilter
       />
     </div>
   );

@@ -5,14 +5,18 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { piApi } from "../components/piApi";
 import {
-  defaultAddress,
-  defaultPIForm,
   getRate,
   getAmount,
   validatePIForm,
   numberToWords,
-} from "../components/piValidation";
-import { PIForm, VehicleLineItem } from "../components/pi.types";
+} from "../components/piValidation"; // Keep piValidation imports
+import { defaultPIForm } from "../components/piValidation"; // Import defaultPIForm from piValidation
+import {
+  PIForm,
+  VehicleLineItem,
+  ProformaInvoiceAPI,
+  AddressDetails,
+} from "../components/pi.types"; // Import ProformaInvoiceAPI
 import PIFormFields from "../components/PIFormFields"; // Import the new component
 
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -29,11 +33,11 @@ const CreatePI = () => {
   const { id } = useParams();
 
   const [clients, setClients] = useState<any[]>([]);
-  const [dealers, setDealers] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]); // Renamed from dealers
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false); // Keep previewLoading
 
   // Import from Order states
   const [orders, setOrders] = useState<any[]>([]);
@@ -42,17 +46,17 @@ const CreatePI = () => {
 
   // Search states for comboboxes
   const [clientSearch, setClientSearch] = useState("");
-  const [dealerSearch, setDealerSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState(""); // Renamed from dealerSearch
 
   const [form, setForm] = useState<PIForm>({ ...defaultPIForm });
   const debouncedClientSearch = useDebounce(clientSearch, 500);
-  const debouncedDealerSearch = useDebounce(dealerSearch, 500);
+  const debouncedCompanySearch = useDebounce(companySearch, 500); // Renamed from debouncedDealerSearch
   const debouncedOrderSearch = useDebounce(orderSearch, 500);
 
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const data = await piApi.getClients(debouncedClientSearch);
+        const data = await piApi.getClients(debouncedClientSearch); // Keep getClients
         setClients(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to fetch clients:", error);
@@ -60,15 +64,15 @@ const CreatePI = () => {
     };
     const fetchDealers = async () => {
       try {
-        const data = await piApi.getDealers(debouncedDealerSearch);
-        setDealers(Array.isArray(data) ? data : []);
+        const data = await piApi.getCompanies(debouncedCompanySearch); // Use getCompanies
+        setCompanies(Array.isArray(data) ? data : []); // Set to companies state
       } catch (error) {
-        console.error("Failed to fetch dealers:", error);
+        console.error("Failed to fetch companies:", error);
       }
     };
     fetchClients();
-    fetchDealers();
-  }, [debouncedClientSearch, debouncedDealerSearch]);
+    fetchDealers(); // This now fetches companies
+  }, [debouncedClientSearch, debouncedCompanySearch]); // Updated dependency
 
   // Fetch orders for the combobox
   useEffect(() => {
@@ -82,53 +86,91 @@ const CreatePI = () => {
     fetchOrders();
   }, [debouncedOrderSearch]);
 
+  // Fetch suggested PI number for new PI creation
+  useEffect(() => {
+    if (!id && form.company_id) {
+      // Only for new PI and if a company is selected
+      const fetchSuggestedPiNumber = async () => {
+        try {
+          const suggestedPi = await piApi.getSuggestedNextPiNumber(
+            form.company_id
+          );
+          setForm((prev) => ({ ...prev, piNumber: suggestedPi }));
+        } catch (error) {
+          console.error("Failed to fetch suggested PI number:", error);
+          // Optionally, set a default or leave empty if generation fails
+          setForm((prev) => ({ ...prev, piNumber: "" }));
+        }
+      };
+      fetchSuggestedPiNumber();
+    }
+  }, [id, form.company_id]); // Re-fetch if company_id changes for a new PI
+
   // Fetch existing PI if in edit mode
   useEffect(() => {
     if (!id) return;
     const fetchPI = async () => {
       try {
-        const pi = await piApi.getPIById(id);
+        const pi: ProformaInvoiceAPI = await piApi.getPIById(id); // Explicitly type pi
         setForm({
           piNumber: pi.piNumber || "",
-          client_id: pi.client_id?._id || pi.client_id || "",
-          dealer_id: pi.dealer_id?._id || pi.dealer_id || "",
-          clientDetails: {
-            name: pi.clientDetails?.name || "",
-            companyName: pi.clientDetails?.companyName || "",
-            address: {
-              ...defaultAddress,
-              ...(typeof pi.clientDetails?.address === "object" &&
-              pi.clientDetails.address
-                ? pi.clientDetails.address
-                : typeof pi.clientDetails?.address === "string"
-                ? { streetArea: pi.clientDetails.address }
-                : {}),
-            },
-          },
-          dealerDetails: {
-            name: pi.dealerDetails?.name || "",
-            gstin: pi.dealerDetails?.gstin || "",
-            address: {
-              ...defaultAddress,
-              ...(typeof pi.dealerDetails?.address === "object" &&
-              pi.dealerDetails.address
-                ? pi.dealerDetails.address
-                : typeof pi.dealerDetails?.address === "string"
-                ? { streetArea: pi.dealerDetails.address }
-                : {}),
-            },
-          },
+          client_id:
+            (typeof pi.client_id === "object" && pi.client_id?._id) ||
+            (typeof pi.client_id === "string" ? pi.client_id : "") ||
+            "",
+          company_id:
+            (typeof pi.company_id === "object" && pi.company_id?._id) ||
+            (typeof pi.company_id === "string" ? pi.company_id : "") ||
+            "", // Corrected access for company_id
           paymentTerms: pi.paymentTerms || "",
           validityDate: pi.validityDate ? pi.validityDate.split("T")[0] : "",
           termsOfDelivery: pi.termsOfDelivery || "",
           incoterm: pi.incoterm || "",
+          clientSnapshot: (() => {
+            if (pi.clientSnapshot) {
+              return pi.clientSnapshot;
+            }
+            if (typeof pi.client_id === "object") {
+              let clientAddressForSnapshot: AddressDetails = {
+                houseBuilding: "",
+                streetArea: "",
+                cityTown: "",
+                state: "",
+                pincode: "",
+                country: "",
+              };
+
+              if (
+                pi.client_id.address &&
+                typeof pi.client_id.address === "string"
+              ) {
+                clientAddressForSnapshot.streetArea = pi.client_id.address;
+                if (pi.client_id.country) {
+                  clientAddressForSnapshot.country = pi.client_id.country;
+                }
+              } else if (
+                pi.client_id.address &&
+                typeof pi.client_id.address === "object"
+              ) {
+                clientAddressForSnapshot = pi.client_id.address;
+              }
+
+              return {
+                name: pi.client_id.name,
+                companyName: pi.client_id.companyName,
+                clientCode: pi.client_id.clientCode,
+                email: pi.client_id.email,
+                phone: pi.client_id.phone,
+                address: clientAddressForSnapshot,
+              };
+            }
+            return undefined;
+          })(),
+          companySnapshot:
+            pi.companySnapshot ||
+            (typeof pi.company_id === "object" ? pi.company_id : undefined),
           portOfLoading: pi.portOfLoading || "",
           portOfDischarge: pi.portOfDischarge || "",
-          bankDetails: pi.bankDetails || {
-            bankName: "",
-            accountNo: "",
-            branchIfsc: "",
-          },
           vehicleDetails:
             pi.vehicleDetails?.length > 0
               ? pi.vehicleDetails.map((v: any) => ({
@@ -161,44 +203,92 @@ const CreatePI = () => {
   };
 
   const handleClientSelect = (clientId: string) => {
-    const selected = clients.find((c) => c._id === clientId);
+    const selectedClientData = clients.find((c) => c._id === clientId);
+    let clientAddressForSnapshot: AddressDetails = {
+      houseBuilding: "",
+      streetArea: "",
+      cityTown: "",
+      state: "",
+      pincode: "",
+      country: "",
+    };
+
+    if (
+      selectedClientData?.address &&
+      typeof selectedClientData.address === "string"
+    ) {
+      clientAddressForSnapshot.streetArea = selectedClientData.address;
+      if (selectedClientData.country) {
+        clientAddressForSnapshot.country = selectedClientData.country;
+      }
+    } else if (
+      selectedClientData?.address &&
+      typeof selectedClientData.address === "object"
+    ) {
+      clientAddressForSnapshot = selectedClientData.address;
+    }
+
     setForm((prev) => ({
       ...prev,
       client_id: clientId,
-      clientDetails: {
-        name: selected?.name || "",
-        companyName: selected?.companyName || "",
-        address: {
-          ...form.clientDetails.address,
-          ...(typeof selected?.address === "object" && selected.address
-            ? selected.address
-            : { streetArea: selected?.address || "" }),
-          state: selected?.state || "",
-          country: selected?.country || "",
-        },
+      clientSnapshot: {
+        name: selectedClientData?.name,
+        companyName: selectedClientData?.companyName,
+        clientCode: selectedClientData?.clientCode,
+        email: selectedClientData?.email,
+        phone: selectedClientData?.phone,
+        address: clientAddressForSnapshot,
       },
     }));
-    if (errors.client_id) {
-      setErrors((prev) => ({ ...prev, client_id: "" }));
-    }
   };
 
-  const handleDealerSelect = (dealerId: string) => {
-    const selected = dealers.find((d) => d._id === dealerId);
+  // Handle direct change to piNumber field
+  const handlePiNumberChange = (value: string) => {
     setForm((prev) => ({
       ...prev,
-      dealer_id: dealerId,
-      dealerDetails: {
-        name: selected?.name || "",
-        gstin: selected?.gstNumber || "",
-        address: {
-          ...form.dealerDetails.address,
-          ...(typeof selected?.address === "object" && selected.address
-            ? selected.address
-            : { streetArea: selected?.address || "" }),
-          state: selected?.state || "",
-        },
-      },
+      piNumber: value,
+    }));
+  };
+  // Helper function to update nested state properties
+  const updateNestedProperty = (obj: any, path: string, value: any): any => {
+    const parts = path.split(".");
+    let current = { ...obj }; // Create a shallow copy to start
+    let pointer = current;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!pointer[part] || typeof pointer[part] !== "object") {
+        pointer[part] = {}; // Initialize if not existing or not an object
+      }
+      pointer = pointer[part];
+    }
+    pointer[parts[parts.length - 1]] = value;
+    return current;
+  };
+
+  const handleClientSnapshotChange = (field: string, value: any) => {
+    setForm((prev) => ({
+      ...prev,
+      clientSnapshot: updateNestedProperty(prev.clientSnapshot, field, value),
+    }));
+  };
+
+  const handleCompanySelect = (companyId: string) => {
+    // Renamed from handleDealerSelect
+    const selectedCompanyData = companies.find((c) => c._id === companyId);
+    // Ensure address and bankDetails are also copied if they exist
+    setForm((prev) => ({
+      ...prev,
+      company_id: companyId, // Set company_id
+      piNumber: id ? prev.piNumber : "", // Clear piNumber if it's a new PI and company changes, so new suggested number can be fetched
+      companySnapshot: selectedCompanyData || {},
+    }));
+  };
+
+  const handleCompanySnapshotChange = (field: string, value: any) => {
+    setForm((prev) => ({
+      ...prev,
+      companySnapshot: updateNestedProperty(prev.companySnapshot, field, value),
     }));
   };
 
@@ -228,40 +318,15 @@ const CreatePI = () => {
       }));
 
       // Populate Dealer
-      const dId = orderData.dealerId?._id || orderData.dealerId;
-      if (dId) {
-        const dealerInState = dealers.find((d) => d._id === dId);
-        if (dealerInState) {
-          handleDealerSelect(dId);
-        } else {
-          try {
-            const d = await piApi.getDealerById(dId);
-            setForm((prev) => ({
-              ...prev,
-              dealer_id: dId,
-              dealerDetails: {
-                name: d.name || "",
-                gstin: d.gstNumber || "",
-                address: {
-                  ...prev.dealerDetails.address,
-                  ...(typeof d.address === "object" && d.address
-                    ? d.address
-                    : { streetArea: d.address || "" }),
-                  state: d.state || "",
-                },
-              },
-            }));
-          } catch (e) {
-            setForm((prev) => ({
-              ...prev,
-              dealer_id: dId,
-              dealerDetails: {
-                ...prev.dealerDetails,
-                name: orderData.dealerName || "",
-              },
-            }));
-          }
-        }
+      const orderCompanyId = orderData.dealerId?._id || orderData.dealerId; // Order still has dealerId, which maps to a Company
+      const companyInState = companies.find((c) => c._id === orderCompanyId); // Try to find a company with this ID
+      if (companyInState && orderCompanyId) {
+        handleCompanySelect(orderCompanyId); // Use handleCompanySelect
+      } else {
+        // If company not in state, just set the ID. PIFormFields will display based on this ID.
+        setForm((prev) => ({ ...prev, company_id: orderCompanyId }));
+        // Optionally, fetch company details and add to `companies` state if not already there
+        // This would be a more robust solution for displaying details immediately.
       }
 
       setForm((prev) => ({
@@ -306,9 +371,9 @@ const CreatePI = () => {
     const payload: any = {
       ...form,
       totalAmount,
+      clientSnapshot: form.clientSnapshot,
+      companySnapshot: form.companySnapshot,
     };
-
-    if (!payload.dealer_id) delete payload.dealer_id;
 
     payload.vehicleDetails = payload.vehicleDetails
       .filter((v: any) => v.selected !== false)
@@ -361,12 +426,12 @@ const CreatePI = () => {
   };
 
   const ordersWithDisplay = orders.map((o) => {
-    let extractedDealerName = o.dealerName || o.dealer?.[0]?.name;
-    if (!extractedDealerName && o.dealerId) {
-      const dId = typeof o.dealerId === "object" ? o.dealerId._id : o.dealerId;
-      const foundDealer = dealers.find((d) => d._id === dId);
-      if (foundDealer) extractedDealerName = foundDealer.name;
-    }
+    // For ordersWithDisplay, we want to show the original dealer name from the order
+    // This is for the combobox display, not for the PI's companyDetails
+    let extractedDealerName =
+      o.dealerName || o.dealer?.[0]?.name || "Unknown Dealer";
+    // No need to look up in companies here, as this is for order display
+
     extractedDealerName = extractedDealerName || "Unknown";
 
     return {
@@ -427,17 +492,20 @@ const CreatePI = () => {
             form={form}
             setForm={setForm}
             errors={errors}
-            clients={clients}
-            dealers={dealers}
+            clients={clients} // Keep clients
+            companies={companies} // Renamed from dealers
             ordersWithDisplay={ordersWithDisplay}
             selectedOrder={selectedOrder}
             setClientSearch={setClientSearch}
-            setDealerSearch={setDealerSearch}
+            setCompanySearch={setCompanySearch} // Renamed from setDealerSearch
             setOrderSearch={setOrderSearch}
+            handlePiNumberChange={handlePiNumberChange} // Pass the new handler
             handleSelectOrder={handleSelectOrder}
             handleVehicleChange={handleVehicleChange}
-            handleClientSelect={handleClientSelect}
-            handleDealerSelect={handleDealerSelect}
+            handleClientSelect={handleClientSelect} // Keep handleClientSelect
+            handleClientSnapshotChange={handleClientSnapshotChange}
+            handleCompanySelect={handleCompanySelect} // Renamed from handleDealerSelect
+            handleCompanySnapshotChange={handleCompanySnapshotChange}
             expandedRows={expandedRows}
             toggleRow={toggleRow}
             totalAmount={totalAmount}

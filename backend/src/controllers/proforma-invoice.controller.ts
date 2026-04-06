@@ -4,6 +4,7 @@ import {
   getPIsService,
   getPIByIdService,
   updatePIService,
+  getSuggestedNextPiNumberService, // Import the new service
   getOrdersWithPIStatusService,
   updatePIStatusService,
   getOrderDetailsWithVehiclePIStatusService,
@@ -17,6 +18,24 @@ export const createPI = async (req: Request, res: Response) => {
     res.status(201).json(pi);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// GET SUGGESTED NEXT PI NUMBER
+export const getSuggestedNextPiNumber = async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) {
+      return res
+        .status(400)
+        .json({ message: "Company ID is required to suggest PI number." });
+    }
+    const suggestedPiNumber = await getSuggestedNextPiNumberService(
+      companyId as string
+    );
+    res.status(200).json({ piNumber: suggestedPiNumber });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };
 

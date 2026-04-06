@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { apiConfig } from "../../../config/apiConfig";
-import { toast } from "react-toastify";
-import { ArrowLeft, Edit, Loader2, Building2 } from "lucide-react";
+import { apiConfig } from "../../../config/apiConfig"; // Keep apiConfig
+import { toast } from "react-toastify"; // Keep toast for general messages
+import { ArrowLeft, Edit, Loader2, Building2, Mail, Phone } from "lucide-react"; // Added Mail and Phone icons
 import { Button } from "@/components/ui/button";
 import { Company } from "../components/company.types";
 
@@ -61,8 +61,6 @@ const CompanyDetails: React.FC = () => {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -116,9 +114,18 @@ const CompanyDetails: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
               <Building2 className="w-7 h-7 text-blue-600" />
               {company.name}
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-lg font-medium ml-2 ${
+                  company.isActive
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {company.isActive ? "Active" : "Inactive"}
+              </span>
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               Company ID:{" "}
@@ -127,6 +134,12 @@ const CompanyDetails: React.FC = () => {
               </span>
             </p>
           </div>
+        </div>
+
+        {/* Moved Status from bottom to header */}
+        <div className="flex items-center gap-3">
+          {/* Edit Button */}
+          {/* ... (existing edit button) ... */}
         </div>
 
         <div className="flex items-center gap-3">
@@ -141,16 +154,21 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       {/* Company Details Card */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-8">
+        {/* Contact Information Section */}
+        <h2 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-5">
+          Contact Information
+        </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-          <div>
-            <p className="text-sm text-gray-500">Email</p>
+          <div className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-gray-400" />
             <p className="font-medium text-gray-900">
               {company.email || "N/A"}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Phone</p>
+          <div className="flex items-center gap-2">
+            <Phone className="h-5 w-5 text-gray-400" />
             <p className="font-medium text-gray-900">
               {company.phone || "N/A"}
             </p>
@@ -161,6 +179,13 @@ const CompanyDetails: React.FC = () => {
               {company.gstNumber || "N/A"}
             </p>
           </div>
+        </div>
+
+        {/* Address Details Section */}
+        <h2 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-5">
+          Address Details
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
           <div>
             <p className="text-sm text-gray-500">House/Building</p>
             <p className="font-medium text-gray-900">
@@ -197,47 +222,50 @@ const CompanyDetails: React.FC = () => {
               {company.address?.country || "N/A"}
             </p>
           </div>
-          <div className="md:col-span-2">
-            <p className="text-sm text-gray-500">Address</p>
-            <p className="font-medium text-gray-900">
-              {typeof company.address === "string"
-                ? company.address
-                : company.address
-                ? [
-                    company.address.houseBuilding,
-                    company.address.streetArea,
-                    company.address.cityTown,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "N/A"
-                : "N/A"}
-            </p>
-          </div>
         </div>
 
+        {/* Bank Details Section */}
+        {(company.bankDetails?.bankName ||
+          company.bankDetails?.accountNo ||
+          company.bankDetails?.branchIfsc) && (
+          <>
+            <h2 className="text-xl font-semibold text-gray-800 border-b pb-3 mb-5">
+              Bank Details
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+              {company.bankDetails?.bankName && (
+                <div>
+                  <p className="text-sm text-gray-500">Bank Name</p>
+                  <p className="font-medium text-gray-900">
+                    {company.bankDetails.bankName}
+                  </p>
+                </div>
+              )}
+              {company.bankDetails?.accountNo && (
+                <div>
+                  <p className="text-sm text-gray-500">Account Number</p>
+                  <p className="font-medium text-gray-900">
+                    {company.bankDetails.accountNo}
+                  </p>
+                </div>
+              )}
+              {company.bankDetails?.branchIfsc && (
+                <div>
+                  <p className="text-sm text-gray-500">Branch/IFSC</p>
+                  <p className="font-medium text-gray-900">
+                    {company.bankDetails.branchIfsc}
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         <div className="border-t border-gray-100 pt-6 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-          <div>
-            <p className="text-sm text-gray-500">Status</p>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                company.isActive
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              {company.isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
           <div>
             <p className="text-sm text-gray-500">Created At</p>
             <p className="font-medium text-gray-900">
               {formatDate(company.createdAt)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Last Updated</p>
-            <p className="font-medium text-gray-900">
-              {formatDate(company.updatedAt)}
             </p>
           </div>
         </div>

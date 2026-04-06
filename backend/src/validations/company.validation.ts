@@ -18,6 +18,12 @@ const addressDetailsSchema = Joi.object<IAddressDetailsDto>({
   }),
 });
 
+const bankDetailsSchema = Joi.object({
+  bankName: Joi.string().trim().allow(""),
+  accountNo: Joi.string().trim().allow(""),
+  branchIfsc: Joi.string().trim().allow(""),
+});
+
 const createCompanySchema = Joi.object<CreateCompanyDto>({
   name: Joi.string().trim().min(2).max(100).required().messages({
     "string.empty": "Company name cannot be empty",
@@ -37,6 +43,7 @@ const createCompanySchema = Joi.object<CreateCompanyDto>({
     .allow(""), // Allow empty string for phone
   address: addressDetailsSchema,
   gstNumber: Joi.string().trim(),
+  bankDetails: bankDetailsSchema, // Add bankDetails to create schema
 });
 
 const updateCompanySchema = Joi.object<UpdateCompanyDto>({
@@ -48,6 +55,7 @@ const updateCompanySchema = Joi.object<UpdateCompanyDto>({
     .allow(""),
   address: addressDetailsSchema,
   gstNumber: Joi.string().trim(),
+  bankDetails: bankDetailsSchema, // Add bankDetails to update schema
 }).min(1); // At least one field is required for update
 
 export const validateCreateCompany = (data: CreateCompanyDto) => {

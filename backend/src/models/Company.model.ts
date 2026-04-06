@@ -5,10 +5,22 @@ export interface ICompany extends Document {
   name: string;
   email?: string;
   phone?: string;
-  country?: string;
-  address?: string;
   gstNumber?: string;
   isActive: boolean;
+  address?: {
+    houseBuilding?: string;
+    streetArea?: string;
+    cityTown?: string;
+    state?: string;
+    pincode?: string;
+    country?: string;
+  };
+  bankDetails?: {
+    bankName?: string;
+    accountNo?: string;
+    branchIfsc?: string;
+  };
+
   __v?: number; // Mongoose version key
   createdAt: Date;
   updatedAt: Date;
@@ -30,9 +42,20 @@ const companySchema = new Schema<ICompany>(
     },
     email: { type: String, trim: true, lowercase: true },
     phone: { type: String, trim: true },
-    country: { type: String, trim: true },
-    address: { type: String, trim: true },
     gstNumber: { type: String, trim: true },
+    address: {
+      houseBuilding: { type: String, trim: true },
+      streetArea: { type: String, trim: true },
+      cityTown: { type: String, trim: true },
+      state: { type: String, trim: true },
+      pincode: { type: String, trim: true },
+      country: { type: String, trim: true },
+    },
+    bankDetails: {
+      bankName: { type: String, trim: true },
+      accountNo: { type: String, trim: true },
+      branchIfsc: { type: String, trim: true },
+    },
     isActive: {
       type: Boolean,
       default: true,

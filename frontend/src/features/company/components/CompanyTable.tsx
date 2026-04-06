@@ -48,12 +48,15 @@ interface CompanyTableProps {
   generatePagination: (
     currentPage: number,
     totalPages: number
-  ) => (number | string)[]; // Added setColumnVisibility
+  ) => (number | string)[];
+  statusFilter: "all" | "active" | "inactive"; // New prop for status filter
+  setStatusFilter: (status: "all" | "active" | "inactive") => void; // New prop for setting status filter
 }
 
 const CompanyTable: React.FC<CompanyTableProps> = ({
   table,
   loading,
+  navigate, // Add navigate to the destructuring of props
   searchInput,
   setSearchInput,
   setGlobalFilter,
@@ -61,9 +64,11 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   setPagination,
   setColumnVisibility,
   generatePagination,
+  statusFilter, // Destructure new prop
+  setStatusFilter, // Destructure new prop
   // companies, // Removed from props
 }) => {
-  const MIN_COMPANY_COLUMNS = 3; // Minimum dynamic columns to be visible
+  const MIN_COMPANY_COLUMNS = 4; // Minimum dynamic columns to be visible (companyId, name, isActive + 1 more)
   const MAX_COMPANY_COLUMNS = 6; // Maximum dynamic columns to be visible
 
   const handleCompanyColumnToggle = (columnId: string) => {
@@ -90,15 +95,44 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
     setColumnVisibility({
       // Use setColumnVisibility from props
       serialNumber: true,
-      companyId: true,
-      name: true,
-      email: true,
+      companyId: true, // Default visible
+      name: true, // Default visible
+      email: false, // Default hidden
       actions: true,
       phone: false, // Assuming these are default hidden
-      country: false, // Assuming these are default hidden
-      isActive: false, // Assuming these are default hidden
+      "address.country": false, // Assuming these are default hidden
+      isActive: true, // Default visible
+      "bankDetails.bankName": false, // Default hidden
     });
     toast.success("Columns reset to default.");
+  };
+
+  const getColumnLabel = (columnId: string): string => {
+    switch (columnId) {
+      case "serialNumber":
+        return "S.No";
+      case "companyId":
+        return "Company ID";
+      case "name":
+        return "Name";
+      case "email":
+        return "Email";
+      case "phone":
+        return "Phone";
+      case "address.country":
+      case "address_country":
+        return "Country";
+      case "isActive":
+      case "is Active":
+        return "Status";
+      case "bankDetails.bankName":
+        return "Status";
+      case "actions":
+        return "Actions";
+      default:
+        // Fallback for any other columns, though we expect all to be covered
+        return columnId.replace(/([A-Z])/g, " $1").trim();
+    }
   };
 
   const handleClearFilters = useCallback(() => {
@@ -106,6 +140,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
     setGlobalFilter("");
     setSorting([]);
     setPagination({
+      // Reset pagination
       pageIndex: 0,
       pageSize: table.getState().pagination.pageSize,
     }); // Reset pageIndex
@@ -116,10 +151,12 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
     setGlobalFilter, // setGlobalFilter is used to clear the global filter
     setSorting, // setSorting is used to clear sorting
     setPagination, // setPagination is used to reset pageIndex
+    setStatusFilter, // Reset status filter
     resetCompanyToDefaultColumns, // resetCompanyToDefaultColumns is called
   ]);
 
   return (
+    // Main container for the table and controls
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
       <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-3">
         {/* Search Input */}
@@ -135,7 +172,32 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
           />
         </div>
 
+        {/* Status Filter Chooser */}
+        <div className="w-full sm:w-auto">
+          <Select
+            value={statusFilter}
+            onValueChange={(value: "all" | "active" | "inactive") =>
+              setStatusFilter(value)
+            }
+          >
+            <SelectTrigger className="h-10 px-4 w-full sm:w-37.5 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
+              <SelectValue placeholder="Filter by Status" />
+            </SelectTrigger>
+            <SelectContent
+              side="bottom"
+              align="start"
+              position="popper"
+              className="z-50"
+            >
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="flex gap-3 w-full sm:w-auto justify-end">
+          {/* Clear Filters Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -176,7 +238,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
               side="bottom"
               align="end"
               sideOffset={4}
-              className="w-60 bg-white shadow-xl border rounded-xl z-50 flex flex-col"
+              className="w-60 bg-white shadow-xl border rounded-xl z-60 flex flex-col" // Increased z-index
             >
               <div className="text-xs font-semibold border-b px-3 py-2 text-gray-500">
                 Visible Columns (
@@ -194,14 +256,14 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                     <div
                       key={column.id}
                       onClick={() => handleCompanyColumnToggle(column.id)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer hover:bg-gray-100 text-sm capitalize ${
+                      className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer hover:bg-gray-100 text-sm ${
                         column.getIsVisible()
                           ? "text-blue-700"
                           : "hover:bg-gray-50"
                       }`}
                     >
-                      <span className="text-sm capitalize">
-                        {column.id.replace(/([A-Z])/g, " $1").trim()}
+                      <span className="text-lg">
+                        {getColumnLabel(column.id)}
                       </span>
                       {column.getIsVisible() && (
                         <Check className="h-4 w-4 text-blue-600" />
@@ -230,8 +292,8 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
         {" "}
         {/* Added border-t */}
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+          <table className="w-full text-left text-gray-500">
+            <thead className="text-sm text-gray-700 uppercase bg-gray-50">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
@@ -273,10 +335,14 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="bg-white border-b hover:bg-gray-50"
+                    onClick={() => navigate(`/companies/${row.original._id}`)} // Make the entire row clickable
+                    className="bg-white border-b hover:bg-gray-50 cursor-pointer" // Add cursor-pointer for UX
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-6 py-4">
+                      <td
+                        key={cell.id}
+                        className="px-6 py-2 text-base font-bold"
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -325,7 +391,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="text-xs border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
+              className="text-sm border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
             >
               Prev
             </Button>
@@ -362,7 +428,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="text-xs border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
+              className="text-sm border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
             >
               Next
             </Button>
