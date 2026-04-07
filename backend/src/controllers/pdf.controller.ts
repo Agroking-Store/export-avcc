@@ -48,9 +48,11 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
     }
 
     // 1. Fetch PI from database
-    const pi = await getPIByIdService(id as string);
-    const client: any = pi.client_id;
-    const dealer: any = pi.dealer_id;
+    const pi: any = await getPIByIdService(id as string);
+
+    // Prioritize snapshot data if available, otherwise use populated data
+    const clientForPdf: any = pi.clientSnapshot || pi.client_id;
+    const companyForPdf: any = pi.companySnapshot || pi.company_id;
 
     // 2. Map vehicle items to HBS template format
     let totalQty = 0;
@@ -92,50 +94,34 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
       paymentTerms: pi.paymentTerms || "As agreed",
       termsOfDelivery: pi.termsOfDelivery || " ",
       incoterm: pi.incoterm || " ",
-      portOfLoading: pi.portOfLoading || " ",
-      portOfDischarge: pi.portOfDischarge || " ",
-      buyersRef: " ",
-      otherRef: " ",
+      portOfLoading: pi.portOfLoading || "N/A",
+      portOfDischarge: pi.portOfDischarge || "N/A",
+      buyersRef: pi.buyersRef || " ",
+      otherRef: pi.otherRef || " ",
       exporter: {
-        name: pi.dealerDetails?.name || dealer?.name || "Your Company Name",
-        address:
-          formatAddress(pi.dealerDetails?.address) ||
-          dealer?.address ||
-          "Your Company Address",
-        gstin: pi.dealerDetails?.gstin || dealer?.gstNumber || " ",
-        state: pi.dealerDetails?.address?.state || " ",
-        stateCode: pi.dealerDetails?.address?.pincode || " ", // Using pincode as a proxy if stateCode is not available
+        name: companyForPdf?.name || "N/A",
+        address: formatAddress(companyForPdf?.address) || "N/A",
+        gstin: companyForPdf?.gstNumber || "N/A",
+        state: companyForPdf?.address?.state || "N/A",
+        stateCode: companyForPdf?.address?.pincode || "N/A", // Using pincode as a proxy if stateCode is not available
       },
       buyer: {
-        name:
-          pi.clientDetails?.companyName ||
-          pi.clientDetails?.name ||
-          client?.companyName ||
-          client?.name ||
-          " ",
+        name: clientForPdf?.companyName || clientForPdf?.name || " ",
         address:
-          formatAddress(pi.clientDetails?.address) ||
-          client?.address ||
-          client?.country ||
-          "",
-        state: pi.clientDetails?.address?.state || " ",
+          formatAddress(clientForPdf?.address) ||
+          clientForPdf?.address ||
+          clientForPdf?.country ||
+          "", // Assuming client.address is a string or object
+        state: clientForPdf?.address?.state || " ", // Assuming client.address is an object
       },
       consignee: {
-        name:
-          pi.clientDetails?.companyName ||
-          pi.clientDetails?.name ||
-          client?.companyName ||
-          client?.name ||
-          " ",
+        name: clientForPdf?.companyName || clientForPdf?.name || " ",
         address:
-          formatAddress(pi.clientDetails?.address) ||
-          client?.address ||
-          client?.country ||
-          "",
-        state: pi.clientDetails?.address?.state || " ",
+          formatAddress(clientForPdf?.address) || clientForPdf?.country || "",
+        state: clientForPdf?.address?.state || " ",
       },
-      dispatchedThrough: " ",
-      destination: client?.country || " ",
+      dispatchedThrough: pi.dispatchedThrough || " ",
+      destination: pi.destination || clientForPdf?.country || " ",
       items,
       totalQty,
       totalAmount: pi.totalAmount.toLocaleString("en-US", {
@@ -143,10 +129,10 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
         maximumFractionDigits: 2,
       }),
       amountInWords: pi.amountInWords || "N/A",
-      bankDetails: pi.bankDetails || {
-        bankName: " ",
-        accountNo: " ",
-        branchIfsc: " ",
+      bankDetails: companyForPdf?.bankDetails || {
+        bankName: "N/A",
+        accountNo: "N/A",
+        branchIfsc: "N/A",
       },
     };
 

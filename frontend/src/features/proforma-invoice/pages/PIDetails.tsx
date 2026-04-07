@@ -14,13 +14,14 @@ import {
   Edit,
   Loader2,
 } from "lucide-react";
+import { ProformaInvoiceAPI } from "../components/pi.types"; // Import ProformaInvoiceAPI
 import { Button } from "@/components/ui/button";
 
 const PIDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ProformaInvoiceAPI | null>(null); // Type data as ProformaInvoiceAPI
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -96,12 +97,14 @@ const PIDetails = () => {
 
   const pi = data;
 
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const formatDate = (date: string | undefined) =>
+    date
+      ? new Date(date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "Not specified";
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -168,7 +171,7 @@ const PIDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
+    <div className="bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
@@ -264,25 +267,28 @@ const PIDetails = () => {
           <div className="bg-white dark:bg-[#0E0E10] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-lg hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 overflow-hidden">
             {/* TOP DOCUMENT INFO */}
             <div className="p-8 sm:p-10 border-b border-zinc-100 dark:border-zinc-800/60 flex flex-col sm:flex-row justify-between gap-8 bg-zinc-50/50 dark:bg-zinc-900/20">
-              {/* From/Exporter Info */}
+              {/* Company Details (Exporter) */}
               <div className="flex-1">
+                {" "}
+                {/* This is the Exporter/Company section */}
                 <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
                   Exporter Details
                 </h3>
-                {pi.dealerDetails?.name ? (
+                {(pi.company_id as any)?.name ? (
                   <div className="space-y-1">
                     <p className="text-base font-medium text-zinc-900 dark:text-white">
-                      {pi.dealerDetails.name}
+                      {(pi.company_id as any).name}
                     </p>
-                    {formatAddress(pi.dealerDetails.address)}
-                    {pi.dealerDetails.gstin && (
+                    {formatAddress((pi.company_id as any).address)}{" "}
+                    {(pi.company_id as any).gstNumber && (
                       <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-2">
                         GSTIN:{" "}
                         <span className="font-mono">
-                          {pi.dealerDetails.gstin}
+                          {(pi.company_id as any).gstNumber}
                         </span>
                       </p>
-                    )}
+                    )}{" "}
+                    {/* Correctly use pi.companyDetails.gstNumber */}
                   </div>
                 ) : (
                   <p className="text-sm text-zinc-400 italic">Not specified</p>
@@ -296,16 +302,22 @@ const PIDetails = () => {
                 </h3>
                 <div>
                   <p className="text-base font-medium text-zinc-900 dark:text-white">
-                    {pi.clientDetails?.name || pi.client_id?.name}
+                    {(pi.client_id as any)?.name}
                   </p>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {pi.clientDetails?.companyName || pi.client_id?.companyName}
+                    {(pi.client_id as any)?.companyName}
                   </p>
-                  {formatAddress(pi.clientDetails?.address)}
+                  {formatAddress(
+                    (pi.client_id as any)?.address ||
+                      (pi.client_id as any)?.country
+                  )}
+
                   <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">
                     Code:{" "}
                     <span className="font-mono">
-                      {pi.client_id?.clientCode}
+                      {typeof pi.client_id === "object"
+                        ? pi.client_id?.clientCode
+                        : ""}
                     </span>
                   </p>
                 </div>
@@ -467,33 +479,34 @@ const PIDetails = () => {
             </div>
 
             {/* BANK DETAILS FOOTER */}
-            {(pi.bankDetails?.bankName || pi.bankDetails?.accountNo) && (
+            {((pi.company_id as any)?.bankDetails?.bankName ||
+              (pi.company_id as any)?.bankDetails?.accountNo) && (
               <div className="px-8 sm:px-10 py-6 bg-zinc-50/50 dark:bg-[#121214] border-t border-zinc-100 dark:border-zinc-800/60 rounded-b-2xl">
                 <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
                   Bank Details
                 </h3>
                 <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-                  {pi.bankDetails.bankName && (
+                  {(pi.company_id as any).bankDetails?.bankName && (
                     <p>
                       <span className="text-zinc-500 mr-2">Bank:</span>
                       <span className="font-medium">
-                        {pi.bankDetails.bankName}
+                        {(pi.company_id as any).bankDetails.bankName}
                       </span>
                     </p>
                   )}
-                  {pi.bankDetails.accountNo && (
+                  {(pi.company_id as any).bankDetails?.accountNo && (
                     <p>
                       <span className="text-zinc-500 mr-2">A/C No:</span>
                       <span className="font-mono font-medium">
-                        {pi.bankDetails.accountNo}
+                        {(pi.company_id as any).bankDetails.accountNo}
                       </span>
                     </p>
                   )}
-                  {pi.bankDetails.branchIfsc && (
+                  {(pi.company_id as any).bankDetails?.branchIfsc && (
                     <p>
                       <span className="text-zinc-500 mr-2">Branch/IFSC:</span>
                       <span className="font-mono font-medium">
-                        {pi.bankDetails.branchIfsc}
+                        {(pi.company_id as any).bankDetails.branchIfsc}
                       </span>
                     </p>
                   )}

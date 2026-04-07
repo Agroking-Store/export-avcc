@@ -26,28 +26,46 @@ const vehicleDetailSchema = Joi.object({
   engineCapacity: Joi.string().allow("").optional(),
 });
 
+const clientSnapshotSchema = Joi.object({
+  name: Joi.string().allow("").optional(),
+  companyName: Joi.string().allow("").optional(),
+  clientCode: Joi.string().allow("").optional(),
+  email: Joi.string().email().allow("").optional(),
+  phone: Joi.string().allow("").optional(),
+  address: addressSchema.optional(),
+});
+
+const bankDetailsSchema = Joi.object({
+  bankName: Joi.string().allow("").optional(),
+  accountNo: Joi.string().allow("").optional(),
+  branchIfsc: Joi.string().allow("").optional(),
+});
+
+const companySnapshotSchema = Joi.object({
+  name: Joi.string().allow("").optional(),
+  email: Joi.string().email().allow("").optional(),
+  phone: Joi.string().allow("").optional(),
+  address: addressSchema.optional(),
+  bankDetails: bankDetailsSchema.optional(),
+  gstNumber: Joi.string().allow("").optional(),
+});
+
 export const createPIValidationSchema = Joi.object({
   piNumber: Joi.string().allow("").optional(),
   client_id: Joi.string().required(),
-  dealer_id: Joi.string().optional().allow(null, ""),
-  clientDetails: Joi.object({
-    name: Joi.string().allow("").optional(),
-    companyName: Joi.string().allow("").optional(),
-    address: addressSchema,
-  }).optional(),
-  dealerDetails: Joi.object({
-    name: Joi.string().allow("").optional(),
-    gstin: Joi.string().allow("").optional(),
-    address: addressSchema,
-  }).optional(),
+  company_id: Joi.string().optional().allow(null, ""), // Renamed from dealer_id
   paymentTerms: Joi.string().allow("").optional(),
   validityDate: Joi.date().allow("").optional(),
   termsOfDelivery: Joi.string().allow("").optional(),
-  bankDetails: Joi.object({
-    bankName: Joi.string().allow("").optional(),
-    accountNo: Joi.string().allow("").optional(),
-    branchIfsc: Joi.string().allow("").optional(),
-  }).optional(),
+  incoterm: Joi.string().allow("").optional(),
+  portOfLoading: Joi.string().allow("").optional(),
+  portOfDischarge: Joi.string().allow("").optional(),
+  buyersRef: Joi.string().allow("").optional(),
+  otherRef: Joi.string().allow("").optional(),
+  dispatchedThrough: Joi.string().allow("").optional(),
+  destination: Joi.string().allow("").optional(),
   vehicleDetails: Joi.array().items(vehicleDetailSchema).min(1).required(),
   totalAmount: Joi.number().optional(), // This is calculated on backend, but sent from frontend
+  clientSnapshot: clientSnapshotSchema.optional(),
+  companySnapshot: companySnapshotSchema.optional(),
 });

@@ -1,3 +1,20 @@
+export interface VehicleDto {
+  name: string;
+  color: string;
+  quantity: number;
+  hsnCode?: string;
+  vehicleName?: string;
+  exteriorColour?: string;
+  chassisNo?: string;
+  engineNo?: string;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  fobAmount?: number;
+  freight?: number;
+}
+
 export interface IVehicleItem {
   name: string;
   color: string;
@@ -5,15 +22,16 @@ export interface IVehicleItem {
   srNo?: string;
 }
 
+// CREATE DTO
 export interface CreateOrderDto {
-  clientId?: string;
-  dealerId?: string;
+  clientId: string;      
   date: string;
-  vehicles: IVehicleItem[];
+  vehicles: VehicleDto[];
 }
 
+// UPDATE DTO
 export interface UpdateOrderDto {
-  clientId?: string;
+  clientId?: string;    
   date?: string | Date;
   dealerId?: string;
   vehicles?: IVehicleItem[];
@@ -29,4 +47,5 @@ export interface UpdateOrderDto {
     name?: string;
     srNo?: string;
   };
+  vehicles?: VehicleDto[];
 }

@@ -1,31 +1,11 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface IAddressDetails {
-  houseBuilding?: string;
-  streetArea?: string;
-  cityTown?: string;
-  state?: string;
-  pincode?: string;
-  country?: string;
-}
-
 export interface IProformaInvoice extends Document {
   piNumber: string;
 
-  client_id: mongoose.Types.ObjectId; // buyer
-  dealer_id?: mongoose.Types.ObjectId; // exporter details
-
-  clientDetails?: {
-    name?: string;
-    companyName?: string;
-    address?: IAddressDetails;
-  };
-
-  dealerDetails?: {
-    name?: string;
-    gstin?: string;
-    address?: IAddressDetails;
-  };
+  order_id?: mongoose.Types.ObjectId; // New field to link to an Order
+  client_id: mongoose.Types.ObjectId; // Buyer
+  company_id?: mongoose.Types.ObjectId; // Exporter details (Company)
 
   vehicleDetails: {
     vehicle_id?: mongoose.Types.ObjectId;
@@ -52,15 +32,49 @@ export interface IProformaInvoice extends Document {
   incoterm?: string;
   portOfLoading?: string;
   portOfDischarge?: string;
+  buyersRef?: string;
+  otherRef?: string;
+  dispatchedThrough?: string;
+  destination?: string;
 
   validityDate?: Date;
 
-  bankDetails?: {
-    bankName: string;
-    accountNo: string;
-    branchIfsc: string;
+  clientSnapshot?: {
+    // Moved clientSnapshot outside of status
+    name?: string;
+    companyName?: string;
+    clientCode?: string;
+    email?: string;
+    phone?: string;
+    address?: {
+      houseBuilding?: string;
+      streetArea?: string;
+      cityTown?: string;
+      state?: string;
+      pincode?: string;
+      country?: string;
+    };
   };
-
+  companySnapshot?: {
+    // Moved companySnapshot outside of status
+    name?: string;
+    email?: string;
+    phone?: string;
+    gstNumber?: string;
+    address?: {
+      houseBuilding?: string;
+      streetArea?: string;
+      cityTown?: string;
+      state?: string;
+      pincode?: string;
+      country?: string;
+    };
+    bankDetails?: {
+      bankName?: string;
+      accountNo?: string;
+      branchIfsc?: string;
+    };
+  };
   status:
     | "draft"
     | "pending_approval"
@@ -68,22 +82,11 @@ export interface IProformaInvoice extends Document {
     | "sent_to_buyer"
     | "lc_received"
     | "expired";
+  __v?: number; // Mongoose version key
 
   createdAt: Date;
   updatedAt: Date;
 }
-
-const addressDetailsSchema = new Schema<IAddressDetails>(
-  {
-    houseBuilding: { type: String },
-    streetArea: { type: String },
-    cityTown: { type: String },
-    state: { type: String },
-    pincode: { type: String },
-    country: { type: String },
-  },
-  { _id: false }
-);
 
 const proformaInvoiceSchema = new Schema<IProformaInvoice>(
   {
@@ -92,27 +95,20 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       unique: true,
     },
 
+    order_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Order",
+      default: null,
+    },
     client_id: {
       type: Schema.Types.ObjectId,
       ref: "Client",
       required: true,
     },
-
-    dealer_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Dealer",
-    },
-
-    clientDetails: {
-      name: { type: String },
-      companyName: { type: String },
-      address: addressDetailsSchema,
-    },
-
-    dealerDetails: {
-      name: { type: String },
-      gstin: { type: String },
-      address: addressDetailsSchema,
+    // Renamed from dealer_id to company_id
+    company_id: {
+      type: Schema.Types.ObjectId, // This will store the ID of the Company
+      ref: "Company", // Reference the Company model
     },
 
     vehicleDetails: [
@@ -167,14 +163,56 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       type: String,
     },
 
+    buyersRef: {
+      type: String,
+    },
+    otherRef: {
+      type: String,
+    },
+    dispatchedThrough: {
+      type: String,
+    },
+    destination: {
+      type: String,
+    },
+
     validityDate: {
       type: Date,
     },
-
-    bankDetails: {
-      bankName: { type: String },
-      accountNo: { type: String },
-      branchIfsc: { type: String },
+    // Moved clientSnapshot and companySnapshot here as top-level fields
+    clientSnapshot: {
+      name: { type: String },
+      companyName: { type: String },
+      clientCode: { type: String },
+      email: { type: String },
+      phone: { type: String },
+      address: {
+        houseBuilding: { type: String },
+        streetArea: { type: String },
+        cityTown: { type: String },
+        state: { type: String },
+        pincode: { type: String },
+        country: { type: String },
+      },
+    },
+    companySnapshot: {
+      name: { type: String },
+      email: { type: String },
+      phone: { type: String },
+      gstNumber: { type: String },
+      address: {
+        houseBuilding: { type: String },
+        streetArea: { type: String },
+        cityTown: { type: String },
+        state: { type: String },
+        pincode: { type: String },
+        country: { type: String },
+      },
+      bankDetails: {
+        bankName: { type: String },
+        accountNo: { type: String },
+        branchIfsc: { type: String },
+      },
     },
 
     status: {
@@ -202,7 +240,8 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
 );
 
 // Index
-proformaInvoiceSchema.index({ client_id: 1 });
+proformaInvoiceSchema.index({ client_id: 1 }); // Existing index
+proformaInvoiceSchema.index({ order_id: 1 }); // New index for order_id
 
 export default mongoose.model<IProformaInvoice>(
   "ProformaInvoice",

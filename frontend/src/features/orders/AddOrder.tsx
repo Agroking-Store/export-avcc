@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, Calendar, ArrowLeft } from "lucide-react";
-import { apiConfig } from "../../config/apiConfig";
 import { toast } from "react-toastify";
 
 interface Vehicle {
@@ -14,15 +13,17 @@ interface Vehicle {
 const AddOrder = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<any[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([{ name: "", color: "", quantity: 1 }]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([
+    { name: "", color: "", quantity: 1 },
+  ]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [clientId, setClientId] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
   useEffect(() => {
-    axios.get(`${apiConfig.baseURL}/clients?limit=1000`).then((res) => {
+    api.get("/clients?limit=1000").then((res) => {
       setClients(res.data.data || res.data);
     });
   }, []);
@@ -34,7 +35,11 @@ const AddOrder = () => {
     setSelectedClient(client || null);
   };
 
-  const handleVehicleChange = (index: number, field: keyof Vehicle, value: any) => {
+  const handleVehicleChange = (
+    index: number,
+    field: keyof Vehicle,
+    value: any,
+  ) => {
     const updated = [...vehicles];
     updated[index] = { ...updated[index], [field]: value };
     setVehicles(updated);
@@ -65,16 +70,16 @@ const AddOrder = () => {
   const buildPayload = () => ({
     clientId,
     date,
-    vehicles
+    vehicles,
   });
 
   const handleSave = async () => {
     if (!validate()) return;
     try {
       setLoading(true);
-      await axios.post(`${apiConfig.baseURL}/orders`, buildPayload());
+      await api.post("/orders", buildPayload());
       navigate("/orders/list", {
-        state: { success: "Order created successfully ✅" },
+        state: { success: "Order created successfully" },
       });
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Error saving");
@@ -92,7 +97,7 @@ const AddOrder = () => {
             Add New Order
           </h2>
           <p className="text-sm text-slate-500 dark:text-gray-300">
-            Client + Vehicles 
+            Client + Vehicles
           </p>
         </div>
         <button
@@ -110,7 +115,9 @@ const AddOrder = () => {
           {/* Client & Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Client</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Client
+              </label>
               <select
                 value={clientId}
                 onChange={handleClientChange}
@@ -123,7 +130,9 @@ const AddOrder = () => {
                   </option>
                 ))}
               </select>
-              {errors.clientId && <p className="text-red-500 text-xs mt-1">{errors.clientId}</p>}
+              {errors.clientId && (
+                <p className="text-red-500 text-xs mt-1">{errors.clientId}</p>
+              )}
             </div>
 
             <div>
@@ -143,10 +152,14 @@ const AddOrder = () => {
           {/* Client Info */}
           {selectedClient && (
             <div className="p-6 bg-slate-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-              <h3 className="font-medium text-slate-800 dark:text-white mb-3">{selectedClient.name}</h3>
+              <h3 className="font-medium text-slate-800 dark:text-white mb-3">
+                {selectedClient.name}
+              </h3>
               <div className="text-sm text-slate-600 dark:text-gray-300 space-y-1">
                 <div>{selectedClient.companyName}</div>
-                <div>{selectedClient.country} • {selectedClient.phone}</div>
+                <div>
+                  {selectedClient.country} • {selectedClient.phone}
+                </div>
               </div>
             </div>
           )}
@@ -169,9 +182,14 @@ const AddOrder = () => {
 
             <div className="space-y-4">
               {vehicles.map((v, i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600">
+                <div
+                  key={i}
+                  className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                >
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-medium text-slate-800 dark:text-white">Vehicle {i + 1}</h4>
+                    <h4 className="font-medium text-slate-800 dark:text-white">
+                      Vehicle {i + 1}
+                    </h4>
                     {vehicles.length > 1 && (
                       <button
                         type="button"
@@ -185,43 +203,62 @@ const AddOrder = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                      <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">
+                        Name
+                      </label>
                       <input
                         type="text"
                         value={v.name}
-                        onChange={(e) => handleVehicleChange(i, "name", e.target.value)}
+                        onChange={(e) =>
+                          handleVehicleChange(i, "name", e.target.value)
+                        }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         placeholder="Vehicle model"
                       />
 
-                      {errors[`name_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`name_${i}`]}</p>}
+                      {errors[`name_${i}`] && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors[`name_${i}`]}
+                        </p>
+                      )}
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">Color</label>
+                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">
+                        Color
+                      </label>
                       <input
                         type="text"
                         value={v.color}
-                        onChange={(e) => handleVehicleChange(i, "color", e.target.value)}
+                        onChange={(e) =>
+                          handleVehicleChange(i, "color", e.target.value)
+                        }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         placeholder="Red, Blue..."
                       />
-                      {errors[`color_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`color_${i}`]}</p>}
+                      {errors[`color_${i}`] && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors[`color_${i}`]}
+                        </p>
+                      )}
                     </div>
 
                     <div>
-                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">Quantity</label>
+                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">
+                        Quantity
+                      </label>
                       <input
                         type="number"
                         value={v.quantity}
                         min="1"
                         onChange={(e) => {
                           const value = e.target.value;
-                        
+
+                          const parsed = parseInt(value);
                           handleVehicleChange(
                             i,
                             "quantity",
-                            value === "" ? "" : parseInt(value)
+                            isNaN(parsed) ? "" : parsed,
                           );
                         }}
                         style={{ MozAppearance: "textfield" }}
@@ -234,7 +271,11 @@ const AddOrder = () => {
                                    [&::-webkit-outer-spin-button]:appearance-none"
                       />
 
-                      {errors[`qty_${i}`] && <p className="text-red-500 text-xs mt-1">{errors[`qty_${i}`]}</p>}
+                      {errors[`qty_${i}`] && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors[`qty_${i}`]}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -267,4 +308,3 @@ const AddOrder = () => {
 };
 
 export default AddOrder;
-

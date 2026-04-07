@@ -5,8 +5,8 @@ export const validateCreateOrder = (data: CreateOrderDto) => {
     throw new Error("Date is required");
   }
 
-  if (!data.clientId && !data.dealerId) {
-    throw new Error("Client or Dealer is required");
+  if (!data.clientId) {
+    throw new Error("clientId is required");
   }
 
   if (!data.vehicles || data.vehicles.length === 0) {

@@ -128,3 +128,60 @@
     @apply font-sans;
     }
 }
+
+/* React Toastify Custom Styles */
+/* Base style for all toasts: white background, default text color */
+.Toastify__toast {
+  background-color: white !important; /* Forces a white background for all toasts */
+  color: #333 !important; /* Default text color for general toasts */
+  border-radius: 8px !important; /* Optional: Adds a slight border-radius */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1), 0 3px 3px rgba(0, 0, 0, 0.05) !important; /* Optional: Adds a subtle shadow */
+}
+
+/* Text color for specific toast types will now default to the general .Toastify__toast color (#333) */
+/* If you want a different shade of gray, you can set it here, e.g., color: #555 !important; */
+.Toastify__toast--success, .Toastify__toast--error,
+.Toastify__toast--info, .Toastify__toast--warning { /* Removed specific color overrides */ }
+
+/* Ensure the progress bar retains its color based on the toast type */
+.Toastify__progress-bar--success {
+  background: #28a745 !important;
+}
+
+.Toastify__progress-bar--error {
+  background: #dc3545 !important;
+}
+
+.Toastify__progress-bar--info {
+  background: #17a2b8 !important;
+}
+
+.Toastify__progress-bar--warning {
+  background: #ffc107 !important;
+}
+
+/* Ensure the icons retain their color based on the toast type */
+.Toastify__toast--success .Toastify__toast-icon svg {
+  fill: #28a745 !important; /* Green for success icon */
+}
+
+.Toastify__toast--error .Toastify__toast-icon svg {
+  fill: #dc3545 !important; /* Red for error icon */
+}
+
+.Toastify__toast--info .Toastify__toast-icon svg {
+  fill: #17a2b8 !important; /* Blue for info icon */
+}
+
+.Toastify__toast--warning .Toastify__toast-icon svg {
+  fill: #ffc107 !important; /* Yellow/Orange for warning icon */
+}
+
+.Toastify__toast-icon {
+  /* This ensures the icon container itself doesn't interfere with the SVG fill */
+  color: transparent !important;
+}
+
+.Toastify__close-button svg {
+  fill: black !important;
+}
