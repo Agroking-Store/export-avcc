@@ -4,24 +4,17 @@ import { Client } from "../models/Client.model";
 import mongoose from "mongoose";
 
 const generateOrderId = async (): Promise<string> => {
-  const latest = await Order.findOne().sort({ orderId: -1 }).select("orderId");
-
-  if (!latest || !latest.orderId) return "ORD-001";
-
-  const num = parseInt(latest.orderId.split("-")[1]) || 0;
-  return `ORD-${String(num + 1).padStart(3, "0")}`;
+  const random = Math.floor(Math.random() * 1000000);
+  return `ORD-${Date.now()}-${random}`;
 };
 
 const generateVoucherNo = async (): Promise<string> => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   const yearSuffix = `${currentYear}-${nextYear.toString().slice(2)}`;
-  const latest = await Order.findOne()
-    .sort({ createdAt: -1 })
-    .select("voucherNo");
-  if (!latest) return `AN/${yearSuffix}/1`;
-  const num = parseInt(latest.voucherNo.split("/").pop() || "0") + 1;
-  return `AN/${yearSuffix}/${num}`;
+
+  const random = Math.floor(Math.random() * 1000000);
+  return `AN/${yearSuffix}/${Date.now()}-${random}`;
 };
 
 // export const createOrderService = async (
@@ -36,7 +29,7 @@ const generateVoucherNo = async (): Promise<string> => {
 //     throw new Error("At least one vehicle is required");
 //   }
 
-//   let retries = 3;
+//   let retries = 5;
 
 //   while (retries > 0) {
 //     try {
@@ -63,6 +56,7 @@ const generateVoucherNo = async (): Promise<string> => {
 //     } catch (err: any) {
 //       if (err.code === 11000) {
 //         retries--;
+//         continue;
 //       } else {
 //         throw err;
 //       }
@@ -75,65 +69,67 @@ const generateVoucherNo = async (): Promise<string> => {
 export const createOrderService = async (
   data: CreateOrderDto
 ): Promise<IOrder> => {
-  if (data.clientId) {
-    const client = await Client.findById(data.clientId);
-    if (!client) throw new Error("Client not found");
+  
+  if (!data.clientId) {
+    throw new Error("clientId is required");
   }
+
+  const client = await Client.findById(data.clientId);
+  if (!client) throw new Error("Client not found");
 
   if (!data.vehicles || data.vehicles.length === 0) {
     throw new Error("At least one vehicle is required");
   }
 
-  let retries = 3;
+  const lastOrder = await Order.findOne().sort({ createdAt: -1 });
 
-  while (retries > 0) {
-    try {
-      const orderId = await generateOrderId();
-      const voucherNo = await generateVoucherNo();
+  let nextNumber = 1;
 
-      const vehicles = data.vehicles.map((v) => ({
-        name: v.name,
-        color: v.color,
-        quantity: v.quantity,
-        hsnCode: v.hsnCode,
-        vehicleName: v.vehicleName,
-        exteriorColour: v.exteriorColour,
-        chassisNo: v.chassisNo,
-        engineNo: v.engineNo,
-        engineCapacity: v.engineCapacity,
-        fuelType: v.fuelType,
-        countryOfOrigin: v.countryOfOrigin,
-        yom: v.yom,
-        fobAmount: v.fobAmount,
-        freight: v.freight,
-      }));
-
-      const order = new Order({
-        orderId,
-        voucherNo,
-        date: new Date(data.date),
-        clientId: data.clientId || null,
-        dealerId: data.dealerId || null,
-        vehicles,
-        status: "Draft",
-      });
-
-      return await order.save();
-    } catch (err: any) {
-      if (err.code === 11000) {
-        retries--;
-      } else {
-        throw err;
-      }
-    }
+  if (lastOrder && lastOrder.orderId) {
+    const lastNumber = parseInt(lastOrder.orderId.split("-")[1]);
+    nextNumber = lastNumber + 1;
   }
 
-  throw new Error("Failed to generate unique order ID");
+  const orderId = `ORD-${String(nextNumber).padStart(3, "0")}`;
+
+  const voucherNo = `AN-${String(nextNumber).padStart(3, "0")}`;
+
+  const vehicles = data.vehicles.map((v) => ({
+    name: v.name,
+    color: v.color,
+    quantity: v.quantity,
+    hsnCode: v.hsnCode,
+    vehicleName: v.vehicleName,
+    exteriorColour: v.exteriorColour,
+    chassisNo: v.chassisNo,
+    engineNo: v.engineNo,
+    engineCapacity: v.engineCapacity,
+    fuelType: v.fuelType,
+    countryOfOrigin: v.countryOfOrigin,
+    yom: v.yom,
+    fobAmount: v.fobAmount,
+    freight: v.freight,
+  }));
+
+  const order = new Order({
+    orderId,
+    voucherNo,
+    date: new Date(data.date),
+    clientId: data.clientId,
+    vehicles,
+    status: "Draft",
+  });
+
+  return await order.save();
 };
 
 export const getOrdersService = async (query: any) => {
   const { search, page = 1, limit = 10, status } = query;
   let match: any = {};
+
+if (query.clientId) {
+  match.clientId = new mongoose.Types.ObjectId(query.clientId);
+}
 
   if (search) {
     match.$or = [
@@ -143,10 +139,6 @@ export const getOrdersService = async (query: any) => {
   }
 
   if (status) match.status = status;
-
-  if (query.dealerId) {
-    match.dealerId = new mongoose.Types.ObjectId(query.dealerId);
-  }
 
   const skip = (Number(page) - 1) * Number(limit);
 
@@ -161,23 +153,13 @@ export const getOrdersService = async (query: any) => {
       },
     },
     {
-      $lookup: {
-        from: "dealers",
-        localField: "dealerId",
-        foreignField: "_id",
-        as: "dealer",
-      },
-    },
-    {
       $addFields: {
         clientName: { $arrayElemAt: ["$client.name", 0] },
         companyName: { $arrayElemAt: ["$client.companyName", 0] },
         clientCountry: { $arrayElemAt: ["$client.country", 0] },
-        dealerName: { $arrayElemAt: ["$dealer.name", 0] },
-        dealerContact: { $arrayElemAt: ["$dealer.contact", 0] },
-      },
+      }
     },
-    { $project: { client: 0, dealer: 0 } },
+    { $project: { client: 0 } },
     { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: Number(limit) },
@@ -198,10 +180,6 @@ export const getOrderByIdService = async (id: string) => {
       path: "clientId",
       select: "name companyName country phone address",
     })
-    .populate({
-      path: "dealerId",
-      select: "name contact email address gstNumber",
-    });
   if (!order) throw new Error("Order not found");
   return order;
 };
