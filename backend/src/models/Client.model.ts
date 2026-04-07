@@ -18,6 +18,7 @@ const clientSchema = new Schema<IClient>(
     clientCode: {
       type: String,
       unique: true,
+      sparse: true,
     },
     name: {
       type: String,
@@ -31,7 +32,7 @@ const clientSchema = new Schema<IClient>(
       required: [true, "Email is required"],
       lowercase: true,
       trim: true,
-      unique: true, 
+      unique: true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         "Please provide a valid email",
@@ -72,10 +73,10 @@ const clientSchema = new Schema<IClient>(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Indexes (like User model)
-clientSchema.index({ email: 1 });
+// clientSchema.index({ email: 1 });
 
 export const Client = mongoose.model<IClient>("Client", clientSchema);
