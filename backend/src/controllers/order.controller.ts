@@ -6,7 +6,10 @@ import {
   updateOrderService,
   updateOrderStatusService,
 } from "../services/order.service";
-import { validateCreateOrder, validateUpdateOrder } from "../validations/order.validation";
+import {
+  validateCreateOrder,
+  validateUpdateOrder,
+} from "../validations/order.validation";
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
@@ -52,12 +55,13 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     if (!status || !["Draft", "Confirmed"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
-    
-    const updated = await updateOrderStatusService(req.params.id as string, status);
+
+    const updated = await updateOrderStatusService(
+      req.params.id as string,
+      status,
+    );
     res.json(updated);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
-
-
