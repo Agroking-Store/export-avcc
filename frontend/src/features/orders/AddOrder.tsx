@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, Calendar, ArrowLeft } from "lucide-react";
-import { apiConfig } from "../../config/apiConfig";
 import { toast } from "react-toastify";
 
 interface Vehicle {
