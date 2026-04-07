@@ -25,6 +25,7 @@ export interface IOrder extends Document {
   vehicles: IVehicleItem[];
   status: "Draft" | "Confirmed";
   createdAt: Date;
+  __v?: number; // Mongoose version key
   updatedAt: Date;
 }
 
@@ -73,7 +74,7 @@ const orderSchema = new Schema<IOrder>(
         return ret;
       },
     },
-  },
+  }
 );
 
 orderSchema.index({ clientId: 1 });

@@ -12,6 +12,7 @@ export interface IUser extends Document {
   isActive: boolean;
   lastLogin?: Date;
   refreshToken?: string;
+  __v?: number; // Mongoose version key
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -68,14 +69,15 @@ const userSchema = new Schema<IUser>(
   {
     timestamps: true,
     toJSON: {
-      transform: function (doc, ret) {
-        delete ret.password;
-        delete ret.refreshToken;
+      transform: function (doc, ret: Record<string, any>) {
+        // Cast 'ret' to a more flexible type
+        delete ret.password; // Now TypeScript allows deleting this property
+        delete ret.refreshToken; // And this one
         delete ret.__v;
         return ret;
       },
     },
-  },
+  }
 );
 
 // Hash password before saving
@@ -88,7 +90,7 @@ userSchema.pre("save", async function (this: IUser) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function (
-  candidatePassword: string,
+  candidatePassword: string
 ): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);

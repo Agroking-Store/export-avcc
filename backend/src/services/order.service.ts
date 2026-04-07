@@ -67,7 +67,7 @@ const generateVoucherNo = async (): Promise<string> => {
 // };
 
 export const createOrderService = async (
-  data: CreateOrderDto,
+  data: CreateOrderDto
 ): Promise<IOrder> => {
   
   if (!data.clientId) {
@@ -186,7 +186,7 @@ export const getOrderByIdService = async (id: string) => {
 
 export const updateOrderService = async (
   id: string,
-  data: UpdateOrderDto,
+  data: UpdateOrderDto
 ): Promise<IOrder | null> => {
   if (data.clientId) {
     const client = await Client.findById(data.clientId);
@@ -221,7 +221,7 @@ export const updateOrderService = async (
 
 export const updateOrderStatusService = async (
   id: string,
-  status: "Draft" | "Confirmed",
+  status: "Draft" | "Confirmed"
 ): Promise<IOrder | null> => {
   return await Order.findByIdAndUpdate(id, { status }, { new: true });
 };

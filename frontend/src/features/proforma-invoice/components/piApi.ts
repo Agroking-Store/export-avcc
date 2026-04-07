@@ -1,0 +1,92 @@
+import axios from "axios";
+import { apiConfig } from "../../../config/apiConfig";
+import { PIForm } from "./pi.types";
+import { companyApi } from "../../company/components/companyApi"; // Import existing companyApi
+
+const getAuthToken = () => {
+  let token =
+    localStorage.getItem("token") || localStorage.getItem("accessToken");
+  if (!token && localStorage.getItem("user")) {
+    try {
+      const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+      token = userObj.token || userObj.accessToken;
+    } catch (e) {}
+  }
+  if (token && token.startsWith('"') && token.endsWith('"')) {
+    token = token.slice(1, -1);
+  }
+  return token;
+};
+
+export const piApi = {
+  getClients: async (search: string) => {
+    const res = await axios.get(`${apiConfig.baseURL}/clients`, {
+      params: { limit: 10, search },
+    });
+    return res.data?.data || res.data;
+  },
+
+  // Reusing existing companyApi for fetching companies
+  getCompanies: async (search: string) => {
+    const res = await companyApi.getCompanies(search, 1, 10, "name", "asc"); // Assuming getCompanies takes these params
+    return res.data || []; // Correctly access the 'data' array from the paginated response
+  },
+
+  getCompanyById: async (id: string) => {
+    return companyApi.getCompanyById(id);
+  },
+  getOrders: async (search: string) => {
+    const res = await axios.get(`${apiConfig.baseURL}/orders`, {
+      params: { limit: 20, search },
+    });
+    return res.data?.data || res.data;
+  },
+
+  getPIById: async (id: string) => {
+    const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`);
+    return res.data;
+  },
+
+  getOrderById: async (id: string) => {
+    const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
+    return res.data;
+  },
+
+  createPI: async (payload: Partial<PIForm> & { totalAmount: number }) => {
+    const res = await axios.post(
+      `${apiConfig.baseURL}/proforma-invoices`,
+      payload
+    );
+    return res.data;
+  },
+
+  updatePI: async (
+    id: string,
+    payload: Partial<PIForm> & { totalAmount: number }
+  ) => {
+    const res = await axios.put(
+      `${apiConfig.baseURL}/proforma-invoices/${id}`,
+      payload
+    );
+    return res.data;
+  },
+
+  previewPDF: (id: string) => {
+    return axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}/pdf`, {
+      responseType: "blob",
+      headers: getAuthToken()
+        ? { Authorization: `Bearer ${getAuthToken()}` }
+        : {},
+    });
+  },
+
+  getSuggestedNextPiNumber: async (companyId: string) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/next-pi-number`,
+      {
+        params: { companyId },
+      }
+    );
+    return res.data.piNumber;
+  },
+};

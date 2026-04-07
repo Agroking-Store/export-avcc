@@ -9,6 +9,7 @@ export interface IClient extends Document {
   companyName: string;
   address: string;
   isActive: boolean;
+  __v?: number; // Mongoose version key
   createdAt: Date;
   updatedAt: Date;
 }
