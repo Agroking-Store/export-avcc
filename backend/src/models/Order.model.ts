@@ -4,6 +4,17 @@ export interface IVehicleItem {
   name: string;
   color: string;
   quantity: number;
+  hsnCode?: string;
+  vehicleName?: string;
+  exteriorColour?: string;
+  chassisNo?: string;
+  engineNo?: string;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  fobAmount?: number;
+  freight?: number;
 }
 
 export interface IOrder extends Document {
@@ -23,7 +34,30 @@ const vehicleItemSchema = new Schema<IVehicleItem>({
   name: { type: String, required: true },
   color: { type: String, required: true },
   quantity: { type: Number, required: true },
+  hsnCode: { type: String },
+  vehicleName: { type: String },
+  exteriorColour: { type: String },
+  chassisNo: { type: String },
+  engineNo: { type: String },
+  engineCapacity: { type: String },
+  fuelType: { type: String },
+  countryOfOrigin: { type: String },
+  yom: { type: String },
+  fobAmount: { type: Number },
+  freight: { type: Number },
 });
+
+export interface IOrder extends Document {
+  orderId: string;
+  voucherNo: string;
+  date: Date;
+  clientId?: mongoose.Types.ObjectId;
+  dealerId?: mongoose.Types.ObjectId;
+  vehicles: IVehicleItem[];
+  status: "Draft" | "Confirmed";
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const orderSchema = new Schema<IOrder>(
   {
@@ -46,7 +80,23 @@ const orderSchema = new Schema<IOrder>(
   }
 );
 
-// Indexes
+export interface VehicleDto {
+  name: string;
+  color: string;
+  quantity: number;
+  hsnCode?: string;
+  vehicleName?: string;
+  exteriorColour?: string;
+  chassisNo?: string;
+  engineNo?: string;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  fobAmount?: number;
+  freight?: number;
+}
+
 orderSchema.index({ clientId: 1 });
 orderSchema.index({ status: 1 });
 

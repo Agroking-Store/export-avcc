@@ -19,6 +19,7 @@ const clientSchema = new Schema<IClient>(
     clientCode: {
       type: String,
       unique: true,
+      sparse: true,
     },
     name: {
       type: String,
@@ -73,10 +74,10 @@ const clientSchema = new Schema<IClient>(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Indexes (like User model)
-clientSchema.index({ email: 1 });
+// clientSchema.index({ email: 1 });
 
 export const Client = mongoose.model<IClient>("Client", clientSchema);
