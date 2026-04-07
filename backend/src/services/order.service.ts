@@ -4,17 +4,35 @@ import { Client } from "../models/Client.model";
 import mongoose from "mongoose";
 
 const generateOrderId = async (): Promise<string> => {
-  const random = Math.floor(Math.random() * 1000000);
-  return `ORD-${Date.now()}-${random}`;
+  const latest = await Order.findOne()
+    .sort({ createdAt: -1 })
+    .select('orderId');
+    
+  if (!latest || !latest.orderId) {
+    return 'ORD-001';
+  }
+  
+  const numStr = latest.orderId.split('-')[1] || '0';
+  const num = Math.max(1, isNaN(parseInt(numStr)) ? 1 : parseInt(numStr) + 1);
+  return `ORD-${String(num).padStart(3, "0")}`;
 };
 
 const generateVoucherNo = async (): Promise<string> => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   const yearSuffix = `${currentYear}-${nextYear.toString().slice(2)}`;
-
-  const random = Math.floor(Math.random() * 1000000);
-  return `AN/${yearSuffix}/${Date.now()}-${random}`;
+  
+  const latest = await Order.findOne()
+    .sort({ createdAt: -1 })
+    .select('voucherNo');
+    
+  if (!latest || !latest.voucherNo) {
+    return `AN/${yearSuffix}/1`;
+  }
+  
+  const numStr = latest.voucherNo.split('/').pop() || '0';
+  const num = Math.max(1, isNaN(parseInt(numStr)) ? 1 : parseInt(numStr) + 1);
+  return `AN/${yearSuffix}/${num}`;
 };
 
 // export const createOrderService = async (
