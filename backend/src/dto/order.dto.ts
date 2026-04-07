@@ -21,18 +21,16 @@ export interface IVehicleItem {
   quantity: number;
 }
 
+// CREATE DTO
 export interface CreateOrderDto {
-  clientId?: string;
-  dealerId?: string;
+  clientId: string;      
   date: string;
-  // vehicles: IVehicleItem[];
   vehicles: VehicleDto[];
 }
 
+// UPDATE DTO
 export interface UpdateOrderDto {
-  clientId?: string;
+  clientId?: string;    
   date?: string | Date;
-  dealerId?: string;
-  // vehicles?: IVehicleItem[];
-  vehicles: VehicleDto[];
+  vehicles?: VehicleDto[];
 }
