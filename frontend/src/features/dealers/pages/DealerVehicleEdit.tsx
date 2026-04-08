@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
+import { bookingApi } from "../../../services/bookingApi";
 import { ArrowLeft, Save, Car, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -22,13 +23,15 @@ interface VehicleForm {
 const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
 const DealerVehicleEdit = () => {
-  const { orderId, vehicleIndex } = useParams() as { orderId: string; vehicleIndex: string };
+const params = useParams();
+const orderId = params.id;
+const vehicleIndex = params.vehicleIndex;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const expandedIndex = parseInt(vehicleIndex || "0");
   const srNo = searchParams.get("srNo") || String(expandedIndex + 1);
-  const vIdx = parseInt(searchParams.get("vIdx") || "0");
+const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,22 +64,43 @@ const DealerVehicleEdit = () => {
         const vehicles = order.vehicles?.filter(Boolean) || [];
         setAllOrderVehicles(vehicles);
         const v = vehicles[vIdx];
-        if (v) {
-          setForm({
-            name: v.name || "",
-            color: v.color || "",
-            hsnCode: v.hsnCode || "",
-            chassisNo: v.chassisNo || "",
-            engineNo: v.engineNo || "",
-            engineCapacity: v.engineCapacity || "",
-            fuelType: v.fuelType || "",
-            countryOfOrigin: v.countryOfOrigin || "",
-            yom: v.yom || new Date().getFullYear(),
-            fobAmount: v.fobAmount || 0,
-            freight: v.freight || 0,
-            quantity: v.quantity || 1,
-          });
+        const name = v?.name || searchParams.get("name") || "";
+        const color = v?.color || searchParams.get("color") || "";
+        
+        // Fetch booking data for booked vehicle
+        const bookingsRes = await bookingApi.getAll();
+        const bookings = bookingsRes.data?.data || bookingsRes.data || [];
+        let bookingVehicle = null;
+        const matchingBooking = bookings.find((b: any) => {
+          if (b.status !== "Booked") return false;
+          return b.vehicles?.some((bv: any) =>
+            bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
+            bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
+          );
+        });
+        if (matchingBooking) {
+          bookingVehicle = matchingBooking.vehicles.find((bv: any) =>
+            bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
+            bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
+          );
         }
+        
+        // Merge: bookingVehicle overrides v, fallback searchParams for name/color
+        const formData = {
+          name,
+          color,
+          hsnCode: bookingVehicle?.hsnCode || v?.hsnCode || "",
+          chassisNo: bookingVehicle?.chassisNo || v?.chassisNo || "",
+          engineNo: bookingVehicle?.engineNo || v?.engineNo || "",
+          engineCapacity: bookingVehicle?.engineCapacity || v?.engineCapacity || "",
+          fuelType: bookingVehicle?.fuelType || v?.fuelType || "",
+          countryOfOrigin: bookingVehicle?.countryOfOrigin || v?.countryOfOrigin || "",
+          yom: bookingVehicle?.yom || v?.yom || new Date().getFullYear(),
+          fobAmount: bookingVehicle?.fobAmount || v?.fobAmount || 0,
+          freight: bookingVehicle?.freight || v?.freight || 0,
+          quantity: v?.quantity || 1,
+        };
+        setForm(formData);
       } catch {
         toast.error("Failed to load vehicle");
       } finally {
@@ -133,9 +157,13 @@ const DealerVehicleEdit = () => {
       toast.error("Please fix errors before saving");
       return;
     }
+    if (vIdx < 0 || vIdx >= allOrderVehicles.length) {
+      toast.error("Invalid vehicle index. Please try again.");
+      return;
+    }
     setSaving(true);
     try {
-      // Build updated vehicles array — replace the vehicle at vIdx
+      // Build updated vehicles array — replace the vehicle at vIdx (grouped index)
       const updatedVehicles = allOrderVehicles.map((v: any, i: number) =>
         i === vIdx
           ? {
@@ -151,19 +179,20 @@ const DealerVehicleEdit = () => {
               yom: form.yom,
               fobAmount: form.fobAmount,
               freight: form.freight,
-              quantity: form.quantity,
+              quantity: v.quantity || 1,
             }
           : v
       );
 
-      await axios.put(`http://localhost:5000/api/v1/orders/${orderId}`, {
+      const response = await axios.put(`http://localhost:5000/api/v1/orders/${orderId}`, {
         vehicles: updatedVehicles,
       });
-
+      console.log("Update response:", response.data);
       toast.success("Vehicle updated successfully");
       navigate(`/dealers/orders/${orderId}`);
-    } catch {
-      toast.error("Failed to update vehicle");
+    } catch (error: any) {
+      console.error("Update error:", error.response?.data || error.message);
+      toast.error(`Failed to update: ${error.response?.data?.message || "Server error"}`);
     } finally {
       setSaving(false);
     }

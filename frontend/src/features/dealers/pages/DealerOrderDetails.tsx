@@ -380,7 +380,8 @@ statusMap[expandedIndex] = hasBooking ? "Booked" : "Available";
                             <div className="flex items-center justify-end gap-2">
                               <button
 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] !== 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
-                                onClick={() => {
+onClick={() => {
+                                  if (vehicleStatuses[expandedIndex] !== 'Booked') return;
                                   // View vehicle details - mirroring vehicle pattern
                                   const params = new URLSearchParams({
                                     name: v.name,
@@ -388,27 +389,38 @@ className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium tex
                                     srNo: String(expandedIndex + 1),
                                     expandedIndex: String(expandedIndex),
                                   });
-                                  navigate(`/dealers/orders/${id}?viewVehicle=${expandedIndex}&${params.toString()}`);
+navigate(`/dealers/orders/${id}/vehicle-view/${expandedIndex}?name=${encodeURIComponent(v.name)}&color=${encodeURIComponent(v.color || '')}&srNo=${expandedIndex + 1}&expandedIndex=${expandedIndex}`);
                                 }}
                               >
                                 <Eye size={14} />
                                 View
                               </button>
                               <button
-className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] !== 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] !== 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                                onClick={() => {
+                                  if (vehicleStatuses[expandedIndex] !== 'Booked') return;
+                                  const params = new URLSearchParams({
+                                    name: v.name,
+                                    color: v.color || '',
+                                    srNo: String(expandedIndex + 1),
+                                    expandedIndex: String(expandedIndex),
+                                  });
+navigate(`/dealers/orders/${id}/vehicle-edit/${expandedIndex}?name=${encodeURIComponent(v.name)}&color=${encodeURIComponent(v.color || '')}&srNo=${expandedIndex + 1}&expandedIndex=${expandedIndex}`);
+                                }}
                               >
                                 <Edit2 size={14} />
                                 Edit
                               </button>
                               <button
 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] === 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
-                                onClick={() => {
+onClick={() => {
+                                  if (vehicleStatuses[expandedIndex] === 'Booked') return;
                                   const params = new URLSearchParams({
                                     name: encodeURIComponent(v.name),
                                     color: encodeURIComponent(v.color || ''),
                                     srNo: String(expandedIndex + 1)
                                   });
-navigate(`/dealers/booking/${id}/${expandedIndex}?${params.toString()}&refresh=true`);
+                                  navigate(`/dealers/booking/${id}/${expandedIndex}?${params.toString()}&refresh=true`);
                                 }}
                               >
                                 Booking

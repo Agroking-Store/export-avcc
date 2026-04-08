@@ -21,13 +21,15 @@ interface VehicleData {
 }
 
 const DealerVehicleView = () => {
-  const { orderId, vehicleIndex } = useParams() as { orderId: string; vehicleIndex: string };
+const params = useParams();
+const orderId = params.id;
+const vehicleIndex = params.vehicleIndex;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const expandedIndex = parseInt(vehicleIndex || "0");
   const srNo = searchParams.get("srNo") || String(expandedIndex + 1);
-  const vIdx = parseInt(searchParams.get("vIdx") || "0");
+const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
 
   const [orderVehicle, setOrderVehicle] = useState<VehicleData | null>(null);
   const [bookingVehicle, setBookingVehicle] = useState<any>(null);
@@ -41,41 +43,57 @@ const DealerVehicleView = () => {
         setLoading(true);
 
         // Fetch the order
+        if (!orderId) {
+          toast.error("Order ID missing");
+          navigate("/dealers/orders");
+          return;
+        }
         const res = await axios.get(`http://localhost:5000/api/v1/orders/${orderId}`);
         const order = res.data.order || res.data;
         setOrderId2(order.orderId);
 
-        // Get this specific vehicle from order
+        // Use searchParams name/color first for matching (robust)
+        const name = searchParams.get("name") || "";
+        const color = searchParams.get("color") || "";
+
+        // Try order vehicle for context
         const vehicles = order.vehicles?.filter(Boolean) || [];
-        const rawVehicle = vehicles[vIdx];
-        if (rawVehicle) setOrderVehicle(rawVehicle);
+        const rawVehicle = vehicles[vIdx] || { name, color };
+        if (rawVehicle && !rawVehicle.name) rawVehicle.name = name;
+        if (rawVehicle && !rawVehicle.color) rawVehicle.color = color;
+        setOrderVehicle(rawVehicle);
 
-        const name = rawVehicle?.name || searchParams.get("name") || "";
-        const color = rawVehicle?.color || searchParams.get("color") || "";
+        // Fetch booking data - inner try for graceful fail
+        try {
+          const bookingsRes = await bookingApi.getAll();
+          const bookings = bookingsRes.data?.data || bookingsRes.data || [];
+          const matchingBooking = bookings.find((b: any) => {
+            if (b.status !== "Booked") return false;
+            return b.vehicles?.some(
+              (bv: any) =>
+                bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
+                bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
+            );
+          });
 
-        // Fetch booking data for this vehicle
-        const bookingsRes = await bookingApi.getAll();
-        const bookings = bookingsRes.data || [];
-        const matchingBooking = bookings.find((b: any) => {
-          if (b.status !== "Booked") return false;
-          return b.vehicles?.some(
-            (bv: any) =>
-              bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-              bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
-          );
-        });
-
-        if (matchingBooking) {
-          setVehicleStatus("Booked");
-          const bv = matchingBooking.vehicles.find(
-            (bv: any) =>
-              bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-              bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
-          );
-          setBookingVehicle(bv || null);
+          if (matchingBooking) {
+            setVehicleStatus("Booked");
+            const bv = matchingBooking.vehicles.find(
+              (bv: any) =>
+                bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
+                bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
+            );
+            setBookingVehicle(bv || null);
+          } else {
+            setVehicleStatus("Draft");
+          }
+        } catch (bookingError) {
+          console.warn("Booking data unavailable:", bookingError);
+          setVehicleStatus("Draft");
         }
-      } catch {
-        toast.error("Failed to load vehicle details");
+      } catch (orderError) {
+        console.error("Order fetch failed:", orderError);
+        toast.error("Order not found");
       } finally {
         setLoading(false);
       }
@@ -198,7 +216,7 @@ const DealerVehicleView = () => {
         <button
           onClick={() => {
             const params = new URLSearchParams(searchParams);
-            navigate(`/dealers/vehicle-edit/${orderId}/${expandedIndex}?${params.toString()}`);
+navigate(`/dealers/orders/${orderId}/vehicle-edit/${expandedIndex}?${params.toString()}`);
           }}
           className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm transition-colors"
         >
