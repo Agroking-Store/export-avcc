@@ -181,7 +181,7 @@ const ClientDetails = () => {
                         </td>
                   
                         <td className="px-4 py-2">
-                          {order.vehicles.reduce((sum: number, v: any) => sum + v.quantity, 0)}
+                          {order.vehicles?.filter(v => v != null).reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0) ?? 0}
                         </td>
                   
                         <td className="px-4 py-2">

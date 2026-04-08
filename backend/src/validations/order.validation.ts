@@ -48,4 +48,25 @@ export const validateUpdateOrder = (data: UpdateOrderDto) => {
       }
     });
   }
+
+  // Validate individual expanded vehicle color update
+  if (data.vehicleColorUpdate) {
+    const { expandedIndex, color } = data.vehicleColorUpdate;
+    if (expandedIndex < 0) {
+      throw new Error("expandedIndex must be non-negative");
+    }
+    if (!color || color.trim() === "") {
+      throw new Error("color is required for vehicleColorUpdate");
+    }
+  }
+
+  if (data.vehiclesUpdate) {
+    const { index } = data.vehiclesUpdate;
+    if (index < 0) {
+      throw new Error("Vehicle index must be non-negative");
+    }
+    if (!data.vehiclesUpdate.color && !data.vehiclesUpdate.name && !data.vehiclesUpdate.srNo) {
+      throw new Error("At least one vehicle field (color, name, or srNo) must be provided");
+    }
+  }
 };
