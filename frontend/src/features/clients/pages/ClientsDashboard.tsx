@@ -74,7 +74,7 @@ const ClientsDashboard = () => {
   const totalOrders = orders.length;
   const totalVehicles = useMemo(() => {
     return orders.reduce((sum, o) => {
-      const qty = o.vehicles.reduce((s, v) => s + v.quantity, 0);
+      const qty = o.vehicles?.filter(v => v != null).reduce((s, v) => s + (v.quantity ?? 0), 0) ?? 0;
       return sum + qty;
     }, 0);
   }, [orders]);
@@ -111,9 +111,11 @@ const ClientsDashboard = () => {
 
   const vehicleStats: Record<string, number> = {};
   orders.forEach((o) => {
-    o.vehicles.forEach((v: Vehicle) => {
-      if (!vehicleStats[v.name]) vehicleStats[v.name] = 0;
-      vehicleStats[v.name] += v.quantity;
+    o.vehicles?.forEach((v) => {
+      if (v?.name) {
+        if (!vehicleStats[v.name]) vehicleStats[v.name] = 0;
+        vehicleStats[v.name] += (v.quantity ?? 0);
+      }
     });
   });
 
@@ -321,8 +323,8 @@ const ClientsDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {orders.slice(0, 5).map(o => {
-                const qty = o.vehicles.reduce((s, v) => s + v.quantity, 0);
+{orders.slice(0, 5).map(o => {
+                const qty = o.vehicles?.filter(v => v != null).reduce((s, v) => s + (v.quantity ?? 0), 0) ?? 0;
                 const isConfirmed = o.status === "Confirmed";
                 
                 return (

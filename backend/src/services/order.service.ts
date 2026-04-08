@@ -4,17 +4,35 @@ import { Client } from "../models/Client.model";
 import mongoose from "mongoose";
 
 const generateOrderId = async (): Promise<string> => {
-  const random = Math.floor(Math.random() * 1000000);
-  return `ORD-${Date.now()}-${random}`;
+  const latest = await Order.findOne()
+    .sort({ createdAt: -1 })
+    .select('orderId');
+    
+  if (!latest || !latest.orderId) {
+    return 'ORD-001';
+  }
+  
+  const numStr = latest.orderId.split('-')[1] || '0';
+  const num = Math.max(1, isNaN(parseInt(numStr)) ? 1 : parseInt(numStr) + 1);
+  return `ORD-${String(num).padStart(3, "0")}`;
 };
 
 const generateVoucherNo = async (): Promise<string> => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   const yearSuffix = `${currentYear}-${nextYear.toString().slice(2)}`;
-
-  const random = Math.floor(Math.random() * 1000000);
-  return `AN/${yearSuffix}/${Date.now()}-${random}`;
+  
+  const latest = await Order.findOne()
+    .sort({ createdAt: -1 })
+    .select('voucherNo');
+    
+  if (!latest || !latest.voucherNo) {
+    return `AN/${yearSuffix}/1`;
+  }
+  
+  const numStr = latest.voucherNo.split('/').pop() || '0';
+  const num = Math.max(1, isNaN(parseInt(numStr)) ? 1 : parseInt(numStr) + 1);
+  return `AN/${yearSuffix}/${num}`;
 };
 
 // export const createOrderService = async (
@@ -98,6 +116,7 @@ export const createOrderService = async (
     name: v.name,
     color: v.color,
     quantity: v.quantity,
+    srNo: v.srNo || null,
     hsnCode: v.hsnCode,
     vehicleName: v.vehicleName,
     exteriorColour: v.exteriorColour,
@@ -111,12 +130,16 @@ export const createOrderService = async (
     freight: v.freight,
   }));
 
+  const orderId = await generateOrderId();
+  const voucherNo = await generateVoucherNo();
+
   const order = new Order({
     orderId,
     voucherNo,
     date: new Date(data.date),
     clientId: data.clientId,
     vehicles,
+    vehicleColors: [], // initialize empty
     status: "Draft",
   });
 
@@ -192,7 +215,11 @@ export const updateOrderService = async (
     const client = await Client.findById(data.clientId);
     if (!client) throw new Error("Client not found");
   }
-  const updateData: any = { ...data };
+
+  const updateData: any = {};
+  if (data.date) updateData.date = new Date(data.date);
+  if (data.clientId !== undefined) updateData.clientId = data.clientId || null;
+  if (data.dealerId !== undefined) updateData.dealerId = data.dealerId || null;
   if (data.vehicles) {
     if (data.vehicles.length === 0) {
       throw new Error("At least one vehicle is required");
@@ -202,6 +229,7 @@ export const updateOrderService = async (
       name: v.name,
       color: v.color,
       quantity: v.quantity,
+      srNo: v.srNo || null,
       hsnCode: v.hsnCode,
       vehicleName: v.vehicleName,
       exteriorColour: v.exteriorColour,
@@ -215,8 +243,63 @@ export const updateOrderService = async (
       freight: v.freight,
     }));
   }
-  if (data.date) updateData.date = new Date(data.date);
-  return await Order.findByIdAndUpdate(id, updateData, { new: true });
+
+  // ─── Handle vehicleColorUpdate ───────────────────────────────────────────────
+  // Updates color for a single expanded vehicle slot (e.g. BMW copy #3)
+  // Does NOT touch the vehicles[] array at all
+  if (data.vehicleColorUpdate) {
+    const { expandedIndex, color } = data.vehicleColorUpdate;
+
+    const order = await Order.findById(id);
+    if (!order) throw new Error("Order not found");
+
+    const existing = order.vehicleColors.find(vc => vc.expandedIndex === expandedIndex);
+    if (existing) {
+      // Update existing color override
+      existing.color = color;
+    } else {
+      // Add new color override for this slot
+      order.vehicleColors.push({ expandedIndex, color });
+    }
+
+    return await order.save();
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ─── Handle vehiclesUpdate (name/srNo edits on vehicles[] array) ─────────────
+  let vehicleUpdate: any = {};
+  let needsVehicleFetch = false;
+
+  if (data.vehiclesUpdate) {
+    const { index, color, name, srNo } = data.vehiclesUpdate;
+    if (index < 0) throw new Error("Invalid vehicle index");
+
+    needsVehicleFetch = true;
+
+    if (color !== undefined) vehicleUpdate[`vehicles.${index}.color`] = color;
+    if (name !== undefined) vehicleUpdate[`vehicles.${index}.name`] = name;
+    if (srNo !== undefined) vehicleUpdate[`vehicles.${index}.srNo`] = srNo;
+  }
+
+  let order: IOrder | null = null;
+  if (needsVehicleFetch) {
+    order = await Order.findById(id);
+    if (!order) throw new Error("Order not found");
+    if (data.vehiclesUpdate!.index >= order.vehicles.length) {
+      throw new Error("Vehicle index out of bounds");
+    }
+  }
+
+  const finalUpdate: any = { ...updateData };
+  if (Object.keys(vehicleUpdate).length > 0) {
+    finalUpdate.$set = vehicleUpdate;
+  }
+
+  if (Object.keys(finalUpdate).length === 0 && Object.keys(vehicleUpdate).length === 0) {
+    return order || await Order.findById(id);
+  }
+
+  return await Order.findByIdAndUpdate(id, finalUpdate, { returnDocument: 'after', runValidators: true });
 };
 
 export const updateOrderStatusService = async (

@@ -4,6 +4,8 @@ export interface IVehicleItem {
   name: string;
   color: string;
   quantity: number;
+  srNo?: string;
+  expandedIndex: number; 
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;
@@ -23,6 +25,7 @@ export interface IOrder extends Document {
   date: Date;
   clientId: mongoose.Types.ObjectId; 
   vehicles: IVehicleItem[];
+  vehicleColors: IVehicleColor[]; // NEW: individual color overrides per expanded slot
   status: "Draft" | "Confirmed";
   createdAt: Date;
   __v?: number; // Mongoose version key
@@ -33,6 +36,12 @@ const vehicleItemSchema = new Schema<IVehicleItem>({
   name: { type: String, required: true },
   color: { type: String, required: true },
   quantity: { type: Number, required: true },
+  srNo: { type: String, default: null },
+});
+
+const vehicleColorSchema = new Schema<IVehicleColor>({
+  expandedIndex: { type: Number, required: true },
+  color: { type: String, required: true },
   hsnCode: { type: String },
   vehicleName: { type: String },
   exteriorColour: { type: String },
@@ -59,7 +68,7 @@ const orderSchema = new Schema<IOrder>(
     },
 
     vehicles: { type: [vehicleItemSchema], required: true },
-
+    vehicleColors: { type: [vehicleColorSchema], default: [] }, 
     status: {
       type: String,
       enum: ["Draft", "Confirmed"],
