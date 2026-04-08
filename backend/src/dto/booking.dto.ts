@@ -14,6 +14,7 @@ export interface CreateBookingDto {
     fobAmount: number;
     freight: number;
     quantity: number;
+    srNo?: string;
   }>;
   status?: 'Draft' | 'Booked';
   orderId?: string;
@@ -35,6 +36,7 @@ export interface UpdateBookingDto {
     fobAmount: number;
     freight: number;
     quantity: number;
+    srNo?: string;
   }>;
   status?: 'Draft' | 'Booked';
 }

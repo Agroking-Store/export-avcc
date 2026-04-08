@@ -5,14 +5,18 @@ export class BookingService {
   static async create(bookingData: CreateBookingDto): Promise<IBooking> {
     // Check for duplicate bookings for the same vehicles
     for (const vehicle of bookingData.vehicles) {
-      const existingBooking = await Booking.findOne({
+      const query: any = {
         'vehicles.name': vehicle.name,
         'vehicles.color': vehicle.color,
         status: 'Booked'
-      });
+      };
+      if (vehicle.srNo) {
+        query['vehicles.srNo'] = vehicle.srNo;
+      }
+      const existingBooking = await Booking.findOne(query);
       
       if (existingBooking) {
-        throw new Error(`Vehicle ${vehicle.name} (${vehicle.color}) is already booked`);
+        throw new Error(`Vehicle ${vehicle.name} (${vehicle.color}) ${vehicle.srNo ? `SR#${vehicle.srNo}` : ''} is already booked`);
       }
     }
     

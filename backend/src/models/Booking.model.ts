@@ -13,6 +13,7 @@ export interface IBookingVehicle {
   fobAmount: number;
   freight: number;
   quantity: number;
+  srNo?: string;
 }
 
 export interface IBooking extends Document {
@@ -38,6 +39,7 @@ const bookingVehicleSchema = new Schema<IBookingVehicle>({
   fobAmount: { type: Number, default: 0 },
   freight: { type: Number, default: 0 },
   quantity: { type: Number, default: 1 },
+  srNo: { type: String },
 });
 
 const bookingSchema = new Schema<IBooking>({

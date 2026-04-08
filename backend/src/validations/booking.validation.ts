@@ -14,6 +14,7 @@ const vehicleSchema = Joi.object({
   fobAmount: Joi.number().min(0).optional(),
   freight: Joi.number().min(0).optional(),
   quantity: Joi.number().min(1).max(100).default(1),
+  srNo: Joi.string().optional().allow(''),
 });
 
 const bookingSchema = Joi.object({

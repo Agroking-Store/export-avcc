@@ -18,6 +18,7 @@ const DealerVehicleBooking = () => {
 
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
 
+  const srNoParam = searchParams.get('srNo') || '';
   const [vehicles, setVehicles] = useState<any[]>([
     {
       hsnCode: '',
@@ -25,6 +26,7 @@ const DealerVehicleBooking = () => {
       exteriorColour: searchParams.get('color') || '',
       chassisNo: '',
       engineNo: '',
+      srNo: srNoParam,
       engineCapacity: '',
       fuelType: '',
       countryOfOrigin: '',
@@ -136,7 +138,8 @@ const DealerVehicleBooking = () => {
           yom: vehicles[0].yom,
           fobAmount: vehicles[0].fobAmount,
           freight: vehicles[0].freight,
-          quantity: 1
+          quantity: 1,
+          srNo: vehicles[0].srNo
         }],
         status: 'Booked'
       });
@@ -321,6 +324,13 @@ const DealerVehicleBooking = () => {
                 </label>
                 <input type="text" value={vehicles[0].engineNo} onChange={(e)=>handleInputChange('vehicles.engineNo',e.target.value)} onBlur={()=>validateField('vehicles.engineNo')} placeholder="ABC12345678" className="w-full p-2.5 text-sm border rounded-md bg-white dark:bg-gray-800 focus:ring-1 focus:ring-blue-400 transition-all" />
                 <ErrorMessage field="vehicles.engineNo" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
+                  Sr No <span className="text-orange-500">*</span>
+                </label>
+                <input type="text" value={vehicles[0].srNo} onChange={(e)=>handleInputChange('vehicles.srNo',e.target.value)} placeholder="SR001" className="w-full p-2.5 text-sm border rounded-md bg-white dark:bg-gray-800 focus:ring-1 focus:ring-orange-400 transition-all" />
+                <ErrorMessage field="vehicles.srNo" />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">Engine Capacity</label>
