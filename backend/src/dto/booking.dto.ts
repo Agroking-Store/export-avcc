@@ -15,7 +15,7 @@ export interface CreateBookingDto {
     freight: number;
     quantity: number;
   }>;
-  status?: 'Draft' | 'Confirmed' | 'Completed' | 'Cancelled';
+  status?: 'Draft' | 'Booked';
   orderId?: string;
 }
 
@@ -36,5 +36,5 @@ export interface UpdateBookingDto {
     freight: number;
     quantity: number;
   }>;
-  status?: 'Draft' | 'Confirmed' | 'Completed' | 'Cancelled';
+  status?: 'Draft' | 'Booked';
 }

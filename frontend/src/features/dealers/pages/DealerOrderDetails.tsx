@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useCallback } from "react";
 import DealerNav from "../components/DealerNav";
-import { ArrowLeft, Eye, Edit2, User, Car, Phone, MapPin, Building, Package, TrendingUp, Clock, Hash, Palette, CheckCircle } from "lucide-react";
+import { ArrowLeft, Eye, Edit2, User, Car, Phone, MapPin, Building, Package, TrendingUp, Clock, Hash, Palette, CheckCircle, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 import { bookingApi } from "../../../services/bookingApi";
 
 const DealerOrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -22,11 +24,27 @@ const DealerOrderDetails = () => {
   }, [id]);
 
   useEffect(() => {
-    // Only fetch vehicle statuses when order data is available
+    // Initial status fetch when order loads
     if (order) {
       fetchVehicleStatuses();
     }
   }, [order]);
+
+  // Auto-refresh if coming from booking creation
+  useEffect(() => {
+    const refresh = searchParams.get('refresh');
+    if (refresh === 'true' && order) {
+      const timer = setTimeout(() => {
+        fetchVehicleStatuses().then(() => {
+          // Clear refresh param
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('refresh');
+          window.history.replaceState(null, '', window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : ''));
+        });
+      }, 1000); // Increased delay to ensure booking is fully saved and indexed
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, order]);
 
   const fetchOrder = async () => {
     try {
@@ -45,26 +63,11 @@ const DealerOrderDetails = () => {
 
   const fetchVehicleStatuses = async () => {
     try {
-      // Only fetch bookings if we have a valid dealerId
-      if (!order?.dealerId?._id) {
-        // If no dealerId, set all vehicles to Draft
-        if (order?.vehicles) {
-          const statusMap: {[key: string]: string} = {};
-          order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
-            const qty = v.quantity ?? 1;
-            for (let qIdx = 0; qIdx < qty; qIdx++) {
-              const expandedIndex = vIdx * qty + qIdx;
-              statusMap[expandedIndex] = "Draft";
-            }
-          });
-          setVehicleStatuses(statusMap);
-        }
-        return;
-      }
-
-      // Fetch all bookings for this dealer
-      const res = await bookingApi.getByDealer(order.dealerId._id);
+      // Fetch all bookings to check for vehicle matches
+      // Since orders don't have a dealerId, we check all bookings
+      const res = await bookingApi.getAll();
       const bookings = res.data || [];
+      console.log('DEBUG: Fetched bookings:', bookings);
       
       // Create a map of vehicle status based on bookings
       const statusMap: {[key: string]: string} = {};
@@ -76,19 +79,24 @@ const DealerOrderDetails = () => {
             const expandedIndex = vIdx * qty + qIdx;
             
             // Check if this vehicle has a booking
-            const hasBooking = bookings.some((booking: any) => 
-              booking.vehicles.some((bv: any) => 
-                bv.name === v.name && 
-                bv.color === v.color &&
-                booking.status === 'Booked'  // Only count as booked if status is Booked
-              )
-            );
+            // Use case-insensitive comparison for name and color
+            const hasBooking = bookings.some((booking: any) => {
+              // Only count as booked if status is 'Booked'
+              if (booking.status !== 'Booked') return false;
+              
+              return booking.vehicles.some((bv: any) => {
+                const nameMatch = bv.name.trim().toLowerCase() === v.name.trim().toLowerCase();
+                const colorMatch = bv.color.trim().toLowerCase() === v.color.trim().toLowerCase();
+                return nameMatch && colorMatch;
+              });
+            });
             
             statusMap[expandedIndex] = hasBooking ? "Booked" : "Draft";
           }
         });
       }
       
+      console.log('DEBUG: Status map:', statusMap);
       setVehicleStatuses(statusMap);
     } catch (error) {
       console.error("Error fetching vehicle statuses", error);
@@ -232,85 +240,7 @@ const DealerOrderDetails = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Client Information */}
-        <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                Client Information
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                  <User size={16} className="text-gray-500 dark:text-gray-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                    Name
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {order.clientId?.name || "-"}
-                  </p>
-                </div>
-              </div>
-
-              {order.clientId?.companyName && (
-                <div className="flex items-start gap-3">
-                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                    <Building size={16} className="text-gray-500 dark:text-gray-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                      Company
-                    </p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {order.clientId?.companyName}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {order.clientId?.phone && (
-                <div className="flex items-start gap-3">
-                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                    <Phone size={16} className="text-gray-500 dark:text-gray-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                      Phone
-                    </p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {order.clientId?.phone}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {order.clientId?.address && (
-                <div className="flex items-start gap-3">
-                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                    <MapPin size={16} className="text-gray-500 dark:text-gray-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                      Address
-                    </p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {order.clientId?.address}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         {/* Vehicles Table */}
         <div className="lg:col-span-2">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -323,9 +253,18 @@ const DealerOrderDetails = () => {
                   Vehicles
                 </h2>
               </div>
-              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm font-medium">
-                {order.vehicles?.filter(Boolean).length || 0} vehicles
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm font-medium">
+                  {order.vehicles?.filter(Boolean).length || 0} vehicles
+                </span>
+                <button
+                  onClick={refreshStatuses}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150"
+                >
+                  <RefreshCw size={16} className="animate-spin" />
+                  Refresh Status
+                </button>
+              </div>
             </div>
 
             {/* Status Summary Cards */}

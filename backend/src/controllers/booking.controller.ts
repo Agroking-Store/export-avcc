@@ -10,7 +10,14 @@ export const createBooking = async (req: Request, res: Response) => {
     const booking = await BookingService.create(bookingData);
     ResponseUtil.success(res, booking, 'Booking created successfully');
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    if (error.message.includes('already booked')) {
+      res.status(400).json({ 
+        message: error.message,
+        code: 'VEHICLE_ALREADY_BOOKED'
+      });
+    } else {
+      res.status(400).json({ message: error.message });
+    }
   }
 };
 

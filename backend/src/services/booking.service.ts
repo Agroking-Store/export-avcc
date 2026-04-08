@@ -3,6 +3,19 @@ import { CreateBookingDto } from '../dto/booking.dto';
 
 export class BookingService {
   static async create(bookingData: CreateBookingDto): Promise<IBooking> {
+    // Check for duplicate bookings for the same vehicles
+    for (const vehicle of bookingData.vehicles) {
+      const existingBooking = await Booking.findOne({
+        'vehicles.name': vehicle.name,
+        'vehicles.color': vehicle.color,
+        status: 'Booked'
+      });
+      
+      if (existingBooking) {
+        throw new Error(`Vehicle ${vehicle.name} (${vehicle.color}) is already booked`);
+      }
+    }
+    
     const booking = new Booking(bookingData);
     return await booking.save();
   }

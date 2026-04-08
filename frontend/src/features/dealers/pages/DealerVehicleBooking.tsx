@@ -76,7 +76,14 @@ const DealerVehicleBooking = () => {
       // Navigate back to the specific order details to see the updated status
       navigate(`/dealers/orders/${orderId}`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create booking');
+      const errorMessage = error.response?.data?.message || 'Failed to create booking';
+      const errorCode = error.response?.data?.code;
+      
+      if (errorCode === 'VEHICLE_ALREADY_BOOKED') {
+        toast.error(errorMessage, { autoClose: 5000 });
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setSubmitLoading(false);
     }
