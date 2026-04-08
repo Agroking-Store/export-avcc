@@ -1,8 +1,12 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "./Sidebar";
+import AppNavigationSidebar from "./AppNavigationSidebar"; // Renamed and imported
 import Header from "./Header";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarInset,
+} from "@/components/ui/sidebar"; // Import Sidebar and SidebarInset UI components
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const MainLayout: React.FC = () => {
@@ -10,13 +14,23 @@ const MainLayout: React.FC = () => {
     <TooltipProvider>
       <SidebarProvider>
         <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
-          <Sidebar />
-          <div className="flex-1 flex flex-col overflow-hidden">
+          {/* The Sidebar UI component handles both desktop and mobile (Sheet) rendering */}
+          <Sidebar
+            side="left"
+            collapsible="icon"
+            className="bg-white dark:bg-gray-900"
+          >
+            {" "}
+            {/* Set explicit background */} {/* Use the Sidebar UI component */}
+            <AppNavigationSidebar />{" "}
+            {/* Pass your application's navigation sidebar as children */}
+          </Sidebar>
+          <SidebarInset>
             <Header />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6">
+            <div className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6">
               <Outlet />
-            </main>
-          </div>
+            </div>
+          </SidebarInset>
         </div>
       </SidebarProvider>
     </TooltipProvider>

@@ -470,7 +470,9 @@ const CreatePI = () => {
             <div className="flex items-center gap-4">
               <Button
                 type="button"
-                onClick={() => navigate("/proforma-invoice")}
+                onClick={() =>
+                  id ? navigate(-1) : navigate("/proforma-invoice/list")
+                }
                 variant="outline"
                 size="icon"
                 className="h-10 w-10 rounded-full border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all duration-200"

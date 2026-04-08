@@ -28,10 +28,7 @@ import DealerOrdersList from "../features/dealers/pages/DealerOrdersList";
 import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
 
 // PI
-import CreatePI from "../features/proforma-invoice/pages/CreatePI";
-import PIList from "../features/proforma-invoice/pages/PIList";
-import PIOrderDetail from "../features/proforma-invoice/pages/PIOrderDetail"; // Import the renamed PIOrderDetail component
-import PIDetails from "../features/proforma-invoice/pages/PIDetails";
+import PIModule from "../features/proforma-invoice/pages/PIModule"; // Import the new PIModule
 
 // Companies
 import CompanyList from "../features/company/pages/CompanyList";
@@ -68,8 +65,14 @@ const AppRoutes: React.FC = () => {
             <Route path="list" element={<VehicleList />} />
 
             <Route path="view/:id" element={<VehicleDetails />} />
-            <Route path="view/:id/view-vehicle/:vehicleIndex" element={<VehicleView />} />
-            <Route path="view/:id/edit-vehicle/:vehicleIndex" element={<VehicleEdit />} />
+            <Route
+              path="view/:id/view-vehicle/:vehicleIndex"
+              element={<VehicleView />}
+            />
+            <Route
+              path="view/:id/edit-vehicle/:vehicleIndex"
+              element={<VehicleEdit />}
+            />
           </Route>
 
           {/* Clients */}
@@ -86,16 +89,9 @@ const AppRoutes: React.FC = () => {
           <Route path="/dealers/orders" element={<DealerOrdersList />} />
           <Route path="/dealers/orders/add" element={<DealerOrders />} />
           <Route path="/dealers/:id" element={<DealerDetails />} />
-
           {/* Proforma Invoice */}
-          <Route path="/proforma-invoice" element={<PIList />} />
-          <Route path="/proforma-invoice/add" element={<CreatePI />} />
-          <Route path="/proforma-invoice/edit/:id" element={<CreatePI />} />
-          <Route path="/proforma-invoice/:id" element={<PIDetails />} />
-          <Route
-            path="/proforma-invoice/orders/:orderId"
-            element={<PIOrderDetail />}
-          />
+          {/* Use PIModule for nested PI routes */}
+          <Route path="/proforma-invoice/*" element={<PIModule />} />
 
           {/* Companies */}
           <Route path="/companies" element={<CompanyList />} />
@@ -139,4 +135,3 @@ const AppRoutes: React.FC = () => {
 };
 
 export default AppRoutes;
-

@@ -178,7 +178,7 @@ const PIDetails = () => {
           <div className="flex items-center gap-4">
             <Button
               type="button"
-              onClick={() => navigate("/proforma-invoice")}
+              onClick={() => navigate("/proforma-invoice/list")}
               variant="ghost"
               size="icon"
               className="h-10 w-10 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
