@@ -139,7 +139,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       setPiData(res.data.data);
       setPiPageCount(res.data.totalPages || 1);
     } catch (error) {
-      console.error(error);
       toast.error("Failed to fetch Proforma Invoices");
     } finally {
       setPiLoading(false);
@@ -520,9 +519,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
   const handlePiColumnToggle = (columnId: string) => {
     const column = table.getColumn(columnId);
     if (!column) {
-      console.error(
-        `[handlePiColumnToggle] Column with ID ${columnId} not found.`
-      );
       return;
     }
 
@@ -549,17 +545,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       nextVisibleHideableCount++;
     }
 
-    console.log(
-      `[handlePiColumnToggle] Attempting to toggle column: "${columnId}"`
-    );
-    console.log(`  Current visibility of "${columnId}": ${isCurrentlyVisible}`);
-    console.log(
-      `  Current count of visible hideable columns (from state): ${currentVisibleHideableCount}`
-    );
-    console.log(
-      `  Configured MIN_PI_COLUMNS: ${MIN_PI_COLUMNS}, MAX_PI_COLUMNS: ${MAX_PI_COLUMNS}`
-    );
-
     if (isCurrentlyVisible && nextVisibleHideableCount < MIN_PI_COLUMNS) {
       toast.warning(`At least ${MIN_PI_COLUMNS} columns must be visible!`);
       return;
@@ -569,9 +554,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       return;
     }
     column.toggleVisibility(!isCurrentlyVisible);
-    console.log(
-      `[handlePiColumnToggle] Successfully toggled visibility for "${columnId}" to ${!isCurrentlyVisible}.`
-    );
   };
 
   const getColumnLabel = (columnId: string): string => {
@@ -581,7 +563,7 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       case "piNumber":
         return "PI No";
       case "client":
-        return "Client Name";
+        return "Client";
       case "companyName":
         return "Company Name";
       case "totalAmount":
