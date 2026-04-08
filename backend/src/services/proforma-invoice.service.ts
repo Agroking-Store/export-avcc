@@ -691,20 +691,64 @@ export const getPIsService = async (query: any) => {
   const limitNum = Number(limit);
   const sortDir: 1 | -1 = sortOrder === "desc" ? -1 : 1;
 
-  // If sorting by client name, we MUST use aggregation to join the clients collection
-  if (sortBy === "client") {
+  let baseMatch: any = {};
+  if (status && status !== "all") {
+    baseMatch.status = status;
+  }
+
+  // Determine if we need aggregation for searching on populated fields or for sorting by them
+  const needsAggregation =
+    search || sortBy === "client" || sortBy === "companyName";
+
+  if (needsAggregation) {
     const pipeline: PipelineStage[] = [
-      { $match: match },
+      { $match: baseMatch }, // Apply initial status filter
       {
         $lookup: {
-          from: "clients", // <-- Ensure this matches your actual MongoDB collection name for clients
+          from: "clients", // Assuming 'clients' is the collection name for the Client model
           localField: "client_id",
           foreignField: "_id",
           as: "clientData",
         },
       },
       { $unwind: { path: "$clientData", preserveNullAndEmptyArrays: true } },
-      { $sort: { "clientData.name": sortDir } },
+      {
+        $lookup: {
+          from: "companies", // Assuming 'companies' is the collection name for the Company model
+          localField: "company_id",
+          foreignField: "_id",
+          as: "companyData",
+        },
+      },
+      { $unwind: { path: "$companyData", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          // Add fields for search on populated fields
+          "client_id.name": "$clientData.name",
+          "client_id.clientCode": "$clientData.clientCode",
+          "company_id.name": "$companyData.name",
+        },
+      },
+      // Add the search match stage here
+      {
+        $match: {
+          $or: [
+            { piNumber: { $regex: search, $options: "i" } },
+            { status: { $regex: search, $options: "i" } },
+            { "client_id.name": { $regex: search, $options: "i" } },
+            { "client_id.clientCode": { $regex: search, $options: "i" } },
+            { "company_id.name": { $regex: search, $options: "i" } },
+          ],
+        },
+      },
+      {
+        // The sort stage should come after the match stage
+        // to sort the filtered results.
+        // If sortBy is not client or companyName, it will sort by default createdAt
+        $sort: {
+          [sortBy === "client" ? "client_id.name" : "company_id.name"]: sortDir,
+        },
+      },
       { $skip: skip },
       { $limit: limitNum },
       {
@@ -716,15 +760,65 @@ export const getPIsService = async (query: any) => {
           createdAt: 1,
           updatedAt: 1,
           client_id: {
-            name: "$clientData.name",
-            clientCode: "$clientData.clientCode",
+            // Project client_id as an object with name and clientCode
+            name: "$client_id.name",
+            clientCode: "$client_id.clientCode",
           },
+          company_id: {
+            // Project company_id as an object with name
+            name: "$company_id.name",
+          },
+          // Include other fields if needed in the projection
         },
       },
     ];
 
     const pis = await ProformaInvoice.aggregate(pipeline);
-    const total = await ProformaInvoice.countDocuments(match);
+
+    // For total count with aggregation, we need a separate pipeline
+    const countPipeline: PipelineStage[] = [
+      { $match: baseMatch },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client_id",
+          foreignField: "_id",
+          as: "clientData",
+        },
+      },
+      { $unwind: { path: "$clientData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company_id",
+          foreignField: "_id",
+          as: "companyData",
+        },
+      },
+      { $unwind: { path: "$companyData", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          "client_id.name": "$clientData.name",
+          "company_id.name": "$companyData.name",
+        },
+      },
+    ];
+    if (search && search.trim() !== "") {
+      countPipeline.push({
+        $match: {
+          $or: [
+            { piNumber: { $regex: search, $options: "i" } },
+            { status: { $regex: search, $options: "i" } },
+            { "client_id.name": { $regex: search, $options: "i" } },
+            { "company_id.name": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+    countPipeline.push({ $count: "total" });
+
+    const totalResult = await ProformaInvoice.aggregate(countPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
     return {
       data: pis,
@@ -732,28 +826,30 @@ export const getPIsService = async (query: any) => {
       page: Number(page),
       totalPages: Math.ceil(total / limitNum),
     };
+  } else {
+    // Default Mongoose Find for standard fields (piNumber, status, totalAmount, etc.)
+    // This path is taken when no search is active and sorting is not on populated fields.
+    let sortOption: any = { createdAt: -1 };
+    if (sortBy) {
+      sortOption = { [sortBy]: sortDir };
+    }
+
+    const pis = await ProformaInvoice.find(baseMatch) // Use baseMatch here
+      .populate("client_id", "name clientCode") // Populate client info
+      .populate("company_id", "name") // Populate company info
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limitNum);
+
+    const total = await ProformaInvoice.countDocuments(baseMatch); // Use baseMatch here
+
+    return {
+      data: pis,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+    };
   }
-
-  // Default Mongoose Find for standard fields (piNumber, status, totalAmount, etc.)
-  let sortOption: any = { createdAt: -1 };
-  if (sortBy) {
-    sortOption = { [sortBy]: sortDir };
-  }
-
-  const pis = await ProformaInvoice.find(match)
-    .populate("client_id", "name clientCode") // 🔥 show client info
-    .sort(sortOption)
-    .skip(skip)
-    .limit(limitNum);
-
-  const total = await ProformaInvoice.countDocuments(match);
-
-  return {
-    data: pis,
-    total,
-    page: Number(page),
-    totalPages: Math.ceil(total / limit),
-  };
 };
 
 // GET PI BY ID

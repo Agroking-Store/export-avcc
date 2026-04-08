@@ -240,9 +240,7 @@ const PIDashboard: React.FC = () => {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="h-10 w-48 text-base">
-            {" "}
-            {/* Increased size */}
+          <SelectTrigger className="h-10 w-36 px-4 py-6 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg cursor-pointer">
             <SelectValue placeholder="Select Time Range" />
           </SelectTrigger>
           <SelectContent position="popper" sideOffset={4}>

@@ -49,11 +49,10 @@ const PIList = () => {
         </h1>
         <Button
           onClick={() => navigate("/proforma-invoice/add")}
-          className="h-10 px-4 shrink-0 rounded-md shadow-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors flex-1 sm:flex-none cursor-pointer"
+          className="h-12 px-6 py-3 shrink-0 rounded-lg shadow-md bg-linear-to-r from-blue-600 to-blue-700 text-white font-semibold tracking-wide hover:from-blue-700 hover:to-blue-800 transition-all duration-300 ease-in-out flex items-center justify-center"
         >
-          <Plus className="h-4 w-4 sm:mr-2 cursor-pointer" />
-          <span className="hidden sm:inline">Create PI</span>
-          <span className="sm:hidden">Create</span>
+          <Plus className="h-5 w-5 mr-2" />
+          <span>Create PI</span>
         </Button>
       </div>
 

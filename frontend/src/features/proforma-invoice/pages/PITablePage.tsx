@@ -268,14 +268,11 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         cell: ({ row }) => (
           <div>
             <div className="font-medium">
-              {typeof row.original.client_id === "object"
-                ? row.original.client_id.name
-                : "N/A"}
+              {(row.original.client_id as { name?: string })?.name || "N/A"}
             </div>
             <div className="text-xs text-gray-500">
-              {typeof row.original.client_id === "object"
-                ? row.original.client_id.clientCode
-                : "N/A"}
+              {(row.original.client_id as { clientCode?: string })
+                ?.clientCode || "N/A"}
             </div>
           </div>
         ),
@@ -294,12 +291,12 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         cell: ({ row }) => (
           <div>
             <div className="font-medium">
-              {typeof row.original.company_id === "object"
-                ? row.original.company_id.name
-                : "N/A"}
+              {(row.original.company_id as { name?: string })?.name || "N/A"}
             </div>
             <div className="text-xs text-gray-500">
-              {typeof row.original.company_id === "object" ? "Exporter" : ""}
+              {(row.original.company_id as { name?: string })?.name
+                ? "Exporter"
+                : ""}
             </div>
           </div>
         ),
@@ -616,8 +613,8 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         {/* Search */}
         <div className="relative w-full lg:max-w-md shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search PI number or status..."
+          <Input // Updated placeholder text
+            placeholder="Search PI No, Status, Client, or Company..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-9 h-10 py-2 w-full rounded-md border border-gray-300 bg-white shadow-sm focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors text-sm"
