@@ -1,0 +1,64 @@
+import mongoose, { Schema, Document, Model } from 'mongoose';
+
+export interface IBookingVehicle {
+  hsnCode: string;
+  name: string;
+  color: string;
+  chassisNo: string;
+  engineNo: string;
+  engineCapacity: string;
+  fuelType: string;
+  countryOfOrigin: string;
+  yom: number;
+  fobAmount: number;
+  freight: number;
+  quantity: number;
+}
+
+export interface IBooking extends Document {
+  dealerId: mongoose.Types.ObjectId;
+  date: string;
+  vehicles: IBookingVehicle[];
+  status: 'Draft' | 'Booked';
+  orderId?: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const bookingVehicleSchema = new Schema<IBookingVehicle>({
+  hsnCode: { type: String, required: true },
+  name: { type: String, required: true },
+  color: { type: String, required: true },
+  chassisNo: { type: String, required: true },
+  engineNo: { type: String, required: true },
+  engineCapacity: { type: String },
+  fuelType: { type: String },
+  countryOfOrigin: { type: String },
+  yom: { type: Number, default: 0 },
+  fobAmount: { type: Number, default: 0 },
+  freight: { type: Number, default: 0 },
+  quantity: { type: Number, default: 1 },
+});
+
+const bookingSchema = new Schema<IBooking>({
+  dealerId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Dealer', 
+    required: true 
+  },
+  date: { type: String, required: true }, // YYYY-MM-DD
+  vehicles: [bookingVehicleSchema],
+  status: { 
+    type: String, 
+    enum: ['Draft', 'Booked'],
+    default: 'Draft'
+  },
+  orderId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Order' 
+  },
+}, {
+  timestamps: true
+});
+
+export const Booking: Model<IBooking> = mongoose.model<IBooking>('Booking', bookingSchema);

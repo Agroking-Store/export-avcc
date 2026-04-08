@@ -4,6 +4,9 @@ import { ArrowLeft, Save, Car, Hash, Palette, Check } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { apiConfig } from '../../../config/apiConfig';
+import { dealerApi } from '../../../services/dealerApi';
+import { orderApi } from '../../../services/orderApi';
+import Select from '../../../components/common/Select';
 
 const VehicleEdit = () => {
   const { id: orderId, vehicleIndex } = useParams();
@@ -12,6 +15,8 @@ const VehicleEdit = () => {
 
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [dealers, setDealers] = useState<any[]>([]);
+  const [selectedDealer, setSelectedDealer] = useState('');
 
   const [name, setName] = useState(searchParams.get('name') || '');
   const [color, setColor] = useState(searchParams.get('color') || '');
@@ -20,12 +25,19 @@ const VehicleEdit = () => {
   const expandedIndex = searchParams.get('expandedIndex') || vehicleIndex || '0';
 
   useEffect(() => {
+    dealerApi.getAll().then(res => setDealers(res.data || [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     // If params missing (e.g. direct URL access), fetch from API
     if (!searchParams.get('name') && orderId) {
       const fetchOrder = async () => {
         try {
           const res = await axios.get(`${apiConfig.baseURL}/orders/${orderId}`);
           const data = res.data.order || res.data;
+
+          // Set dealer
+          if (data.dealerId) setSelectedDealer(data.dealerId);
 
           // Rebuild expanded list to find this slot
           let idx = 0;
@@ -62,7 +74,8 @@ const VehicleEdit = () => {
     setLoading(true);
 
     try {
-      await axios.put(`${apiConfig.baseURL}/orders/${orderId}`, {
+      await orderApi.update(orderId!, {
+        dealerId: selectedDealer || undefined,
         vehicleColorUpdate: {
           expandedIndex: parseInt(expandedIndex),
           color,
@@ -190,6 +203,32 @@ const VehicleEdit = () => {
                     {name}
                   </p>
                 </div>
+              </div>
+
+              {/* Dealer Assignment */}
+              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-700">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-lg">
+                    <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                      Assign Dealer
+                    </p>
+                  </div>
+                </div>
+                <Select
+                  value={selectedDealer}
+                  onChange={(e) => setSelectedDealer(e.target.value)}
+                  className="w-full"
+                >
+                  <option value="">No dealer assigned</option>
+                  {dealers.map((dealer) => (
+                    <option key={dealer._id} value={dealer._id}>
+                      {dealer.name} - {dealer.contact}
+                    </option>
+                  ))}
+                </Select>
               </div>
 
               {/* Color - Editable */}

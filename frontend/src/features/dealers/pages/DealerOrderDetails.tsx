@@ -371,6 +371,14 @@ const DealerOrderDetails = () => {
                               </button>
                               <button
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors duration-150"
+                                onClick={() => {
+                                  const params = new URLSearchParams({
+                                    name: encodeURIComponent(v.name),
+                                    color: encodeURIComponent(v.color || ''),
+                                    srNo: String(expandedIndex + 1)
+                                  });
+                                  navigate(`/dealers/booking/${id}/${expandedIndex}?${params.toString()}`);
+                                }}
                               >
                                 Booking
                               </button>
