@@ -2,108 +2,395 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import DealerNav from "../components/DealerNav";
-import { apiConfig } from "../../../config/apiConfig";
+import { ArrowLeft, Eye, Edit2, User, Car, Phone, MapPin, Building, Package, TrendingUp, Clock, Hash, Palette, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 
 const DealerOrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
-    axios.get(`${apiConfig.baseURL}/orders/${id}`)
-      .then(res => setOrder(res.data))
-      .catch(console.error);
+    if (id) fetchOrder();
   }, [id]);
 
-  const handleStatusUpdate = async (status: string) => {
+  const fetchOrder = async () => {
     try {
-      await axios.patch(`${apiConfig.baseURL}/orders/${id}/status`, { status });
-      setOrder({ ...order, status });
-      toast.success("Status updated!");
-    } catch {
-      toast.error("Failed to update status");
+      setLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/v1/orders/${id}`);
+      const data = res.data.order || res.data;
+      setOrder(data);
+      setStatus(data.status || "Draft");
+    } catch (error) {
+      console.error("Error fetching order", error);
+      toast.error("Order not found");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!order) return <div className="p-6 text-slate-400">Loading...</div>;
+  // Group vehicles by name and calculate status counts (mirroring VehicleDetails)
+  const vehicleGroups = (() => {
+    if (!order?.vehicles) return [];
+    const groups: { [key: string]: { name: string; color: string; total: number; booked: number; piGenerated: number; available: number } } = {};
+    
+    order.vehicles.filter(Boolean).forEach((v: any) => {
+      const qty = v.quantity ?? 1;
+      const name = v.name || "Unknown";
+      const color = v.color || "#6b7280";
+      
+      if (!groups[name]) {
+        groups[name] = {
+          name,
+          color,
+          total: 0,
+          booked: 0,
+          piGenerated: 0,
+          available: 0
+        };
+      }
+      
+      groups[name].total += qty;
+      
+      if (order.status === "Confirmed") {
+        groups[name].booked += qty;
+      } else if (order.status === "PI Generated") {
+        groups[name].piGenerated += qty;
+      } else if (order.status === "Draft") {
+        groups[name].available += qty;
+      }
+    });
+    
+    return Object.values(groups);
+  })();
+
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case "Draft":
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700";
+      case "Confirmed":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700";
+      case "PI Generated":
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700";
+      default:
+        return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-12">
+          <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            Loading order details...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-12">
+          <div className="text-center text-gray-500 dark:text-gray-400">
+            Order not found
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6">
       <DealerNav />
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Order #{order.orderId}</h2>
-          <p className="text-sm text-slate-400 dark:text-slate-500">{new Date(order.date).toLocaleDateString()}</p>
-        </div>
-        <button onClick={() => navigate("/dealers/orders")}
-          className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700">
-          ← Back to Orders
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => navigate("/dealers/orders")}
+          className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
+        >
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <ArrowLeft size={18} />
+          </div>
+          <span className="font-medium">Back to Dealer Orders</span>
         </button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {new Date(order.date).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-4">
-        <div className="grid grid-cols-3 gap-6">
-          {[
-            { label: "Order ID", value: order.orderId },
-            { label: "Voucher No", value: order.voucherNo },
-            { label: "Date", value: new Date(order.date).toLocaleDateString() },
-            { label: "Grand Total", value: `$${order.grandTotal?.toLocaleString()}` },
-          ].map((item) => (
-            <div key={item.label}>
-              <p className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">{item.label}</p>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{item.value}</p>
+      {/* Order Title Card */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-blue-100 text-sm font-medium mb-1">Order Number</p>
+            <h1 className="text-3xl font-bold text-white">{order.orderId}</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <span
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
+                status
+              )}`}
+            >
+              <CheckCircle size={14} />
+              {status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Client Information */}
+        <div className="lg:col-span-1">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                Client Information
+              </h2>
             </div>
-          ))}
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
+                  <User size={16} className="text-gray-500 dark:text-gray-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                    Name
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {order.clientId?.name || "-"}
+                  </p>
+                </div>
+              </div>
+
+              {order.clientId?.companyName && (
+                <div className="flex items-start gap-3">
+                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
+                    <Building size={16} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                      Company
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {order.clientId?.companyName}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {order.clientId?.phone && (
+                <div className="flex items-start gap-3">
+                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
+                    <Phone size={16} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                      Phone
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {order.clientId?.phone}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {order.clientId?.address && (
+                <div className="flex items-start gap-3">
+                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
+                    <MapPin size={16} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                      Address
+                    </p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {order.clientId?.address}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Status Update */}
-        <div className="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Status:</label>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            order.status === "Confirmed"
-              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-              : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-          }`}>{order.status}</span>
-          <select
-            value={order.status}
-            onChange={(e) => handleStatusUpdate(e.target.value)}
-            className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="Draft">Draft</option>
-            <option value="Confirmed">Confirmed</option>
-          </select>
-        </div>
-      </div>
+        {/* Vehicles Table */}
+        <div className="lg:col-span-2">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
+                  <Car className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Vehicles
+                </h2>
+              </div>
+              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm font-medium">
+                {order.vehicles?.filter(Boolean).length || 0} vehicles
+              </span>
+            </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h3 className="font-semibold text-slate-600 dark:text-slate-300 mb-4">Vehicles ({order.vehicles?.length})</h3>
-        <div className="space-y-4">
-          {order.vehicles?.map((v: any, i: number) => (
-            <div key={i} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-              <p className="font-medium text-slate-700 dark:text-slate-200 mb-3">Vehicle {i + 1}</p>
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: "HSN Code", value: v.hsnCode },
-                  { label: "Vehicle Name", value: v.vehicleName },
-                  { label: "Exterior Colour", value: v.exteriorColour },
-                  { label: "Chassis No", value: v.chassisNo },
-                  { label: "Engine No", value: v.engineNo },
-                  { label: "Engine Capacity", value: v.engineCapacity },
-                  { label: "Fuel Type", value: v.fuelType },
-                  { label: "Country of Origin", value: v.countryOfOrigin },
-                  { label: "Year of Manufacture", value: v.yom },
-                  { label: "FOB Amount", value: `$${v.fobAmount}` },
-                  { label: "Freight", value: `$${v.freight}` },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">{item.label}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">{item.value || "-"}</p>
+            {/* Status Summary Cards */}
+            {vehicleGroups.length > 0 && (
+              <div className="mb-6 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Status Summary
+                </h3>
+                {vehicleGroups.map((group, index) => (
+                  <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }}></div>
+                        <span className="font-semibold text-gray-900 dark:text-white">{group.name}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">({group.total} total)</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg">
+                          <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Booked</p>
+                          <p className="font-semibold text-blue-600 dark:text-blue-400">{group.booked}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-purple-100 dark:bg-purple-900/30 p-1.5 rounded-lg">
+                          <TrendingUp className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">PI Generated</p>
+                          <p className="font-semibold text-purple-600 dark:text-purple-400">{group.piGenerated}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
+                          <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
+                          <p className="font-semibold text-green-600 dark:text-green-400">{group.available}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Sr No
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Vehicle Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Color
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {order.vehicles?.filter(Boolean).map((v: any, vIdx: number) => {
+                    const qty = v.quantity ?? 1;
+                    const rows = [];
+                    for (let qIdx = 0; qIdx < qty; qIdx++) {
+                      const expandedIndex = vIdx * qty + qIdx;
+                      rows.push(
+                        <tr
+                          key={`${vIdx}-${qIdx}`}
+                          className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                        >
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                              {expandedIndex + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {v.name}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-5 h-5 rounded-full border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                                style={{ backgroundColor: v.color?.toLowerCase() || '#6b7280' }}
+                              />
+                              <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">
+                                {v.color}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150"
+                                onClick={() => {
+                                  // View vehicle details - mirroring vehicle pattern
+                                  const params = new URLSearchParams({
+                                    name: v.name,
+                                    color: v.color || '',
+                                    srNo: String(expandedIndex + 1),
+                                    expandedIndex: String(expandedIndex),
+                                  });
+                                  navigate(`/dealers/orders/${id}?viewVehicle=${expandedIndex}&${params.toString()}`);
+                                }}
+                              >
+                                <Eye size={14} />
+                                View
+                              </button>
+                              <button
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors duration-150"
+                              >
+                                <Edit2 size={14} />
+                                Edit
+                              </button>
+                              <button
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors duration-150"
+                              >
+                                Booking
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return rows;
+                  }) || (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        No vehicles in this order
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
@@ -111,3 +398,4 @@ const DealerOrderDetails = () => {
 };
 
 export default DealerOrderDetails;
+
