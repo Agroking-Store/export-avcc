@@ -6,6 +6,7 @@ const bookingApi = {
   getById: (id: string) => api.get(`/bookings/${id}`),
   getByDealer: (dealerId: string) => api.get(`/bookings/dealer/${dealerId}`),
   update: (id: string, data: any) => api.put(`/bookings/${id}`, data),
+  confirm: (id: string) => api.patch(`/bookings/${id}/confirm`),
   delete: (id: string) => api.delete(`/bookings/${id}`),
 };
 

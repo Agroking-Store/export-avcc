@@ -70,10 +70,11 @@ const DealerVehicleBooking = () => {
           freight: v.freight,
           quantity: 1
         })),
-        status: 'Draft'
+        status: 'Booked'
       });
       toast.success('Booking created successfully!');
-      navigate('/dealers/orders');
+      // Navigate back to the specific order details to see the updated status
+      navigate(`/dealers/orders/${orderId}`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create booking');
     } finally {

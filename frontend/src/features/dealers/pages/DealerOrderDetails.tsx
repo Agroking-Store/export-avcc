@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import DealerNav from "../components/DealerNav";
 import { ArrowLeft, Eye, Edit2, User, Car, Phone, MapPin, Building, Package, TrendingUp, Clock, Hash, Palette, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
+import { bookingApi } from "../../../services/bookingApi";
 
 const DealerOrderDetails = () => {
   const { id } = useParams();
@@ -12,10 +13,20 @@ const DealerOrderDetails = () => {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
+  const [vehicleStatuses, setVehicleStatuses] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
-    if (id) fetchOrder();
+    if (id) {
+      fetchOrder();
+    }
   }, [id]);
+
+  useEffect(() => {
+    // Only fetch vehicle statuses when order data is available
+    if (order) {
+      fetchVehicleStatuses();
+    }
+  }, [order]);
 
   const fetchOrder = async () => {
     try {
@@ -30,6 +41,75 @@ const DealerOrderDetails = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchVehicleStatuses = async () => {
+    try {
+      // Only fetch bookings if we have a valid dealerId
+      if (!order?.dealerId?._id) {
+        // If no dealerId, set all vehicles to Draft
+        if (order?.vehicles) {
+          const statusMap: {[key: string]: string} = {};
+          order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
+            const qty = v.quantity ?? 1;
+            for (let qIdx = 0; qIdx < qty; qIdx++) {
+              const expandedIndex = vIdx * qty + qIdx;
+              statusMap[expandedIndex] = "Draft";
+            }
+          });
+          setVehicleStatuses(statusMap);
+        }
+        return;
+      }
+
+      // Fetch all bookings for this dealer
+      const res = await bookingApi.getByDealer(order.dealerId._id);
+      const bookings = res.data || [];
+      
+      // Create a map of vehicle status based on bookings
+      const statusMap: {[key: string]: string} = {};
+      
+      if (order?.vehicles) {
+        order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
+          const qty = v.quantity ?? 1;
+          for (let qIdx = 0; qIdx < qty; qIdx++) {
+            const expandedIndex = vIdx * qty + qIdx;
+            
+            // Check if this vehicle has a booking
+            const hasBooking = bookings.some((booking: any) => 
+              booking.vehicles.some((bv: any) => 
+                bv.name === v.name && 
+                bv.color === v.color &&
+                booking.status === 'Booked'  // Only count as booked if status is Booked
+              )
+            );
+            
+            statusMap[expandedIndex] = hasBooking ? "Booked" : "Draft";
+          }
+        });
+      }
+      
+      setVehicleStatuses(statusMap);
+    } catch (error) {
+      console.error("Error fetching vehicle statuses", error);
+      // Set all to Draft if there's an error
+      if (order?.vehicles) {
+        const statusMap: {[key: string]: string} = {};
+        order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
+          const qty = v.quantity ?? 1;
+          for (let qIdx = 0; qIdx < qty; qIdx++) {
+            const expandedIndex = vIdx * qty + qIdx;
+            statusMap[expandedIndex] = "Draft";
+          }
+        });
+        setVehicleStatuses(statusMap);
+      }
+    }
+  };
+
+  const refreshStatuses = async () => {
+    await fetchVehicleStatuses();
+    toast.success("Status updated");
   };
 
   // Group vehicles by name and calculate status counts (mirroring VehicleDetails)
@@ -71,6 +151,8 @@ const DealerOrderDetails = () => {
     switch (s) {
       case "Draft":
         return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700";
+      case "Booked":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700";
       case "Confirmed":
         return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700";
       case "PI Generated":
@@ -297,22 +379,25 @@ const DealerOrderDetails = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Sr No
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Vehicle Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Color
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
+                 <thead>
+                   <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                       Sr No
+                     </th>
+                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                       Vehicle Name
+                     </th>
+                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                       Color
+                     </th>
+                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                       Status
+                     </th>
+                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                       Actions
+                     </th>
+                   </tr>
+                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {order.vehicles?.filter(Boolean).map((v: any, vIdx: number) => {
                     const qty = v.quantity ?? 1;
@@ -334,17 +419,22 @@ const DealerOrderDetails = () => {
                               {v.name}
                             </span>
                           </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-5 h-5 rounded-full border-2 border-gray-200 dark:border-gray-600 shadow-sm"
-                                style={{ backgroundColor: v.color?.toLowerCase() || '#6b7280' }}
-                              />
-                              <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">
-                                {v.color}
-                              </span>
-                            </div>
-                          </td>
+                           <td className="px-4 py-4">
+                             <div className="flex items-center gap-2">
+                               <div
+                                 className="w-5 h-5 rounded-full border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                                 style={{ backgroundColor: v.color?.toLowerCase() || '#6b7280' }}
+                               />
+                               <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">
+                                 {v.color}
+                               </span>
+                             </div>
+                           </td>
+                           <td className="px-4 py-4">
+                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(vehicleStatuses[expandedIndex] || 'Draft')}`}>
+                               {vehicleStatuses[expandedIndex] || 'Draft'}
+                             </span>
+                           </td>
                           <td className="px-4 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
