@@ -8,6 +8,10 @@ import {
   getOrdersWithPIStatusService,
   updatePIStatusService,
   getOrderDetailsWithVehiclePIStatusService,
+  getDashboardKPIsService,
+  getPIStatusDistributionService,
+  getMonthlyPIValueTrendService,
+  getTopClientsByPIValueService,
 } from "../services/proforma-invoice.service";
 
 // CREATE PI
@@ -36,6 +40,71 @@ export const getSuggestedNextPiNumber = async (req: Request, res: Response) => {
     res.status(200).json({ piNumber: suggestedPiNumber });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// GET DASHBOARD KPIS
+export const getDashboardKPIs = async (req: Request, res: Response) => {
+  try {
+    const { timeRange } = req.query;
+    const kpis = await getDashboardKPIsService(timeRange as string);
+    res.status(200).json(kpis);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch dashboard KPIs",
+      error: error.message,
+    });
+  }
+};
+
+// GET PI STATUS DISTRIBUTION FOR CHARTS
+export const getPIStatusDistribution = async (req: Request, res: Response) => {
+  try {
+    const { timeRange } = req.query;
+    const distribution = await getPIStatusDistributionService(
+      timeRange as string
+    );
+    res.status(200).json(distribution);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch PI status distribution",
+      error: error.message,
+    });
+  }
+};
+
+// GET MONTHLY PI VALUE TREND
+export const getMonthlyPIValueTrend = async (req: Request, res: Response) => {
+  try {
+    const { timeRange } = req.query;
+    const trend = await getMonthlyPIValueTrendService(timeRange as string);
+    res.status(200).json(trend);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch monthly PI value trend",
+        error: error.message,
+      });
+  }
+};
+
+// GET TOP CLIENTS BY PI VALUE
+export const getTopClientsByPIValue = async (req: Request, res: Response) => {
+  try {
+    const { timeRange, limit } = req.query;
+    const clients = await getTopClientsByPIValueService(
+      timeRange as string,
+      Number(limit)
+    );
+    res.status(200).json(clients);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch top clients by PI value",
+        error: error.message,
+      });
   }
 };
 

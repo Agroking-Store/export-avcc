@@ -901,7 +901,7 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
               value={table.getState().pagination.pageSize.toString()}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="h-8 w-17.5 px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
+              <SelectTrigger className="h-10 w-24 px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
                 <SelectValue
                   placeholder={table.getState().pagination.pageSize}
                 />
