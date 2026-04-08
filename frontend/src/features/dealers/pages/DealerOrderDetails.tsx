@@ -34,14 +34,14 @@ const DealerOrderDetails = () => {
   useEffect(() => {
     const refresh = searchParams.get('refresh');
     if (refresh === 'true' && order) {
-      const timer = setTimeout(() => {
+const timer = setTimeout(() => {
         fetchVehicleStatuses().then(() => {
           // Clear refresh param
           const newParams = new URLSearchParams(searchParams);
           newParams.delete('refresh');
           window.history.replaceState(null, '', window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : ''));
         });
-      }, 1000); // Increased delay to ensure booking is fully saved and indexed
+      }, 3000); // Increased to 3s for DB indexing
       return () => clearTimeout(timer);
     }
   }, [searchParams, order]);
@@ -66,7 +66,7 @@ const DealerOrderDetails = () => {
       // Fetch all bookings to check for vehicle matches
       // Since orders don't have a dealerId, we check all bookings
       const res = await bookingApi.getAll();
-      const bookings = res.data || [];
+      const bookings = res.data?.data || res.data || [];
       console.log('DEBUG: Fetched bookings:', bookings);
       
       // Create a map of vehicle status based on bookings
@@ -80,18 +80,20 @@ const DealerOrderDetails = () => {
             
             // Check if this vehicle has a booking
             // Use case-insensitive comparison for name and color
-            const hasBooking = bookings.some((booking: any) => {
+const hasBooking = bookings.some((booking: any) => {
+              console.log('Checking booking:', booking._id, booking.status, booking.vehicles.map((bv:any) => ({name: bv.name, color: bv.color})));
               // Only count as booked if status is 'Booked'
               if (booking.status !== 'Booked') return false;
               
               return booking.vehicles.some((bv: any) => {
                 const nameMatch = bv.name.trim().toLowerCase() === v.name.trim().toLowerCase();
                 const colorMatch = bv.color.trim().toLowerCase() === v.color.trim().toLowerCase();
+                console.log(`Vehicle match: ${v.name} (${v.color}) vs ${bv.name} (${bv.color}) - name: ${nameMatch}, color: ${colorMatch}`);
                 return nameMatch && colorMatch;
               });
             });
             
-            statusMap[expandedIndex] = hasBooking ? "Booked" : "Draft";
+statusMap[expandedIndex] = hasBooking ? "Booked" : "Available";
           }
         });
       }
@@ -377,7 +379,7 @@ const DealerOrderDetails = () => {
                           <td className="px-4 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150"
+className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] !== 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                                 onClick={() => {
                                   // View vehicle details - mirroring vehicle pattern
                                   const params = new URLSearchParams({
@@ -393,20 +395,20 @@ const DealerOrderDetails = () => {
                                 View
                               </button>
                               <button
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors duration-150"
+className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] !== 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                               >
                                 <Edit2 size={14} />
                                 Edit
                               </button>
                               <button
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors duration-150"
+className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors duration-150 ${vehicleStatuses[expandedIndex] === 'Booked' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                                 onClick={() => {
                                   const params = new URLSearchParams({
                                     name: encodeURIComponent(v.name),
                                     color: encodeURIComponent(v.color || ''),
                                     srNo: String(expandedIndex + 1)
                                   });
-                                  navigate(`/dealers/booking/${id}/${expandedIndex}?${params.toString()}`);
+navigate(`/dealers/booking/${id}/${expandedIndex}?${params.toString()}&refresh=true`);
                                 }}
                               >
                                 Booking
