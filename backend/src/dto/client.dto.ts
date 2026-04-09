@@ -1,10 +1,19 @@
+export interface IClientAddressDetailsDto {
+  houseBuilding?: string;
+  streetArea?: string;
+  cityTown?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+}
+
 export interface CreateClientDto {
   name: string;
   phone: string;
   country: string;
-  email: string;       
-  companyName: string; 
-  address: string;        
+  email: string;
+  companyName: string;
+  address?: IClientAddressDetailsDto;
 }
 
 export interface UpdateClientDto {
@@ -13,5 +22,5 @@ export interface UpdateClientDto {
   country?: string;
   email?: string;
   companyName?: string;
-  address?: string;
+  address?: IClientAddressDetailsDto;
 }
