@@ -14,6 +14,13 @@ import {
   validateCreateCompanyForm,
   validateUpdateCompanyForm,
 } from "../components/companyValidation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const defaultAddress: IAddressDetails = {
   houseBuilding: "",
@@ -32,6 +39,7 @@ const defaultCreateForm: CreateCompanyForm = {
   address: { ...defaultAddress },
   bankDetails: { ...defaultBankDetails }, // Add bankDetails to default form
   gstNumber: "",
+  isActive: true, // Default to active for new companies
 };
 
 const CreateCompany: React.FC = () => {
@@ -66,6 +74,7 @@ const CreateCompany: React.FC = () => {
               ...(companyData.bankDetails || {}), // Populate bankDetails
             },
             gstNumber: companyData.gstNumber || "",
+            isActive: companyData.isActive, // Populate isActive status
           });
         } catch (error) {
           console.error("Failed to fetch company details:", error); // Consolidated catch block
@@ -198,10 +207,10 @@ const CreateCompany: React.FC = () => {
               type="button"
               onClick={() => navigate("/companies")}
               variant="outline"
-              size="icon"
-              className="h-10 w-10 rounded-full border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all duration-200"
+              size="default" // Changed to default to allow custom sizing
+              className="h-12 w-12 rounded-full border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all duration-200"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-6 h-6" />
             </Button>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
               {isEditMode ? "Edit Company" : "Create New Company"}
@@ -299,6 +308,46 @@ const CreateCompany: React.FC = () => {
                   className={inputClass} // Use inputClass
                 />
               </div>
+            </div>
+            {/* Status Field */}
+            <div className="mt-6">
+              <label htmlFor="isActive" className={labelClass}>
+                Status <span className="text-red-500">*</span>
+              </label>
+              <div className="max-w-xs">
+                <Select
+                  value={form.isActive ? "true" : "false"}
+                  onValueChange={(value) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      isActive: value === "true", // Convert string "true" or "false" to boolean
+                    }));
+                    setErrors((prev) => ({ ...prev, isActive: "" })); // Clear error for isActive
+                  }}
+                >
+                  <SelectTrigger className={getInputClass("isActive")}>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className="z-70"
+                    side="bottom"
+                    align="start"
+                    position="popper"
+                  >
+                    <SelectItem className="text-base" value="true">
+                      Active
+                    </SelectItem>
+                    <SelectItem className="text-base" value="false">
+                      Inactive
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {errors.isActive && (
+                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.isActive}
+                </p>
+              )}
             </div>
           </div>
           {divider} {/* Re-used divider */}
