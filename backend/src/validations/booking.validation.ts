@@ -30,6 +30,7 @@ export const updateBookingSchema = bookingSchema.keys({
   dealerId: Joi.string().optional(),
   date: Joi.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   vehicles: Joi.array().items(vehicleSchema).optional(),
+  status: Joi.string().valid('Draft', 'Booked').optional(),
 });
 
 export const validateCreateBooking = validate(createBookingSchema);

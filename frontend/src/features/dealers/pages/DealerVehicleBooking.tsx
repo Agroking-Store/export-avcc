@@ -89,7 +89,11 @@ const DealerVehicleBooking = () => {
         if (!vehicle.exteriorColour?.trim()) setErrors(prev => ({...prev, [field]: 'Color is required'}));
         break;
       case 'vehicles.chassisNo':
-        if (!vehicle.chassisNo?.trim()) setErrors(prev => ({...prev, [field]: 'Chassis No is required (17 chars)'}));
+        if (!vehicle.chassisNo?.trim()) {
+           setErrors(prev => ({...prev, [field]: 'Chassis No is required'}));
+        } else if (vehicle.chassisNo.trim().length !== 17) {
+           setErrors(prev => ({...prev, [field]: 'Chassis No must be exactly 17 characters'}));
+        }
         break;
       case 'vehicles.engineNo':
         if (!vehicle.engineNo?.trim()) setErrors(prev => ({...prev, [field]: 'Engine No is required'}));
@@ -106,7 +110,11 @@ const DealerVehicleBooking = () => {
     if (!vehicle.hsnCode?.trim()) newErrors['vehicles.hsnCode'] = 'HSN Code is required';
     if (!vehicle.vehicleName?.trim()) newErrors['vehicles.vehicleName'] = 'Vehicle name is required';
     if (!vehicle.exteriorColour?.trim()) newErrors['vehicles.exteriorColour'] = 'Color is required';
-    if (!vehicle.chassisNo?.trim()) newErrors['vehicles.chassisNo'] = 'Chassis No is required (17 chars)';
+    if (!vehicle.chassisNo?.trim()) {
+       newErrors['vehicles.chassisNo'] = 'Chassis No is required';
+    } else if (vehicle.chassisNo.trim().length !== 17) {
+       newErrors['vehicles.chassisNo'] = 'Chassis No must be exactly 17 chars';
+    }
     if (!vehicle.engineNo?.trim()) newErrors['vehicles.engineNo'] = 'Engine No is required';
     if (vehicles.length !== 1) newErrors.vehicles = 'Only 1 vehicle per booking';
 
@@ -126,6 +134,7 @@ const DealerVehicleBooking = () => {
       await bookingApi.create({
         dealerId: selectedDealer,
         date: bookingDate,
+        orderId: orderId,
         vehicles: [{
           hsnCode: vehicles[0].hsnCode,
           name: vehicles[0].vehicleName,
@@ -148,8 +157,11 @@ const DealerVehicleBooking = () => {
     } catch (error: any) {
       const msg = error.response?.data?.message || 'Failed to create booking';
       const code = error.response?.data?.code;
-      if (code === 'VEHICLE_ALREADY_BOOKED') {
+      if (code === 'VEHICLE_ALREADY_BOOKED' || msg.includes('already exists') || msg.includes('already booked')) {
         toast.error(`⚠️ ${msg}`, { autoClose: 5000 });
+        if (msg.includes('Engine No') || msg.includes('Chassis No')) {
+           setErrors(prev => ({...prev, 'vehicles.chassisNo': msg, 'vehicles.engineNo': msg}));
+        }
       } else {
         toast.error(msg);
       }
@@ -315,14 +327,16 @@ const DealerVehicleBooking = () => {
                 <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                   Chassis No <span className="text-red-500">*</span>
                 </label>
-                <input type="text" value={vehicles[0].chassisNo} onChange={(e)=>handleInputChange('vehicles.chassisNo',e.target.value)} onBlur={()=>validateField('vehicles.chassisNo')} placeholder="KA1ABC123DEF45678" className="w-full p-2.5 text-sm border rounded-md bg-white dark:bg-gray-800 focus:ring-1 focus:ring-blue-400 transition-all" />
+                <input type="text" value={vehicles[0].chassisNo} onChange={(e)=>handleInputChange('vehicles.chassisNo',e.target.value.toUpperCase())} onBlur={()=>validateField('vehicles.chassisNo')} placeholder="e.g. JB1AABZ11U0000001" maxLength={17} className="w-full p-2.5 text-sm border rounded-md bg-white dark:bg-gray-800 focus:ring-1 focus:ring-blue-400 font-mono transition-all" />
+                <p className="text-[10px] text-gray-400 mt-1">Must be exactly 17 characters</p>
                 <ErrorMessage field="vehicles.chassisNo" />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
                   Engine No <span className="text-red-500">*</span>
                 </label>
-                <input type="text" value={vehicles[0].engineNo} onChange={(e)=>handleInputChange('vehicles.engineNo',e.target.value)} onBlur={()=>validateField('vehicles.engineNo')} placeholder="ABC12345678" className="w-full p-2.5 text-sm border rounded-md bg-white dark:bg-gray-800 focus:ring-1 focus:ring-blue-400 transition-all" />
+                <input type="text" value={vehicles[0].engineNo} onChange={(e)=>handleInputChange('vehicles.engineNo',e.target.value.toUpperCase())} onBlur={()=>validateField('vehicles.engineNo')} placeholder="e.g. 2ZR1234567" className="w-full p-2.5 text-sm border rounded-md bg-white dark:bg-gray-800 focus:ring-1 focus:ring-blue-400 font-mono transition-all" />
+                <p className="text-[10px] text-gray-400 mt-1">Example: 2ZR1234567</p>
                 <ErrorMessage field="vehicles.engineNo" />
               </div>
               <div>

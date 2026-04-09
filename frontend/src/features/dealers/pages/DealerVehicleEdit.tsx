@@ -39,6 +39,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderId2, setOrderId2] = useState("");
   const [allOrderVehicles, setAllOrderVehicles] = useState<any[]>([]);
+  const [bookingId, setBookingId] = useState("");
 
   const [form, setForm] = useState<VehicleForm>({
     name: searchParams.get("name") || "",
@@ -73,16 +74,12 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
         let bookingVehicle = null;
         const matchingBooking = bookings.find((b: any) => {
           if (b.status !== "Booked") return false;
-          return b.vehicles?.some((bv: any) =>
-            bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-            bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
-          );
+          if (b.orderId && b.orderId !== orderId) return false;
+          return b.vehicles?.some((bv: any) => String(bv.srNo) === String(srNo));
         });
         if (matchingBooking) {
-          bookingVehicle = matchingBooking.vehicles.find((bv: any) =>
-            bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-            bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
-          );
+          setBookingId(matchingBooking._id);
+          bookingVehicle = matchingBooking.vehicles.find((bv: any) => String(bv.srNo) === String(srNo));
         }
         
         // Merge: bookingVehicle overrides v, fallback searchParams for name/color
@@ -157,42 +154,47 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       toast.error("Please fix errors before saving");
       return;
     }
-    if (vIdx < 0 || vIdx >= allOrderVehicles.length) {
-      toast.error("Invalid vehicle index. Please try again.");
+    setSaving(true);
+    if (!bookingId) {
+      toast.error("Booking not found for this vehicle. Cannot edit.");
+      setSaving(false);
       return;
     }
-    setSaving(true);
-    try {
-      // Build updated vehicles array — replace the vehicle at vIdx (grouped index)
-      const updatedVehicles = allOrderVehicles.map((v: any, i: number) =>
-        i === vIdx
-          ? {
-              ...v,
-              name: form.name.trim(),
-              color: form.color.trim(),
-              hsnCode: form.hsnCode.trim(),
-              chassisNo: form.chassisNo.trim().toUpperCase(),
-              engineNo: form.engineNo.trim(),
-              engineCapacity: form.engineCapacity.trim(),
-              fuelType: form.fuelType.trim(),
-              countryOfOrigin: form.countryOfOrigin.trim(),
-              yom: form.yom,
-              fobAmount: form.fobAmount,
-              freight: form.freight,
-              quantity: v.quantity || 1,
-            }
-          : v
-      );
 
-      const response = await axios.put(`http://localhost:5000/api/v1/orders/${orderId}`, {
-        vehicles: updatedVehicles,
+    try {
+      // Create updated vehicle object for the booking
+      const updatedVehicleData = {
+        name: form.name.trim(),
+        color: form.color.trim(),
+        hsnCode: form.hsnCode.trim(),
+        chassisNo: form.chassisNo.trim().toUpperCase(),
+        engineNo: form.engineNo.trim(),
+        engineCapacity: form.engineCapacity.trim(),
+        fuelType: form.fuelType.trim(),
+        countryOfOrigin: form.countryOfOrigin.trim(),
+        yom: form.yom,
+        fobAmount: form.fobAmount,
+        freight: form.freight,
+        quantity: 1,
+        srNo: srNo,
+      };
+
+      const response = await bookingApi.update(bookingId, {
+        vehicles: [updatedVehicleData],
       });
       console.log("Update response:", response.data);
       toast.success("Vehicle updated successfully");
       navigate(`/dealers/orders/${orderId}`);
     } catch (error: any) {
       console.error("Update error:", error.response?.data || error.message);
-      toast.error(`Failed to update: ${error.response?.data?.message || "Server error"}`);
+      const msg = error.response?.data?.message || "Server error";
+      toast.error(`Failed to update: ${msg}`);
+      if (msg.includes('already exists')) {
+         setErrors({
+           chassisNo: msg,
+           engineNo: msg
+         });
+      }
     } finally {
       setSaving(false);
     }

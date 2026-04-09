@@ -18,6 +18,18 @@ export class BookingService {
       if (existingBooking) {
         throw new Error(`Vehicle ${vehicle.name} (${vehicle.color}) ${vehicle.srNo ? `SR#${vehicle.srNo}` : ''} is already booked`);
       }
+
+      // Unique check for Engine No and Chassis No
+      const existingVehicle = await Booking.findOne({
+        $or: [
+          { 'vehicles.engineNo': vehicle.engineNo },
+          { 'vehicles.chassisNo': vehicle.chassisNo }
+        ]
+      });
+
+      if (existingVehicle) {
+        throw new Error('Engine No or Chassis No already exists');
+      }
     }
     
     const booking = new Booking(bookingData);
@@ -37,6 +49,23 @@ export class BookingService {
   }
 
   static async update(id: string, updateData: Partial<IBooking>): Promise<IBooking | null> {
+    if (updateData.vehicles) {
+      for (const vehicle of updateData.vehicles) {
+        // Unique check for Engine No and Chassis No during update
+        const existingVehicle = await Booking.findOne({
+          $or: [
+            { 'vehicles.engineNo': vehicle.engineNo },
+            { 'vehicles.chassisNo': vehicle.chassisNo }
+          ],
+          _id: { $ne: id }
+        });
+
+        if (existingVehicle) {
+          throw new Error('Engine No or Chassis No already exists');
+        }
+      }
+    }
+
     return await Booking.findByIdAndUpdate(id, updateData, { new: true }).populate('dealerId', 'name contact');
   }
 

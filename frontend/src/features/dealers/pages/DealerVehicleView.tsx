@@ -69,19 +69,16 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           const bookings = bookingsRes.data?.data || bookingsRes.data || [];
           const matchingBooking = bookings.find((b: any) => {
             if (b.status !== "Booked") return false;
+            if (b.orderId && b.orderId !== orderId) return false;
             return b.vehicles?.some(
-              (bv: any) =>
-                bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-                bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
+              (bv: any) => String(bv.srNo) === String(srNo)
             );
           });
 
           if (matchingBooking) {
             setVehicleStatus("Booked");
             const bv = matchingBooking.vehicles.find(
-              (bv: any) =>
-                bv.name?.trim().toLowerCase() === name.trim().toLowerCase() &&
-                bv.color?.trim().toLowerCase() === color.trim().toLowerCase()
+              (bv: any) => String(bv.srNo) === String(srNo)
             );
             setBookingVehicle(bv || null);
           } else {

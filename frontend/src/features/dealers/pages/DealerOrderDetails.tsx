@@ -73,27 +73,27 @@ const timer = setTimeout(() => {
       const statusMap: {[key: string]: string} = {};
       
       if (order?.vehicles) {
+        let globalIndex = 0;
         order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
           const qty = v.quantity ?? 1;
           for (let qIdx = 0; qIdx < qty; qIdx++) {
-            const expandedIndex = vIdx * qty + qIdx;
+            const expandedIndex = globalIndex++;
             
             // Check if this vehicle has a booking
-            // Use case-insensitive comparison for name and color
-const hasBooking = bookings.some((booking: any) => {
-              console.log('Checking booking:', booking._id, booking.status, booking.vehicles.map((bv:any) => ({name: bv.name, color: bv.color})));
+            const hasBooking = bookings.some((booking: any) => {
               // Only count as booked if status is 'Booked'
               if (booking.status !== 'Booked') return false;
               
+              // MUST strictly belong to this order. Old broken global data will be ignored.
+              if (booking.orderId !== id) return false;
+              
               return booking.vehicles.some((bv: any) => {
-                const nameMatch = bv.name.trim().toLowerCase() === v.name.trim().toLowerCase();
-                const colorMatch = bv.color.trim().toLowerCase() === v.color.trim().toLowerCase();
-                console.log(`Vehicle match: ${v.name} (${v.color}) vs ${bv.name} (${bv.color}) - name: ${nameMatch}, color: ${colorMatch}`);
-                return nameMatch && colorMatch;
+                const srNoMatch = String(bv.srNo) === String(expandedIndex + 1);
+                return srNoMatch;
               });
             });
             
-statusMap[expandedIndex] = hasBooking ? "Booked" : "Available";
+            statusMap[expandedIndex] = hasBooking ? "Booked" : "Draft";
           }
         });
       }
@@ -105,10 +105,11 @@ statusMap[expandedIndex] = hasBooking ? "Booked" : "Available";
       // Set all to Draft if there's an error
       if (order?.vehicles) {
         const statusMap: {[key: string]: string} = {};
+        let globalIndex = 0;
         order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
           const qty = v.quantity ?? 1;
           for (let qIdx = 0; qIdx < qty; qIdx++) {
-            const expandedIndex = vIdx * qty + qIdx;
+            const expandedIndex = globalIndex++;
             statusMap[expandedIndex] = "Draft";
           }
         });
@@ -340,12 +341,14 @@ statusMap[expandedIndex] = hasBooking ? "Booked" : "Available";
                    </tr>
                  </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {order.vehicles?.filter(Boolean).map((v: any, vIdx: number) => {
-                    const qty = v.quantity ?? 1;
-                    const rows = [];
-                    for (let qIdx = 0; qIdx < qty; qIdx++) {
-                      const expandedIndex = vIdx * qty + qIdx;
-                      rows.push(
+                  {(() => {
+                    let globalIndex = 0;
+                    return order.vehicles?.filter(Boolean).map((v: any, vIdx: number) => {
+                      const qty = v.quantity ?? 1;
+                      const rows = [];
+                      for (let qIdx = 0; qIdx < qty; qIdx++) {
+                        const expandedIndex = globalIndex++;
+                        rows.push(
                         <tr
                           key={`${vIdx}-${qIdx}`}
                           className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
@@ -431,7 +434,8 @@ onClick={() => {
                       );
                     }
                     return rows;
-                  }) || (
+                    });
+                  })() || (
                     <tr>
                       <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                         No vehicles in this order
