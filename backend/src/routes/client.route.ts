@@ -8,7 +8,7 @@ import {
 
 const router = Router();
 
-router.post("/", createClient);
+router.post("/add", createClient);
 router.get("/", getClients);
 router.get("/:id", getClientById);
 router.put("/:id", updateClient);

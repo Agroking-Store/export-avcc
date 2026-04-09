@@ -2,25 +2,21 @@ import { Client } from "../models/Client.model";
 import { CreateClientDto, UpdateClientDto } from "../dto/client.dto";
 import { Order } from "../models/Order.model";
 
-// Create
 export const createClientService = async (data: CreateClientDto) => {
-  // Check duplicate
   const existing = await Client.findOne({ phone: data.phone });
   if (existing) {
     throw new Error("Client already exists with this phone");
   }
 
-  // Get last created client
   const lastClient = await Client.findOne().sort({ createdAt: -1 });
-  
+
   let nextNumber = 1;
-  
+
   if (lastClient && lastClient.clientCode) {
     const lastNumber = parseInt(lastClient.clientCode.split("-")[1]);
     nextNumber = lastNumber + 1;
   }
-  
-  // Generate new client code
+
   const clientCode = `CL-${String(nextNumber).padStart(3, "0")}`;
 
   const client = new Client({
@@ -31,7 +27,6 @@ export const createClientService = async (data: CreateClientDto) => {
   return await client.save();
 };
 
-// Get all
 export const getClientsService = async (query: any) => {
   const { search, page = 1, limit = 5 } = query;
 
@@ -44,6 +39,9 @@ export const getClientsService = async (query: any) => {
       { country: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
       { phone: { $regex: search, $options: "i" } },
+      { "address.cityTown": { $regex: search, $options: "i" } },
+      { "address.state": { $regex: search, $options: "i" } },
+      { "address.country": { $regex: search, $options: "i" } },
     ];
   }
 
@@ -51,7 +49,6 @@ export const getClientsService = async (query: any) => {
 
   const clients = await Client.aggregate([
     { $match: match },
-
     {
       $lookup: {
         from: "orders",
@@ -60,20 +57,13 @@ export const getClientsService = async (query: any) => {
         as: "orders",
       },
     },
-
     {
       $addFields: {
         totalOrders: { $size: "$orders" },
         lastTransaction: { $max: "$orders.createdAt" },
       },
     },
-
-    {
-      $project: {
-        orders: 0, // remove heavy data
-      },
-    },
-
+    { $project: { orders: 0 } },
     { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: Number(limit) },
@@ -89,7 +79,6 @@ export const getClientsService = async (query: any) => {
   };
 };
 
-// Get by ID
 export const getClientByIdService = async (id: string) => {
   const client = await Client.findById(id);
 
@@ -97,26 +86,20 @@ export const getClientByIdService = async (id: string) => {
     throw new Error("Client not found");
   }
 
-  const orders = await Order.find({ clientId: id })
-    .sort({ createdAt: -1 });
+  const orders = await Order.find({ clientId: id }).sort({ createdAt: -1 });
 
   return {
     client,
     orders,
     totalOrders: orders.length,
-    lastTransaction:
-      orders.length > 0 ? orders[0].createdAt : null,
+    lastTransaction: orders.length > 0 ? orders[0].createdAt : null,
   };
 };
 
-// Update
 export const updateClientService = async (
   id: string,
-  data: UpdateClientDto
+  data: UpdateClientDto,
 ) => {
-  const updated = await Client.findByIdAndUpdate(id, data, {
-    new: true,
-  });
-
+  const updated = await Client.findByIdAndUpdate(id, data, { new: true });
   return updated;
 };

@@ -7,7 +7,14 @@ export interface IClient extends Document {
   phone: string;
   country: string;
   companyName: string;
-  address: string;
+  address?: {
+    houseBuilding?: string;
+    streetArea?: string;
+    cityTown?: string;
+    state?: string;
+    pincode?: string;
+    country?: string;
+  };
   isActive: boolean;
   __v?: number; // Mongoose version key
   createdAt: Date;
@@ -25,8 +32,6 @@ const clientSchema = new Schema<IClient>(
       type: String,
       required: [true, "Client name is required"],
       trim: true,
-      minlength: [2, "Name must be at least 2 characters"],
-      maxlength: [100, "Name cannot exceed 100 characters"],
     },
     email: {
       type: String,
@@ -57,9 +62,12 @@ const clientSchema = new Schema<IClient>(
       trim: true,
     },
     address: {
-      type: String,
-      required: [true, "Address is required"],
-      trim: true,
+      houseBuilding: { type: String, trim: true },
+      streetArea: { type: String, trim: true },
+      cityTown: { type: String, trim: true },
+      state: { type: String, trim: true },
+      pincode: { type: String, trim: true },
+      country: { type: String, trim: true },
     },
     isActive: {
       type: Boolean,
