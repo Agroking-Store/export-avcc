@@ -167,6 +167,377 @@ export const createPIService = async (data: any) => {
   return await pi.save();
 };
 
+// Helper to get date ranges for filtering
+const getDateRange = (timeRange: string) => {
+  const now = new Date();
+  let startDate: Date | undefined;
+  let endDate: Date | undefined;
+  let prevStartDate: Date | undefined;
+  let prevEndDate: Date | undefined;
+
+  switch (timeRange) {
+    case "today":
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // End of today
+      prevStartDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 1
+      );
+      prevEndDate = startDate;
+      break;
+    case "thisWeek":
+      const dayOfWeek = now.getDay(); // Sunday is 0, Saturday is 6
+      startDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - dayOfWeek
+      ); // Start of Sunday
+      endDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + (6 - dayOfWeek) + 1
+      ); // End of Saturday
+      prevStartDate = new Date(startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      prevEndDate = startDate;
+      break;
+    case "thisMonth":
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1); // Start of next month
+      prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      prevEndDate = startDate;
+      break;
+    case "thisYear":
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear() + 1, 0, 1); // Start of next year
+      prevStartDate = new Date(now.getFullYear() - 1, 0, 1);
+      prevEndDate = startDate;
+      break;
+    case "allTime":
+    default:
+      return {
+        createdAtMatch: {},
+        validityDateMatch: {},
+        prevCreatedAtMatch: {},
+        prevValidityDateMatch: {},
+      };
+  }
+
+  return {
+    createdAtMatch: { createdAt: { $gte: startDate, $lt: endDate } },
+    validityDateMatch: { validityDate: { $gte: startDate, $lt: endDate } },
+    prevCreatedAtMatch: {
+      createdAt: { $gte: prevStartDate, $lt: prevEndDate },
+    },
+    prevValidityDateMatch: {
+      validityDate: { $gte: prevStartDate, $lt: prevEndDate },
+    },
+  };
+};
+const calculateTrend = (currentValue: number, previousValue: number) => {
+  if (previousValue === 0) return currentValue > 0 ? 1 : 0; // If previous was 0, any positive current is 100% growth
+  return (currentValue - previousValue) / previousValue;
+};
+
+// GET DASHBOARD KPIS
+export const getDashboardKPIsService = async (timeRange: string) => {
+  const {
+    createdAtMatch,
+    prevCreatedAtMatch,
+    validityDateMatch,
+    prevValidityDateMatch,
+  } = getDateRange(timeRange); // Destructure here
+
+  const activePipelineValueResult = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        ...createdAtMatch,
+        status: { $in: ["pending_approval", "approved", "sent_to_buyer"] },
+      },
+    },
+    { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } },
+  ]);
+  const activePipelineValue =
+    activePipelineValueResult.length > 0
+      ? activePipelineValueResult[0].totalAmount
+      : 0;
+
+  const prevActivePipelineValueResult = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        ...prevCreatedAtMatch,
+        status: { $in: ["pending_approval", "approved", "sent_to_buyer"] },
+      },
+    },
+    { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } },
+  ]);
+  const prevActivePipelineValue =
+    prevActivePipelineValueResult.length > 0 // Corrected: Use prevActivePipelineValueResult
+      ? activePipelineValueResult[0].totalAmount
+      : 0;
+
+  // KPI 2: Pending PI Approvals
+  const pendingApprovalsResult = await ProformaInvoice.aggregate([
+    { $match: { ...createdAtMatch, status: "pending_approval" } },
+    { $group: { _id: null, count: { $sum: 1 } } },
+  ]);
+  const pendingApprovals =
+    pendingApprovalsResult.length > 0 ? pendingApprovalsResult[0].count : 0;
+
+  const prevPendingApprovalsResult = await ProformaInvoice.aggregate([
+    { $match: { ...prevCreatedAtMatch, status: "pending_approval" } },
+    { $group: { _id: null, count: { $sum: 1 } } },
+  ]);
+  const prevPendingApprovals =
+    pendingApprovalsResult.length > 0 ? pendingApprovalsResult[0].count : 0;
+
+  // KPI 3: Expiring PIs (Next 7 Days) - This is a fixed window, not dependent on the timeRange selector for 'createdAt'
+  const now = new Date();
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const expiringPIsResult = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        validityDate: { $gte: now, $lte: sevenDaysFromNow },
+        status: { $nin: ["expired", "lc_received"] },
+      },
+    },
+    { $group: { _id: null, count: { $sum: 1 } } },
+  ]);
+  const expiringPIs =
+    expiringPIsResult.length > 0 ? expiringPIsResult[0].count : 0;
+
+  const prevExpiringPIsResult = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        validityDate: {
+          $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+          $lte: now,
+        }, // Previous 7 days
+        status: { $nin: ["expired", "lc_received"] },
+      },
+    },
+    { $group: { _id: null, count: { $sum: 1 } } },
+  ]);
+  const prevExpiringPIs =
+    prevExpiringPIsResult.length > 0 ? prevExpiringPIsResult[0].count : 0; // Corrected: Use prevExpiringPIsResult
+
+  // KPI 4: Overall Order PI Completion
+  // This requires aggregating from the Order model, then looking up PIs
+  const overallOrderPICompletionResult = await Order.aggregate([
+    {
+      $match: {
+        ...createdAtMatch, // Filter orders by creation date
+      },
+    },
+    {
+      $lookup: {
+        from: "proformainvoices", // Ensure this matches your actual MongoDB collection name for proforma invoices
+        localField: "_id", // Order's _id
+        foreignField: "order_id", // New order_id field in ProformaInvoice
+        as: "proformaInvoices",
+      },
+    },
+    {
+      $addFields: {
+        totalVehiclesInOrder: { $sum: "$vehicles.quantity" },
+        totalVehiclesPIed: {
+          $sum: {
+            $map: {
+              input: "$proformaInvoices",
+              as: "pi",
+              in: {
+                $sum: {
+                  $map: {
+                    input: "$$pi.vehicleDetails",
+                    as: "piVehicle",
+                    in: "$$piVehicle.quantity",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalVehiclesInAllOrders: { $sum: "$totalVehiclesInOrder" },
+        totalVehiclesPIedInAllOrders: { $sum: "$totalVehiclesPIed" },
+      },
+    },
+  ]);
+
+  let overallOrderPICompletionPercentage = 0;
+  if (overallOrderPICompletionResult.length > 0) {
+    const { totalVehiclesInAllOrders, totalVehiclesPIedInAllOrders } =
+      overallOrderPICompletionResult[0];
+    if (totalVehiclesInAllOrders > 0) {
+      overallOrderPICompletionPercentage =
+        (totalVehiclesPIedInAllOrders / totalVehiclesInAllOrders) * 100;
+    }
+  }
+
+  const prevOverallOrderPICompletionResult = await Order.aggregate([
+    {
+      $match: {
+        ...prevCreatedAtMatch, // Filter orders by creation date for previous period
+      },
+    },
+    {
+      $lookup: {
+        from: "proformainvoices",
+        localField: "_id",
+        foreignField: "order_id",
+        as: "proformaInvoices",
+      },
+    },
+    {
+      $addFields: {
+        totalVehiclesInOrder: { $sum: "$vehicles.quantity" },
+        totalVehiclesPIed: {
+          $sum: {
+            $map: {
+              input: "$proformaInvoices",
+              as: "pi",
+              in: {
+                $sum: {
+                  $map: {
+                    input: "$$pi.vehicleDetails",
+                    as: "piVehicle",
+                    in: "$$piVehicle.quantity",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalVehiclesInAllOrders: { $sum: "$totalVehiclesInOrder" },
+        totalVehiclesPIedInAllOrders: { $sum: "$totalVehiclesPIed" },
+      },
+    },
+  ]);
+
+  let prevOverallOrderPICompletionPercentage = 0;
+  if (prevOverallOrderPICompletionResult.length > 0) {
+    const { totalVehiclesInAllOrders, totalVehiclesPIedInAllOrders } =
+      prevOverallOrderPICompletionResult[0];
+    if (totalVehiclesInAllOrders > 0) {
+      prevOverallOrderPICompletionPercentage =
+        (totalVehiclesPIedInAllOrders / totalVehiclesInAllOrders) * 100;
+    }
+  }
+
+  return {
+    activePipelineValue: {
+      value: activePipelineValue,
+      trend: calculateTrend(activePipelineValue, prevActivePipelineValue),
+    },
+    pendingApprovals: {
+      value: pendingApprovals,
+      trend: calculateTrend(pendingApprovals, prevPendingApprovals),
+    },
+    expiringPIs: {
+      value: expiringPIs,
+      trend: calculateTrend(expiringPIs, prevExpiringPIs),
+    },
+    overallOrderPICompletion: {
+      value: overallOrderPICompletionPercentage,
+      trend: calculateTrend(
+        overallOrderPICompletionPercentage,
+        prevOverallOrderPICompletionPercentage
+      ),
+    },
+  };
+};
+
+// GET PI STATUS DISTRIBUTION FOR CHARTS
+export const getPIStatusDistributionService = async (timeRange: string) => {
+  const { createdAtMatch } = getDateRange(timeRange);
+
+  const statusDistribution = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        ...createdAtMatch,
+      },
+    },
+    { $group: { _id: "$status", count: { $sum: 1 } } },
+    { $project: { status: "$_id", count: 1, _id: 0 } },
+  ]);
+  return statusDistribution;
+};
+
+// GET MONTHLY PI VALUE TREND FOR CHARTS
+export const getMonthlyPIValueTrendService = async (timeRange: string) => {
+  const { createdAtMatch } = getDateRange(timeRange);
+
+  const monthlyTrend = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        ...createdAtMatch,
+        status: { $in: ["approved", "sent_to_buyer", "lc_received"] },
+      },
+    },
+    {
+      $group: {
+        _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+        totalAmount: { $sum: "$totalAmount" },
+      },
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } },
+    {
+      $project: {
+        _id: 0,
+        year: "$_id.year",
+        month: "$_id.month",
+        totalAmount: 1,
+      },
+    },
+  ]);
+  return monthlyTrend;
+};
+
+// GET TOP CLIENTS BY PI VALUE FOR CHARTS
+export const getTopClientsByPIValueService = async (
+  timeRange: string,
+  limit: number = 5
+) => {
+  const { createdAtMatch } = getDateRange(timeRange);
+
+  const topClients = await ProformaInvoice.aggregate([
+    {
+      $match: {
+        ...createdAtMatch,
+        status: { $in: ["approved", "sent_to_buyer", "lc_received"] },
+      },
+    },
+    {
+      $group: {
+        _id: "$client_id",
+        totalAmount: { $sum: "$totalAmount" },
+      },
+    },
+    {
+      $lookup: {
+        from: "clients", // Assuming your clients collection is named 'clients'
+        localField: "_id",
+        foreignField: "_id",
+        as: "clientInfo",
+      },
+    },
+    { $unwind: "$clientInfo" },
+    { $sort: { totalAmount: -1 } },
+    { $limit: limit },
+    { $project: { _id: 0, clientName: "$clientInfo.name", totalAmount: 1 } },
+  ]);
+  return topClients;
+};
+
 // GET ORDERS WITH PI STATUS
 export const getOrdersWithPIStatusService = async (query: any) => {
   const { search, page = 1, limit = 5, sortBy, sortOrder } = query;
@@ -320,20 +691,64 @@ export const getPIsService = async (query: any) => {
   const limitNum = Number(limit);
   const sortDir: 1 | -1 = sortOrder === "desc" ? -1 : 1;
 
-  // If sorting by client name, we MUST use aggregation to join the clients collection
-  if (sortBy === "client") {
+  let baseMatch: any = {};
+  if (status && status !== "all") {
+    baseMatch.status = status;
+  }
+
+  // Determine if we need aggregation for searching on populated fields or for sorting by them
+  const needsAggregation =
+    search || sortBy === "client" || sortBy === "companyName";
+
+  if (needsAggregation) {
     const pipeline: PipelineStage[] = [
-      { $match: match },
+      { $match: baseMatch }, // Apply initial status filter
       {
         $lookup: {
-          from: "clients", // <-- Ensure this matches your actual MongoDB collection name for clients
+          from: "clients", // Assuming 'clients' is the collection name for the Client model
           localField: "client_id",
           foreignField: "_id",
           as: "clientData",
         },
       },
       { $unwind: { path: "$clientData", preserveNullAndEmptyArrays: true } },
-      { $sort: { "clientData.name": sortDir } },
+      {
+        $lookup: {
+          from: "companies", // Assuming 'companies' is the collection name for the Company model
+          localField: "company_id",
+          foreignField: "_id",
+          as: "companyData",
+        },
+      },
+      { $unwind: { path: "$companyData", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          // Add fields for search on populated fields
+          "client_id.name": "$clientData.name",
+          "client_id.clientCode": "$clientData.clientCode",
+          "company_id.name": "$companyData.name",
+        },
+      },
+      // Add the search match stage here
+      {
+        $match: {
+          $or: [
+            { piNumber: { $regex: search, $options: "i" } },
+            { status: { $regex: search, $options: "i" } },
+            { "client_id.name": { $regex: search, $options: "i" } },
+            { "client_id.clientCode": { $regex: search, $options: "i" } },
+            { "company_id.name": { $regex: search, $options: "i" } },
+          ],
+        },
+      },
+      {
+        // The sort stage should come after the match stage
+        // to sort the filtered results.
+        // If sortBy is not client or companyName, it will sort by default createdAt
+        $sort: {
+          [sortBy === "client" ? "client_id.name" : "company_id.name"]: sortDir,
+        },
+      },
       { $skip: skip },
       { $limit: limitNum },
       {
@@ -345,15 +760,65 @@ export const getPIsService = async (query: any) => {
           createdAt: 1,
           updatedAt: 1,
           client_id: {
-            name: "$clientData.name",
-            clientCode: "$clientData.clientCode",
+            // Project client_id as an object with name and clientCode
+            name: "$client_id.name",
+            clientCode: "$client_id.clientCode",
           },
+          company_id: {
+            // Project company_id as an object with name
+            name: "$company_id.name",
+          },
+          // Include other fields if needed in the projection
         },
       },
     ];
 
     const pis = await ProformaInvoice.aggregate(pipeline);
-    const total = await ProformaInvoice.countDocuments(match);
+
+    // For total count with aggregation, we need a separate pipeline
+    const countPipeline: PipelineStage[] = [
+      { $match: baseMatch },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client_id",
+          foreignField: "_id",
+          as: "clientData",
+        },
+      },
+      { $unwind: { path: "$clientData", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "company_id",
+          foreignField: "_id",
+          as: "companyData",
+        },
+      },
+      { $unwind: { path: "$companyData", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          "client_id.name": "$clientData.name",
+          "company_id.name": "$companyData.name",
+        },
+      },
+    ];
+    if (search && search.trim() !== "") {
+      countPipeline.push({
+        $match: {
+          $or: [
+            { piNumber: { $regex: search, $options: "i" } },
+            { status: { $regex: search, $options: "i" } },
+            { "client_id.name": { $regex: search, $options: "i" } },
+            { "company_id.name": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+    countPipeline.push({ $count: "total" });
+
+    const totalResult = await ProformaInvoice.aggregate(countPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
     return {
       data: pis,
@@ -361,28 +826,30 @@ export const getPIsService = async (query: any) => {
       page: Number(page),
       totalPages: Math.ceil(total / limitNum),
     };
+  } else {
+    // Default Mongoose Find for standard fields (piNumber, status, totalAmount, etc.)
+    // This path is taken when no search is active and sorting is not on populated fields.
+    let sortOption: any = { createdAt: -1 };
+    if (sortBy) {
+      sortOption = { [sortBy]: sortDir };
+    }
+
+    const pis = await ProformaInvoice.find(baseMatch) // Use baseMatch here
+      .populate("client_id", "name clientCode") // Populate client info
+      .populate("company_id", "name") // Populate company info
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limitNum);
+
+    const total = await ProformaInvoice.countDocuments(baseMatch); // Use baseMatch here
+
+    return {
+      data: pis,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+    };
   }
-
-  // Default Mongoose Find for standard fields (piNumber, status, totalAmount, etc.)
-  let sortOption: any = { createdAt: -1 };
-  if (sortBy) {
-    sortOption = { [sortBy]: sortDir };
-  }
-
-  const pis = await ProformaInvoice.find(match)
-    .populate("client_id", "name clientCode") // 🔥 show client info
-    .sort(sortOption)
-    .skip(skip)
-    .limit(limitNum);
-
-  const total = await ProformaInvoice.countDocuments(match);
-
-  return {
-    data: pis,
-    total,
-    page: Number(page),
-    totalPages: Math.ceil(total / limit),
-  };
 };
 
 // GET PI BY ID

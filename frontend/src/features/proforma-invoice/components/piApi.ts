@@ -89,4 +89,44 @@ export const piApi = {
     );
     return res.data.piNumber;
   },
+
+  getDashboardKPIs: async (timeRange: string) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/dashboard-kpis`,
+      {
+        params: { timeRange },
+      }
+    );
+    return res.data;
+  },
+
+  getPIStatusDistribution: async (timeRange: string) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/pi-status-distribution`,
+      {
+        params: { timeRange },
+      }
+    );
+    return res.data;
+  },
+
+  getMonthlyPIValueTrend: async (timeRange: string) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/monthly-pi-value-trend`,
+      {
+        params: { timeRange },
+      }
+    );
+    return res.data;
+  },
+
+  getTopClientsByPIValue: async (timeRange: string, limit: number = 5) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/top-clients-by-pi-value`,
+      {
+        params: { timeRange, limit },
+      }
+    );
+    return res.data;
+  },
 };
