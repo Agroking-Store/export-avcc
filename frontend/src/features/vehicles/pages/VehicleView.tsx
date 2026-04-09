@@ -111,6 +111,21 @@ const VehicleView = () => {
               </div>
             </div>
 
+            {/* Dealer */}
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+              <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
+                <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                  Dealer
+                </p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Not assigned
+                </p>
+              </div>
+            </div>
+
             {/* Color */}
             <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
               <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
