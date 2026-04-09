@@ -84,8 +84,8 @@ const DealerVehicleBooking = () => {
       case 'vehicles.chassisNo':
         if (!vehicle.chassisNo?.trim()) {
           setErrors(prev => ({ ...prev, [field]: 'Chassis No is required' }));
-        } else if (vehicle.chassisNo.trim().length !== 17) {
-          setErrors(prev => ({ ...prev, [field]: 'Invalid chassis number format' }));
+        } else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(vehicle.chassisNo.trim())) {
+          setErrors(prev => ({ ...prev, [field]: 'Must be 17 alphanumeric characters (no I, O, Q)' }));
         }
         break;
       case 'vehicles.engineNo':
@@ -105,8 +105,8 @@ const DealerVehicleBooking = () => {
     if (!vehicle.exteriorColour?.trim()) newErrors['vehicles.exteriorColour'] = 'Color is required';
     if (!vehicle.chassisNo?.trim()) {
       newErrors['vehicles.chassisNo'] = 'Chassis No is required';
-    } else if (vehicle.chassisNo.trim().length !== 17) {
-      newErrors['vehicles.chassisNo'] = 'Invalid chassis number format';
+    } else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(vehicle.chassisNo.trim())) {
+      newErrors['vehicles.chassisNo'] = 'Must be 17 alphanumeric characters (no I, O, Q)';
     }
     if (!vehicle.engineNo?.trim()) newErrors['vehicles.engineNo'] = 'Engine number is required';
 
