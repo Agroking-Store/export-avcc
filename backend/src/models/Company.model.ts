@@ -73,6 +73,5 @@ const companySchema = new Schema<ICompany>(
 );
 
 companySchema.index({ name: 1 });
-companySchema.index({ companyId: 1 });
 
 export const Company = mongoose.model<ICompany>("Company", companySchema);
