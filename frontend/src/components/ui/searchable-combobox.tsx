@@ -33,6 +33,7 @@ interface ComboboxProps {
   disabled?: boolean;
   error?: boolean;
   renderItem?: (item: any, index: number) => React.ReactNode;
+  header?: React.ReactNode;
 }
 
 export function SearchableCombobox({
@@ -49,6 +50,7 @@ export function SearchableCombobox({
   disabled = false,
   error = false,
   renderItem,
+  header,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -90,6 +92,7 @@ export function SearchableCombobox({
             {!loading && data.length === 0 && (
               <CommandEmpty>{emptyMessage}</CommandEmpty>
             )}
+            {header}
             <CommandGroup>
               {data.map((item, index) => (
                 <CommandItem

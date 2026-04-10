@@ -156,6 +156,7 @@ export interface OrderWithPIStatus {
 export interface AssociatedPI {
   piId: string;
   piNumber: string;
+  companyName: string;
   createdAt: string;
 }
 
@@ -171,6 +172,7 @@ export interface VehicleTracking {
   fuelType: string;
   countryOfOrigin: string;
   engineCapacity: string;
+  dealerName: string;
   fob: number;
   freight: number;
   quantity: number;
@@ -183,7 +185,16 @@ export interface OrderDetailData {
   _id: string;
   orderId: string;
   voucherNo: string;
-  client: { _id: string; name: string; clientCode: string };
+  client: {
+    _id: string;
+    name: string;
+    clientCode: string;
+    email?: string;
+    phone?: string;
+    companyName?: string;
+    address?: AddressDetails;
+    country?: string;
+  };
   dealer: { name: string };
   createdAt: string;
   totalVehiclesInOrder: number;

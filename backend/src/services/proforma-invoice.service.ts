@@ -174,6 +174,7 @@ export const createPIService = async (data: any) => {
 interface AssociatedPI {
   piId: string;
   piNumber: string;
+  companyName: string;
   createdAt: string;
 }
 
@@ -189,6 +190,7 @@ interface VehicleTracking {
   fuelType: string;
   countryOfOrigin: string;
   engineCapacity: string;
+  dealerName: string;
   fob: number;
   freight: number;
   quantity: number;
@@ -201,7 +203,7 @@ interface VehicleTracking {
 export const getOrderDetailWithTrackingService = async (orderId: string) => {
   const order = await Order.findById(orderId).populate(
     "clientId",
-    "name clientCode"
+    "name clientCode email phone companyName address country"
   );
 
   if (!order) {
@@ -213,21 +215,22 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
   const bookings = await Booking.find({
     orderId: new Types.ObjectId(orderId),
     status: "Booked",
-  });
+  }).populate("dealerId", "name");
 
-  // Fetch dealer details if any booking exists for this order
-  let dealerName = "N/A";
-  if (bookings.length > 0 && bookings[0].dealerId) {
-    const dealer = await Dealer.findById(bookings[0].dealerId);
-    if (dealer) {
-      dealerName = dealer.name;
-    }
-  }
+  // Collect all unique dealer names for the summary
+  const uniqueDealers = new Set<string>();
+  bookings.forEach((b) => {
+    if ((b.dealerId as any)?.name) uniqueDealers.add((b.dealerId as any).name);
+  });
+  const summaryDealerDisplay =
+    uniqueDealers.size > 1
+      ? `${uniqueDealers.size} Dealers Involved`
+      : uniqueDealers.values().next().value || "N/A";
 
   // Fetch all relevant Proforma Invoices for this order
   const proformaInvoices = await ProformaInvoice.find({
     order_id: new Types.ObjectId(orderId),
-  });
+  }).populate("company_id", "name");
 
   const vehicleTracking: VehicleTracking[] = [];
   let totalVehiclesInOrder = 0;
@@ -243,11 +246,13 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       globalIndex++;
 
       // 1. Find the individual booking for this specific unit using srNo
-      let foundBookingVehicle = null;
+      let foundBookingVehicle: any = null;
+      let unitDealerName = "N/A";
       for (const b of bookings) {
         const bv = b.vehicles.find((v) => String(v.srNo) === currentSrNo);
         if (bv) {
           foundBookingVehicle = bv;
+          unitDealerName = (b.dealerId as any)?.name || "N/A";
           break;
         }
       }
@@ -275,6 +280,7 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
             associatedPIs.push({
               piId: pi._id.toString(),
               piNumber: pi.piNumber,
+              companyName: (pi.company_id as any)?.name || "N/A",
               createdAt: pi.createdAt.toISOString(),
             });
             break; // Stop looking for this vehicle once found in a PI
@@ -306,6 +312,7 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
           foundBookingVehicle?.countryOfOrigin ||
           (vehicleItem as any).countryOfOrigin ||
           "N/A",
+        dealerName: unitDealerName,
         engineCapacity:
           foundBookingVehicle?.engineCapacity ||
           (vehicleItem as any).engineCapacity ||
@@ -342,10 +349,15 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       _id: (order.clientId as any)?._id?.toString() || "N/A", // Add client _id
       name: (order.clientId as any)?.name || "N/A",
       clientCode: (order.clientId as any)?.clientCode || "N/A",
+      email: (order.clientId as any)?.email,
+      phone: (order.clientId as any)?.phone,
+      companyName: (order.clientId as any)?.companyName,
+      address: (order.clientId as any)?.address,
+      country: (order.clientId as any)?.country,
     },
     dealer: {
       // Correctly populate dealer name from associated booking
-      name: dealerName,
+      name: summaryDealerDisplay,
     },
     createdAt: order.createdAt.toISOString(),
     totalVehiclesInOrder,

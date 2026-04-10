@@ -2,9 +2,17 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { piApi } from "../components/piApi"; // Import piApi
 import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts";
+import {
   SlidersHorizontal,
   Check,
   BrushCleaning, // For clear filters
+  ChevronLeft,
 } from "lucide-react";
 import {
   Tooltip,
@@ -28,18 +36,65 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Inbox } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Inbox,
+  Building2,
+  User,
+  ReceiptText,
+  CalendarDays,
+  MoveLeft,
+  MoveRight,
+} from "lucide-react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
   VisibilityState, // Import VisibilityState
 } from "@tanstack/react-table";
-import ProgressBar from "../../../components/common/ProgressBar"; // Import the shared ProgressBar
 
 import { VehicleTracking, OrderDetailData } from "../components/pi.types"; // Import from pi.types
+
+const generatePagination = (currentPage: number, totalPages: number) => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  if (currentPage <= 3) {
+    return [1, 2, 3, 4, "...", totalPages];
+  }
+  if (currentPage >= totalPages - 2) {
+    return [
+      1,
+      "...",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
+  return [
+    1,
+    "...",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "...",
+    totalPages,
+  ];
+};
+
+const CHART_COLORS = ["#10b981", "#f59e0b", "#e2e8f0"]; // Green (PI'd), Amber (Pending), Gray (Total)
 
 const PIOrderDetail = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -56,12 +111,14 @@ const PIOrderDetail = () => {
             serialNumber: true,
             make: false, // Changed to false as per request
             model: true,
-            chassisNo: true,
+            chassisNo: false,
             engineNo: false, // Changed to false as per request
+            dealerName: false,
+            companyName: false, // Exporter name, hidden by default
             bookingStatus: true,
             piStatus: true,
             associatedPIs: false, // Changed to false as per request
-            piCreationDate: false, // Default hidden
+            piCreationDate: true,
             actions: true,
           };
     }
@@ -92,24 +149,21 @@ const PIOrderDetail = () => {
   }, [orderId]);
 
   // Effect to save column visibility to local storage
+
+  const chartData = useMemo(() => {
+    if (!orderDetail) return [];
+    return [
+      { name: "PI Generated", value: orderDetail.totalVehiclesPIed },
+      { name: "Pending PI", value: orderDetail.pendingVehicles },
+    ].filter((item) => item.value > 0);
+  }, [orderDetail]);
+
   useEffect(() => {
     localStorage.setItem(
       "pi-order-detail-columns",
       JSON.stringify(columnVisibility)
     );
   }, [columnVisibility]);
-  const getPIProgressBarColor = (status: string) => {
-    switch (status) {
-      case "Fully PI'd":
-        return "bg-green-600";
-      case "Partially PI'd":
-        return "bg-green-500";
-      case "Not Started":
-        return "bg-slate-200";
-      default:
-        return "bg-slate-200";
-    }
-  };
 
   const columns = useMemo<ColumnDef<VehicleTracking>[]>(
     () => [
@@ -126,65 +180,64 @@ const PIOrderDetail = () => {
         accessorKey: "make",
         header: "Make",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.make}</span>
+          <span className="font-medium whitespace-nowrap text-left block">
+            {row.original.make}
+          </span>
         ),
       },
       {
         accessorKey: "model",
         header: "Model",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.model}</span>
+          <span className="font-medium whitespace-nowrap text-left block">
+            {row.original.model}
+          </span>
         ),
       },
       {
         accessorKey: "chassisNo", // Changed from chassisNumber
         header: "Chassis No.",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.chassisNo}</span>
+          <span className="font-medium whitespace-nowrap text-left block font-mono">
+            {row.original.chassisNo}
+          </span>
         ),
       },
       {
         accessorKey: "engineNo", // Changed from engineNumber
         header: "Engine No.",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.engineNo}</span>
-        ),
-      },
-      {
-        accessorKey: "bookingStatus",
-        header: "Booking Status",
-        cell: ({ row }) => (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              row.original.bookingStatus === "Booked"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-gray-100 text-gray-700"
-            }`}
-          >
-            {row.original.bookingStatus}
+          <span className="font-medium whitespace-nowrap text-left block font-mono">
+            {row.original.engineNo}
           </span>
         ),
       },
       {
-        accessorKey: "piStatus", // Keep accessorKey as piStatus as it maps to the data
-        header: "PI Created", // Changed header text
+        accessorKey: "dealerName",
+        header: "Dealer",
         cell: ({ row }) => (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              row.original.piStatus === "PI'd"
-                ? "bg-green-100 text-green-700"
-                : "bg-amber-100 text-amber-700"
-            }`}
-          >
-            {row.original.piStatus}
+          <span className="text-sm whitespace-nowrap text-left block">
+            {row.original.dealerName}
           </span>
         ),
+      },
+      {
+        id: "companyName",
+        header: "Company (Exporter)",
+        cell: ({ row }) => {
+          const company = row.original.associatedPIs?.[0]?.companyName;
+          return (
+            <span className="text-sm font-medium whitespace-nowrap text-left block">
+              {company || "-"}
+            </span>
+          );
+        },
       },
       {
         id: "associatedPIs",
         header: "Associated PI(s)",
         cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 min-w-30">
             {row.original.associatedPIs.length > 0 ? (
               row.original.associatedPIs.map((pi) => (
                 <TooltipProvider key={pi.piId}>
@@ -211,7 +264,7 @@ const PIOrderDetail = () => {
       },
       {
         id: "piCreationDate",
-        header: "PI Date",
+        header: () => <div className="text-center">PI Date</div>,
         cell: ({ row }) => (
           <div className="text-center">
             {row.original.associatedPIs.length > 0
@@ -223,6 +276,40 @@ const PIOrderDetail = () => {
                   year: "numeric",
                 })
               : "-"}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "bookingStatus",
+        header: () => <div className="text-center">Booking Status</div>,
+        cell: ({ row }) => (
+          <div className="text-center">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                row.original.bookingStatus === "Booked"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {row.original.bookingStatus}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "piStatus", // Keep accessorKey as piStatus as it maps to the data
+        header: () => <div className="text-center">PI Created</div>,
+        cell: ({ row }) => (
+          <div className="text-center">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                row.original.piStatus === "PI'd"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {row.original.piStatus}
+            </span>
           </div>
         ),
       },
@@ -339,12 +426,14 @@ const PIOrderDetail = () => {
       serialNumber: true,
       make: false, // Set to false as per request
       model: true,
-      chassisNo: true,
+      chassisNo: false,
       engineNo: false, // Set to false as per request
+      dealerName: false,
+      companyName: false,
       bookingStatus: true,
       piStatus: true,
       associatedPIs: false, // Set to false as per request
-      piCreationDate: false,
+      piCreationDate: true,
       actions: true,
     });
     toast.success("Columns reset to default.");
@@ -362,6 +451,10 @@ const PIOrderDetail = () => {
         return "Chassis No.";
       case "engineNo":
         return "Engine No.";
+      case "dealerName":
+        return "Dealer Name";
+      case "companyName":
+        return "Company (Exporter)";
       case "bookingStatus":
         return "Booking Status";
       case "piStatus":
@@ -391,6 +484,12 @@ const PIOrderDetail = () => {
     data: orderDetail?.vehicleTracking || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
     state: {
       columnVisibility, // Add this
     },
@@ -442,188 +541,254 @@ const PIOrderDetail = () => {
     <div className="p-4 md:p-6 lg:p-8 mx-auto space-y-4 md:space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-          Order Details: {orderDetail.orderId}
-        </h1>
-        <div className="flex gap-2">
-          {" "}
-          {/* New div for action buttons */}
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  onClick={handleClearFilters}
-                  className="h-10 w-10 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <BrushCleaning className="h-4 w-4 text-gray-500 cursor-pointer" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
-                Clear Filters
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Popover>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-10 w-10 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <SlidersHorizontal className="h-4 w-4 text-gray-500 cursor-pointer" />
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
-                  Toggle Columns
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <PopoverContent
-              side="bottom"
-              align="end"
-              sideOffset={4}
-              className="w-60 bg-white shadow-xl border rounded-xl z-50 flex flex-col"
-            >
-              <div className="text-xs font-semibold border-b px-3 py-2 text-gray-500">
-                Visible Columns (
-                {
-                  table.getVisibleLeafColumns().filter((c) => c.getCanHide())
-                    .length
-                }
-                /{MAX_VISIBLE_HIDEABLE_COLUMNS})
-              </div>
-              <div className="max-h-65 overflow-y-auto px-1">
-                {table
-                  .getAllLeafColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => (
-                    <div
-                      key={column.id}
-                      onClick={() => handleColumnToggle(column.id)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer hover:bg-gray-100 text-sm capitalize ${
-                        column.getIsVisible()
-                          ? "text-blue-700"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="text-sm capitalize">
-                        {getColumnLabel(column.id)}
-                      </span>
-                      {column.getIsVisible() && (
-                        <Check className="h-4 w-4 text-blue-600" />
-                      )}
-                    </div>
-                  ))}
-              </div>
-              <div className="border-t p-2">
-                <PopoverClose asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs"
-                    onClick={resetToDefaultColumns}
-                  >
-                    Reset to Default
-                  </Button>
-                </PopoverClose>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button onClick={() => navigate(-1)} variant="outline">
-            Back
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="default"
+            className="h-12 w-12 rounded-full border-gray-300 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-md transition-all duration-200 cursor-pointer"
+            onClick={() => navigate(-1)}
+          >
+            <ChevronLeft className="size-6" strokeWidth={2.5} />
           </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+            Order Details: {orderDetail.orderId}
+          </h1>
         </div>
       </div>
 
-      {/* Order Summary */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">Voucher No.</p>
-            <p className="font-medium text-gray-900">{orderDetail.voucherNo}</p>
+      {/* Main Dashboard Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Order Info Cards */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <User className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Client Info
+              </p>
+              <p className="text-lg font-bold text-gray-900 truncate">
+                {orderDetail.client.name}
+              </p>
+              <p className="text-xs text-gray-500 font-mono">
+                {orderDetail.client.clientCode}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Client</p>
-            <p className="font-medium text-gray-900">
-              {orderDetail.client.name} ({orderDetail.client.clientCode})
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Dealer</p>
-            <p className="font-medium text-gray-900">
-              {orderDetail.dealer.name}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Order Date</p>
-            <p className="font-medium text-gray-900">
-              {new Date(orderDetail.createdAt).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-        </div>
-      </div>
 
-      {/* Overall PI Tracking Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col">
-          <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">
-            Total Vehicles
-          </h3>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            {orderDetail.totalVehiclesInOrder}
-          </p>
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+              <Building2 className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Dealer
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                {orderDetail.dealer.name}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+              <ReceiptText className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Voucher No.
+              </p>
+              <p className="text-lg font-bold text-gray-900 font-mono">
+                {orderDetail.voucherNo}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+              <CalendarDays className="h-6 w-6 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Order Date
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                {new Date(orderDetail.createdAt).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col">
-          <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">
-            Vehicles PI'd
+
+        {/* Right: Completion Chart */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-60">
+          <h3 className="text-sm font-bold text-gray-700 mb-4 self-start">
+            PI Completion Status
           </h3>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            {orderDetail.totalVehiclesPIed}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col">
-          <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">
-            Vehicles Pending PI
-          </h3>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            {orderDetail.pendingVehicles}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col">
-          <h3 className="text-gray-500 text-xs sm:text-sm font-medium mb-1">
-            Overall PI Status
-          </h3>
-          <div className="mt-2">
-            <ProgressBar
-              value={
-                orderDetail.totalVehiclesInOrder > 0
-                  ? (orderDetail.totalVehiclesPIed /
-                      orderDetail.totalVehiclesInOrder) *
-                    100
-                  : 0
-              }
-              statusText={orderDetail.overallPIStatus}
-              colorClass={getPIProgressBarColor(orderDetail.overallPIStatus)}
-            />
+          <div className="w-full h-full min-h-45 relative flex items-center justify-center">
+            {/* Center Label for Total Count */}
+            <div className="absolute z-20 flex flex-col items-center justify-center text-center pointer-events-auto">
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-4xl font-black text-gray-900 leading-none cursor-pointer hover:text-blue-600 transition-all duration-300">
+                      {orderDetail.totalVehiclesInOrder}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-gray-900 text-white text-xs px-2 py-1 rounded"
+                  >
+                    Total Units
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  cornerRadius="50%"
+                  paddingAngle={5}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  {chartData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex gap-4 mt-2">
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-emerald-500" />
+              <span className="text-xs font-medium text-gray-600">
+                PI'd: {orderDetail.totalVehiclesPIed}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-amber-500" />
+              <span className="text-xs font-medium text-gray-600">
+                Pending: {orderDetail.pendingVehicles}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Detailed Vehicle & PI Status Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-800">
             Vehicle PI Tracking
           </h2>
+          <div className="flex gap-2">
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={handleClearFilters}
+                    className="h-9 w-9 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <BrushCleaning className="h-4 w-4 text-gray-500 cursor-pointer" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
+                  Clear Filters
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Popover>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-9 w-9 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        <SlidersHorizontal className="h-4 w-4 text-gray-500 cursor-pointer" />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
+                    Toggle Columns
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <PopoverContent
+                side="bottom"
+                align="end"
+                className="w-60 bg-white shadow-xl border rounded-xl z-50 flex flex-col"
+              >
+                <div className="text-xs font-semibold border-b px-3 py-2 text-gray-500">
+                  Visible Columns (
+                  {
+                    table.getVisibleLeafColumns().filter((c) => c.getCanHide())
+                      .length
+                  }
+                  /{MAX_VISIBLE_HIDEABLE_COLUMNS})
+                </div>
+                <div className="max-h-65 overflow-y-auto px-1">
+                  {table
+                    .getAllLeafColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => (
+                      <div
+                        key={column.id}
+                        onClick={() => handleColumnToggle(column.id)}
+                        className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer hover:bg-gray-100 text-sm capitalize ${
+                          column.getIsVisible()
+                            ? "text-blue-700"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className="text-sm capitalize">
+                          {getColumnLabel(column.id)}
+                        </span>
+                        {column.getIsVisible() && (
+                          <Check className="h-4 w-4 text-blue-600" />
+                        )}
+                      </div>
+                    ))}
+                </div>
+                <div className="border-t p-2">
+                  <PopoverClose asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={resetToDefaultColumns}
+                    >
+                      Reset to Default
+                    </Button>
+                  </PopoverClose>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         <div className="overflow-x-auto w-full">
           <Table className="w-full">
@@ -678,6 +843,96 @@ const PIOrderDetail = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination Section */}
+        {table.getPageCount() > 0 && (
+          <div className="flex flex-col lg:flex-row justify-between items-center p-4 border-t border-gray-200 bg-white gap-4">
+            {/* Left: Items per row */}
+            <div className="flex items-center gap-2 w-full lg:w-1/3 justify-center lg:justify-start">
+              <span className="text-sm text-gray-500">Show</span>
+              <Select
+                value={table.getState().pagination.pageSize.toString()}
+                onValueChange={(value) => table.setPageSize(Number(value))}
+              >
+                <SelectTrigger className="h-10 w-24 px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
+                </SelectTrigger>
+                <SelectContent position="popper" sideOffset={4}>
+                  {[5, 10, 25, 50].map((pageSize) => (
+                    <SelectItem
+                      key={pageSize}
+                      value={pageSize.toString()}
+                      className="text-base cursor-pointer"
+                    >
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-gray-500">items</span>
+            </div>
+
+            {/* Center: Pagination Buttons */}
+            <div className="flex items-center justify-center space-x-1 w-full lg:w-1/3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="text-xs border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
+              >
+                <MoveLeft className="h-3 w-3 mr-1" /> Prev
+              </Button>
+
+              <div className="items-center space-x-1 flex">
+                {generatePagination(
+                  table.getState().pagination.pageIndex + 1,
+                  table.getPageCount()
+                ).map((item, idx) =>
+                  item === "..." ? (
+                    <span key={idx} className="px-2 text-gray-500 text-xs">
+                      ...
+                    </span>
+                  ) : (
+                    <Button
+                      key={idx}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => table.setPageIndex((item as number) - 1)}
+                      className={`text-xs h-8 w-8 p-0 transition-colors cursor-pointer ${
+                        table.getState().pagination.pageIndex + 1 === item
+                          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+                          : "border-gray-300 text-gray-700 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50"
+                      }`}
+                    >
+                      {item}
+                    </Button>
+                  )
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="text-xs border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
+              >
+                Next <MoveRight className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+
+            {/* Right: Page indicator */}
+            <div className="flex justify-center lg:justify-end w-full lg:w-1/3">
+              <span className="text-sm text-gray-500">
+                Page {table.getState().pagination.pageIndex + 1} of{" "}
+                {table.getPageCount()}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

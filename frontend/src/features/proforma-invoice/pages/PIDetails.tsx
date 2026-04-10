@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import {
   Download,
   Eye,
-  ArrowLeft,
+  ChevronLeft,
   CheckCircle2,
   Clock,
   XCircle,
@@ -178,12 +178,12 @@ const PIDetails = () => {
           <div className="flex items-center gap-4">
             <Button
               type="button"
-              onClick={() => navigate("/proforma-invoice/list")}
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              onClick={() => navigate(-1)}
+              variant="outline"
+              size="default"
+              className="h-12 w-12 rounded-full border-gray-300 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-md transition-all duration-200 cursor-pointer"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="size-6" strokeWidth={2.5} />
             </Button>
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">

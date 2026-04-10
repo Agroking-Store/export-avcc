@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Eye } from "lucide-react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { ChevronLeft, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { piApi } from "../components/piApi";
@@ -31,6 +31,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 const CreatePI = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
 
   const [clients, setClients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]); // Renamed from dealers
@@ -39,7 +40,7 @@ const CreatePI = () => {
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const [previewLoading, setPreviewLoading] = useState(false); // Keep previewLoading
 
-  // Import from Order states
+  // Fetch Order states
   const [orders, setOrders] = useState<any[]>([]);
   const [orderSearch, setOrderSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -310,8 +311,11 @@ const CreatePI = () => {
     }));
   };
 
-  // Import from Order Logic
-  const handleSelectOrder = async (orderId: string) => {
+  // Fetch Order Logic
+  const handleSelectOrder = async (
+    orderId: string,
+    specificChassis?: string
+  ) => {
     if (!orderId) return;
     try {
       // 1. Fetch detailed tracking data for the order
@@ -323,50 +327,99 @@ const CreatePI = () => {
         (v: any) => v.bookingStatus === "Booked" && v.piStatus === "Pending"
       );
 
-      if (availableToPI.length === 0) {
+      // 3. Filter for specific chassis if coming from PIOrderDetail row
+      const finalVehiclesToPI = specificChassis
+        ? availableToPI.filter((v: any) => v.chassisNo === specificChassis)
+        : availableToPI;
+
+      if (finalVehiclesToPI.length === 0) {
+        if (specificChassis) {
+          toast.error(
+            "This specific vehicle is either not booked or already has a PI."
+          );
+          return;
+        }
         toast.warning("No booked vehicles available to PI for this order.");
+        return;
       }
 
-      // 3. Map these individual units to the PI form's VehicleLineItem structure
-      const mappedVehicles: VehicleLineItem[] = availableToPI.map((v: any) => ({
-        vehicle_id: v._id, // Use the unique ID from vehicleTracking
-        model: v.model,
-        color: v.color,
-        engineNo: v.engineNo,
-        chassisNo: v.chassisNo,
-        quantity: 1, // Each entry is an individual unit
-        hsn: v.hsn,
-        fob: v.fob,
-        freight: v.freight,
-        yom: v.yom,
-        fuelType: v.fuelType,
-        countryOfOrigin: v.countryOfOrigin,
-        engineCapacity: v.engineCapacity,
-        selected: true, // Default to selected for PI creation
-      }));
+      // 4. Map units to the PI form structure
+      const mappedVehicles: VehicleLineItem[] = finalVehiclesToPI.map(
+        (v: any) => ({
+          vehicle_id: v._id, // Use the unique ID from vehicleTracking
+          model: v.model,
+          color: v.color,
+          engineNo: v.engineNo,
+          chassisNo: v.chassisNo,
+          quantity: 1, // Each entry is an individual unit
+          hsn: v.hsn,
+          fob: v.fob,
+          freight: v.freight,
+          yom: v.yom,
+          fuelType: v.fuelType,
+          countryOfOrigin: v.countryOfOrigin,
+          engineCapacity: v.engineCapacity,
+          selected: true, // Default to selected for PI creation
+        })
+      );
 
-      // 4. Update the form's vehicleDetails and link order_id
+      // 5. Construct Client Snapshot from tracking data
+      const c = trackingData.client;
+      let clientAddressForSnapshot: AddressDetails = {
+        houseBuilding: "",
+        streetArea: "",
+        cityTown: "",
+        state: "",
+        pincode: "",
+        country: "",
+      };
+
+      if (c.address && typeof c.address === "string") {
+        clientAddressForSnapshot.streetArea = c.address;
+        if (c.country) clientAddressForSnapshot.country = c.country;
+      } else if (c.address && typeof c.address === "object") {
+        clientAddressForSnapshot = c.address;
+      } else if (c.country) {
+        clientAddressForSnapshot.country = c.country;
+      }
+
+      // 6. Update the form including client data
       setForm((prev) => ({
         ...prev,
         order_id: trackingData._id, // Link the PI to the selected order
         vehicleDetails: mappedVehicles,
+        client_id: c._id,
+        clientSnapshot: {
+          name: c.name,
+          companyName: c.companyName,
+          clientCode: c.clientCode,
+          email: c.email,
+          phone: c.phone,
+          address: clientAddressForSnapshot,
+        },
       }));
 
-      // 5. Handle client selection based on the order's client
-      if (trackingData.client?._id) {
-        handleClientSelect(trackingData.client._id);
-      }
-
-      // 6. Handle company (exporter) selection - this is separate from order's dealer.
+      // 7. Handle company (exporter) selection - separate from order's dealer.
       // The company_id for the PI (exporter) should be selected independently.
       // Removing previous logic that tried to map order's dealer to PI's company.
 
-      toast.success("Order details imported successfully!");
+      toast.success("Order details fetched successfully!");
     } catch (err) {
       console.error("Failed to load order details:", err);
       toast.error("Failed to load order details.");
     }
   };
+
+  // Auto-populate data if redirected from PIOrderDetail
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const urlOrderId = searchParams.get("orderId");
+    const urlChassisNo = searchParams.get("chassisNo");
+
+    if (urlOrderId && urlChassisNo && !id) {
+      handleSelectOrder(urlOrderId, urlChassisNo);
+    }
+  }, [location.search, id]);
 
   const toggleRow = (index: number) => {
     setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -454,20 +507,23 @@ const CreatePI = () => {
   };
 
   const ordersWithDisplay = orders.map((o) => {
-    // For ordersWithDisplay, we want to show the original dealer name from the order
-    // This is for the combobox display, not for the PI's companyDetails
-    let extractedDealerName =
-      o.dealerName || o.dealer?.[0]?.name || "Unknown Dealer";
-    // No need to look up in companies here, as this is for order display
-
-    extractedDealerName = extractedDealerName || "Unknown";
+    const clientName = o.clientName || o.client?.name || "Unknown Client";
+    const formattedDate = o.date
+      ? new Date(o.date).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "-";
 
     return {
       ...o,
-      dealerName: extractedDealerName,
-      displayName: `${o.orderId} - ${extractedDealerName} (${
-        o.date ? new Date(o.date).toLocaleDateString() : "-"
-      })`,
+      clientName,
+      serialNumber: orders.indexOf(o) + 1, // Add serial number
+      orderNo: o.orderId, // Use orderId as orderNo
+      dateFormatted: formattedDate,
+      // Keep displayName for internal filtering if the combobox uses it, or for fallback display
+      displayName: `${o.orderId} - ${clientName} (${formattedDate})`,
     };
   });
 
@@ -480,14 +536,12 @@ const CreatePI = () => {
             <div className="flex items-center gap-4">
               <Button
                 type="button"
-                onClick={() =>
-                  id ? navigate(-1) : navigate("/proforma-invoice/list")
-                }
+                onClick={() => navigate(-1)}
                 variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-full border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all duration-200"
+                size="default"
+                className="h-12 w-12 rounded-full border-gray-300 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-md transition-all duration-200 cursor-pointer"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ChevronLeft className="size-6" strokeWidth={2.5} />
               </Button>
               <h1 className="text-3xl font-semibold tracking-tight">
                 {id ? "Edit Proforma Invoice" : "Create Proforma Invoice"}
