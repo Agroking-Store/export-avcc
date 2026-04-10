@@ -139,7 +139,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       setPiData(res.data.data);
       setPiPageCount(res.data.totalPages || 1);
     } catch (error) {
-      console.error(error);
       toast.error("Failed to fetch Proforma Invoices");
     } finally {
       setPiLoading(false);
@@ -269,14 +268,11 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         cell: ({ row }) => (
           <div>
             <div className="font-medium">
-              {typeof row.original.client_id === "object"
-                ? row.original.client_id.name
-                : "N/A"}
+              {(row.original.client_id as { name?: string })?.name || "N/A"}
             </div>
             <div className="text-xs text-gray-500">
-              {typeof row.original.client_id === "object"
-                ? row.original.client_id.clientCode
-                : "N/A"}
+              {(row.original.client_id as { clientCode?: string })
+                ?.clientCode || "N/A"}
             </div>
           </div>
         ),
@@ -295,12 +291,12 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         cell: ({ row }) => (
           <div>
             <div className="font-medium">
-              {typeof row.original.company_id === "object"
-                ? row.original.company_id.name
-                : "N/A"}
+              {(row.original.company_id as { name?: string })?.name || "N/A"}
             </div>
             <div className="text-xs text-gray-500">
-              {typeof row.original.company_id === "object" ? "Exporter" : ""}
+              {(row.original.company_id as { name?: string })?.name
+                ? "Exporter"
+                : ""}
             </div>
           </div>
         ),
@@ -520,9 +516,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
   const handlePiColumnToggle = (columnId: string) => {
     const column = table.getColumn(columnId);
     if (!column) {
-      console.error(
-        `[handlePiColumnToggle] Column with ID ${columnId} not found.`
-      );
       return;
     }
 
@@ -549,17 +542,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       nextVisibleHideableCount++;
     }
 
-    console.log(
-      `[handlePiColumnToggle] Attempting to toggle column: "${columnId}"`
-    );
-    console.log(`  Current visibility of "${columnId}": ${isCurrentlyVisible}`);
-    console.log(
-      `  Current count of visible hideable columns (from state): ${currentVisibleHideableCount}`
-    );
-    console.log(
-      `  Configured MIN_PI_COLUMNS: ${MIN_PI_COLUMNS}, MAX_PI_COLUMNS: ${MAX_PI_COLUMNS}`
-    );
-
     if (isCurrentlyVisible && nextVisibleHideableCount < MIN_PI_COLUMNS) {
       toast.warning(`At least ${MIN_PI_COLUMNS} columns must be visible!`);
       return;
@@ -569,9 +551,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       return;
     }
     column.toggleVisibility(!isCurrentlyVisible);
-    console.log(
-      `[handlePiColumnToggle] Successfully toggled visibility for "${columnId}" to ${!isCurrentlyVisible}.`
-    );
   };
 
   const getColumnLabel = (columnId: string): string => {
@@ -581,7 +560,7 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       case "piNumber":
         return "PI No";
       case "client":
-        return "Client Name";
+        return "Client";
       case "companyName":
         return "Company Name";
       case "totalAmount":
@@ -634,8 +613,8 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         {/* Search */}
         <div className="relative w-full lg:max-w-md shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search PI number or status..."
+          <Input // Updated placeholder text
+            placeholder="Search PI No, Status, Client, or Company..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-9 h-10 py-2 w-full rounded-md border border-gray-300 bg-white shadow-sm focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:border-blue-500 transition-colors text-sm"
@@ -901,7 +880,7 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
               value={table.getState().pagination.pageSize.toString()}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="h-8 w-17.5 px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
+              <SelectTrigger className="h-10 w-24 px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
                 <SelectValue
                   placeholder={table.getState().pagination.pageSize}
                 />

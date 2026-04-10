@@ -2,7 +2,21 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
-import { ArrowLeft, Eye, Edit2, User, FileText, CheckCircle, Car, Phone, MapPin, Building, Package, TrendingUp, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  Edit2,
+  User,
+  FileText,
+  CheckCircle,
+  Car,
+  Phone,
+  MapPin,
+  Building,
+  Package,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 const VehicleDetails = () => {
@@ -35,13 +49,22 @@ const VehicleDetails = () => {
   // Group vehicles by name and calculate status counts
   const vehicleGroups = (() => {
     if (!order?.vehicles) return [];
-    const groups: { [key: string]: { name: string; color: string; total: number; booked: number; piGenerated: number; available: number } } = {};
-    
+    const groups: {
+      [key: string]: {
+        name: string;
+        color: string;
+        total: number;
+        booked: number;
+        piGenerated: number;
+        available: number;
+      };
+    } = {};
+
     order.vehicles.filter(Boolean).forEach((v: any) => {
       const qty = v.quantity ?? 1;
       const name = v.name || "Unknown";
       const color = v.color || "#6b7280";
-      
+
       if (!groups[name]) {
         groups[name] = {
           name,
@@ -49,12 +72,12 @@ const VehicleDetails = () => {
           total: 0,
           booked: 0,
           piGenerated: 0,
-          available: 0
+          available: 0,
         };
       }
-      
+
       groups[name].total += qty;
-      
+
       // Calculate based on order status
       if (order.status === "Confirmed") {
         groups[name].booked += qty;
@@ -64,10 +87,10 @@ const VehicleDetails = () => {
         groups[name].available += qty;
       }
     });
-    
+
     return Object.values(groups);
   })();
-  
+
   // Expand vehicles by quantity into individual rows.
   const expandedVehicles = (() => {
     if (!order?.vehicles) return [];
@@ -78,7 +101,7 @@ const VehicleDetails = () => {
       const qty = v.quantity ?? 1;
       for (let qIdx = 0; qIdx < qty; qIdx++) {
         const colorOverride = order.vehicleColors?.find(
-          (vc: any) => vc.expandedIndex === expandedIndex
+          (vc: any) => vc.expandedIndex === expandedIndex,
         );
         result.push({
           expandedIndex,
@@ -133,6 +156,21 @@ const VehicleDetails = () => {
     );
   }
 
+  const formatAddress = (address: any) => {
+    if (!address) return "-";
+
+    const parts = [
+      address.houseBuilding,
+      address.streetArea,
+      address.cityTown,
+      address.state,
+      address.pincode,
+      address.country,
+    ].filter(Boolean);
+
+    return parts.join(", ") || "-";
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -161,13 +199,15 @@ const VehicleDetails = () => {
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-blue-100 text-sm font-medium mb-1">Order Number</p>
+            <p className="text-blue-100 text-sm font-medium mb-1">
+              Order Number
+            </p>
             <h1 className="text-3xl font-bold text-white">{order.orderId}</h1>
           </div>
           <div className="flex items-center gap-4">
             <span
               className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
-                status
+                status,
               )}`}
             >
               <CheckCircle size={14} />
@@ -180,7 +220,9 @@ const VehicleDetails = () => {
             <div className="flex items-center gap-2 text-blue-100 text-sm">
               <FileText size={14} />
               <span>Voucher No:</span>
-              <span className="font-semibold text-white">{order.voucherNo}</span>
+              <span className="font-semibold text-white">
+                {order.voucherNo}
+              </span>
             </div>
           </div>
         )}
@@ -202,7 +244,10 @@ const VehicleDetails = () => {
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                  <User size={16} className="text-gray-500 dark:text-gray-400" />
+                  <User
+                    size={16}
+                    className="text-gray-500 dark:text-gray-400"
+                  />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
@@ -217,7 +262,10 @@ const VehicleDetails = () => {
               {order.clientId?.companyName && (
                 <div className="flex items-start gap-3">
                   <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                    <Building size={16} className="text-gray-500 dark:text-gray-400" />
+                    <Building
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400"
+                    />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
@@ -233,7 +281,10 @@ const VehicleDetails = () => {
               {order.clientId?.phone && (
                 <div className="flex items-start gap-3">
                   <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                    <Phone size={16} className="text-gray-500 dark:text-gray-400" />
+                    <Phone
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400"
+                    />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
@@ -249,14 +300,17 @@ const VehicleDetails = () => {
               {order.clientId?.address && (
                 <div className="flex items-start gap-3">
                   <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg shrink-0">
-                    <MapPin size={16} className="text-gray-500 dark:text-gray-400" />
+                    <MapPin
+                      size={16}
+                      className="text-gray-500 dark:text-gray-400"
+                    />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
                       Address
                     </p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {order.clientId?.address}
+                    <p className="text-base font-medium text-gray-800 dark:text-gray-100">
+                      {formatAddress(order.clientId?.address)}
                     </p>
                   </div>
                 </div>
@@ -278,7 +332,8 @@ const VehicleDetails = () => {
                 </h2>
               </div>
               <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm font-medium">
-                {expandedVehicles.length} vehicle{expandedVehicles.length !== 1 ? "s" : ""}
+                {expandedVehicles.length} vehicle
+                {expandedVehicles.length !== 1 ? "s" : ""}
               </span>
             </div>
 
@@ -289,12 +344,22 @@ const VehicleDetails = () => {
                   Status Summary
                 </h3>
                 {vehicleGroups.map((group, index) => (
-                  <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                  <div
+                    key={index}
+                    className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }}></div>
-                        <span className="font-semibold text-gray-900 dark:text-white">{group.name}</span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">({group.total} total)</span>
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        ></div>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {group.name}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          ({group.total} total)
+                        </span>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
@@ -303,8 +368,12 @@ const VehicleDetails = () => {
                           <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Booked</p>
-                          <p className="font-semibold text-blue-600 dark:text-blue-400">{group.booked}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Booked
+                          </p>
+                          <p className="font-semibold text-blue-600 dark:text-blue-400">
+                            {group.booked}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -312,8 +381,12 @@ const VehicleDetails = () => {
                           <TrendingUp className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">PI Generated</p>
-                          <p className="font-semibold text-purple-600 dark:text-purple-400">{group.piGenerated}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            PI Generated
+                          </p>
+                          <p className="font-semibold text-purple-600 dark:text-purple-400">
+                            {group.piGenerated}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -321,25 +394,35 @@ const VehicleDetails = () => {
                           <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
-                          <p className="font-semibold text-green-600 dark:text-green-400">{group.available}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Available
+                          </p>
+                          <p className="font-semibold text-green-600 dark:text-green-400">
+                            {group.available}
+                          </p>
                         </div>
                       </div>
                     </div>
                     {/* Progress Bar */}
                     <div className="mt-3 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                       <div className="flex h-full">
-                        <div 
-                          className="bg-blue-500 h-full transition-all duration-300" 
-                          style={{ width: `${(group.booked / group.total) * 100}%` }}
+                        <div
+                          className="bg-blue-500 h-full transition-all duration-300"
+                          style={{
+                            width: `${(group.booked / group.total) * 100}%`,
+                          }}
                         ></div>
-                        <div 
-                          className="bg-purple-500 h-full transition-all duration-300" 
-                          style={{ width: `${(group.piGenerated / group.total) * 100}%` }}
+                        <div
+                          className="bg-purple-500 h-full transition-all duration-300"
+                          style={{
+                            width: `${(group.piGenerated / group.total) * 100}%`,
+                          }}
                         ></div>
-                        <div 
-                          className="bg-green-500 h-full transition-all duration-300" 
-                          style={{ width: `${(group.available / group.total) * 100}%` }}
+                        <div
+                          className="bg-green-500 h-full transition-all duration-300"
+                          style={{
+                            width: `${(group.available / group.total) * 100}%`,
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -406,7 +489,7 @@ const VehicleDetails = () => {
                                   expandedIndex: String(v.expandedIndex),
                                 });
                                 navigate(
-                                  `/vehicles/view/${id}/view-vehicle/${v.expandedIndex}?${params.toString()}`
+                                  `/vehicles/view/${id}/view-vehicle/${v.expandedIndex}?${params.toString()}`,
                                 );
                               }}
                             >
@@ -423,7 +506,7 @@ const VehicleDetails = () => {
                                   expandedIndex: String(v.expandedIndex),
                                 });
                                 navigate(
-                                  `/vehicles/view/${id}/edit-vehicle/${v.expandedIndex}?${params.toString()}`
+                                  `/vehicles/view/${id}/edit-vehicle/${v.expandedIndex}?${params.toString()}`,
                                 );
                               }}
                             >

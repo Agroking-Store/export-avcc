@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { format } from "date-fns";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { VehicleLineItem, PIForm } from "./pi.types";
 
 interface PIFormFieldsProps {
@@ -125,6 +125,283 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               )}
             />
           </div>
+        </div>
+      </div>
+
+      {divider}
+
+      {/* VEHICLE LINE ITEMS */}
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className={sectionTitleClass + " mb-0!"}>Vehicle Line Items</h3>
+        </div>
+
+        <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
+          {/* Table Header */}
+          <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+            <div className="col-span-4 flex items-center gap-3">
+              <Checkbox
+                checked={
+                  form.vehicleDetails.length > 0 &&
+                  form.vehicleDetails.every((v) => v.selected !== false)
+                }
+                onCheckedChange={(checked) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    vehicleDetails: prev.vehicleDetails.map((v) => ({
+                      ...v,
+                      selected: !!checked,
+                    })),
+                  }));
+                }}
+                className="h-6 w-6 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              Model / Description
+            </div>
+            <div className="col-span-1 text-center">Qty</div>
+            <div className="col-span-2 text-right">FOB ($)</div>
+            <div className="col-span-1 text-right">Freight ($)</div>
+            <div className="col-span-1 text-right">Rate ($)</div>
+            <div className="col-span-2 text-right">Amount ($)</div>
+            <div className="col-span-1 text-right"></div>
+          </div>
+
+          {/* Rows */}
+          {form.vehicleDetails.map((v, index) => (
+            <div key={index} className="border-b border-gray-200 last:border-0">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 py-4 items-center">
+                <div className="col-span-1 lg:col-span-4 flex gap-3 items-start">
+                  <div className="pt-1">
+                    <Checkbox
+                      checked={v.selected !== false}
+                      onCheckedChange={(checked) =>
+                        handleVehicleChange(index, "selected", !!checked)
+                      }
+                      className="h-6 w-6 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <input
+                      placeholder="Vehicle Model"
+                      value={v.model}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "model", e.target.value)
+                      }
+                      className={getInputClass(`v_${index}_model`)}
+                    />
+                  </div>
+                </div>
+                <div className="col-span-1 lg:col-span-1">
+                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
+                    Qty
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={v.quantity}
+                    onChange={(e) =>
+                      handleVehicleChange(
+                        index,
+                        "quantity",
+                        Number(e.target.value)
+                      )
+                    }
+                    className={`${getInputClass(
+                      `v_${index}_quantity`
+                    )} text-center`}
+                  />
+                </div>
+                <div className="col-span-1 lg:col-span-2">
+                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
+                    FOB ($)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={v.fob}
+                    onChange={(e) =>
+                      handleVehicleChange(
+                        index,
+                        "fob",
+                        e.target.value ? Number(e.target.value) : ""
+                      )
+                    }
+                    className={`${inputClass} text-right font-mono`}
+                  />
+                </div>
+                <div className="col-span-1 lg:col-span-1">
+                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
+                    Freight ($)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={v.freight}
+                    onChange={(e) =>
+                      handleVehicleChange(
+                        index,
+                        "freight",
+                        e.target.value ? Number(e.target.value) : ""
+                      )
+                    }
+                    className={`${inputClass} text-right font-mono`}
+                  />
+                </div>
+                <div className="col-span-1 lg:col-span-1 text-right font-mono text-gray-600">
+                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
+                    Rate ($)
+                  </label>
+                  <span
+                    className={errors[`v_${index}_rate`] ? "text-red-500" : ""}
+                  >
+                    ${getRate(v).toLocaleString()}
+                  </span>
+                </div>
+                <div className="col-span-1 lg:col-span-2 text-right font-mono font-medium text-gray-900">
+                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
+                    Amount ($)
+                  </label>
+                  ${getAmount(v).toLocaleString()}
+                </div>
+                <div className="col-span-1 lg:col-span-1 flex justify-end items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => toggleRow(index)}
+                    variant="ghost"
+                    size="icon"
+                    title="Toggle Advanced Fields"
+                  >
+                    <ChevronDown
+                      className={`w-5 h-5 transition-transform ${
+                        expandedRows[index] ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Expanded Fields */}
+              {expandedRows[index] && (
+                <div className="px-6 py-6 bg-gray-50 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className={labelClass}>Exterior Color</label>
+                    <input
+                      value={v.color}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "color", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Engine No</label>
+                    <input
+                      value={v.engineNo}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "engineNo", e.target.value)
+                      }
+                      className={`${inputClass} font-mono`}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Chassis No (VIN)</label>
+                    <input
+                      value={v.chassisNo}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "chassisNo", e.target.value)
+                      }
+                      className={`${inputClass} font-mono`}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Year of Manufacture</label>
+                    <input
+                      value={v.yom}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "yom", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>HSN / SAC</label>
+                    <input
+                      value={v.hsn}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "hsn", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Fuel Type</label>
+                    <input
+                      value={v.fuelType}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "fuelType", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Country of Origin</label>
+                    <input
+                      value={v.countryOfOrigin}
+                      onChange={(e) =>
+                        handleVehicleChange(
+                          index,
+                          "countryOfOrigin",
+                          e.target.value
+                        )
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Engine Capacity</label>
+                    <input
+                      value={v.engineCapacity}
+                      onChange={(e) =>
+                        handleVehicleChange(
+                          index,
+                          "engineCapacity",
+                          e.target.value
+                        )
+                      }
+                      className={inputClass}
+                      placeholder="e.g. 2000cc"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {divider}
+
+      {/* SUMMARY */}
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
+        <div className="w-full sm:w-1/2">
+          <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
+            Amount Chargeable (in words)
+          </p>
+          <p className="text-base font-medium text-gray-900">
+            {numberToWords(totalAmount)}
+          </p>
+        </div>
+        <div className="w-full sm:w-auto sm:text-right">
+          <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
+            Grand Total
+          </p>
+          <p className="text-4xl font-light text-gray-900 tracking-tight font-mono">
+            $
+            {totalAmount.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </p>
         </div>
       </div>
 
@@ -593,285 +870,6 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
       {divider}
 
       {divider}
-
-      {/* SUMMARY */}
-
-      {divider}
-
-      {/* VEHICLE LINE ITEMS */}
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className={sectionTitleClass + " mb-0!"}>Vehicle Line Items</h3>
-        </div>
-
-        <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
-          {/* Table Header */}
-          <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
-            <div className="col-span-4 flex items-center gap-3">
-              <Switch
-                checked={
-                  form.vehicleDetails.length > 0 &&
-                  form.vehicleDetails.every((v) => v.selected !== false)
-                }
-                onCheckedChange={(checked) => {
-                  setForm((prev) => ({
-                    ...prev,
-                    vehicleDetails: prev.vehicleDetails.map((v) => ({
-                      ...v,
-                      selected: !!checked,
-                    })),
-                  }));
-                }}
-                className="scale-125 ml-1 data-[state=checked]:bg-blue-600"
-              />
-              Model / Description
-            </div>
-            <div className="col-span-1 text-center">Qty</div>
-            <div className="col-span-2 text-right">FOB ($)</div>
-            <div className="col-span-1 text-right">Freight ($)</div>
-            <div className="col-span-1 text-right">Rate ($)</div>
-            <div className="col-span-2 text-right">Amount ($)</div>
-            <div className="col-span-1 text-right"></div>
-          </div>
-
-          {/* Rows */}
-          {form.vehicleDetails.map((v, index) => (
-            <div key={index} className="border-b border-gray-200 last:border-0">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 py-4 items-center">
-                <div className="col-span-1 lg:col-span-4 flex gap-3 items-start">
-                  <div className="pt-3">
-                    <Switch
-                      checked={v.selected !== false}
-                      onCheckedChange={(checked) =>
-                        handleVehicleChange(index, "selected", !!checked)
-                      }
-                      className="scale-125 ml-1 data-[state=checked]:bg-blue-600"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <input
-                      placeholder="Vehicle Model"
-                      value={v.model}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "model", e.target.value)
-                      }
-                      className={getInputClass(`v_${index}_model`)}
-                    />
-                  </div>
-                </div>
-                <div className="col-span-1 lg:col-span-1">
-                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
-                    Qty
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={v.quantity}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "quantity",
-                        Number(e.target.value)
-                      )
-                    }
-                    className={`${getInputClass(
-                      `v_${index}_quantity`
-                    )} text-center`}
-                  />
-                </div>
-                <div className="col-span-1 lg:col-span-2">
-                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
-                    FOB ($)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={v.fob}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "fob",
-                        e.target.value ? Number(e.target.value) : ""
-                      )
-                    }
-                    className={`${inputClass} text-right font-mono`}
-                  />
-                </div>
-                <div className="col-span-1 lg:col-span-1">
-                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1">
-                    Freight ($)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={v.freight}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "freight",
-                        e.target.value ? Number(e.target.value) : ""
-                      )
-                    }
-                    className={`${inputClass} text-right font-mono`}
-                  />
-                </div>
-                <div className="col-span-1 lg:col-span-1 text-right font-mono text-gray-600">
-                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
-                    Rate ($)
-                  </label>
-                  <span
-                    className={errors[`v_${index}_rate`] ? "text-red-500" : ""}
-                  >
-                    ${getRate(v).toLocaleString()}
-                  </span>
-                </div>
-                <div className="col-span-1 lg:col-span-2 text-right font-mono font-medium text-gray-900">
-                  <label className="block lg:hidden text-xs font-medium text-gray-500 mb-1 text-right">
-                    Amount ($)
-                  </label>
-                  ${getAmount(v).toLocaleString()}
-                </div>
-                <div className="col-span-1 lg:col-span-1 flex justify-end items-center gap-2">
-                  <Button
-                    type="button"
-                    onClick={() => toggleRow(index)}
-                    variant="ghost"
-                    size="icon"
-                    title="Toggle Advanced Fields"
-                  >
-                    <ChevronDown
-                      className={`w-5 h-5 transition-transform ${
-                        expandedRows[index] ? "rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Expanded Fields */}
-              {expandedRows[index] && (
-                <div className="px-6 py-6 bg-gray-50 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div>
-                    <label className={labelClass}>Exterior Color</label>
-                    <input
-                      value={v.color}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "color", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Engine No</label>
-                    <input
-                      value={v.engineNo}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "engineNo", e.target.value)
-                      }
-                      className={`${inputClass} font-mono`}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Chassis No (VIN)</label>
-                    <input
-                      value={v.chassisNo}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "chassisNo", e.target.value)
-                      }
-                      className={`${inputClass} font-mono`}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Year of Manufacture</label>
-                    <input
-                      value={v.yom}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "yom", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>HSN / SAC</label>
-                    <input
-                      value={v.hsn}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "hsn", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Fuel Type</label>
-                    <input
-                      value={v.fuelType}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "fuelType", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Country of Origin</label>
-                    <input
-                      value={v.countryOfOrigin}
-                      onChange={(e) =>
-                        handleVehicleChange(
-                          index,
-                          "countryOfOrigin",
-                          e.target.value
-                        )
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Engine Capacity</label>
-                    <input
-                      value={v.engineCapacity}
-                      onChange={(e) =>
-                        handleVehicleChange(
-                          index,
-                          "engineCapacity",
-                          e.target.value
-                        )
-                      }
-                      className={inputClass}
-                      placeholder="e.g. 2000cc"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {divider}
-
-      {/* SUMMARY */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-8">
-        <div className="w-full sm:w-1/2">
-          <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
-            Amount Chargeable (in words)
-          </p>
-          <p className="text-base font-medium text-gray-900">
-            {numberToWords(totalAmount)}
-          </p>
-        </div>
-        <div className="w-full sm:w-auto sm:text-right">
-          <p className="text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">
-            Grand Total
-          </p>
-          <p className="text-4xl font-light text-gray-900 tracking-tight font-mono">
-            $
-            {totalAmount.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </p>
-        </div>
-      </div>
     </>
   );
 };
