@@ -322,21 +322,27 @@ const PIOrderDetail = () => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() =>
-                        navigate(
-                          // Changed from chassisNumber
-                          `/proforma-invoice/add?orderId=${orderDetail?._id}&chassisNo=${row.original.chassisNo}`
-                        )
-                      }
-                    >
-                      <Plus className="h-4 w-4 text-blue-600" />
-                    </Button>
+                    <span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={row.original.bookingStatus !== "Booked"}
+                        onClick={() =>
+                          navigate(
+                            `/proforma-invoice/add?orderId=${orderDetail?._id}&chassisNo=${row.original.chassisNo}`
+                          )
+                        }
+                      >
+                        <Plus className="h-4 w-4 text-blue-600" />
+                      </Button>
+                    </span>
                   </TooltipTrigger>
-                  <TooltipContent>Create PI for this vehicle</TooltipContent>
+                  <TooltipContent>
+                    {row.original.bookingStatus === "Booked"
+                      ? "Create PI for this vehicle"
+                      : "Vehicle must be Booked to create PI"}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
