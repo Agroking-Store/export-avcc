@@ -35,10 +35,12 @@ const OrderDetails = () => {
   const updateStatus = async (newStatus: string) => {
     try {
       setUpdatingStatus(true);
-      await axios.put(`${apiConfig.baseURL}/orders/${id}`, { status: newStatus });
+      await axios.put(`${apiConfig.baseURL}/orders/${id}`, {
+        status: newStatus,
+      });
       setStatus(newStatus);
       navigate("/orders/list", {
-        state: { success: "Order status updated successfully ✅" }
+        state: { success: "Order status updated successfully ✅" },
       });
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Error updating status ❌");
@@ -49,10 +51,14 @@ const OrderDetails = () => {
 
   const getStatusColor = (s: string) => {
     switch (s) {
-      case "Draft": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-      case "Confirmed": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-      case "PI Generated": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+      case "Draft":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
+      case "Confirmed":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+      case "PI Generated":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
     }
   };
 
@@ -82,9 +88,23 @@ const OrderDetails = () => {
     );
   }
 
+  const formatAddress = (address: any) => {
+    if (!address) return "-";
+
+    const parts = [
+      address.houseBuilding,
+      address.streetArea,
+      address.cityTown,
+      address.state,
+      address.pincode,
+      address.country,
+    ].filter(Boolean);
+
+    return parts.join(", ") || "-";
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-6">
-      
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -106,11 +126,12 @@ const OrderDetails = () => {
 
       {/* Content */}
       <div className="space-y-6">
-        
         {/* SECTION 1: STATUS & VOUCHER */}
         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
           <div className="flex items-center gap-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(status)}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(status)}`}
+            >
               {status}
             </span>
             <span className="text-sm text-gray-500 dark:text-gray-300">
@@ -129,10 +150,8 @@ const OrderDetails = () => {
                            text-black dark:text-white 
                            rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               >
-
                 <option value="Draft">Draft</option>
                 <option value="Confirmed">Confirmed</option>
-
               </select>
               <button
                 onClick={() => updateStatus(status)}
@@ -155,27 +174,36 @@ const OrderDetails = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Name</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
+                Name
+              </p>
               <p className="text-base font-medium text-gray-800 dark:text-gray-100">
-                {order.clientId?.name || '-'}
+                {order.clientId?.name || "-"}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Company</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
+                Company
+              </p>
               <p className="text-base font-medium text-gray-800 dark:text-gray-100">
-                {order.clientId?.companyName || '-'}
+                {order.clientId?.companyName || "-"}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Phone</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
+                Phone
+              </p>
               <p className="text-base font-medium text-gray-800 dark:text-gray-100">
-                {order.clientId?.phone || '-'}
+                {order.clientId?.phone || "-"}
               </p>
             </div>
+
             <div className="md:col-span-2 lg:col-span-3">
-              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">Address</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
+                Address
+              </p>
               <p className="text-base font-medium text-gray-800 dark:text-gray-100">
-                {order.clientId?.address || '-'}
+                {formatAddress(order.clientId?.address)}
               </p>
             </div>
           </div>
@@ -208,7 +236,10 @@ const OrderDetails = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
                   {order.vehicles.map((v: any, i: number) => (
-                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr
+                      key={i}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       <td className="border border-gray-200 dark:border-gray-600 px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
                         {i + 1}
                       </td>
@@ -240,4 +271,3 @@ const OrderDetails = () => {
 };
 
 export default OrderDetails;
-
