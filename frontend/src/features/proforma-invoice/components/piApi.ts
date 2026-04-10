@@ -1,6 +1,6 @@
 import axios from "axios";
 import { apiConfig } from "../../../config/apiConfig";
-import { PIForm } from "./pi.types";
+import { PIForm, OrderDetailData } from "./pi.types"; // Import OrderDetailData
 import { companyApi } from "../../company/components/companyApi"; // Import existing companyApi
 
 const getAuthToken = () => {
@@ -49,6 +49,15 @@ export const piApi = {
 
   getOrderById: async (id: string) => {
     const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
+    return res.data;
+  },
+
+  getOrderDetailWithTracking: async (
+    orderId: string
+  ): Promise<OrderDetailData> => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/orders/${orderId}/details`
+    );
     return res.data;
   },
 

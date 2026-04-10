@@ -1,7 +1,24 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { apiConfig } from "../../../config/apiConfig";
+import { piApi } from "../components/piApi"; // Import piApi
+import {
+  SlidersHorizontal,
+  Check,
+  BrushCleaning, // For clear filters
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverClose,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import { toast } from "react-toastify";
 import {
   Table,
@@ -12,52 +29,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Plus, Eye, Inbox } from "lucide-react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
+  VisibilityState, // Import VisibilityState
 } from "@tanstack/react-table";
 import ProgressBar from "../../../components/common/ProgressBar"; // Import the shared ProgressBar
 
-// Types for the Order Detail page
-interface AssociatedPI {
-  piId: string;
-  piNumber: string;
-  createdAt: string;
-}
-
-interface VehicleTracking {
-  _id: string;
-  make: string;
-  model: string;
-  chassisNumber: string;
-  engineNumber: string;
-  quantity: number;
-  piStatus: "PI'd" | "Pending";
-  associatedPIs: AssociatedPI[];
-}
-
-interface OrderDetailData {
-  _id: string;
-  orderId: string;
-  voucherNo: string;
-  client: { name: string; clientCode: string };
-  dealer: { name: string };
-  createdAt: string;
-  totalVehiclesInOrder: number;
-  totalVehiclesPIed: number;
-  pendingVehicles: number;
-  overallPIStatus: string;
-  vehicleTracking: VehicleTracking[];
-}
+import { VehicleTracking, OrderDetailData } from "../components/pi.types"; // Import from pi.types
 
 const PIOrderDetail = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -65,6 +47,25 @@ const PIOrderDetail = () => {
   const [orderDetail, setOrderDetail] = useState<OrderDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    () => {
+      const saved = localStorage.getItem("pi-order-detail-columns");
+      return saved
+        ? JSON.parse(saved)
+        : {
+            serialNumber: true,
+            make: false, // Changed to false as per request
+            model: true,
+            chassisNo: true,
+            engineNo: false, // Changed to false as per request
+            bookingStatus: true,
+            piStatus: true,
+            associatedPIs: false, // Changed to false as per request
+            piCreationDate: false, // Default hidden
+            actions: true,
+          };
+    }
+  );
 
   useEffect(() => {
     const fetchOrderDetail = async () => {
@@ -75,10 +76,9 @@ const PIOrderDetail = () => {
       }
       try {
         setLoading(true);
-        const res = await axios.get(
-          `${apiConfig.baseURL}/proforma-invoices/orders/${orderId}/details` // Updated endpoint
-        );
-        setOrderDetail(res.data);
+        const res = await piApi.getOrderDetailWithTracking(orderId); // Use the new piApi function
+
+        setOrderDetail(res);
       } catch (err) {
         console.error("Failed to fetch order details:", err);
         setError("Failed to load order details.");
@@ -91,6 +91,13 @@ const PIOrderDetail = () => {
     fetchOrderDetail();
   }, [orderId]);
 
+  // Effect to save column visibility to local storage
+  useEffect(() => {
+    localStorage.setItem(
+      "pi-order-detail-columns",
+      JSON.stringify(columnVisibility)
+    );
+  }, [columnVisibility]);
   const getPIProgressBarColor = (status: string) => {
     switch (status) {
       case "Fully PI'd":
@@ -130,22 +137,37 @@ const PIOrderDetail = () => {
         ),
       },
       {
-        accessorKey: "chassisNumber",
+        accessorKey: "chassisNo", // Changed from chassisNumber
         header: "Chassis No.",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.chassisNumber}</span>
+          <span className="font-medium">{row.original.chassisNo}</span>
         ),
       },
       {
-        accessorKey: "engineNumber",
+        accessorKey: "engineNo", // Changed from engineNumber
         header: "Engine No.",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.engineNumber}</span>
+          <span className="font-medium">{row.original.engineNo}</span>
         ),
       },
       {
-        accessorKey: "piStatus",
-        header: "PI Status",
+        accessorKey: "bookingStatus",
+        header: "Booking Status",
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              row.original.bookingStatus === "Booked"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {row.original.bookingStatus}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "piStatus", // Keep accessorKey as piStatus as it maps to the data
+        header: "PI Created", // Changed header text
         cell: ({ row }) => (
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -219,7 +241,8 @@ const PIOrderDetail = () => {
                       className="h-8 w-8 p-0"
                       onClick={() =>
                         navigate(
-                          `/proforma-invoice/add?orderId=${orderDetail?._id}&chassisNumber=${row.original.chassisNumber}`
+                          // Changed from chassisNumber
+                          `/proforma-invoice/add?orderId=${orderDetail?._id}&chassisNo=${row.original.chassisNo}`
                         )
                       }
                     >
@@ -254,15 +277,124 @@ const PIOrderDetail = () => {
               )}
           </div>
         ),
+        enableHiding: false, // Actions column should always be visible
       },
     ],
     [navigate, orderDetail]
   );
 
+  const MIN_VISIBLE_HIDEABLE_COLUMNS = 4; // Minimum dynamic columns to be visible
+  const MAX_VISIBLE_HIDEABLE_COLUMNS = 6; // Changed from 8 to 6 as per request
+
+  const handleColumnToggle = (columnId: string) => {
+    const column = table.getColumn(columnId);
+    if (!column) return;
+
+    const isCurrentlyVisible = columnVisibility[columnId]; // Get visibility from state
+    const hideableColumns = table
+      .getAllLeafColumns()
+      .filter((c) => c.getCanHide());
+
+    // Calculate current visible hideable count based on the columnVisibility state
+    let currentVisibleHideableCount = 0;
+    for (const hideableCol of hideableColumns) {
+      if (columnVisibility[hideableCol.id]) {
+        currentVisibleHideableCount++;
+      }
+    }
+
+    // Predict the next visible hideable count if the toggle were to happen
+    let nextVisibleHideableCount = currentVisibleHideableCount;
+    if (isCurrentlyVisible) {
+      // If it's currently visible and we're trying to hide it
+      nextVisibleHideableCount--;
+    } else {
+      // If it's currently hidden and we're trying to show it
+      nextVisibleHideableCount++;
+    }
+
+    if (
+      isCurrentlyVisible &&
+      nextVisibleHideableCount < MIN_VISIBLE_HIDEABLE_COLUMNS
+    ) {
+      toast.warning(
+        `At least ${MIN_VISIBLE_HIDEABLE_COLUMNS} columns must be visible!`
+      );
+      return;
+    }
+    if (
+      !isCurrentlyVisible &&
+      nextVisibleHideableCount > MAX_VISIBLE_HIDEABLE_COLUMNS
+    ) {
+      toast.warning(
+        `Maximum ${MAX_VISIBLE_HIDEABLE_COLUMNS} columns can be visible!`
+      );
+      return;
+    }
+    column.toggleVisibility(!isCurrentlyVisible);
+  };
+
+  const resetToDefaultColumns = () => {
+    setColumnVisibility({
+      serialNumber: true,
+      make: false, // Set to false as per request
+      model: true,
+      chassisNo: true,
+      engineNo: false, // Set to false as per request
+      bookingStatus: true,
+      piStatus: true,
+      associatedPIs: false, // Set to false as per request
+      piCreationDate: false,
+      actions: true,
+    });
+    toast.success("Columns reset to default.");
+  };
+
+  const getColumnLabel = (columnId: string): string => {
+    switch (columnId) {
+      case "serialNumber":
+        return "S.No";
+      case "make":
+        return "Make";
+      case "model":
+        return "Model";
+      case "chassisNo":
+        return "Chassis No.";
+      case "engineNo":
+        return "Engine No.";
+      case "bookingStatus":
+        return "Booking Status";
+      case "piStatus":
+        return "PI Created";
+      case "associatedPIs":
+        return "Associated PI(s)";
+      case "piCreationDate":
+        return "PI Date";
+      case "actions":
+        return "Actions";
+      default:
+        return columnId
+          .replace(/([A-Z])/g, " $1")
+          .trim()
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+  };
+
+  const handleClearFilters = () => {
+    // For PIOrderDetail, there are no search/sorting filters yet,
+    // so this primarily resets column visibility.
+    resetToDefaultColumns();
+    toast.info("Filters cleared");
+  };
+
   const table = useReactTable({
     data: orderDetail?.vehicleTracking || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
+    state: {
+      columnVisibility, // Add this
+    },
+    onColumnVisibilityChange: setColumnVisibility, // Add this
   });
 
   if (loading) {
@@ -313,9 +445,99 @@ const PIOrderDetail = () => {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
           Order Details: {orderDetail.orderId}
         </h1>
-        <Button onClick={() => navigate(-1)} variant="outline">
-          Back
-        </Button>
+        <div className="flex gap-2">
+          {" "}
+          {/* New div for action buttons */}
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={handleClearFilters}
+                  className="h-10 w-10 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <BrushCleaning className="h-4 w-4 text-gray-500 cursor-pointer" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
+                Clear Filters
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Popover>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-10 w-10 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <SlidersHorizontal className="h-4 w-4 text-gray-500 cursor-pointer" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
+                  Toggle Columns
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <PopoverContent
+              side="bottom"
+              align="end"
+              sideOffset={4}
+              className="w-60 bg-white shadow-xl border rounded-xl z-50 flex flex-col"
+            >
+              <div className="text-xs font-semibold border-b px-3 py-2 text-gray-500">
+                Visible Columns (
+                {
+                  table.getVisibleLeafColumns().filter((c) => c.getCanHide())
+                    .length
+                }
+                /{MAX_VISIBLE_HIDEABLE_COLUMNS})
+              </div>
+              <div className="max-h-65 overflow-y-auto px-1">
+                {table
+                  .getAllLeafColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => (
+                    <div
+                      key={column.id}
+                      onClick={() => handleColumnToggle(column.id)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer hover:bg-gray-100 text-sm capitalize ${
+                        column.getIsVisible()
+                          ? "text-blue-700"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="text-sm capitalize">
+                        {getColumnLabel(column.id)}
+                      </span>
+                      {column.getIsVisible() && (
+                        <Check className="h-4 w-4 text-blue-600" />
+                      )}
+                    </div>
+                  ))}
+              </div>
+              <div className="border-t p-2">
+                <PopoverClose asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={resetToDefaultColumns}
+                  >
+                    Reset to Default
+                  </Button>
+                </PopoverClose>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button onClick={() => navigate(-1)} variant="outline">
+            Back
+          </Button>
+        </div>
       </div>
 
       {/* Order Summary */}

@@ -314,47 +314,57 @@ const CreatePI = () => {
   const handleSelectOrder = async (orderId: string) => {
     if (!orderId) return;
     try {
-      const orderData = await piApi.getOrderById(orderId);
-      setSelectedOrder(orderData);
+      // 1. Fetch detailed tracking data for the order
+      const trackingData = await piApi.getOrderDetailWithTracking(orderId);
+      setSelectedOrder(trackingData); // Store the full tracking data if needed elsewhere
 
-      // Map all vehicles from order
-      const mappedVehicles = (orderData.vehicles || []).map((v: any) => ({
-        vehicle_id: v.vehicle_id || v._id || "",
-        model: v.name || v.vehicleName || "",
-        color: v.color || v.exteriorColour || "",
-        engineNo: v.engineNo || "",
-        chassisNo: v.chassisNo || "",
-        quantity: Number(v.quantity) || Number(v.qty) || 1,
-        hsn: v.hsnCode || "",
-        fob: v.fobAmount || 0,
-        freight: v.freight || 0,
-        yom: v.yom ? String(v.yom) : "",
-        fuelType: v.fuelType || "",
-        countryOfOrigin: v.countryOfOrigin || "",
-        engineCapacity: v.engineCapacity || "",
-        selected: true,
-      }));
+      // 2. Filter for vehicles that are Booked and do not yet have a PI
+      const availableToPI = trackingData.vehicleTracking.filter(
+        (v: any) => v.bookingStatus === "Booked" && v.piStatus === "Pending"
+      );
 
-      // Populate Dealer
-      const orderCompanyId = orderData.dealerId?._id || orderData.dealerId; // Order still has dealerId, which maps to a Company
-      const companyInState = companies.find((c) => c._id === orderCompanyId); // Try to find a company with this ID
-      if (companyInState && orderCompanyId) {
-        handleCompanySelect(orderCompanyId); // Use handleCompanySelect
-      } else {
-        // If company not in state, just set the ID. PIFormFields will display based on this ID.
-        setForm((prev) => ({ ...prev, company_id: orderCompanyId }));
-        // Optionally, fetch company details and add to `companies` state if not already there
-        // This would be a more robust solution for displaying details immediately.
+      if (availableToPI.length === 0) {
+        toast.warning("No booked vehicles available to PI for this order.");
       }
 
+      // 3. Map these individual units to the PI form's VehicleLineItem structure
+      const mappedVehicles: VehicleLineItem[] = availableToPI.map((v: any) => ({
+        vehicle_id: v._id, // Use the unique ID from vehicleTracking
+        model: v.model,
+        color: v.color,
+        engineNo: v.engineNo,
+        chassisNo: v.chassisNo,
+        quantity: 1, // Each entry is an individual unit
+        hsn: v.hsn,
+        fob: v.fob,
+        freight: v.freight,
+        yom: v.yom,
+        fuelType: v.fuelType,
+        countryOfOrigin: v.countryOfOrigin,
+        engineCapacity: v.engineCapacity,
+        selected: true, // Default to selected for PI creation
+      }));
+
+      // 4. Update the form's vehicleDetails and link order_id
       setForm((prev) => ({
         ...prev,
+        order_id: trackingData._id, // Link the PI to the selected order
         vehicleDetails: mappedVehicles,
       }));
 
+      // 5. Handle client selection based on the order's client
+      if (trackingData.client?._id) {
+        handleClientSelect(trackingData.client._id);
+      }
+
+      // 6. Handle company (exporter) selection - this is separate from order's dealer.
+      // The company_id for the PI (exporter) should be selected independently.
+      // Removing previous logic that tried to map order's dealer to PI's company.
+
       toast.success("Order details imported successfully!");
     } catch (err) {
-      toast.error("Failed to load order details");
+      console.error("Failed to load order details:", err);
+      toast.error("Failed to load order details.");
     }
   };
 
