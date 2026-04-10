@@ -70,7 +70,7 @@ export type PIForm = {
 export interface ProformaInvoiceAPI {
   _id: string;
   piNumber: string;
-  order_id?: string; // Assuming it's just the ID string
+  order_id?: string | { _id: string; orderId: string }; // Updated to support populated object
   client_id:
     | string
     | {

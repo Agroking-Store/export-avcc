@@ -101,13 +101,13 @@ const PIOrderDetail = () => {
   const getPIProgressBarColor = (status: string) => {
     switch (status) {
       case "Fully PI'd":
-        return "bg-green-500";
+        return "bg-green-600";
       case "Partially PI'd":
-        return "bg-amber-500";
+        return "bg-green-500";
       case "Not Started":
-        return "bg-gray-400";
+        return "bg-slate-200";
       default:
-        return "bg-gray-400";
+        return "bg-slate-200";
     }
   };
 

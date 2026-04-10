@@ -206,6 +206,19 @@ const PIDetails = () => {
                 <span className="font-mono text-zinc-700 dark:text-zinc-300">
                   {pi?.piNumber}
                 </span>
+                {pi?.order_id && (
+                  <>
+                    <span className="mx-2 text-zinc-300 dark:text-zinc-700">
+                      |
+                    </span>
+                    Order:{" "}
+                    <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                      {typeof pi.order_id === "object"
+                        ? pi.order_id.orderId
+                        : pi.order_id}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>

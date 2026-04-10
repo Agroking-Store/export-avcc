@@ -3,6 +3,7 @@ import { Order } from "../models/Order.model";
 import { Types, PipelineStage } from "mongoose";
 import { Company } from "../models/Company.model"; // Import Company model
 import { IBookingVehicle, IBooking } from "../models/Booking.model"; // Import Booking model interfaces
+import Dealer from "../models/Dealer.model";
 import { Booking } from "../models/Booking.model"; // Import Booking model
 
 const numberToWords = (num: number): string => {
@@ -214,6 +215,15 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
     status: "Booked",
   });
 
+  // Fetch dealer details if any booking exists for this order
+  let dealerName = "N/A";
+  if (bookings.length > 0 && bookings[0].dealerId) {
+    const dealer = await Dealer.findById(bookings[0].dealerId);
+    if (dealer) {
+      dealerName = dealer.name;
+    }
+  }
+
   // Fetch all relevant Proforma Invoices for this order
   const proformaInvoices = await ProformaInvoice.find({
     order_id: new Types.ObjectId(orderId),
@@ -250,10 +260,14 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       let piStatus: "PI'd" | "Pending" = "Pending";
       const associatedPIs: AssociatedPI[] = [];
 
-      if (unitChassis !== "N/A") {
+      if (unitChassis && unitChassis !== "N/A") {
+        const normalizedChassis = unitChassis.trim().toLowerCase();
+
         for (const pi of proformaInvoices) {
           const piVehicle = pi.vehicleDetails.find(
-            (vd) => vd.chassisNo === unitChassis
+            (vd) =>
+              vd.chassisNo &&
+              vd.chassisNo.trim().toLowerCase() === normalizedChassis
           );
           if (piVehicle) {
             piStatus = "PI'd";
@@ -263,6 +277,7 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
               piNumber: pi.piNumber,
               createdAt: pi.createdAt.toISOString(),
             });
+            break; // Stop looking for this vehicle once found in a PI
           }
         }
       }
@@ -329,7 +344,8 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       clientCode: (order.clientId as any)?.clientCode || "N/A",
     },
     dealer: {
-      name: (order as any).dealerId?.name || "N/A",
+      // Correctly populate dealer name from associated booking
+      name: dealerName,
     },
     createdAt: order.createdAt.toISOString(),
     totalVehiclesInOrder,
@@ -1028,6 +1044,7 @@ export const getPIsService = async (query: any) => {
 // GET PI BY ID
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
+    .populate("order_id", "orderId") // Order model se orderId field fetch karne ke liye
     .populate(
       "client_id", // Populate client_id to get original details if no snapshot
       "name clientCode email phone country address companyName" // Select fields to populate

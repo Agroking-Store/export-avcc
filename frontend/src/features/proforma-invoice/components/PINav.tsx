@@ -33,7 +33,7 @@ const PINav = () => {
       return (
         currentPath.startsWith("/proforma-invoice") &&
         !currentPath.startsWith("/proforma-invoice/dashboard") &&
-        !currentPath.startsWith("/proforma-invoice/orders-list")
+        !currentPath.startsWith("/proforma-invoice/orders")
       );
     }
     if (itemPath === "/proforma-invoice/orders-list") {
