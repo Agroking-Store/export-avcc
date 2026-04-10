@@ -37,6 +37,24 @@ export const getVehicles = async (req: Request, res: Response) => {
   }
 };
 
+export const getLatestVehicles = async (req: Request, res: Response) => {
+  try {
+    const vehicles = await vehicleService.getLatestVehiclesService();
+    res.json({
+      success: true,
+      message: 'Vehicles fetched successfully',
+      data: vehicles
+    });
+  } catch (error) {
+    console.log('Vehicles list error:', error);
+    const errMsg = error && error instanceof Error ? error.message : String(error);
+    res.status(500).json({
+      success: false,
+      message: errMsg || 'Failed to fetch vehicles'
+    });
+  }
+};
+
 export const getVehicleStats = async (req: Request, res: Response) => {
   try {
     const stats = await vehicleService.getVehicleStatsService();

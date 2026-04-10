@@ -113,3 +113,19 @@ export const bookVehicleService = async (data: BookVehicleDto): Promise<IVehicle
     throw new Error(mongooseError instanceof Error ? mongooseError.message : 'Failed to book vehicle');
   }
 };
+
+export const getLatestVehiclesService = async () => {
+  try {
+    const latestVehicles = await Vehicle.find()
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    return latestVehicles;
+  } catch (mongooseError) {
+    throw new Error(
+      mongooseError instanceof Error
+        ? mongooseError.message
+        : "Failed to get latest vehicles"
+    );
+  }
+};

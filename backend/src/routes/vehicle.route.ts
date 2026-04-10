@@ -6,7 +6,8 @@ import {
   getVehicle,
   updateVehicle,
   deleteVehicle,
-  bookVehicle
+  bookVehicle,
+  getLatestVehicles
 } from "../controllers/vehicle.controller";
 import { 
   validateCreateVehicle, 
@@ -22,6 +23,7 @@ router.use(authMiddleware);
 router.post("/", validateCreateVehicle, createVehicle);
 router.get("/", getVehicles);
 router.get("/stats", getVehicleStats);
+router.get("/latest", getLatestVehicles);
 router.get("/:id", getVehicle);
 router.put("/:id", updateVehicle);
 router.delete("/:id", deleteVehicle);

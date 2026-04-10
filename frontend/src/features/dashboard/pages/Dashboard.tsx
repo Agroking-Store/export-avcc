@@ -1,307 +1,487 @@
-import React from "react";
+import { apiConfig } from "@/config/apiConfig";
+import ClientsTable from "@/features/clients/components/ClientsTable";
+import VehiclesTable from "@/features/vehicles/components/VehiclesTable";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import {
-  Folder,
-  FileText,
-  Car,
-  MoreHorizontal,
-  Plus,
-  CheckCircle,
-  Truck,
-  Pencil,
-} from "lucide-react";
+  BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell
+} from "recharts";
+import { BarChart2, Crown, LayoutDashboard, PieChart as PieChartIcon } from "lucide-react";
+
+import { Search, Bell, DollarSign, TrendingUp, Truck, Eye, Download, MoreVertical } from "lucide-react";
+const data = [
+  { name: "Total Orders", value: 12 },
+  { name: "Vehicles Exported", value: 50 },
+  { name: "Confirmed Orders", value: 8 },
+  { name: "Total Clients", value: 2 },
+];
+
+const COLORS = ["#6366F1", "#22C55E", "#F59E0B", "#EF4444"];
+
+const shipmentData = [
+  { month: "Jan", shipments: 20 },
+  { month: "Feb", shipments: 35 },
+  { month: "Mar", shipments: 28 },
+  { month: "Apr", shipments: 45 },
+  { month: "May", shipments: 30 },
+  { month: "Jun", shipments: 50 },
+];
+const colorStyles = {
+  indigo: {
+    bg: "bg-indigo-50",
+    text: "text-indigo-600",
+    bar: "bg-indigo-500",
+    ring: "ring-indigo-100",
+    cardBg: "bg-gradient-to-br from-white to-indigo-50/40"
+  },
+  green: {
+    bg: "bg-green-50",
+    text: "text-green-600",
+    bar: "bg-green-500",
+    ring: "ring-green-100",
+    cardBg: "bg-gradient-to-br from-white to-green-50/40"
+  },
+  blue: {
+    bg: "bg-blue-50",
+    text: "text-blue-600",
+    bar: "bg-blue-500",
+    ring: "ring-blue-100",
+    cardBg: "bg-gradient-to-br from-white to-blue-50/40"
+  }
+};
+const modules = [
+  "Vehicles",
+  "Clients",
+  "Proforma Invoices",
+  "Letter of Credit",
+  "Dealers",
+  "Companies",
+];
 
 const Dashboard: React.FC = () => {
-  const quickAccess = [
-    {
-      title: "Total Vehicles",
-      value: "124 Vehicles",
-      size: "In Stock",
-      icon: <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
-    },
-    {
-      title: "Pending PI",
-      value: "18 Documents",
-      size: "Requires Action",
-      icon: <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
-    },
-    {
-      title: "In Transit",
-      value: "32 Vehicles",
-      size: "Shipping",
-      icon: <Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
-    },
-    {
-      title: "Delivered",
-      value: "74 Vehicles",
-      size: "Completed",
-      icon: (
-        <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-      ),
-    },
-  ];
+  const [activeModule, setActiveModule] = useState<string>("Dashboard");
+  //do not touch
+  const renderModuleContent = () => {
+    switch (activeModule) {
+      case "Vehicles":
+        return <VehiclesTable />;
+      case "Clients":
+        return <ClientsTable />
+      case "Proforma Invoices":
+        return <p className="text-sm">Proforma invoices data will be shown here.</p>;
+      case "Letter of Credit":
+        return <p className="text-sm">LC module data will be shown here.</p>;
+      case "Dealers":
+        return <p className="text-sm">Dealers data will be shown here.</p>;
+      case "Companies":
+        return <p className="text-sm">Companies data will be shown here.</p>;
+      default:
+        return (
+          <p className="text-sm">Default shipment activity data shown here.</p>
+        );
+    }
+  };
+  //
 
-  const activeShipments = [
-    {
-      id: 1,
-      name: "Maruti Swift - CH123456",
-      client: "Public",
-      size: "4.5 MB",
-      date: "Apr 10, 2024",
-      type: "Docs",
-    },
-    {
-      id: 2,
-      name: "Toyota Innova - CH789012",
-      client: "Public",
-      size: "2.5 MB",
-      date: "Apr 2, 2024",
-      type: "Fonts",
-    },
-    {
-      id: 3,
-      name: "Proforma Invoice #1234",
-      client: "Private (+4)",
-      size: "1.2 MB",
-      date: "Yesterday",
-      type: "Source",
-      isActive: true,
-    },
-    {
-      id: 4,
-      name: "Letter of Credit #5678",
-      client: "Private",
-      size: "12.2 MB",
-      date: "Yesterday",
-      type: "Example",
-    },
-  ];
+return (
+  <div className="p-6 bg-gradient-to-br  min-h-screen">
+    {/* Header */}
+  <div className="flex justify-between items-center mb-8 px-8 py-7 rounded-2xl border-none bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow-[0_6px_20px_rgba(0,0,0,0.15)]">
 
-  const timelineActivity = [
-    {
-      date: "Yesterday",
-      activities: [
-        { text: "You shared edit access to", target: "Client ABC", img: "C" },
-        { text: "You uploaded document", target: "PI_1234.pdf", img: "P" },
-      ],
-    },
-    {
-      date: "Apr 1, 2024",
-      activities: [
-        { text: "You changed status to", target: "In Transit", img: "T" },
-      ],
-    },
-  ];
+  {/* LEFT */}
+  <div className="flex items-center gap-3">
+    
+    {/* ICON */}
+    <div className="p-2.5 rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
+      <LayoutDashboard size={20} className="text-indigo-600" />
+    </div>
+
+    <div>
+  <h1 className="text-2xl font-semibold text-white tracking-tight">
+    Dashboard
+  </h1>
+  <p className="text-sm text-blue-100 mt-1">
+    Manage shipments, orders and export activity
+  </p>
+</div>
+
+  </div>
+
+  {/* RIGHT */}
+  <div className="flex items-center gap-3">
+
+    {/* SEARCH */}
+    <div className="hidden md:flex items-center bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-300 transition w-52">
+      <Search size={16} className="text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search..."
+        className="ml-2 outline-none text-sm bg-transparent w-full placeholder:text-gray-400"
+      />
+    </div>
+
+    {/* NOTIFICATION */}
+    <div className="relative cursor-pointer p-2 rounded-xl hover:bg-white/10 transition">
+  <Bell size={20} className="text-white" />
+  <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full shadow-sm">
+    3
+  </span>
+</div>
+
+{/* BUTTON */}
+<button className="bg-white text-indigo-600 px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm hover:bg-gray-100 hover:shadow-md active:scale-[0.98]">
+  + New Shipment
+</button>
+    {/* PROFILE */}
+    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 cursor-pointer hover:ring-2 hover:ring-indigo-300 transition" />
+
+  </div>
+</div>
+
+ <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+{[{
+  title: "Total Balance",
+  value: "$56,874",
+  icon: <DollarSign size={20} />,
+  color: "indigo",
+  change: "+4.2%"
+},
+{
+  title: "Total Sales",
+  value: "$24,575",
+  icon: <TrendingUp size={20} />,
+  color: "green",
+  change: "+2.3%"
+},
+{
+  title: "Vehicles Exported",
+  value: "50",
+  icon: <Truck size={20} />,
+  color: "blue",
+  change: "+8%"
+}].map((card, i) => {
+
+  const style = colorStyles[card.color as keyof typeof colorStyles];
 
   return (
-    <div className="font-sans animate-fade-in text-gray-800 dark:text-gray-200 transition-colors duration-200 min-h-screen p-4 lg:p-8 max-w-7xl mx-auto">
-      {/* Section 1: Sidebar & Header */}
-      <section className="py-6 px-4 lg:px-0 mb-10 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <span className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-                <Car className="w-4 h-4 text-white" />
-              </span>
-              Vehicle Export
-            </h1>
-            <div className="hidden md:flex gap-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <span className="text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 pb-1 cursor-pointer">
-                Dashboard
-              </span>
-              <span className="hover:text-gray-900 dark:hover:text-white cursor-pointer">
-                Activity
-              </span>
-              <span className="hover:text-gray-900 dark:hover:text-white cursor-pointer">
-                Calendar
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div
+      key={i}
+      className={`relative p-6 rounded-2xl border overflow-hidden
+      shadow-[0_4px_20px_rgba(0,0,0,0.04)]
+      hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)]
+      hover:-translate-y-1 transition-all duration-300 group
+      ${style.cardBg}`}
+    >
 
-      {/* Sections 2,3,4: Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 lg:gap-10 space-y-10 lg:space-y-12">
-        {/* Left: Quick Access Cards & Main Table */}
-        <div className="xl:col-span-9 space-y-10 lg:space-y-12">
-          
-          {/* Section 2: Quick Access Cards */}
-          <section className="space-y-6 pb-12">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                Quick Access
-              </h2>
-              <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {quickAccess.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="group bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-lg hover:shadow-2xl hover:scale-[1.02] hover:brightness-105 active:scale-[0.98] transition-all duration-300 cursor-pointer bg-gradient-to-br from-white to-gray-50 dark:from-gray-900/50 dark:to-gray-900"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      {item.icon}
-                    </div>
-                  </div>
-                  <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-1">
-                    {item.title}
-                  </h3>
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mb-0.5 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
-                    {item.value}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.size}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
+      
 
-          {/* Section 3: Main Table (Active Shipments) */}
-          <section className="space-y-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-              <div className="flex flex-col sm:flex-row items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                  <span className="text-gray-900 dark:text-gray-200">Home</span>
-                  <span>›</span>
-                  <span>Active Shipments</span>
-                </div>
-                <button className="mt-2 sm:mt-0 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.05] active:scale-[0.95] transition-all duration-200">
-                  <Plus className="w-4 h-4" /> Add New
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-xs text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800">
-                      <th className="font-medium p-4 pl-6">Name</th>
-                      <th className="font-medium p-4">Sharing</th>
-                      <th className="font-medium p-4">Size</th>
-                      <th className="font-medium p-4">Modified</th>
-                      <th className="font-medium p-4"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {activeShipments.map((item) => (
-                      <tr
-                        key={item.id}
-                        className={`group/row border-b border-gray-50/50 dark:border-gray-800/50 hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-blue-50/30 dark:hover:from-gray-800/60 dark:hover:to-gray-800/30 hover:shadow-sm transition-all duration-200 cursor-pointer rounded-xl mx-2 my-1 ${item.isActive ? "bg-gradient-to-r from-blue-50/70 to-indigo-50/70 dark:from-blue-950/30 dark:to-indigo-950/30 shadow-md ring-1 ring-blue-100/50 dark:ring-blue-900/50" : ""}`}
-                      >
-                        <td className="p-6 pl-8 group-hover/row:text-gray-900 dark:group-hover/row:text-gray-100 flex items-center gap-4 font-medium">
-                          <Folder
-                            className={`w-6 h-6 shrink-0 transition-transform group-hover/row:scale-110 ${item.isActive ? "text-blue-600 dark:text-blue-400" : "text-blue-500 dark:text-blue-300"}`}
-                            fill="currentColor"
-                          />
-                          <span
-                            className={`font-semibold transition-colors group-hover/row:text-gray-900 dark:group-hover/row:text-gray-100 ${item.isActive ? "text-blue-900 dark:text-blue-300" : "text-gray-800 dark:text-gray-200"}`}
-                          >
-                            {item.name}
-                          </span>
-                        </td>
-                        <td className="p-4 text-gray-500 dark:text-gray-400">
-                          {item.client}
-                        </td>
-                        <td className="p-4 text-gray-500 dark:text-gray-400">
-                          {item.size}
-                        </td>
-                        <td className="p-4 text-gray-500 dark:text-gray-400">
-                          {item.date}
-                        </td>
-                        <td className="p-4 text-right">
-                          <MoreHorizontal className="w-5 h-5 text-gray-400 inline-block hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
+      {/* TOP */}
+      <div className="flex justify-between items-start relative z-10">
+
+        {/* ICON */}
+        <div className={`p-3 rounded-xl ${style.bg} ${style.text} ring-4 ${style.ring} shadow-sm`}>
+          {card.icon}
         </div>
 
-        {/* Section 4: Right Side Panel (Source Details) */}
-        <div className="xl:col-span-3">
-          <section className="group bg-gradient-to-br from-white via-white/90 to-gray-50/50 dark:from-slate-900/80 dark:via-slate-900 dark:to-slate-800/70 rounded-3xl border border-gray-100/50 dark:border-slate-800/50 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 p-8 flex flex-col h-fit sticky top-8 self-start backdrop-blur-sm">
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                <Folder
-                  className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                  fill="currentColor"
-                />
-              </div>
-              <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                ×
-              </button>
-            </div>
-
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-              Source Details
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              1.2 MB • Yesterday • 1 Item
-            </p>
-
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-3 text-sm">
-                <span className="text-gray-500 dark:text-gray-400 font-medium">
-                  Tags
-                </span>
-                <span className="inline-flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-full text-blue-700 dark:text-blue-400 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 font-semibold cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.05]">
-                  <Pencil className="w-3 h-3" /> Edit
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md text-xs font-medium">
-                  Work
-                </span>
-                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md text-xs font-medium">
-                  Source
-                </span>
-              </div>
-            </div>
-
-            <div className="flex border-b border-gray-200/50 dark:border-slate-700/50 mb-8 gap-8 text-sm">
-              <span className="group/tab flex-1 py-3 px-4 rounded-t-xl bg-gradient-to-r from-blue-500/10 to-blue-600/20 border-b-2 border-blue-500 text-blue-700 dark:text-blue-400 dark:from-blue-950/40 dark:to-blue-900/50 dark:border-blue-400 font-semibold cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 text-center">
-                Activity
-              </span>
-              <span className="group/tab flex-1 py-3 px-4 rounded-t-xl bg-gray-100/50 dark:bg-slate-800/50 hover:bg-gray-200/70 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 text-center">
-                Comments
-              </span>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2">
-              {timelineActivity.map((group, idx) => (
-                <div key={idx} className="mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"></div>
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      {group.date}
-                    </span>
-                  </div>
-                  <div className="space-y-4 pl-4 border-l-2 border-gray-100 dark:border-gray-800 ml-1">
-                    {group.activities.map((activity, actIdx) => (
-                      <div key={actIdx} className="relative pl-4">
-                        <div className="absolute -left-[21px] top-1 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 border-4 border-white dark:border-gray-900 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">
-                          {activity.img}
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {activity.text}{" "}
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {activity.target}
-                          </span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
+        {/* CHANGE BADGE */}
+        <span className="text-xs font-semibold text-green-600 bg-green-100/80 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+          <TrendingUp size={12} /> {card.change}
+        </span>
       </div>
+
+      {/* VALUE */}
+      <h2 className="text-3xl font-bold text-gray-900 mt-5 tracking-tight">
+        {card.value}
+      </h2>
+
+      <p className="text-sm text-gray-500 mt-1">
+        {card.title}
+      </p>
+
+      {/* PROGRESS BAR */}
+      <div className="mt-5 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full ${style.bar} w-2/3 rounded-full transition-all duration-700`}
+        />
+      </div>
+
+      {/* BOTTOM FADE LINE */}
+      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-gray-200 to-transparent opacity-60" />
+
     </div>
   );
+})}
+
+
+
+  {/* PREMIUM CARD (keep as it is) */}
+  <div className="relative bg-gradient-to-r from-indigo-600 to-purple-400 text-white p-6 rounded-xl shadow-xl hover:scale-[1.02] transition overflow-hidden">
+
+  {/* ICON */}
+  <div className="absolute top-4 right-4 p-3 rounded-xl bg-white/20 backdrop-blur-md">
+  <TrendingUp size={22} className="text-white" />
+</div>
+
+  <p className="text-sm opacity-80">Upgrade</p>
+
+  <h2 className="text-lg font-semibold mt-2 max-w-[80%]">
+    Get more information and opportunities
+  </h2>
+
+  <button className="mt-4 bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition">
+    Go Pro
+  </button>
+
+</div>
+
+</div>
+    {/* CHART SECTION */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+  {/* BAR CHART */}
+  <div className="lg:col-span-2 relative bg-gradient-to-br from-white to-indigo-50/30 p-6 rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+
+    {/* TOP */}
+    <div className="flex justify-between items-center mb-4">
+
+      <div className="flex items-center gap-3">
+  <div className="p-2.5 rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
+    <BarChart2 size={20} className="text-indigo-600" />
+  </div>
+
+  <h3 className="font-semibold text-gray-800">
+    Shipment Statistics
+  </h3>
+</div>
+      <select className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 bg-white hover:border-indigo-400 focus:ring-2 focus:ring-indigo-200 transition outline-none cursor-pointer">
+        <option>Last 6 Months</option>
+        <option>Last Year</option>
+      </select>
+    </div>
+
+    {/* CHART */}
+    <div className="rounded-xl bg-white/60 backdrop-blur p-3">
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={shipmentData}>
+          <XAxis dataKey="month" stroke="#9CA3AF" />
+          <YAxis stroke="#9CA3AF" />
+          <Tooltip
+            contentStyle={{
+              borderRadius: "10px",
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            }}
+          />
+          <Bar
+            dataKey="shipments"
+            fill="#6366f1"
+            radius={[6, 6, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+
+   
+  </div>
+
+
+  {/* PIE CHART */}
+  <div className="relative bg-gradient-to-br from-white to-purple-50/30 p-6 rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+
+    {/* TOP */}
+    <div className="flex items-center gap-3 mb-4">
+  <div className="p-2.5 rounded-xl bg-purple-50 ring-1 ring-purple-100">
+    <PieChartIcon size={20} className="text-purple-600" />
+  </div>
+
+  <h3 className="font-semibold text-gray-800">
+    Order Distribution
+  </h3>
+</div>
+
+    {/* CHART */}
+    <div className="rounded-xl bg-white/60 backdrop-blur p-3 flex justify-center">
+      <ResponsiveContainer width="100%" height={260}>
+        <PieChart>
+          <Pie
+            data={data}
+            innerRadius={60}
+            outerRadius={90}
+            dataKey="value"
+            paddingAngle={3}
+          >
+            {data.map((entry, index) => (
+              <Cell
+                key={index}
+                fill={COLORS[index % COLORS.length]}
+                className="hover:opacity-80 transition"
+              />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              borderRadius: "10px",
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+
+  </div>
+
+</div>
+
+    {/* RECENT ORDERS */}
+    <div className="bg-white rounded-2xl shadow-sm mb-8 border border-gray-200 overflow-hidden">
+
+  {/* HEADER */}
+  <div className="p-6 border-b flex justify-between items-center bg-gray-50/60">
+    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+      <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+      Recent Orders
+    </h3>
+
+    <button className="text-sm text-indigo-600 font-medium hover:underline">
+      View All
+    </button>
+  </div>
+
+  {/* TABLE */}
+  <table className="w-full text-sm">
+
+    <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+      <tr>
+        <th className="text-left px-6 py-3">Order ID</th>
+        <th className="text-left px-6 py-3">Client</th>
+        <th className="text-left px-6 py-3">Vehicle</th>
+        <th className="text-left px-6 py-3">Status</th>
+        <th className="text-left px-6 py-3">Date</th>
+        <th className="text-right px-6 py-3">Actions</th>
+      </tr>
+    </thead>
+
+    <tbody className="divide-y">
+
+      {[{
+        id: "#1023",
+        client: "ABC Traders",
+        vehicle: "Toyota Land Cruiser",
+        status: "Completed",
+        color: "green"
+      },
+      {
+        id: "#1022",
+        client: "Global Motors",
+        vehicle: "BMW X5",
+        status: "Processing",
+        color: "yellow"
+      },
+      {
+        id: "#1021",
+        client: "Dubai Imports",
+        vehicle: "Mercedes G Wagon",
+        status: "Shipped",
+        color: "blue"
+      }].map((order, i) => (
+
+        <tr
+          key={i}
+          className="hover:bg-gray-50/70 transition duration-200 cursor-pointer"
+        >
+
+          <td className="px-6 py-4 font-semibold text-gray-800">
+            {order.id}
+          </td>
+
+          <td className="px-6 py-4 text-gray-600">
+            {order.client}
+          </td>
+
+          <td className="px-6 py-4 text-gray-600">
+            {order.vehicle}
+          </td>
+
+          {/* STATUS */}
+          <td className="px-6 py-4">
+            <span
+              className={`flex items-center gap-2 w-fit px-3 py-1 rounded-full text-xs font-medium bg-${order.color}-100 text-${order.color}-700`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full bg-${order.color}-500`}
+              ></span>
+              {order.status}
+            </span>
+          </td>
+
+          <td className="px-6 py-4 text-gray-500">
+            10 Apr 2026
+          </td>
+
+          {/* ACTIONS */}
+          <td className="px-6 py-4 text-right">
+            <div className="flex justify-end gap-2">
+
+              <div className="p-2 rounded-lg hover:bg-indigo-50 transition">
+                <Eye size={16} className="text-gray-500 hover:text-indigo-600" />
+              </div>
+
+              <div className="p-2 rounded-lg hover:bg-green-50 transition">
+                <Download size={16} className="text-gray-500 hover:text-green-600" />
+              </div>
+
+              <div className="p-2 rounded-lg hover:bg-gray-100 transition">
+                <MoreVertical size={16} className="text-gray-500 hover:text-gray-700" />
+              </div>
+
+            </div>
+          </td>
+
+        </tr>
+      ))}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+    {/* SHIPMENT ACTIVITY */}
+    <div className="bg-white p-6 rounded-xl shadow-sm border">
+
+      <h3 className="font-semibold text-gray-800 mb-6">
+        Shipment Activity
+      </h3>
+
+      <div className="flex gap-6 border-b mb-6 overflow-x-auto">
+
+        {modules.map((mod) => (
+          <button
+            key={mod}
+            onClick={() => setActiveModule(mod)}
+            className={`pb-2 text-sm whitespace-nowrap transition ${
+              activeModule === mod
+                ? "border-b-2 border-indigo-600 text-indigo-600 font-semibold"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {mod}
+          </button>
+        ))}
+
+      </div>
+
+      <div className="bg-gray-50 p-5 rounded-lg min-h-[120px] hover:shadow-inner transition">
+        {renderModuleContent()}
+      </div>
+
+    </div>
+
+  </div>
+);
 };
 
 export default Dashboard;
-
