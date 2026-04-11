@@ -1,81 +1,129 @@
-
-import { vehicleApi } from "../../../services/vehicleApi";
+import { apiConfig } from "@/config/apiConfig";
+import axios from "axios";
 import { useEffect, useState } from "react";
-export interface Client {
+
+export interface BookingVehicleRow {
+    dealerName: string;
+    date: string;
+    status: "Draft" | "Booked";
+
+    hsnCode: string;
     name: string;
     color: string;
-    engineNo: string;
     chassisNo: string;
-    status: 'Available' | 'Booked';
+    engineNo: string;
+    quantity: number;
+    srNo?: string;
+    fobAmount?: number;
 }
-const VehiclesTable = () => {
 
-    const [vehicle, setVehicle] = useState<Client[]>([]);
+const BookingVehiclesTable = () => {
+
+    const [data, setData] = useState<BookingVehicleRow[]>([]);
     const [loading, setLoading] = useState(false);
-    const fetchVehicle = async () => {
+
+    const fetchData = async () => {
         try {
             setLoading(true);
 
-            const res = await vehicleApi.getLatestVehicles()
+            const res = await axios.get(
+                `${apiConfig.baseURL}/bookings/latestVehicles`
+            );
 
-            if (res.success) {
-                setVehicle(res.data!);
-                console.log(vehicle)
+            if (res.data.success) {
+                setData(res.data.data); // already flattened from backend
             }
+
         } catch (error) {
-            console.error("Error fetching vehicle", error);
+            console.error("Error fetching bookings", error);
         } finally {
             setLoading(false);
         }
     };
-    useEffect(() => {
-        fetchVehicle();
-    }, []);
-    if (loading) return <p>Loading vehicle...</p>;
-    if (vehicle.length === 0 || vehicle === undefined) return <p>No vehicle found</p>;
 
-    return <>
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    if (loading) return <p>Loading bookings...</p>;
+    if (!data.length) return <p>No bookings found</p>;
+
+    return (
         <div className="bg-white rounded-xl shadow border">
+
             {/* Header */}
             <div className="p-4 border-b flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Clients</h2>
+                <h2 className="text-lg font-semibold">Dealer Bookings</h2>
                 <span className="text-sm text-gray-500">
-                    Total: {vehicle.length}
+                    Latest 5 Vehicles
                 </span>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full text-sm text-left">
+
                     <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
                         <tr>
-                            <th className="px-4 py-3">Engine No.</th>
-                            <th className="px-4 py-3">Name</th>
+                            <th className="px-4 py-3">Dealer</th>
+                            <th className="px-4 py-3">Vehicle</th>
                             <th className="px-4 py-3">Color</th>
-                            <th className="px-4 py-3">Chassis No.</th>
-                            <th className="px-4 py-3">status</th>
+                            <th className="px-4 py-3">Engine No</th>
+                            <th className="px-4 py-3">Chassis No</th>
+                            <th className="px-4 py-3">Qty</th>
+                            <th className="px-4 py-3">FOB</th>
+                            <th className="px-4 py-3">Status</th>
                         </tr>
                     </thead>
 
                     <tbody className="divide-y">
-                        {vehicle.map((Vehicle) => (
-                            <tr
-                                key={Vehicle.engineNo}
-                                className="hover:bg-gray-50 transition"
-                            >
-                                <td className="px-4 py-3 text-blue-600">{Vehicle.engineNo}</td>
-                                <td className="px-4 py-3">{Vehicle.name}</td>
-                                <td className="px-4 py-3">{Vehicle.color}</td>
-                                <td className="px-4 py-3 ">{Vehicle.chassisNo}</td>
-                                <td className={`px-4 py-3 ${Vehicle.status === "Available" ? "text-green-800" : "text-blue-800"}`}>{Vehicle.status}</td>
+                        {data.map((v, i) => (
+                            <tr key={i} className="hover:bg-gray-50 transition">
+
+                                <td className="px-4 py-3">
+                                    {v.dealerName}
+                                </td>
+
+                                <td className="px-4 py-3 font-medium">
+                                    {v.name}
+                                </td>
+
+                                <td className="px-4 py-3">
+                                    {v.color}
+                                </td>
+
+                                <td className="px-4 py-3 text-blue-600">
+                                    {v.engineNo}
+                                </td>
+
+                                <td className="px-4 py-3">
+                                    {v.chassisNo}
+                                </td>
+
+                                <td className="px-4 py-3">
+                                    {v.quantity}
+                                </td>
+
+                                <td className="px-4 py-3">
+                                    {v.fobAmount}
+                                </td>
+
+                                <td className={`px-4 py-3 ${
+                                    v.status === "Booked"
+                                        ? "text-green-700"
+                                        : "text-yellow-600"
+                                }`}>
+                                    {v.status}
+                                </td>
+
                             </tr>
                         ))}
                     </tbody>
+
                 </table>
             </div>
         </div>
-    </>
+    );
 };
 
-
-export default VehiclesTable;
+export default BookingVehiclesTable;

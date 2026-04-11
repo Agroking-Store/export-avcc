@@ -81,5 +81,58 @@ export class BookingService {
     return await Booking.find().sort({ createdAt: -1 }).limit(limit).populate('dealerId', 'name');
   }
 }
+export const getLatestBookingVehiclesService = async () => {
+  try {
+    const bookings = await Booking.aggregate([
+      // 🔥 flatten vehicles array
+      { $unwind: "$vehicles" },
+
+      // 🔗 join dealer
+      {
+        $lookup: {
+          from: "dealers",
+          localField: "dealerId",
+          foreignField: "_id",
+          as: "dealer",
+        },
+      },
+      { $unwind: "$dealer" },
+
+      // 🧹 shape output
+      {
+        $project: {
+          _id: 0,
+          bookingId: "$_id",
+          date: 1,
+          status: 1,
+          dealerName: "$dealer.name",
+
+          hsnCode: "$vehicles.hsnCode",
+          name: "$vehicles.name",
+          color: "$vehicles.color",
+          chassisNo: "$vehicles.chassisNo",
+          engineNo: "$vehicles.engineNo",
+          quantity: "$vehicles.quantity",
+          srNo: "$vehicles.srNo",
+          fobAmount: "$vehicles.fobAmount",
+        },
+      },
+
+      // ⏱ latest first
+      { $sort: { createdAt: -1 } },
+
+      // 🎯 only 5
+      { $limit: 5 },
+    ]);
+
+    return {
+      count: bookings.length,
+      data: bookings,
+    };
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to fetch booking vehicles");
+  }
+};
 
 export default BookingService;

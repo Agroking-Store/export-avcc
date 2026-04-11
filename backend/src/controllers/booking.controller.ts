@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import BookingService from '../services/booking.service';
+import BookingService, { getLatestBookingVehiclesService } from '../services/booking.service';
 import { ResponseUtil } from '../utils/response';
 import { validateCreateBooking, validateUpdateBooking } from '../validations/booking.validation';
 import { CreateBookingDto } from '../dto/booking.dto';
@@ -72,5 +72,20 @@ export const deleteBooking = async (req: Request, res: Response) => {
     ResponseUtil.success(res, booking, 'Booking deleted successfully');
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+};
+export const getLatestBookingVehicles = async (req: Request, res: Response) => {
+  try {
+    const result = await getLatestBookingVehiclesService();
+
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

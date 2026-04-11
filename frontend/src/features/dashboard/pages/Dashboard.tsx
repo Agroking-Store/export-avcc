@@ -262,8 +262,8 @@ return (
     </div>
 
     {/* CHART */}
-    <div className="rounded-xl bg-white/60 backdrop-blur p-3">
-      <ResponsiveContainer width="100%" height={260}>
+    <div className="rounded-xl bg-white/60 backdrop-blur p-3 ">
+      <ResponsiveContainer width="100%" height={360}>
         <BarChart data={shipmentData}>
           <XAxis dataKey="month" stroke="#9CA3AF" />
           <YAxis stroke="#9CA3AF" />
@@ -302,34 +302,57 @@ return (
 </div>
 
     {/* CHART */}
-    <div className="rounded-xl bg-white/60 backdrop-blur p-3 flex justify-center">
-      <ResponsiveContainer width="100%" height={260}>
-        <PieChart>
-          <Pie
-            data={data}
-            innerRadius={60}
-            outerRadius={90}
-            dataKey="value"
-            paddingAngle={3}
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={index}
-                fill={COLORS[index % COLORS.length]}
-                className="hover:opacity-80 transition"
-              />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              borderRadius: "10px",
-              border: "none",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-            }}
+    <div className="rounded-xl bg-white/60 backdrop-blur p-3 flex flex-col items-center">
+
+  <ResponsiveContainer width="100%" height={260}>
+    <PieChart>
+      <Pie
+        data={data}
+        innerRadius={60}
+        outerRadius={90}
+        dataKey="value"
+        paddingAngle={3}
+      >
+        {data.map((entry, index) => (
+          <Cell
+            key={index}
+            fill={COLORS[index % COLORS.length]}
+            className="hover:opacity-80 transition"
           />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+        ))}
+      </Pie>
+
+      <Tooltip
+        contentStyle={{
+          borderRadius: "10px",
+          border: "none",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
+      />
+    </PieChart>
+  </ResponsiveContainer>
+
+  {/* ✅ Custom Legend (outside chart) */}
+  <div className="mt-3 flex flex-wrap gap-3 justify-center">
+    {data.map((entry, index) => (
+      <div
+        key={index}
+        className="flex items-center gap-2 text-sm"
+      >
+        <span
+          className="w-3 h-3 rounded-full"
+          style={{
+            backgroundColor: COLORS[index % COLORS.length],
+          }}
+        />
+        <span className="text-gray-700">
+          {entry.name} : {entry.value}
+        </span>
+      </div>
+    ))}
+  </div>
+
+</div>
 
   </div>
 
