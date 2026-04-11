@@ -44,6 +44,7 @@ export interface CreateCompanyForm {
   address: IAddressDetails;
   bankDetails: IBankDetails; // Made required for CreateCompanyForm as default is provided
   gstNumber: string;
+  isActive?: boolean; // Added isActive for updating company status
 }
 
 export interface UpdateCompanyForm {
@@ -54,4 +55,5 @@ export interface UpdateCompanyForm {
   address?: IAddressDetails;
   bankDetails?: IBankDetails; // Added bankDetails to UpdateCompanyForm
   gstNumber?: string;
+  isActive?: boolean; // Added isActive for updating company status
 }

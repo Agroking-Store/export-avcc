@@ -243,9 +243,10 @@ const CompanyList: React.FC = () => {
                     variant="outline"
                     size="sm"
                     className="h-10 w-10 p-0 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/companies/edit/${row.original._id}`)
-                    }
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent the row's onClick from firing
+                      navigate(`/companies/edit/${row.original._id}`);
+                    }}
                   >
                     <FilePenLine className="h-6 w-6 text-blue-600 cursor-pointer" />
                   </Button>
@@ -308,9 +309,6 @@ const CompanyList: React.FC = () => {
     manualSorting: true,
   });
 
-  console.log("Companies state:", companies);
-  console.log("Table row model rows:", table.getRowModel().rows);
-
   return (
     <div className="p-4 md:p-6 lg:p-8 mx-auto space-y-4 md:space-y-6">
       {/* HEADER */}
@@ -341,7 +339,7 @@ const CompanyList: React.FC = () => {
         setPagination={setPagination}
         setColumnVisibility={setColumnVisibility}
         generatePagination={generatePagination}
-        loading={loading}
+        piLoading={loading}
         statusFilter={statusFilter} // Pass statusFilter
         setStatusFilter={setStatusFilter} // Pass setStatusFilter
       />

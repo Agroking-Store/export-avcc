@@ -7,11 +7,11 @@ import {
   getSuggestedNextPiNumberService, // Import the new service
   getOrdersWithPIStatusService,
   updatePIStatusService,
-  getOrderDetailsWithVehiclePIStatusService,
   getDashboardKPIsService,
   getPIStatusDistributionService,
   getMonthlyPIValueTrendService,
   getTopClientsByPIValueService,
+  getOrderDetailWithTrackingService, // Import the new service
 } from "../services/proforma-invoice.service";
 
 // CREATE PI
@@ -22,6 +22,22 @@ export const createPI = async (req: Request, res: Response) => {
     res.status(201).json(pi);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// GET Order Details with PI Tracking
+export const getOrderDetailWithTracking = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderId } = req.params;
+    const orderDetails = await getOrderDetailWithTrackingService(
+      orderId as string
+    );
+    res.status(200).json(orderDetails);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
   }
 };
 
@@ -80,12 +96,10 @@ export const getMonthlyPIValueTrend = async (req: Request, res: Response) => {
     const trend = await getMonthlyPIValueTrendService(timeRange as string);
     res.status(200).json(trend);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch monthly PI value trend",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to fetch monthly PI value trend",
+      error: error.message,
+    });
   }
 };
 
@@ -99,12 +113,10 @@ export const getTopClientsByPIValue = async (req: Request, res: Response) => {
     );
     res.status(200).json(clients);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch top clients by PI value",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to fetch top clients by PI value",
+      error: error.message,
+    });
   }
 };
 
@@ -124,21 +136,6 @@ export const getOrdersWithPIStatus = async (req: Request, res: Response) => {
   try {
     const ordersWithPIStatus = await getOrdersWithPIStatusService(req.query);
     res.json(ordersWithPIStatus);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// GET ORDER DETAILS WITH VEHICLE PI STATUS
-export const getOrderDetailsWithVehiclePIStatus = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const orderDetails = await getOrderDetailsWithVehiclePIStatusService(
-      req.params.orderId as string
-    );
-    res.json(orderDetails);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

@@ -44,6 +44,7 @@ const createCompanySchema = Joi.object<CreateCompanyDto>({
   address: addressDetailsSchema,
   gstNumber: Joi.string().trim(),
   bankDetails: bankDetailsSchema, // Add bankDetails to create schema
+  isActive: Joi.boolean().optional(), // Allow isActive for creation
 });
 
 const updateCompanySchema = Joi.object<UpdateCompanyDto>({
@@ -56,6 +57,7 @@ const updateCompanySchema = Joi.object<UpdateCompanyDto>({
   address: addressDetailsSchema,
   gstNumber: Joi.string().trim(),
   bankDetails: bankDetailsSchema, // Add bankDetails to update schema
+  isActive: Joi.boolean().optional(), // Allow isActive for updates
 }).min(1); // At least one field is required for update
 
 export const validateCreateCompany = (data: CreateCompanyDto) => {

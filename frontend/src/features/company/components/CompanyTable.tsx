@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { type NavigateFunction } from "react-router-dom";
 import { flexRender, Table as ReactTableType } from "@tanstack/react-table";
 import {
-  Loader2,
+  Inbox, // Added Inbox icon
   SlidersHorizontal, // Keep SlidersHorizontal for column visibility toggle
   BrushCleaning, // Changed Check to BrushCleaning icon
   Check,
@@ -30,10 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Added Select components
+import { TableCell, TableRow } from "@/components/ui/table";
 
 interface CompanyTableProps {
   table: ReactTableType<Company>;
-  loading: boolean;
+  piLoading: boolean;
   navigate: NavigateFunction;
   // companies: Company[]; // Removed as data is accessed via table instance
   pageCount: number; // Added pageCount
@@ -54,8 +55,7 @@ interface CompanyTableProps {
 }
 
 const CompanyTable: React.FC<CompanyTableProps> = ({
-  table,
-  loading,
+  table, // Add navigate to the destructuring of props
   navigate, // Add navigate to the destructuring of props
   searchInput,
   setSearchInput,
@@ -66,7 +66,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   generatePagination,
   statusFilter, // Destructure new prop
   setStatusFilter, // Destructure new prop
-  // companies, // Removed from props
+  piLoading,
 }) => {
   const MIN_COMPANY_COLUMNS = 4; // Minimum dynamic columns to be visible (companyId, name, isActive + 1 more)
   const MAX_COMPANY_COLUMNS = 6; // Maximum dynamic columns to be visible
@@ -189,9 +189,15 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
               position="popper"
               className="z-50"
             >
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="all" className="text-base cursor-pointer">
+                All
+              </SelectItem>
+              <SelectItem value="active" className="text-base cursor-pointer">
+                Active
+              </SelectItem>
+              <SelectItem value="inactive" className="text-base cursor-pointer">
+                Inactive
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -310,25 +316,55 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
               ))}
             </thead>
             <tbody>
-              {loading ? (
+              {piLoading ? (
+                Array.from({
+                  length: table.getState().pagination.pageSize,
+                }).map((_, rowIndex) => (
+                  <TableRow key={rowIndex} className="hover:bg-gray-100">
+                    <TableCell>
+                      <div className="h-4 w-6 rounded bg-gray-200 animate-pulse" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-20 rounded bg-gray-200 animate-pulse" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-32 rounded bg-gray-200 animate-pulse mb-2" />
+                      <div className="h-3 w-16 rounded bg-gray-200 animate-pulse" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-16 rounded bg-gray-200 animate-pulse mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-6 w-24 rounded-full bg-gray-200 animate-pulse mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-20 rounded bg-gray-200 animate-pulse mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-center gap-2">
+                        <div className="h-9 w-9 rounded bg-gray-200 animate-pulse" />
+                        <div className="h-9 w-9 rounded bg-gray-200 animate-pulse" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowCount() === 0 ? (
                 <tr>
                   <td
-                    colSpan={table.getAllColumns().length}
-                    className="text-center py-8"
+                    colSpan={
+                      table.getAllColumns().length
+                    } /* Use table.getAllColumns().length here */
+                    className="h-40 text-center p-4"
                   >
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-500 mr-3" />
-                      Loading companies...
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl min-h-40 bg-gray-50 text-center p-8">
+                      <Inbox className="h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-gray-600 font-medium text-lg">
+                        No Companies found!
+                      </p>
+                      <p className="text-gray-400">
+                        Adjust your filters or search term.
+                      </p>
                     </div>
-                  </td>
-                </tr>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="text-center py-8"
-                  >
-                    No companies found.
                   </td>
                 </tr>
               ) : (
@@ -374,12 +410,20 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                   placeholder={table.getState().pagination.pageSize}
                 />
               </SelectTrigger>
-              <SelectContent>
-                {[5, 10, 25, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={pageSize.toString()}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
+              <SelectContent position="popper" sideOffset={4}>
+                {[5, 10, 25, 50].map(
+                  (
+                    pageSize // Increased dropdown text size for pagination selector
+                  ) => (
+                    <SelectItem
+                      key={pageSize}
+                      value={pageSize.toString()}
+                      className="text-base cursor-pointer"
+                    >
+                      {pageSize}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>

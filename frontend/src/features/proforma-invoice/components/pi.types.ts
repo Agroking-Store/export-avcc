@@ -31,6 +31,7 @@ export type BankDetails = {
 };
 
 export type PIForm = {
+  order_id?: string; // Added to link PI to an Order
   piNumber: string;
   client_id: string;
   company_id: string;
@@ -69,7 +70,7 @@ export type PIForm = {
 export interface ProformaInvoiceAPI {
   _id: string;
   piNumber: string;
-  order_id?: string; // Assuming it's just the ID string
+  order_id?: string | { _id: string; orderId: string }; // Updated to support populated object
   client_id:
     | string
     | {
@@ -149,4 +150,56 @@ export interface OrderWithPIStatus {
   overallPIStatus: string;
   createdAt: string; // Added for 'Created' column
   updatedAt: string; // Added for 'Last Updated' column
+}
+
+// New interfaces for Order Detail with Tracking
+export interface AssociatedPI {
+  piId: string;
+  piNumber: string;
+  companyName: string;
+  createdAt: string;
+}
+
+export interface VehicleTracking {
+  _id: string;
+  make: string;
+  model: string;
+  chassisNo: string;
+  engineNo: string;
+  color: string;
+  hsn: string;
+  yom: string;
+  fuelType: string;
+  countryOfOrigin: string;
+  engineCapacity: string;
+  dealerName: string;
+  fob: number;
+  freight: number;
+  quantity: number;
+  bookingStatus: "Booked" | "Draft";
+  piStatus: "PI'd" | "Pending";
+  associatedPIs: AssociatedPI[];
+}
+
+export interface OrderDetailData {
+  _id: string;
+  orderId: string;
+  voucherNo: string;
+  client: {
+    _id: string;
+    name: string;
+    clientCode: string;
+    email?: string;
+    phone?: string;
+    companyName?: string;
+    address?: AddressDetails;
+    country?: string;
+  };
+  dealer: { name: string };
+  createdAt: string;
+  totalVehiclesInOrder: number;
+  totalVehiclesPIed: number;
+  pendingVehicles: number;
+  overallPIStatus: string;
+  vehicleTracking: VehicleTracking[];
 }
