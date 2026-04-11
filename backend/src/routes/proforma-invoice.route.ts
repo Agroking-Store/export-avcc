@@ -10,8 +10,8 @@ import {
   getDashboardKPIs, // Import the new controller for dashboard KPIs
   getMonthlyPIValueTrend, // Import new controller
   getTopClientsByPIValue, // Import new controller
-  updatePIStatus,
-  getOrderDetailsWithVehiclePIStatus, // Import the controller for the new route
+  getOrderDetailWithTracking, // Import the new controller for order details with tracking
+  updatePIStatus, // Import the controller for the new route
 } from "../controllers/proforma-invoice.controller";
 import { downloadProformaInvoice } from "../controllers/pdf.controller";
 import { validate } from "../middleware/validate.middleware";
@@ -25,11 +25,10 @@ router.get("/top-clients-by-pi-value", getTopClientsByPIValue); // New route for
 router.get("/pi-status-distribution", getPIStatusDistribution); // New route for PI status distribution
 router.get("/next-pi-number", getSuggestedNextPiNumber); // New route for suggested PI number
 router.get("/orders-with-pi-status", getOrdersWithPIStatus); // Route to get a list of orders with their overall PI status (for the PIList page)
+router.get("/orders/:orderId/details", getOrderDetailWithTracking); // New route for detailed order tracking
 router.get("/", getPIs);
 router.get("/:id/pdf", downloadProformaInvoice);
 router.get("/:id", getPIById);
 router.put("/:id", validate(createPIValidationSchema), updatePI); // Keep this line
 router.patch("/:id/status", updatePIStatus);
-router.get("/orders/:orderId/details", getOrderDetailsWithVehiclePIStatus); // New route for PI Order Detail page
-
 export default router;

@@ -76,10 +76,10 @@ const AppNavigationSidebar: React.FC = () => {
                   ? location.pathname.startsWith("/dealers")
                   : item.name === "Clients"
                   ? location.pathname.startsWith("/clients") ||
-                    location.pathname.startsWith("/orders")
+                    location.pathname.startsWith("/orders") // This condition is fine
                   : item.name === "Companies"
                   ? location.pathname.startsWith("/companies")
-                  : location.pathname === item.path;
+                  : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
 
               return (
                 <SidebarMenuItem key={item.name}>
@@ -89,9 +89,10 @@ const AppNavigationSidebar: React.FC = () => {
                     isActive={isActive}
                     tooltip={item.name}
                     className={cn(
-                      "p-6 text-lg transition-colors rounded-lg", // Increase padding, add smooth color transitions, and rounded border
-                      isActive
-                        ? "bg-blue-200 text-blue-700 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800 rounded-4xl" // Apply darker active state styles with darker blue border
+                      // Increase padding, add smooth color transitions, and rounded border
+                      "p-6 text-lg transition-colors rounded-lg",
+                      isActive // Apply darker active state styles with darker blue border
+                        ? "bg-blue-700 text-white dark:bg-blue-800 dark:text-blue-100 dark:border-blue-700 rounded-4xl"
                         : "text-gray-500 hover:bg-blue-200 dark:hover:bg-blue-800 dark:border-gray-700 rounded-4xl" // Default/hover state styles
                     )}
                   >

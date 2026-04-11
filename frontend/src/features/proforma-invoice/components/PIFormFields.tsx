@@ -92,11 +92,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
     <>
       {/* LINK ORDER */}
       <div>
-        <h3 className={sectionTitleClass}>Link Dealer Order</h3>
+        <h3 className={sectionTitleClass}>Fetch Order</h3>
         <div className="max-w-md">
           <div>
             <label className={labelClass}>
-              Select Order (Auto-fills Dealer & Vehicles)
+              Choose Order (Auto-fills Client & Vehicles)
             </label>
             <SearchableCombobox
               data={ordersWithDisplay}
@@ -106,20 +106,29 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               displayField="displayName"
               valueField="_id"
               placeholder="Search and select an order..."
-              searchPlaceholder="Search by Order ID..."
+              searchPlaceholder="Search by Order No or Client..."
               emptyMessage="No orders found."
-              renderItem={(item, index) => (
-                <div className="flex items-center justify-between w-full gap-4">
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="w-5 text-xs text-gray-400 font-mono">
-                      {index + 1}.
-                    </span>
-                    <span className="font-medium truncate">
-                      {item.orderId} - {item.dealerName || "Unknown"}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                    {item.date ? new Date(item.date).toLocaleDateString() : "-"}
+              header={
+                <div className="grid grid-cols-[40px_110px_1fr_100px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
+                  <div>S.No</div>
+                  <div>Order No</div>
+                  <div>Client Name</div>
+                  <div className="text-right">Date</div>
+                </div>
+              }
+              renderItem={(item) => (
+                <div className="grid grid-cols-[40px_110px_1fr_100px] gap-2 w-full items-center py-0.5">
+                  <span className="text-xs text-gray-400 font-mono">
+                    {item.serialNumber}.
+                  </span>
+                  <span className="font-bold text-blue-600 truncate">
+                    {item.orderNo}
+                  </span>
+                  <span className="truncate text-gray-700 font-medium">
+                    {item.clientName}
+                  </span>
+                  <span className="text-[11px] text-gray-500 text-right whitespace-nowrap">
+                    {item.dateFormatted}
                   </span>
                 </div>
               )}

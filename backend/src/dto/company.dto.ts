@@ -20,6 +20,7 @@ export interface CreateCompanyDto {
   address?: IAddressDetailsDto;
   bankDetails?: IBankDetailsDto; // Added bankDetails to DTO
   gstNumber?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateCompanyDto {
@@ -29,4 +30,5 @@ export interface UpdateCompanyDto {
   address?: IAddressDetailsDto;
   bankDetails?: IBankDetailsDto; // Added bankDetails to DTO
   gstNumber?: string;
+  isActive?: boolean;
 }

@@ -2,6 +2,9 @@ import ProformaInvoice from "../models/ProformaInvoice.model";
 import { Order } from "../models/Order.model";
 import { Types, PipelineStage } from "mongoose";
 import { Company } from "../models/Company.model"; // Import Company model
+import { IBookingVehicle, IBooking } from "../models/Booking.model"; // Import Booking model interfaces
+import Dealer from "../models/Dealer.model";
+import { Booking } from "../models/Booking.model"; // Import Booking model
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
@@ -165,6 +168,204 @@ export const createPIService = async (data: any) => {
   });
 
   return await pi.save();
+};
+
+// Helper types for the service function's return value, mirroring frontend's VehicleTracking and AssociatedPI
+interface AssociatedPI {
+  piId: string;
+  piNumber: string;
+  companyName: string;
+  createdAt: string;
+}
+
+interface VehicleTracking {
+  _id: string;
+  make: string;
+  model: string;
+  chassisNo: string;
+  engineNo: string;
+  color: string;
+  hsn: string;
+  yom: string;
+  fuelType: string;
+  countryOfOrigin: string;
+  engineCapacity: string;
+  dealerName: string;
+  fob: number;
+  freight: number;
+  quantity: number;
+  bookingStatus: "Booked" | "Draft";
+  piStatus: "PI'd" | "Pending";
+  associatedPIs: AssociatedPI[];
+}
+
+// New service to get detailed order tracking with PI and Booking status
+export const getOrderDetailWithTrackingService = async (orderId: string) => {
+  const order = await Order.findById(orderId).populate(
+    "clientId",
+    "name clientCode email phone companyName address country"
+  );
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // Fetch all relevant bookings for this order
+  // We need to find bookings that contain vehicles linked to this order
+  const bookings = await Booking.find({
+    orderId: new Types.ObjectId(orderId),
+    status: "Booked",
+  }).populate("dealerId", "name");
+
+  // Collect all unique dealer names for the summary
+  const uniqueDealers = new Set<string>();
+  bookings.forEach((b) => {
+    if ((b.dealerId as any)?.name) uniqueDealers.add((b.dealerId as any).name);
+  });
+  const summaryDealerDisplay =
+    uniqueDealers.size > 1
+      ? `${uniqueDealers.size} Dealers Involved`
+      : uniqueDealers.values().next().value || "N/A";
+
+  // Fetch all relevant Proforma Invoices for this order
+  const proformaInvoices = await ProformaInvoice.find({
+    order_id: new Types.ObjectId(orderId),
+  }).populate("company_id", "name");
+
+  const vehicleTracking: VehicleTracking[] = [];
+  let totalVehiclesInOrder = 0;
+  let totalVehiclesPIed = 0;
+  let globalIndex = 0;
+
+  for (const vehicleItem of order.vehicles) {
+    const qty = vehicleItem.quantity || 1;
+    totalVehiclesInOrder += qty;
+
+    for (let qIdx = 0; qIdx < qty; qIdx++) {
+      const currentSrNo = String(globalIndex + 1);
+      globalIndex++;
+
+      // 1. Find the individual booking for this specific unit using srNo
+      let foundBookingVehicle: any = null;
+      let unitDealerName = "N/A";
+      for (const b of bookings) {
+        const bv = b.vehicles.find((v) => String(v.srNo) === currentSrNo);
+        if (bv) {
+          foundBookingVehicle = bv;
+          unitDealerName = (b.dealerId as any)?.name || "N/A";
+          break;
+        }
+      }
+
+      const unitChassis = foundBookingVehicle?.chassisNo || "N/A";
+      const unitEngine = foundBookingVehicle?.engineNo || "N/A";
+      const bookingStatus = foundBookingVehicle ? "Booked" : "Draft";
+
+      // 2. Determine PI Status using the Chassis Number from the Booking
+      let piStatus: "PI'd" | "Pending" = "Pending";
+      const associatedPIs: AssociatedPI[] = [];
+
+      if (unitChassis && unitChassis !== "N/A") {
+        const normalizedChassis = unitChassis.trim().toLowerCase();
+
+        for (const pi of proformaInvoices) {
+          const piVehicle = pi.vehicleDetails.find(
+            (vd) =>
+              vd.chassisNo &&
+              vd.chassisNo.trim().toLowerCase() === normalizedChassis
+          );
+          if (piVehicle) {
+            piStatus = "PI'd";
+            totalVehiclesPIed += 1;
+            associatedPIs.push({
+              piId: pi._id.toString(),
+              piNumber: pi.piNumber,
+              companyName: (pi.company_id as any)?.name || "N/A",
+              createdAt: pi.createdAt.toISOString(),
+            });
+            break; // Stop looking for this vehicle once found in a PI
+          }
+        }
+      }
+
+      vehicleTracking.push({
+        _id: new Types.ObjectId().toString(),
+        make:
+          (vehicleItem as any).make ||
+          vehicleItem.vehicleName ||
+          vehicleItem.name ||
+          "N/A",
+        model: vehicleItem.vehicleName || vehicleItem.name || "N/A",
+        chassisNo: unitChassis,
+        engineNo: unitEngine,
+        color: foundBookingVehicle?.color || vehicleItem.color || "N/A",
+        hsn:
+          foundBookingVehicle?.hsnCode || (vehicleItem as any).hsnCode || "N/A",
+        yom: foundBookingVehicle?.yom
+          ? String(foundBookingVehicle.yom)
+          : (vehicleItem as any).yom || "N/A",
+        fuelType:
+          foundBookingVehicle?.fuelType ||
+          (vehicleItem as any).fuelType ||
+          "N/A",
+        countryOfOrigin:
+          foundBookingVehicle?.countryOfOrigin ||
+          (vehicleItem as any).countryOfOrigin ||
+          "N/A",
+        dealerName: unitDealerName,
+        engineCapacity:
+          foundBookingVehicle?.engineCapacity ||
+          (vehicleItem as any).engineCapacity ||
+          "N/A",
+        fob:
+          foundBookingVehicle?.fobAmount || (vehicleItem as any).fobAmount || 0,
+        freight:
+          foundBookingVehicle?.freight || (vehicleItem as any).freight || 0,
+        quantity: 1, // Individual unit
+        bookingStatus,
+        piStatus,
+        associatedPIs,
+      });
+    }
+  }
+
+  const pendingVehicles = totalVehiclesInOrder - totalVehiclesPIed;
+  let overallPIStatus: string;
+  if (totalVehiclesInOrder === 0) {
+    overallPIStatus = "No Vehicles in Order";
+  } else if (totalVehiclesPIed === 0) {
+    overallPIStatus = "Not Started";
+  } else if (totalVehiclesPIed === totalVehiclesInOrder) {
+    overallPIStatus = "Fully PI'd";
+  } else {
+    overallPIStatus = "Partially PI'd";
+  }
+
+  return {
+    _id: order._id.toString(),
+    orderId: order.orderId,
+    voucherNo: order.voucherNo,
+    client: {
+      _id: (order.clientId as any)?._id?.toString() || "N/A", // Add client _id
+      name: (order.clientId as any)?.name || "N/A",
+      clientCode: (order.clientId as any)?.clientCode || "N/A",
+      email: (order.clientId as any)?.email,
+      phone: (order.clientId as any)?.phone,
+      companyName: (order.clientId as any)?.companyName,
+      address: (order.clientId as any)?.address,
+      country: (order.clientId as any)?.country,
+    },
+    dealer: {
+      // Correctly populate dealer name from associated booking
+      name: summaryDealerDisplay,
+    },
+    createdAt: order.createdAt.toISOString(),
+    totalVehiclesInOrder,
+    totalVehiclesPIed,
+    pendingVehicles,
+    overallPIStatus,
+    vehicleTracking,
+  };
 };
 
 // Helper to get date ranges for filtering
@@ -855,6 +1056,7 @@ export const getPIsService = async (query: any) => {
 // GET PI BY ID
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
+    .populate("order_id", "orderId") // Order model se orderId field fetch karne ke liye
     .populate(
       "client_id", // Populate client_id to get original details if no snapshot
       "name clientCode email phone country address companyName" // Select fields to populate
@@ -917,210 +1119,4 @@ export const updatePIStatusService = async (id: string, status: string) => {
   );
 
   return updated;
-};
-
-// GET ORDER DETAILS WITH VEHICLE PI STATUS
-export const getOrderDetailsWithVehiclePIStatusService = async (
-  orderId: string
-) => {
-  const orderObjectId = new Types.ObjectId(orderId);
-
-  const pipeline: PipelineStage[] = [
-    // 1. Match the specific order
-    { $match: { _id: orderObjectId } },
-    // 2. Lookup client and dealer details
-    {
-      $lookup: {
-        from: "clients",
-        localField: "clientId",
-        foreignField: "_id",
-        as: "client",
-      },
-    },
-    { $unwind: { path: "$client", preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: "dealers",
-        localField: "dealerId",
-        foreignField: "_id",
-        as: "dealer",
-      },
-    },
-    { $unwind: { path: "$dealer", preserveNullAndEmptyArrays: true } },
-    // 3. Lookup all ProformaInvoices associated with this order
-    {
-      $lookup: {
-        from: "proformainvoices",
-        localField: "_id",
-        foreignField: "order_id",
-        as: "proformaInvoices",
-      },
-    },
-    // 4. Process each vehicle in the order to determine its PI status
-    {
-      $addFields: {
-        vehicleTracking: {
-          $map: {
-            input: "$vehicles",
-            as: "orderVehicle",
-            in: {
-              _id: "$$orderVehicle._id",
-              make: "", // 'make' is not present in Order.vehicles, using empty string as placeholder
-              model: "$$orderVehicle.vehicleName", // Map 'vehicleName' from order to 'model'
-              chassisNumber: "$$orderVehicle.chassisNumber",
-              engineNumber: "$$orderVehicle.engineNumber",
-              quantity: "$$orderVehicle.quantity",
-              piStatus: {
-                $cond: {
-                  if: {
-                    $in: [
-                      // Check if the order vehicle's chassis number exists in any PI's vehicle details
-                      "$$orderVehicle.chassisNumber",
-                      {
-                        $reduce: {
-                          // Flatten all chassis numbers from all PIs into a single array
-                          input: "$proformaInvoices",
-                          initialValue: [],
-                          in: {
-                            $concatArrays: [
-                              "$$value",
-                              {
-                                $map: {
-                                  input: "$$this.vehicleDetails",
-                                  as: "piVehicle",
-                                  in: "$$piVehicle.chassisNumber",
-                                },
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    ],
-                  },
-                  then: "PI'd",
-                  else: "Pending",
-                },
-              },
-              associatedPIs: {
-                $filter: {
-                  // Filter PIs that contain the current order vehicle's chassis number
-                  input: "$proformaInvoices",
-                  as: "pi",
-                  cond: {
-                    $in: [
-                      "$$orderVehicle.chassisNumber",
-                      {
-                        $map: {
-                          input: "$$pi.vehicleDetails",
-                          as: "piVehicle",
-                          in: "$$piVehicle.chassisNumber",
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-        totalVehiclesInOrder: { $sum: "$vehicles.quantity" },
-        totalVehiclesPIed: {
-          $sum: {
-            // Sum the quantities of all vehicles across all PIs for this order
-            $map: {
-              input: "$proformaInvoices",
-              as: "pi",
-              in: {
-                $sum: {
-                  $map: {
-                    input: "$$pi.vehicleDetails",
-                    as: "piVehicle",
-                    in: "$$piVehicle.quantity",
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    // 5. Calculate pending vehicles and overall PI status (similar to getOrdersWithPIStatusService)
-    {
-      $addFields: {
-        pendingVehicles: {
-          $subtract: ["$totalVehiclesInOrder", "$totalVehiclesPIed"],
-        },
-        overallPIStatus: {
-          $cond: {
-            if: { $eq: ["$totalVehiclesInOrder", 0] },
-            then: "No Vehicles in Order",
-            else: {
-              $cond: {
-                if: { $eq: ["$totalVehiclesPIed", 0] },
-                then: "Not Started",
-                else: {
-                  $cond: {
-                    if: {
-                      $eq: ["$totalVehiclesInOrder", "$totalVehiclesPIed"],
-                    },
-                    then: "Fully PI'd",
-                    else: "Partially PI'd",
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    // 6. Project the final output
-    {
-      $project: {
-        _id: 1,
-        orderId: 1,
-        voucherNo: 1,
-        createdAt: 1,
-        client: { name: "$client.name", clientCode: "$client.clientCode" },
-        dealer: { name: "$dealer.name" },
-        totalVehiclesInOrder: 1,
-        totalVehiclesPIed: 1,
-        pendingVehicles: 1,
-        overallPIStatus: 1,
-        vehicleTracking: {
-          $map: {
-            input: "$vehicleTracking",
-            as: "vt",
-            in: {
-              _id: "$$vt._id",
-              make: "$$vt.make",
-              model: "$$vt.model",
-              chassisNumber: "$$vt.chassisNumber",
-              engineNumber: "$$vt.engineNumber",
-              quantity: "$$vt.quantity",
-              piStatus: "$$vt.piStatus",
-              associatedPIs: {
-                $map: {
-                  input: "$$vt.associatedPIs",
-                  as: "api",
-                  in: {
-                    piId: "$$api._id",
-                    piNumber: "$$api.piNumber",
-                    createdAt: "$$api.createdAt",
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  ];
-
-  const [order] = await Order.aggregate(pipeline);
-
-  if (!order) {
-    throw new Error("Order not found");
-  }
-
-  return order;
 };
