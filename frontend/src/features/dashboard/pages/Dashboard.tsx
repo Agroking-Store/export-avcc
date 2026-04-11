@@ -51,12 +51,8 @@ const colorStyles = {
   }
 };
 const modules = [
-  "Vehicles",
+  "Booked Vehicles",
   "Clients",
-  "Proforma Invoices",
-  "Letter of Credit",
-  "Dealers",
-  "Companies",
 ];
 
 const Dashboard: React.FC = () => {
@@ -64,18 +60,10 @@ const Dashboard: React.FC = () => {
   //do not touch
   const renderModuleContent = () => {
     switch (activeModule) {
-      case "Vehicles":
+      case "Booked Vehicles":
         return <VehiclesTable />;
       case "Clients":
         return <ClientsTable />
-      case "Proforma Invoices":
-        return <p className="text-sm">Proforma invoices data will be shown here.</p>;
-      case "Letter of Credit":
-        return <p className="text-sm">LC module data will be shown here.</p>;
-      case "Dealers":
-        return <p className="text-sm">Dealers data will be shown here.</p>;
-      case "Companies":
-        return <p className="text-sm">Companies data will be shown here.</p>;
       default:
         return (
           <p className="text-sm">Default shipment activity data shown here.</p>
@@ -98,8 +86,8 @@ return (
     </div>
 
     <div>
-  <h1 className="text-2xl font-semibold text-white tracking-tight">
-    Dashboard
+  <h1 className="text-xl font-semibold text-white tracking-tight">
+    Export Overview
   </h1>
   <p className="text-sm text-blue-100 mt-1">
     Manage shipments, orders and export activity
@@ -485,7 +473,7 @@ return (
           <button
             key={mod}
             onClick={() => setActiveModule(mod)}
-            className={`pb-2 text-sm whitespace-nowrap transition ${
+            className={`pb-2 text-sm whitespace-nowrap transition cursor-pointer ${
               activeModule === mod
                 ? "border-b-2 border-indigo-600 text-indigo-600 font-semibold"
                 : "text-gray-500 hover:text-gray-700"

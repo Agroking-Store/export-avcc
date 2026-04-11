@@ -84,10 +84,22 @@ export class BookingService {
 export const getLatestBookingVehiclesService = async () => {
   try {
     const bookings = await Booking.aggregate([
-      // 🔥 flatten vehicles array
-      { $unwind: "$vehicles" },
+      // 🥇 Step 1: Latest bookings first
+      {
+        $sort: { createdAt: -1, _id: -1 }, // fallback for safety
+      },
 
-      // 🔗 join dealer
+      // 🎯 Step 2: Take latest bookings (adjust if needed)
+      {
+        $limit: 5,
+      },
+
+      // 🚗 Step 3: Extract vehicles from those bookings
+      {
+        $unwind: "$vehicles",
+      },
+
+      // 🔗 Step 4: Join dealer info
       {
         $lookup: {
           from: "dealers",
@@ -98,7 +110,7 @@ export const getLatestBookingVehiclesService = async () => {
       },
       { $unwind: "$dealer" },
 
-      // 🧹 shape output
+      // 🎨 Step 5: Shape response
       {
         $project: {
           _id: 0,
@@ -117,12 +129,6 @@ export const getLatestBookingVehiclesService = async () => {
           fobAmount: "$vehicles.fobAmount",
         },
       },
-
-      // ⏱ latest first
-      { $sort: { createdAt: -1 } },
-
-      // 🎯 only 5
-      { $limit: 5 },
     ]);
 
     return {
@@ -130,7 +136,7 @@ export const getLatestBookingVehiclesService = async () => {
       data: bookings,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Aggregation error:", error);
     throw new Error("Failed to fetch booking vehicles");
   }
 };
