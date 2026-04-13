@@ -81,8 +81,7 @@ const AddClient = () => {
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-8 py-10 max-w-5xl mx-auto">
-
+    <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-10">
         <div>

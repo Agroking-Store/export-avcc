@@ -27,8 +27,7 @@ const ClientsNavbar: React.FC = () => {
   const location = useLocation();
 
   return (
-    /* Removed the bg-white, border, shadow, and p-1.5 from here */
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5 p-1 bg-slate-50/50 rounded-[18px] w-fit">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const path = location.pathname;
@@ -44,18 +43,18 @@ const ClientsNavbar: React.FC = () => {
           <Link
             key={tab.key}
             to={tab.path}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-[14px] text-[15px] font-medium transition-all duration-200 whitespace-nowrap ${
+            className={`flex items-center gap-2.5 px-6 py-2.5 rounded-[14px] text-[14px] font-bold transition-all duration-300 whitespace-nowrap active:scale-95 ${
               isActive
-                ? "bg-gradient-to-r from-[#00b4d8] to-[#2b67f6] text-white shadow-md shadow-blue-100"
-                : "text-[#334155] hover:bg-[#eff6ff] hover:text-[#2563eb] dark:text-slate-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"
+                ? "bg-[#1877F2] text-white shadow-md shadow-indigo-200" 
+                : "text-slate-500 hover:text-[#005A9C] hover:bg-[#005A9C]/5"
             }`}
           >
             <Icon
-              size={19}
+              size={18}
               strokeWidth={isActive ? 2.5 : 2}
-              className={isActive ? "text-white" : "text-slate-500"}
+              className={isActive ? "text-white" : "text-slate-400"}
             />
-            <span>{tab.label}</span>
+            <span className="tracking-tight">{tab.label}</span>
           </Link>
         );
       })}

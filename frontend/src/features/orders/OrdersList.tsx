@@ -89,19 +89,29 @@ const OrdersList = () => {
 
         {/* TOOLBAR: FILTERS & SEARCH */}
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
-          <div className="flex items-center gap-3">
-            <div className="p-2 text-slate-400">
-              <Filter size={18} />
+          <div className="flex items-center gap-4">
+            {/* STYLIZED WHITE FILTER BUTTON */}
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
+                <Filter size={16} />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                <option value="All">All Orders</option>
+                <option value="Draft">Draft</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="PI Generated">PI Generated</option>
+              </select>
+              {/* Custom Arrow */}
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none">
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-slate-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-slate-600 dark:text-gray-300 outline-none w-32 focus:ring-2 focus:ring-blue-500 transition-all"
-            >
-              <option value="All">All Status</option>
-              <option value="Draft">Draft</option>
-              <option value="Confirmed">Confirmed</option>
-            </select>
           </div>
 
           <div className="relative">

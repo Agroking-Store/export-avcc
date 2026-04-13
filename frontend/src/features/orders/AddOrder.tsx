@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, Calendar, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Calendar, ArrowLeft, X, ShoppingBag, User } from "lucide-react";
 import { toast } from "react-toastify";
 
 interface Vehicle {
@@ -35,11 +35,7 @@ const AddOrder = () => {
     setSelectedClient(client || null);
   };
 
-  const handleVehicleChange = (
-    index: number,
-    field: keyof Vehicle,
-    value: any,
-  ) => {
+  const handleVehicleChange = (index: number, field: keyof Vehicle, value: any) => {
     const updated = [...vehicles];
     updated[index] = { ...updated[index], [field]: value };
     setVehicles(updated);
@@ -60,249 +56,198 @@ const AddOrder = () => {
     vehicles.forEach((v, i) => {
       if (!v.name.trim()) e[`name_${i}`] = "Name required";
       if (!v.color.trim()) e[`color_${i}`] = "Color required";
-      if (v.quantity === "" || Number(v.quantity) < 1)
-        e[`qty_${i}`] = "Quantity ≥ 1";
+      if (v.quantity === "" || Number(v.quantity) < 1) e[`qty_${i}`] = "Quantity ≥ 1";
     });
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const buildPayload = () => ({
-    clientId,
-    date,
-    vehicles,
-  });
+  const buildPayload = () => ({ clientId, date, vehicles });
 
   const handleSave = async () => {
     if (!validate()) return;
     try {
       setLoading(true);
       await api.post("/orders", buildPayload());
-      navigate("/orders/list", {
-        state: { success: "Order created successfully" },
-      });
+      navigate("/orders/list", { state: { success: "Order created successfully ✅" } });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Error saving");
+      toast.error(err.response?.data?.message || "Error saving order");
     } finally {
       setLoading(false);
     }
   };
 
+  // Reusable UI Styles
+  const inputStyle = "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
+  const labelStyle = "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
+
   return (
-    <div className="space-y-6 bg-gray-100 dark:bg-gray-900 min-h-screen p-4 rounded-xl">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
+      
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-10">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Add New Order
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-gray-300">
-            Client + Vehicles
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Add New Order</h1>
+          <p className="text-sm text-gray-500 mt-1">Initialize a new vehicle delivery order</p>
         </div>
+
         <button
           onClick={() => navigate("/orders/list")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm rounded-lg"
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
         >
-          <ArrowLeft size={18} />
-          Orders
+          <ArrowLeft size={18} /> Back to Orders
         </button>
       </div>
 
-      {/* Main Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-8 space-y-8">
-          {/* Client & Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form className="space-y-10">
+        {/* CLIENT & DATE SECTION */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Basic Information</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Client
+              <label className={labelStyle}>
+                <User size={14} className="text-indigo-500" /> Select Client
               </label>
               <select
                 value={clientId}
                 onChange={handleClientChange}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={inputStyle}
               >
                 <option value="">Select Client</option>
                 {clients.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.name} — {c.companyName} ({c.country})
+                    {c.name} — {c.companyName}
                   </option>
                 ))}
               </select>
-              {errors.clientId && (
-                <p className="text-red-500 text-xs mt-1">{errors.clientId}</p>
-              )}
+              {errors.clientId && <p className="text-red-500 text-[10px] mt-1 font-bold uppercase">{errors.clientId}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Calendar size={16} />
-                Date
+              <label className={labelStyle}>
+                <Calendar size={14} className="text-blue-400" /> Order Date
               </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={inputStyle}
               />
             </div>
-          </div>
 
-          {/* Client Info */}
-          {selectedClient && (
-            <div className="p-6 bg-slate-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-              <h3 className="font-medium text-slate-800 dark:text-white mb-3">
-                {selectedClient.name}
-              </h3>
-              <div className="text-sm text-slate-600 dark:text-gray-300 space-y-1">
-                <div>{selectedClient.companyName}</div>
+            {/* Quick Preview of selected client */}
+            {selectedClient && (
+              <div className="lg:col-span-1 bg-[#F0F7FF] dark:bg-gray-800/50 p-4 rounded-xl border border-blue-100 dark:border-gray-700 flex items-center gap-4">
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">
+                  {selectedClient.name.charAt(0)}
+                </div>
                 <div>
-                  {selectedClient.country} • {selectedClient.phone}
+                  <p className="text-xs font-bold text-blue-800 dark:text-blue-300">{selectedClient.name}</p>
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-medium">{selectedClient.country}</p>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Vehicles */}
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
-                Vehicles ({vehicles.length})
-              </h3>
-              <button
-                type="button"
-                onClick={addVehicle}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
-              >
-                <Plus size={16} />
-                Add Vehicle
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {vehicles.map((v, i) => (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-medium text-slate-800 dark:text-white">
-                      Vehicle {i + 1}
-                    </h4>
-                    {vehicles.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeVehicle(i)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        value={v.name}
-                        onChange={(e) =>
-                          handleVehicleChange(i, "name", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        placeholder="Vehicle model"
-                      />
-
-                      {errors[`name_${i}`] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors[`name_${i}`]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">
-                        Color
-                      </label>
-                      <input
-                        type="text"
-                        value={v.color}
-                        onChange={(e) =>
-                          handleVehicleChange(i, "color", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        placeholder="Red, Blue..."
-                      />
-                      {errors[`color_${i}`] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors[`color_${i}`]}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs text-slate-500 dark:text-gray-300 mb-1">
-                        Quantity
-                      </label>
-                      <input
-                        type="number"
-                        value={v.quantity}
-                        min="1"
-                        onChange={(e) => {
-                          const value = e.target.value;
-
-                          const parsed = parseInt(value);
-                          handleVehicleChange(
-                            i,
-                            "quantity",
-                            isNaN(parsed) ? "" : parsed,
-                          );
-                        }}
-                        style={{ MozAppearance: "textfield" }}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
-                                   bg-white dark:bg-gray-800 text-black dark:text-white 
-                                   placeholder-gray-400 dark:placeholder-gray-300 
-                                   rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                                   text-sm appearance-none 
-                                   [&::-webkit-inner-spin-button]:appearance-none 
-                                   [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-
-                      {errors[`qty_${i}`] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors[`qty_${i}`]}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex justify-end gap-4 pt-6 border-t border-slate-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={() => navigate("/orders/list")}
-              className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/80"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={loading}
-              className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              {loading ? "Saving..." : "Save Order"}
-            </button>
+            )}
           </div>
         </div>
-      </div>
+
+        {/* VEHICLES SECTION */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+              <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Vehicles ({vehicles.length})</h2>
+            </div>
+            <button
+              type="button"
+              onClick={addVehicle}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+            >
+              <Plus size={16} /> Add Vehicle
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {vehicles.map((v, i) => (
+              <div key={i} className="group relative bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 p-6 rounded-[1.5rem] transition-all hover:shadow-md">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="bg-white dark:bg-gray-700 px-3 py-1 rounded-lg text-[10px] font-bold text-gray-500 uppercase tracking-widest border border-gray-100 dark:border-gray-600">
+                    Vehicle #{i + 1}
+                  </span>
+                  {vehicles.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeVehicle(i)}
+                      className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded-lg transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelStyle}>Model Name</label>
+                    <input
+                      type="text"
+                      value={v.name}
+                      onChange={(e) => handleVehicleChange(i, "name", e.target.value)}
+                      className={inputStyle}
+                      placeholder="e.g. Hilux"
+                    />
+                    {errors[`name_${i}`] && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase">{errors[`name_${i}`]}</p>}
+                  </div>
+                  <div>
+                    <label className={labelStyle}>Color</label>
+                    <input
+                      type="text"
+                      value={v.color}
+                      onChange={(e) => handleVehicleChange(i, "color", e.target.value)}
+                      className={inputStyle}
+                      placeholder="e.g. White"
+                    />
+                    {errors[`color_${i}`] && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase">{errors[`color_${i}`]}</p>}
+                  </div>
+                  <div>
+                    <label className={labelStyle}>Quantity</label>
+                    <input
+                      type="number"
+                      value={v.quantity}
+                      onChange={(e) => handleVehicleChange(i, "quantity", e.target.value === "" ? "" : parseInt(e.target.value))}
+                      className={inputStyle}
+                      placeholder="1"
+                    />
+                    {errors[`qty_${i}`] && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase">{errors[`qty_${i}`]}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* FOOTER BUTTONS */}
+        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
+          <button
+            type="button"
+            onClick={() => navigate("/orders/list")}
+            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+          >
+            <X size={16} /> Discard
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70"
+          >
+            {loading ? "Saving..." : <><ShoppingBag size={18} /> Confirm & Save Order</>}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
