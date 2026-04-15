@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Search, Filter, Plus } from "lucide-react";
-import { useLocation } from "react-router-dom";
-import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 interface Order {
@@ -36,7 +34,6 @@ const OrdersList = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-
       const res = await axios.get("http://localhost:5000/api/v1/orders", {
         params: {
           search,
@@ -45,7 +42,6 @@ const OrdersList = () => {
           limit,
         },
       });
-
       setOrders(res.data.data);
       setTotalPages(res.data.totalPages);
     } catch (error) {
@@ -62,177 +58,139 @@ const OrdersList = () => {
   useEffect(() => {
     if (location.state?.success) {
       toast.success(location.state.success);
-
-      // clear state so it doesn't repeat on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Draft":
-        return "bg-gray-100 text-gray-800";
-      case "Confirmed":
-        return "bg-blue-100 text-blue-800";
-      case "PI Generated":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
-    <div className="space-y-4 bg-gray-100 dark:bg-gray-900 min-h-screen p-2 rounded-xl">
+    <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
       <ToastContainer position="top-right" autoClose={3000} />
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            Orders
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-gray-300">
-            Manage all your export orders
-          </p>
+
+      {/* MAIN CARD CONTAINER */}
+      <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
+        
+        {/* TOP SECTION: TITLE */}
+        <div className="px-8 py-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">Orders</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Manage all your export orders</p>
+          </div>
+          
+          <button
+            onClick={() => navigate("/orders/add")}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:from-[#4a56ff] hover:to-[#2a37ff] text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+          >
+            <Plus size={18} strokeWidth={3} />
+            Create New Order
+          </button>
         </div>
 
-        <button
-          onClick={() => navigate("/orders/add")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
-        >
-          <Plus size={18} />
-          Create New Order
-        </button>
-      </div>
+        <hr className="border-slate-100 dark:border-gray-800" />
 
-      {/* MAIN CARD */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
-        {/* TOOLBAR */}
-        <div className="px-6 py-4 border-b bg-slate-50 dark:bg-gray-700 border-slate-200 dark:border-gray-600 flex justify-between items-center">
-          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-gray-300">
-            <Filter size={16} />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="All">All</option>
-              <option value="Draft">Draft</option>
-              <option value="Confirmed">Confirmed</option>
-            </select>
+        {/* TOOLBAR: FILTERS & SEARCH */}
+        <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
+          <div className="flex items-center gap-4">
+            {/* STYLIZED WHITE FILTER BUTTON */}
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
+                <Filter size={16} />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                <option value="All">All Orders</option>
+                <option value="Draft">Draft</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="PI Generated">PI Generated</option>
+              </select>
+              {/* Custom Arrow */}
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none">
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div className="relative">
-            <Search
-              className="absolute left-3 top-2.5 text-slate-400 dark:text-gray-300"
-              size={16}
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
               placeholder="Search order ID or client name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 text-sm border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded-md placeholder-gray-400 dark:placeholder-gray-300 focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2.5 w-72 text-sm bg-slate-50/30 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
         </div>
 
-        {/* TABLE */}
+        {/* DATA TABLE */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-gray-700 text-slate-500 dark:text-gray-200 text-xs uppercase">
+          <table className="w-full text-center">
+            <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">
-                  ORDER ID
-                </th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">
-                  Client Name
-                </th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">
-                  No. of Vehicles
-                </th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">
-                  Status
-                </th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">
-                  Date
-                </th>
-                <th className="border border-slate-200 dark:border-gray-700 px-6 py-3 text-center font-medium">
-                  Actions
-                </th>
+                {["Order ID", "Client Name", "No. of Vehicles", "Status", "Date", "Actions"].map((head) => (
+                  <th key={head} className="px-8 py-4 text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
+                    {head}
+                  </th>
+                ))}
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {orders.length === 0 && !loading ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-10 text-gray-500 dark:text-gray-300"
-                  >
-                    No orders found
-                  </td>
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">No orders found</td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr
-                    key={order._id}
-                    className="border-t border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700"
-                  >
-                    <td className="px-6 py-4 text-center">
-                      <span className="bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-medium">
+                  <tr key={order._id} className="hover:bg-slate-50/30 dark:hover:bg-gray-800/30 transition-colors">
+                    
+                    <td className="px-8 py-5 text-center">
+                      <span className="bg-[#f1f5f9] dark:bg-gray-800 text-[#475569] dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs font-semibold">
                         {order.orderId}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 text-center">
-                      <div className="font-medium text-gray-800 dark:text-white">
-                        {order.clientName}
-                      </div>
-
-                      <div className="text-xs text-gray-500 dark:text-gray-300">
-                        {order.companyName || order.clientCountry}
-                      </div>
+                    <td className="px-8 py-5 text-center">
+                      <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">{order.clientName}</div>
+                      <div className="text-xs text-slate-400 dark:text-gray-500">{order.companyName || order.clientCountry}</div>
                     </td>
 
-                    <td className="px-6 py-4 text-center">
-                      {order.vehicles
-                        ? order.vehicles.reduce(
-                            (sum, v) => sum + (Number(v.quantity) || 0),
-                            0,
-                          )
-                        : 0}
+                    <td className="px-8 py-5 text-sm font-medium text-slate-600 dark:text-gray-300">
+                      {order.vehicles ? order.vehicles.reduce((sum, v) => sum + (Number(v.quantity) || 0), 0) : 0}
                     </td>
 
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status || "")}`}
-                      >
-                        {order.status}
+                    <td className="px-8 py-5 text-center">
+                      <span className="bg-[#f1f5f9] dark:bg-gray-800 text-[#64748b] dark:text-slate-400 px-3 py-1 rounded text-xs font-medium">
+                        {order.status || "Draft"}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 text-center">
-                      {order.date
-                        ? new Date(order.date).toLocaleDateString()
-                        : order.createdAt
-                          ? new Date(order.createdAt).toLocaleDateString()
-                          : "-"}
+                    <td className="px-8 py-5 text-sm text-slate-600 dark:text-gray-300">
+                      {order.date ? new Date(order.date).toLocaleDateString() : (order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-")}
                     </td>
 
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center gap-2">
+                    <td className="px-8 py-5 text-center">
+                      <div className="flex items-center gap-2 justify-center">
+                        {/* VIEW BUTTON */}
                         <button
                           onClick={() => navigate(`/orders/${order._id}`)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                          className="p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-800 transition-all shadow-sm active:scale-95"
+                          title="View Details"
                         >
                           <Eye size={18} />
                         </button>
 
+                        {/* EDIT BUTTON */}
                         <button
                           onClick={() => navigate(`/orders/edit/${order._id}`)}
-                          className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                          className="p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all shadow-sm active:scale-95"
+                          title="Edit Order"
                         >
-                          <Pencil size={18} />
+                          <FilePenLine size={18} />
                         </button>
                       </div>
                     </td>
@@ -243,30 +201,30 @@ const OrdersList = () => {
           </table>
         </div>
 
-        {/* PAGINATION */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-slate-200 dark:border-gray-700">
-          <span className="text-sm text-gray-500 dark:text-gray-300">
-            Page {currentPage} of {totalPages}
+        {/* BOTTOM SECTION: PAGINATION */}
+        <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
+          <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
+            Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of {totalPages}
           </span>
 
-          <div className="flex gap-2">
+          <div className="flex gap-6">
             <button
               onClick={() => setCurrentPage((p) => p - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-600"
+              className="flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Prev
+              <ChevronLeft size={18} /> Prev
             </button>
-
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-600"
+              className="flex items-center gap-1 text-sm font-bold text-[#0f172a] hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Next
+              Next <ChevronRight size={18} />
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

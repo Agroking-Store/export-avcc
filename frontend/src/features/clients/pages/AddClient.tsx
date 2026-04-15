@@ -3,6 +3,17 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import { toast } from "react-toastify";
+import { 
+  User, 
+  Phone, 
+  Mail, 
+  Globe, 
+  Building2, 
+  MapPin, 
+  ArrowLeft, 
+  X, 
+  PlusCircle 
+} from "lucide-react";
 
 const AddClient = () => {
   const navigate = useNavigate();
@@ -26,19 +37,13 @@ const AddClient = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
-      address: {
-        ...form.address,
-        [e.target.name]: e.target.value,
-      },
+      address: { ...form.address, [e.target.name]: e.target.value },
     });
   };
 
@@ -52,18 +57,12 @@ const AddClient = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const error = validate();
-    if (error) {
-      toast.error(error);
-      return;
-    }
+    if (error) return toast.error(error);
 
     try {
       setLoading(true);
-
       await axios.post(`${apiConfig.baseURL}/clients/add`, form);
-
       navigate("/clients/list", {
         state: { success: "Client added successfully ✅" },
       });
@@ -74,192 +73,133 @@ const AddClient = () => {
     }
   };
 
+  // UI Styles to match the reference
+  const inputStyle =
+    "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
+
+  const labelStyle =
+    "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-            Add Client
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-300">
-            Create a new client profile
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Add Client</h1>
+          <p className="text-sm text-gray-500 mt-1">Create a new client profile</p>
         </div>
+
         <button
           onClick={() => navigate("/clients/list")}
-          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
         >
-          ← Back to Clients
+          <ArrowLeft size={18} /> Back to Clients
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Client Details Section */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-          <h2 className="text-base font-semibold mb-4 text-gray-800 dark:text-white">
-            Client Details
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Name */}
+      <form onSubmit={handleSubmit} className="space-y-10">
+
+        {/* CLIENT DETAILS SECTION */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Client Details</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-                Client Name
+              <label className={labelStyle}>
+                <User size={14} className="text-indigo-500" /> Client Full Name
               </label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Enter client name"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-                required
-              />
+              <input name="name" value={form.name} onChange={handleChange} className={inputStyle} placeholder="John Doe" />
             </div>
-            {/* Phone */}
+
             <div>
-              <label className="block text-sm mb-1">Contact Number</label>
-              <input
-                type="text"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="Enter phone number"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-                required
-              />
+              <label className={labelStyle}>
+                <Phone size={14} className="text-blue-400" /> Contact Number
+              </label>
+              <input name="phone" value={form.phone} onChange={handleChange} className={inputStyle} placeholder="+1 (555) 000-0000" />
             </div>
-            {/* Email */}
+
             <div>
-              <label className="block text-sm mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                required
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Enter email"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>
+                <Globe size={14} className="text-emerald-500" /> Region / Country
+              </label>
+              <input name="country" value={form.country} onChange={handleChange} className={inputStyle} placeholder="United Arab Emirates" />
             </div>
-            {/* Company Name */}
+
             <div>
-              <label className="block text-sm mb-1">Company Name</label>
-              <input
-                type="text"
-                name="companyName"
-                required
-                value={form.companyName}
-                onChange={handleChange}
-                placeholder="Enter company name"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>
+                <Mail size={14} className="text-rose-400" /> Professional Email
+              </label>
+              <input name="email" value={form.email} onChange={handleChange} className={inputStyle} placeholder="client@company.com" />
             </div>
-            {/* Primary Country */}
+
             <div className="md:col-span-2">
-              <label className="block text-sm mb-1">Primary Country</label>
-              <input
-                type="text"
-                name="country"
-                required
-                value={form.country}
-                onChange={handleChange}
-                placeholder="Enter primary country of business"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>
+                <Building2 size={14} className="text-amber-500" /> Organization / Company Name
+              </label>
+              <input name="companyName" value={form.companyName} onChange={handleChange} className={inputStyle} placeholder="Global Logistics Solutions Ltd." />
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-          <h2 className="text-base font-semibold mb-4 text-gray-800 dark:text-white">
-            Shipping Address
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* SHIPPING ADDRESS SECTION */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-purple-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Shipping Address</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className="block text-sm mb-1">House / Building No.</label>
-              <input
-                type="text"
-                name="houseBuilding"
-                value={form.address.houseBuilding}
-                onChange={handleAddressChange}
-                placeholder="e.g. Aprtment 12B, The Plaza"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>
+                <MapPin size={14} className="text-purple-500" /> House / Building No.
+              </label>
+              <input name="houseBuilding" value={form.address.houseBuilding} onChange={handleAddressChange} className={inputStyle} placeholder="Suite 405, Business Bay" />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm mb-1">Street / Area</label>
-              <input
-                type="text"
-                name="streetArea"
-                value={form.address.streetArea}
-                onChange={handleAddressChange}
-                placeholder="e.g. Mombasa Road"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+
             <div>
-              <label className="block text-sm mb-1">City / Town</label>
-              <input
-                type="text"
-                name="cityTown"
-                value={form.address.cityTown}
-                onChange={handleAddressChange}
-                placeholder="e.g. Pune"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>Street / Area</label>
+              <input name="streetArea" value={form.address.streetArea} onChange={handleAddressChange} className={inputStyle} placeholder="Main Street" />
             </div>
+
             <div>
-              <label className="block text-sm mb-1">State / Province</label>
-              <input
-                type="text"
-                name="state"
-                value={form.address.state}
-                onChange={handleAddressChange}
-                placeholder="e.g. Maharashtra"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>City / Town</label>
+              <input name="cityTown" value={form.address.cityTown} onChange={handleAddressChange} className={inputStyle} placeholder="Dubai" />
             </div>
+
             <div>
-              <label className="block text-sm mb-1">Pincode / ZIP</label>
-              <input
-                type="text"
-                name="pincode"
-                value={form.address.pincode}
-                onChange={handleAddressChange}
-                placeholder="e.g. 00100"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>State / Province</label>
+              <input name="state" value={form.address.state} onChange={handleAddressChange} className={inputStyle} placeholder="Dubai" />
             </div>
+
             <div>
-              <label className="block text-sm mb-1">Country</label>
-              <input
-                type="text"
-                name="country"
-                value={form.address.country}
-                onChange={handleAddressChange}
-                placeholder="e.g. India"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500"
-              />
+              <label className={labelStyle}>Pincode / ZIP</label>
+              <input name="pincode" value={form.address.pincode} onChange={handleAddressChange} className={inputStyle} placeholder="00000" />
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        {/* FOOTER BUTTONS */}
+        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             onClick={() => navigate("/clients/list")}
-            className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white rounded-lg"
+            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
-            Cancel
+            <X size={16} /> Discard
           </button>
+
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg transition"
+            className="flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70"
           >
-            {loading ? "Saving..." : "Add Client"}
+            {loading ? "Saving..." : <><PlusCircle size={18} /> Confirm & Save Client</>}
           </button>
         </div>
+
       </form>
     </div>
   );
