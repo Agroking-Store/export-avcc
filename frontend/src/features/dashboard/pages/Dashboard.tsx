@@ -1,6 +1,7 @@
 import { apiConfig } from "@/config/apiConfig";
 import ClientsTable from "@/features/clients/components/ClientsTable";
 import VehiclesTable from "@/features/vehicles/components/VehiclesTable";
+import { AlertTriangle } from "lucide-react";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import {
@@ -95,38 +96,7 @@ return (
 </div>
 
   </div>
-
-  {/* RIGHT */}
-  <div className="flex items-center gap-3">
-
-    {/* SEARCH */}
-    <div className="hidden md:flex items-center bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-300 transition w-52">
-      <Search size={16} className="text-gray-400" />
-      <input
-        type="text"
-        placeholder="Search..."
-        className="ml-2 outline-none text-sm bg-transparent w-full placeholder:text-gray-400"
-      />
-    </div>
-
-    {/* NOTIFICATION */}
-    <div className="relative cursor-pointer p-2 rounded-xl hover:bg-white/10 transition">
-  <Bell size={20} className="text-white" />
-  <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full shadow-sm">
-    3
-  </span>
 </div>
-
-{/* BUTTON */}
-<button className="bg-white text-indigo-600 px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm hover:bg-gray-100 hover:shadow-md active:scale-[0.98]">
-  + New Shipment
-</button>
-    {/* PROFILE */}
-    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 cursor-pointer hover:ring-2 hover:ring-indigo-300 transition" />
-
-  </div>
-</div>
-
  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
 
 {[{
@@ -204,22 +174,41 @@ return (
 
 
 
-  {/* PREMIUM CARD (keep as it is) */}
-  <div className="relative bg-gradient-to-r from-indigo-600 to-purple-400 text-white p-6 rounded-xl shadow-xl hover:scale-[1.02] transition overflow-hidden">
+ {/* PENDING ACTIONS CARD - FINAL */}
+<div className="relative bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition flex flex-col justify-between h-full">
 
   {/* ICON */}
-  <div className="absolute top-4 right-4 p-3 rounded-xl bg-white/20 backdrop-blur-md">
-  <TrendingUp size={22} className="text-white" />
+ <div className="absolute top-4 right-4 p-2 rounded-lg bg-orange-50 shadow-sm">
+  <AlertTriangle size={20} className="text-orange-500" />
 </div>
 
-  <p className="text-sm opacity-80">Upgrade</p>
+  <div>
+    <p className="text-sm text-gray-500">Pending Actions</p>
 
-  <h2 className="text-lg font-semibold mt-2 max-w-[80%]">
-    Get more information and opportunities
-  </h2>
+    <h2 className="text-lg font-semibold mt-1.5 text-gray-800">
+      Operational Alerts
+    </h2>
 
-  <button className="mt-4 bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition">
-    Go Pro
+    <div className="mt-4 space-y-2 text-sm">
+      <div className="flex justify-between items-center pr-1">
+        <span className="text-gray-600">Orders Pending</span>
+        <span className="font-semibold text-orange-500">3</span>
+      </div>
+
+      <div className="flex justify-between items-center pr-1">
+        <span className="text-gray-600">Invoices Missing</span>
+        <span className="font-semibold text-yellow-500">2</span>
+      </div>
+
+      <div className="flex justify-between items-center pr-1">
+        <span className="text-gray-600">Vehicles Not Shipped</span>
+        <span className="font-semibold text-blue-500">5</span>
+      </div>
+    </div>
+  </div>
+
+  <button className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">
+    View Details →
   </button>
 
 </div>
@@ -236,7 +225,7 @@ return (
 
       <div className="flex items-center gap-3">
   <div className="p-2.5 rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
-    <BarChart2 size={20} className="text-indigo-600" />
+    <BarChart2 size={22} className="text-indigo-600" />
   </div>
 
   <h3 className="font-semibold text-gray-800">
@@ -281,7 +270,7 @@ return (
     {/* TOP */}
     <div className="flex items-center gap-3 mb-4">
   <div className="p-2.5 rounded-xl bg-purple-50 ring-1 ring-purple-100">
-    <PieChartIcon size={20} className="text-purple-600" />
+    <PieChartIcon size={21} className="text-purple-600" />
   </div>
 
   <h3 className="font-semibold text-gray-800">
