@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Search, Filter, Car, Users, Hash, Calendar } from "lucide-react";
-import { toast } from "react-toastify";
+import { Eye, Search, Filter, Plus, ChevronLeft, ChevronRight, Car, Hash, Users, Calendar } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Order {
   _id: string;
@@ -33,7 +34,6 @@ const VehicleList = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-
       const res = await axios.get("http://localhost:5000/api/v1/orders", {
         params: {
           search,
@@ -42,7 +42,6 @@ const VehicleList = () => {
           limit,
         },
       });
-
       setOrders(res.data.data);
       setTotalPages(res.data.totalPages);
     } catch (error) {
@@ -60,119 +59,93 @@ const VehicleList = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Draft":
-        return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600";
+        return "bg-[#f1f5f9] dark:bg-gray-800 text-[#64748b] dark:text-slate-400";
       case "Confirmed":
-        return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700";
+        return "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
       case "PI Generated":
-        return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700";
+        return "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
       default:
-        return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600";
+        return "bg-[#f1f5f9] dark:bg-gray-800 text-[#64748b] dark:text-slate-400";
     }
   };
 
   return (
-    <div className="p-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-            Vehicle Orders
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage and track all vehicle export orders
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full font-medium">
-            {orders.length} Orders
-          </span>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
+      <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Main Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Toolbar */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-            {/* Filter Section */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <Filter size={16} />
-                <span className="font-medium">Filter:</span>
-              </div>
-              <div className="flex gap-2">
-               {["All", "Draft", "Confirmed"].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 ${
-                      statusFilter === status
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Search Section */}
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
-              <input
-                type="text"
-                placeholder="Search order ID or client..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
-            </div>
+      <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
+        
+        {/* TOP SECTION */}
+        <div className="px-8 py-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">Vehicle Orders</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Manage and track all vehicle export orders</p>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400">
+            <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold">
+              {orders.length} Orders
+            </span>
           </div>
         </div>
 
-        {/* Table */}
+        <hr className="border-slate-100 dark:border-gray-800" />
+
+        {/* TOOLBAR */}
+        <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
+                <Filter size={16} />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="PI Generated">PI Generated</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none">
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search order ID or client..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 pr-4 py-2.5 w-72 text-sm bg-slate-50/30 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
+          </div>
+        </div>
+
+        {/* DATA TABLE */}
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50/80 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Hash size={14} />
-                    Order ID
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Users size={14} />
-                    Client
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Car size={14} />
-                    Vehicles
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={14} />
-                    Date
-                  </div>
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
+          <table className="w-full text-center">
+            <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
+              <tr>
+                {["Order ID", "Client", "Vehicles", "Status", "Date", "Actions"].map((head, idx) => (
+                  <th key={head} className={`px-8 py-4 text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider ${idx === 5 ? "text-right" : "text-center"}`}>
+                    {head}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+
+            <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
+                    <div className="flex items-center justify-center gap-2">
                       <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                       Loading orders...
                     </div>
@@ -180,87 +153,54 @@ const VehicleList = () => {
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <Car className="w-12 h-12 text-gray-300 dark:text-gray-600" />
-                      <p className="text-gray-500 dark:text-gray-400 font-medium">
-                        No orders found
-                      </p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">
-                        Try adjusting your search or filters
-                      </p>
-                    </div>
-                  </td>
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">No vehicle orders found</td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr
-                    key={order._id}
-                    className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
-                  >
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                  <tr key={order._id} className="hover:bg-slate-50/30 dark:hover:bg-gray-800/30 transition-colors group">
+                    <td className="px-8 py-5 text-center">
+                      <span className="bg-[#f1f5f9] dark:bg-gray-800 text-[#475569] dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold">
                         {order.orderId}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {order.clientName || "N/A"}
-                        </span>
-                        {(order.companyName || order.clientCountry) && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {[order.companyName, order.clientCountry]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </span>
-                        )}
-                      </div>
+                    <td className="px-8 py-5 text-center">
+                       <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">{order.clientName || "N/A"}</div>
+                       {(order.companyName || order.clientCountry) && (
+                          <div className="text-xs text-slate-400 dark:text-gray-500">
+                            {[order.companyName, order.clientCountry].filter(Boolean).join(", ")}
+                          </div>
+                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg">
-                          <Car size={14} className="text-blue-600 dark:text-blue-400" />
+                    <td className="px-8 py-5 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-1.5 rounded-lg text-blue-600 dark:text-blue-400">
+                          <Car size={14} />
                         </div>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {order.vehicles?.filter(Boolean).reduce((sum, v) => sum + (v?.quantity ?? 0), 0) ||
-                            order.vehicles?.length ||
-                            0}
+                        <span className="font-bold text-slate-700 dark:text-gray-200">
+                           {order.vehicles?.filter(Boolean).reduce((sum, v) => sum + (v?.quantity ?? 0), 0) || order.vehicles?.length || 0}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          order.status || ""
-                        )}`}
-                      >
+                    <td className="px-8 py-5 text-center">
+                      <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${getStatusColor(order.status || "")}`}>
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {order.date
-                        ? new Date(order.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
+                    <td className="px-8 py-5 text-center text-sm font-medium text-slate-500 dark:text-gray-400">
+                       {order.date
+                        ? new Date(order.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                         : order.createdAt
-                        ? new Date(order.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
+                        ? new Date(order.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                         : "-"}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => navigate(`/vehicles/view/${order._id}`)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors duration-150"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
+                    <td className="px-8 py-5 text-right">
+                       <button
+                          onClick={() => navigate(`/vehicles/view/${order._id}`)}
+                          className="p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
                     </td>
                   </tr>
                 ))
@@ -269,31 +209,32 @@ const VehicleList = () => {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* PAGINATION */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Showing page <span className="font-medium">{currentPage}</span> of{" "}
-              <span className="font-medium">{totalPages}</span>
+          <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
+            <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
+              Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of {totalPages}
             </span>
-            <div className="flex gap-2">
+
+            <div className="flex gap-6">
               <button
                 onClick={() => setCurrentPage((p) => p - 1)}
                 disabled={currentPage === 1}
-                className="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                className="flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                Previous
+                <ChevronLeft size={18} /> Prev
               </button>
               <button
                 onClick={() => setCurrentPage((p) => p + 1)}
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                className="flex items-center gap-1 text-sm font-bold text-[#0f172a] hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                Next
+                Next <ChevronRight size={18} />
               </button>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

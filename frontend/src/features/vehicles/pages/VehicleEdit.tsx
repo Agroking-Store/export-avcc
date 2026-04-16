@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Save, Car, Hash, Palette, Check } from 'lucide-react';
+import { ArrowLeft, Car, Hash, Palette, Check, Save, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { apiConfig } from '../../../config/apiConfig';
-import { dealerApi } from '../../../services/dealerApi';
 import { orderApi } from '../../../services/orderApi';
-import Select from '../../../components/common/Select';
 
 const VehicleEdit = () => {
   const { id: orderId, vehicleIndex } = useParams();
@@ -15,8 +13,6 @@ const VehicleEdit = () => {
 
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [dealers, setDealers] = useState<any[]>([]);
-  const [selectedDealer, setSelectedDealer] = useState('');
 
   const [name, setName] = useState(searchParams.get('name') || '');
   const [color, setColor] = useState(searchParams.get('color') || '');
@@ -25,21 +21,12 @@ const VehicleEdit = () => {
   const expandedIndex = searchParams.get('expandedIndex') || vehicleIndex || '0';
 
   useEffect(() => {
-    dealerApi.getAll().then(res => setDealers(res.data || [])).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    // If params missing (e.g. direct URL access), fetch from API
     if (!searchParams.get('name') && orderId) {
       const fetchOrder = async () => {
         try {
           const res = await axios.get(`${apiConfig.baseURL}/orders/${orderId}`);
           const data = res.data.order || res.data;
 
-          // Set dealer
-          if (data.dealerId) setSelectedDealer(data.dealerId);
-
-          // Rebuild expanded list to find this slot
           let idx = 0;
           const targetIdx = parseInt(expandedIndex);
           for (const v of (data.vehicles || [])) {
@@ -57,7 +44,6 @@ const VehicleEdit = () => {
             }
           }
         } catch (error) {
-          console.error('Failed to fetch order:', error);
           toast.error('Failed to load vehicle data');
         }
       };
@@ -75,257 +61,211 @@ const VehicleEdit = () => {
 
     try {
       await orderApi.update(orderId!, {
-        dealerId: selectedDealer || undefined,
         vehicleColorUpdate: {
           expandedIndex: parseInt(expandedIndex),
           color,
         },
       });
 
-      // Show success state
       setShowSuccess(true);
       toast.success('Vehicle updated successfully!');
-      
-      // Navigate back after a short delay
+
       setTimeout(() => {
         navigate(`/vehicles/view/${orderId}`, { replace: true });
       }, 1500);
     } catch (error: any) {
-      console.error('Update error:', error);
       toast.error(error.response?.data?.message || 'Failed to update vehicle');
     } finally {
       setLoading(false);
     }
   };
 
-  // Common color suggestions
   const colorSuggestions = [
-    'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 
+    'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green',
     'Brown', 'Beige', 'Gold', 'Orange', 'Yellow', 'Purple', 'Pink'
   ];
 
-  // Generate a nice gradient based on color
   const getColorGradient = (colorValue: string) => {
     const colorLower = colorValue.toLowerCase();
     const gradients: Record<string, string> = {
-      red: 'from-red-500 to-red-600',
-      blue: 'from-blue-500 to-blue-600',
-      green: 'from-green-500 to-green-600',
-      black: 'from-gray-700 to-gray-900',
-      white: 'from-gray-300 to-gray-400',
-      silver: 'from-gray-400 to-gray-500',
-      grey: 'from-gray-500 to-gray-600',
-      gray: 'from-gray-500 to-gray-600',
-      yellow: 'from-yellow-500 to-yellow-600',
-      orange: 'from-orange-500 to-orange-600',
-      purple: 'from-purple-500 to-purple-600',
-      brown: 'from-amber-700 to-amber-800',
-      beige: 'from-amber-200 to-amber-300',
-      gold: 'from-amber-500 to-amber-600',
-      pink: 'from-pink-500 to-pink-600',
+      red: "from-red-500 to-red-600",
+      blue: "from-blue-500 to-blue-600",
+      green: "from-green-500 to-green-600",
+      black: "from-gray-700 to-gray-900",
+      white: "from-gray-300 to-gray-400",
+      silver: "from-gray-400 to-gray-500",
+      grey: "from-gray-500 to-gray-600",
+      gray: "from-gray-500 to-gray-600",
+      yellow: "from-yellow-500 to-yellow-600",
+      orange: "from-orange-500 to-orange-600",
+      purple: "from-purple-500 to-purple-600",
+      brown: "from-amber-700 to-amber-800",
+      beige: "from-amber-200 to-amber-300",
+      gold: "from-amber-500 to-amber-600",
+      pink: "from-pink-500 to-pink-600",
     };
-    return gradients[colorLower] || 'from-slate-500 to-slate-600';
+    return gradients[colorLower] || "from-slate-500 to-slate-600";
   };
 
   return (
-    <div className="p-6">
-      {/* Back Button */}
-      <div className="mb-6">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-gray-950 p-6 lg:p-10 animate-in fade-in duration-500">
+
+      {/* Header and Back Button */}
+      <div className="flex justify-between items-center mb-8 max-w-3xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit Unit</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure individual unit details and configurations</p>
+        </div>
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-gray-800 hover:text-blue-600 active:scale-95"
         >
-          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-            <ArrowLeft size={18} />
-          </div>
-          <span className="font-medium">Back to Order</span>
+          <ArrowLeft size={18} />
+          Back to Order
         </button>
       </div>
 
       {/* Main Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden max-w-2xl mx-auto">
-        {/* Header with gradient */}
-        <div className={`bg-gradient-to-r ${getColorGradient(color)} p-6 relative overflow-hidden`}>
+      <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden max-w-3xl mx-auto transition-all hover:shadow-lg">
+
+        {/* Dynamic Gradient Header */}
+        <div className={`bg-gradient-to-r ${getColorGradient(color)} p-8 relative overflow-hidden transition-colors duration-500`}>
           <div className="absolute inset-0 bg-black/10"></div>
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/20 rounded-full blur-3xl"></div>
+          <div className="absolute -left-12 -bottom-12 w-48 h-48 bg-black/20 rounded-full blur-3xl"></div>
+
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-white/80 text-sm font-medium mb-1">Edit Vehicle</p>
-              <h1 className="text-2xl font-bold text-white">{name}</h1>
+              <p className="text-white/80 text-[10px] uppercase tracking-widest font-bold mb-1">
+                Editing Model
+              </p>
+              <h1 className="text-4xl font-black text-white tracking-tight">{name || "Vehicle"}</h1>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
-              <Car className="w-8 h-8 text-white" />
+            <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-lg">
+              <Car className="w-10 h-10 text-white" />
             </div>
           </div>
-          <div className="relative mt-4 flex items-center gap-4 text-white/90 text-sm">
-            <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-              Sr No: {srNo}
+
+          <div className="relative mt-6 flex items-center gap-4 text-white/95 text-sm font-bold">
+            <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 shadow-sm flex items-center gap-2">
+              <Hash size={14} /> Unit No: {srNo || "–"}
             </span>
-            <div className="flex items-center gap-2">
+            <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 shadow-sm flex items-center gap-2">
               <div
-                className="w-4 h-4 rounded-full border-2 border-white/50"
-                style={{ backgroundColor: color.toLowerCase() }}
+                className="w-4 h-4 rounded-full border-2 border-white/80 shadow-inner"
+                style={{ backgroundColor: color.toLowerCase() || 'transparent' }}
               />
-              <span className="capitalize">{color}</span>
-            </div>
+              <span className="capitalize">{color || '–'}</span>
+            </span>
           </div>
         </div>
 
-        {/* Form */}
+        {/* Form Content */}
         <form onSubmit={handleSubmit}>
-          <div className="p-6">
-            <div className="space-y-4">
-              {/* Serial Number - Read Only */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                <div className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg">
-                  <Hash className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-                    Serial Number
-                  </p>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-0.5">
-                    {srNo}
-                  </p>
-                </div>
+          <div className="p-8">
+
+            {/* Info Cards Grid — matching VehicleView layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Serial Identifier (read-only) */}
+              <div className="group bg-[#F8F9FB] dark:bg-gray-800 rounded-2xl p-6 flex flex-col justify-center border border-[#F1F3F6] dark:border-gray-700 transition-all duration-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md hover:-translate-y-1">
+                <p className="text-[10px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Hash size={14} className="text-blue-500" /> Serial Identifier
+                </p>
+                <h3 className="text-2xl font-bold text-[#2D3748] dark:text-gray-100">{srNo || '–'}</h3>
               </div>
 
-              {/* Vehicle Name - Read Only */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
-                  <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-                    Vehicle Name
-                  </p>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-0.5">
-                    {name}
-                  </p>
-                </div>
+              {/* Vehicle Model (read-only) */}
+              <div className="group bg-[#F8F9FB] dark:bg-gray-800 rounded-2xl p-6 flex flex-col justify-center border border-[#F1F3F6] dark:border-gray-700 transition-all duration-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md hover:-translate-y-1">
+                <p className="text-[10px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Car size={14} className="text-indigo-500" /> Vehicle Model
+                </p>
+                <h3 className="text-2xl font-bold text-[#2D3748] dark:text-gray-100">{name || '–'}</h3>
               </div>
 
-              {/* Dealer Assignment */}
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-700">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-lg">
-                    <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-                      Assign Dealer
-                    </p>
-                  </div>
-                </div>
-                <Select
-                  value={selectedDealer}
-                  onChange={(e) => setSelectedDealer(e.target.value)}
-                  className="w-full"
-                >
-                  <option value="">No dealer assigned</option>
-                  {dealers.map((dealer) => (
-                    <option key={dealer._id} value={dealer._id}>
-                      {dealer.name} - {dealer.contact}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+              {/* Paint Job — editable, spans full width */}
+              <div className="md:col-span-2 group bg-[#F8F9FB] dark:bg-gray-800 rounded-2xl p-6 border border-[#F1F3F6] dark:border-gray-700 transition-all duration-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md">
+                <p className="text-[10px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Palette size={14} className="text-emerald-500" /> Paint Job Configuration
+                </p>
 
-              {/* Color - Editable */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
-                    <Palette className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-                      Color <span className="text-red-500">*</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="pl-16">
+                {/* Color Input */}
+                <div className="relative flex items-center mb-4">
+                  <div
+                    className="absolute left-4 w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500 shadow-sm transition-all duration-300"
+                    style={{ backgroundColor: color.toLowerCase() || 'transparent' }}
+                  />
                   <input
-                    type="text"
+                    name="color"
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
-                    placeholder="Enter vehicle color (e.g., Red, Blue, White)"
+                    className="w-full bg-white dark:bg-gray-900 border border-[#E2E8F0] dark:border-gray-600 rounded-xl px-4 py-3 pl-11 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="e.g., Cherry Red, Royal Blue"
                     required
                   />
+                </div>
 
-                  {/* Color Suggestions */}
-                  <div className="mt-3">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Quick select:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {colorSuggestions.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setColor(c)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border transition-all duration-150 ${
-                            color === c
-                              ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300'
-                              : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
-                          }`}
-                        >
-                          <div
-                            className="w-2.5 h-2.5 rounded-full"
-                            style={{ backgroundColor: c.toLowerCase() }}
-                          />
-                          {c}
-                        </button>
-                      ))}
-                    </div>
+                {/* Color Presets */}
+                <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-[#E2E8F0] dark:border-gray-600">
+                  <p className="text-[10px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-widest mb-3">Quick Presets</p>
+                  <div className="flex flex-wrap gap-2">
+                    {colorSuggestions.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setColor(c)}
+                        className={`inline-flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider rounded-xl border transition-all duration-200 ${
+                          color.toLowerCase() === c.toLowerCase()
+                            ? 'bg-[#1877F2] border-[#1877F2] text-white shadow-md shadow-blue-200'
+                            : 'bg-[#F8F9FB] dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full border border-gray-200 dark:border-gray-500 shadow-inner"
+                          style={{ backgroundColor: c.toLowerCase() }}
+                        />
+                        {c}
+                      </button>
+                    ))}
                   </div>
                 </div>
+
               </div>
             </div>
 
-            {/* Success Message */}
+            {/* Success Banner */}
             {showSuccess && (
-              <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-xl flex items-center gap-3">
-                <div className="bg-green-100 dark:bg-green-800 p-2 rounded-lg">
-                  <Check className="w-5 h-5 text-green-600 dark:text-green-300" />
+              <div className="mt-6 p-4 bg-[#EBFDF5] dark:bg-emerald-900/30 border border-[#D1FAE5] dark:border-emerald-800/50 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2">
+                <div className="bg-emerald-100 dark:bg-emerald-800 p-2 rounded-lg text-emerald-600 dark:text-emerald-300">
+                  <Check size={18} strokeWidth={3} />
                 </div>
                 <div>
-                  <p className="font-medium text-green-800 dark:text-green-200">
-                    Vehicle updated successfully!
-                  </p>
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    Redirecting to order details...
-                  </p>
+                  <p className="font-bold text-emerald-800 dark:text-emerald-200 text-sm">Vehicle unit updated successfully!</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mt-1">Redirecting...</p>
                 </div>
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="submit"
-                disabled={loading || showSuccess}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors font-medium shadow-sm hover:shadow-md"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Save size={18} />
-                    Update Vehicle
-                  </>
-                )}
-              </button>
+            {/* Action Buttons — matching VehicleView footer style */}
+            <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-end gap-4">
               <button
                 type="button"
                 onClick={() => navigate(-1)}
                 disabled={loading || showSuccess}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all disabled:opacity-50"
               >
-                Cancel
+                <X size={16} /> Discard Changes
+              </button>
+
+              <button
+                type="submit"
+                disabled={loading || showSuccess}
+                className="flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 active:scale-95"
+              >
+                {loading ? "Updating..." : <><Save size={18} /> Save Configurations</>}
               </button>
             </div>
+
           </div>
         </form>
       </div>
