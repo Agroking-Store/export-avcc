@@ -106,7 +106,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       case "Invoice Created": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700";
       case "New":
       case "Draft":
-      default: return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700";
+      default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
     }
   })();
 

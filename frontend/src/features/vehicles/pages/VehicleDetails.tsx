@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
+import { bookingApi } from "../../../services/bookingApi";
 import {
   ArrowLeft,
   Eye,
@@ -26,6 +27,7 @@ const VehicleDetails = () => {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
+  const [vehicleStatuses, setVehicleStatuses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (id) fetchOrder();
@@ -38,6 +40,31 @@ const VehicleDetails = () => {
       const data = res.data.order || res.data;
       setOrder(data);
       setStatus(data.status || "Draft");
+      
+      // Fetch unit statuses
+      try {
+        const bookingsRes = await bookingApi.getAll();
+        const bookings = bookingsRes.data?.data || bookingsRes.data || [];
+        const statusMap: Record<string, string> = {};
+        
+        let expandedIndex = 0;
+        data.vehicles?.filter(Boolean).forEach((v: any) => {
+           const qty = v.quantity ?? 1;
+           for (let i = 0; i < qty; i++) {
+             const srNo = String(expandedIndex + 1);
+             const booking = bookings.find((b: any) => 
+               (b.orderId === id || b.orderId?._id === id) &&
+               b.vehicles?.some((bv: any) => String(bv.srNo) === srNo)
+             );
+             statusMap[expandedIndex] = booking ? (booking.status || "Booked") : "New";
+             expandedIndex++;
+           }
+        });
+        setVehicleStatuses(statusMap);
+      } catch (e) {
+        console.error("Error fetching vehicle statuses", e);
+      }
+
     } catch (error) {
       console.error("Error fetching order", error);
       toast.error("Order not found");
@@ -107,6 +134,7 @@ const VehicleDetails = () => {
           srNo: String(expandedIndex + 1),
           name: v.name || "",
           color: colorOverride ? colorOverride.color : v.color || "",
+          status: vehicleStatuses[expandedIndex] || "New"
         });
         expandedIndex++;
       }
@@ -114,6 +142,17 @@ const VehicleDetails = () => {
 
     return result;
   })();
+
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case "New": return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+      case "Booked": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700";
+      case "PI Created": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700";
+      case "LC Received": return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-700";
+      case "Invoice Created": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700";
+      default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+    }
+  };
 
   const formatAddress = (address: any) => {
     if (!address) return "-";
@@ -222,6 +261,7 @@ const VehicleDetails = () => {
                       <th className="px-6 py-4 text-left">Unit #</th>
                       <th className="px-6 py-4 text-left">Model Summary</th>
                       <th className="px-6 py-4 text-left">Color Build</th>
+                      <th className="px-6 py-4 text-center">Status</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -246,6 +286,11 @@ const VehicleDetails = () => {
                               {v.color}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                           <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(v.status)}`}>
+                             {v.status}
+                           </span>
                         </td>
                         <td className="px-6 py-5 text-right">
                           <div className="flex items-center justify-end gap-3">
