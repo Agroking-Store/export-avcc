@@ -11,9 +11,9 @@ export const createBooking = async (req: Request, res: Response) => {
     ResponseUtil.success(res, booking, 'Booking created successfully');
   } catch (error: any) {
     if (error.message.includes('already booked')) {
-      res.status(400).json({ 
+      res.status(400).json({
         message: error.message,
-        code: 'VEHICLE_ALREADY_BOOKED'
+        code: 'VEHICLE_ALREADY_BOOKED',
       });
     } else {
       res.status(400).json({ message: error.message });
@@ -87,5 +87,16 @@ export const getLatestBookingVehicles = async (req: Request, res: Response) => {
       success: false,
       message: error.message,
     });
+
+export const deleteBookingsByOrder = async (req: Request, res: Response) => {
+  try {
+    const deletedCount = await BookingService.deleteByOrderId(req.params.orderId);
+    ResponseUtil.success(
+      res,
+      { deletedCount },
+      `${deletedCount} booking(s) deleted for order`
+    );
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

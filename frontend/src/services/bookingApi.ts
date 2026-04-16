@@ -8,6 +8,7 @@ const bookingApi = {
   update: (id: string, data: any) => api.put(`/bookings/${id}`, data),
   confirm: (id: string) => api.patch(`/bookings/${id}/confirm`),
   delete: (id: string) => api.delete(`/bookings/${id}`),
+  deleteByOrder: (orderId: string) => api.delete(`/bookings/order/${orderId}`),
 };
 
 export { bookingApi };
