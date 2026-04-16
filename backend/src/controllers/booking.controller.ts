@@ -87,6 +87,8 @@ export const getLatestBookingVehicles = async (req: Request, res: Response) => {
       success: false,
       message: error.message,
     });
+  }
+};
 
 export const deleteBookingsByOrder = async (req: Request, res: Response) => {
   try {

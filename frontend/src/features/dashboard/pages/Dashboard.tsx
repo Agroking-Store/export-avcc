@@ -11,6 +11,8 @@ import {
 import { BarChart2, Crown, LayoutDashboard, PieChart as PieChartIcon } from "lucide-react";
 
 import { Search, Bell, DollarSign, TrendingUp, Truck, Eye, Download, MoreVertical } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
 const data = [
   { name: "Total Orders", value: 12 },
   { name: "Vehicles Exported", value: 50 },
@@ -57,18 +59,16 @@ const modules = [
 ];
 
 const Dashboard: React.FC = () => {
-  const [activeModule, setActiveModule] = useState<string>("Dashboard");
-  //do not touch
+  const [activeModule, setActiveModule] = useState<"Booked Vehicles" | "Clients">("Booked Vehicles");
+
   const renderModuleContent = () => {
     switch (activeModule) {
       case "Booked Vehicles":
         return <VehiclesTable />;
       case "Clients":
-        return <ClientsTable />
+        return <ClientsTable />;
       default:
-        return (
-          <p className="text-sm">Default shipment activity data shown here.</p>
-        );
+        return <VehiclesTable />;
     }
   };
   //
@@ -474,9 +474,19 @@ return (
 
       </div>
 
-      <div className="bg-gray-50 p-5 rounded-lg min-h-[120px] hover:shadow-inner transition">
-        {renderModuleContent()}
-      </div>
+      <div className="bg-gray-50 p-5 rounded-lg min-h-[120px] hover:shadow-inner">
+  <AnimatePresence mode="wait">
+    <motion.div
+      key={activeModule}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+    >
+      {renderModuleContent()}
+    </motion.div>
+  </AnimatePresence>
+</div>
 
     </div>
 
