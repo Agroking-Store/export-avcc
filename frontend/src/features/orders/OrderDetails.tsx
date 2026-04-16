@@ -93,8 +93,7 @@ const OrderDetails = () => {
 
         <button
           onClick={() => navigate("/orders/list")}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"
-        >
+          className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"        >
           <ArrowLeft size={18} />
           Back to Orders
         </button>
@@ -192,8 +191,7 @@ const OrderDetails = () => {
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 disabled={updatingStatus}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
+                className="cursor-pointer w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"              >
                 <option value="Draft">Draft</option>
                 <option value="Confirmed">Confirmed</option>
                 <option value="PI Generated">PI Generated</option>
@@ -201,8 +199,7 @@ const OrderDetails = () => {
               <button
                 onClick={() => updateStatus(status)}
                 disabled={updatingStatus}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-100 disabled:opacity-50"
-              >
+                className="cursor-pointer w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"              >
                 {updatingStatus ? "Updating..." : "Update Status"}
               </button>
             </div>

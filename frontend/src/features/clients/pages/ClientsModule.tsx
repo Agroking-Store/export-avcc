@@ -25,7 +25,7 @@ const ClientsModule = () => {
           <div>
             {/* Title: Scaled down to text-2xl */}
             <h1 className="text-2xl font-bold text-[#0f172a] dark:text-white tracking-tight leading-tight">
-              Clients Module
+              Clients 
             </h1>
             {/* Subtitle: Scaled down to text-sm */}
             <p className="text-sm text-slate-500 dark:text-blue-200/70 mt-0.5">
