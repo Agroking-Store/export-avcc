@@ -35,4 +35,3 @@ export const updateBookingSchema = bookingSchema.keys({
 
 export const validateCreateBooking = validate(createBookingSchema);
 export const validateUpdateBooking = validate(updateBookingSchema);
-
