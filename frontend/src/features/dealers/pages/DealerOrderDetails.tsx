@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { 
-  ArrowLeft, Eye, Edit2, Car, Calendar, 
+  ArrowLeft, Eye, FilePenLine, Car, Calendar, 
   Hash, ClipboardList, TrendingUp, Package, 
   Clock, CheckCircle, PlusCircle
 } from "lucide-react";
@@ -97,6 +97,7 @@ const DealerOrderDetails = () => {
     if (!order?.vehicles) return [];
     const groups: { [key: string]: { name: string; color: string; total: number; booked: number; piGenerated: number; available: number } } = {};
     
+    let globalIndex = 0;
     order.vehicles.filter(Boolean).forEach((v: any) => {
       const qty = v.quantity ?? 1;
       const name = v.name || "Unknown";
@@ -107,9 +108,16 @@ const DealerOrderDetails = () => {
       }
       groups[name].total += qty;
       
-      if (order.status === "Confirmed") groups[name].booked += qty;
-      else if (order.status === "PI Generated") groups[name].piGenerated += qty;
-      else if (order.status === "New" || order.status === "Draft") groups[name].available += qty;
+      // Calculate based on real-time vehicleStatuses map
+      for (let i = 0; i < qty; i++) {
+        const vStatus = vehicleStatuses[globalIndex] || 'New';
+        if (vStatus !== 'New' && vStatus !== 'Draft') {
+          groups[name].booked += 1;
+        } else {
+          groups[name].available += 1;
+        }
+        globalIndex++;
+      }
     });
     
     return Object.values(groups);
@@ -163,9 +171,9 @@ const DealerOrderDetails = () => {
       
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
-        <div className="bg-[#1e293b] px-6 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
-          <Hash size={16} className="text-indigo-400 mr-2" />
-          <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-indigo-300 transition-colors">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-2.5 rounded-xl shadow-lg border border-blue-500/30 flex items-center group cursor-default">
+          <Hash size={16} className="text-blue-100 mr-2" />
+          <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-blue-200 transition-colors">
             {order.orderId}
           </span>
         </div>
@@ -287,10 +295,10 @@ const DealerOrderDetails = () => {
                                     const params = new URLSearchParams({ name: v.name, color: v.color, srNo: v.srNo, expandedIndex: String(v.expandedIndex) });
                                     navigate(`/dealers/orders/${id}/vehicle-edit/${v.expandedIndex}?${params.toString()}`);
                                   }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${!isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-blue-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-sm'}`}
+                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 hover:scale-110 ${!isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-blue-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-sm'}`}
                                   title="Edit Vehicle"
                                 >
-                                  <Edit2 size={18} />
+                                  <FilePenLine size={18} />
                                 </button>
                                 <button
                                   onClick={() => {
@@ -298,7 +306,7 @@ const DealerOrderDetails = () => {
                                     const params = new URLSearchParams({ name: v.name, color: v.color, srNo: v.srNo });
                                     navigate(`/dealers/booking/${id}/${v.expandedIndex}?${params.toString()}&refresh=true`);
                                   }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:text-white hover:bg-[#5243EF] hover:border-[#5243EF] hover:shadow-md'}`}
+                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 hover:scale-110 ${isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-emerald-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:shadow-sm'}`}
                                   title="Book Vehicle"
                                 >
                                   <PlusCircle size={18} />
@@ -319,11 +327,11 @@ const DealerOrderDetails = () => {
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
           
-          <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-3xl p-6 shadow-xl border border-slate-700">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 shadow-xl border border-blue-500/50">
+            <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1">
               Order Status
             </p>
-            <h3 className={`text-2xl font-black ${status === 'Draft' ? 'text-yellow-400' : status === 'Confirmed' ? 'text-blue-400' : 'text-emerald-400'}`}>
+            <h3 className={`text-2xl font-black ${status === 'Draft' ? 'text-yellow-300' : status === 'Confirmed' ? 'text-white' : 'text-emerald-300'}`}>
               {status}
             </h3>
           </div>
