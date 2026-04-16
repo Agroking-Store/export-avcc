@@ -78,7 +78,7 @@ const OrdersList = () => {
           
           <button
             onClick={() => navigate("/orders/add")}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:from-[#4a56ff] hover:to-[#2a37ff] text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+            className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:from-[#4a56ff] hover:to-[#2a37ff] text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
           >
             <Plus size={18} strokeWidth={3} />
             Create New Order
@@ -178,7 +178,7 @@ const OrdersList = () => {
                         {/* VIEW BUTTON */}
                         <button
                           onClick={() => navigate(`/orders/${order._id}`)}
-                          className="p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-800 transition-all shadow-sm active:scale-95"
+                          className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="View Details"
                         >
                           <Eye size={18} />
@@ -187,7 +187,7 @@ const OrdersList = () => {
                         {/* EDIT BUTTON */}
                         <button
                           onClick={() => navigate(`/orders/edit/${order._id}`)}
-                          className="p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all shadow-sm active:scale-95"
+                          className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="Edit Order"
                         >
                           <FilePenLine size={18} />
@@ -211,14 +211,14 @@ const OrdersList = () => {
             <button
               onClick={() => setCurrentPage((p) => p - 1)}
               disabled={currentPage === 1}
-              className="flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+             className="cursor-pointer flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-blue-600 hover:-translate-x-1 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft size={18} /> Prev
             </button>
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
               disabled={currentPage === totalPages}
-              className="flex items-center gap-1 text-sm font-bold text-[#0f172a] hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="cursor-pointer flex items-center gap-1 text-sm font-bold text-[#0f172a] hover:text-blue-600 hover:translate-x-1 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               Next <ChevronRight size={18} />
             </button>
