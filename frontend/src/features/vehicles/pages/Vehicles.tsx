@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { vehicleApi, VehicleStats } from '../../../services/vehicleApi';
+import { bookingApi } from '../../../services/bookingApi';
 import axios from 'axios';
 import { apiConfig } from '../../../config/apiConfig';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -14,8 +16,24 @@ import {
   CartesianGrid,
   PieChart as RechartsPieChart,
   Pie,
-  Cell
+  Cell,
+  AreaChart,
+  Area
 } from "recharts";
+import { 
+  Car, 
+  CheckCircle2, 
+  Clock, 
+  TrendingUp, 
+  ArrowUpRight, 
+  ArrowRight, 
+  Package, 
+  Truck, 
+  ShieldCheck,
+  LayoutDashboard,
+  Search,
+  Plus
+} from 'lucide-react';
 
 interface Order {
   _id: string;
@@ -30,272 +48,324 @@ interface Order {
 }
 
 const Vehicles: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<VehicleStats | null>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [bookings, setBookings] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const loadData = async () => {
       try {
-        setLoadingStats(true);
-        const response = await vehicleApi.getStats();
-        if (response.success) {
-          setStats(response.data!);
-        }
+        setLoading(true);
+        const [statsRes, ordersRes, bookingsRes] = await Promise.all([
+          vehicleApi.getStats().catch(e => ({ success: false, data: null })),
+          axios.get(`${apiConfig.baseURL}/orders?limit=1000`).catch(e => ({ data: { data: [] } })),
+          bookingApi.getAll().catch(e => ({ data: { data: [] } }))
+        ]);
+
+        if (statsRes.success) setStats(statsRes.data!);
+        
+        const orderList = ordersRes.data?.data || ordersRes.data || [];
+        setOrders(orderList);
+
+        const bookingList = bookingsRes.data?.data || bookingsRes.data || [];
+        setBookings(Array.isArray(bookingList) ? bookingList : []);
+
       } catch (error) {
-        console.error('Failed to fetch vehicle stats:', error);
+        console.error('Failed to fetch dashboard data:', error);
       } finally {
-        setLoadingStats(false);
+        setLoading(false);
       }
     };
-
-    const fetchOrders = async () => {
-      try {
-        setLoadingOrders(true);
-        const res = await axios.get(`${apiConfig.baseURL}/orders?limit=1000`);
-        setOrders(res.data.data || []);
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-
-    fetchStats();
-    fetchOrders();
+    loadData();
   }, []);
 
-  const totalVehicles = loadingStats ? 0 : (stats?.total ?? 0);
-  const availableVehicles = loadingStats ? 0 : (stats?.available ?? 0);
+  const totalVehiclesInStock = stats?.total ?? 0;
   
-  const orderStats = {
+  // Dynamic metrics from real booking data
+  const vehicleMetrics = useMemo(() => {
+    const counts = {
+      booked: 0,
+      piCreated: 0,
+      lcReceived: 0,
+      invoiceCreated: 0
+    };
+
+    bookings.forEach(b => {
+      const status = b.status;
+      if (status === "Booked") counts.booked++;
+      else if (status === "PI Created") counts.piCreated++;
+      else if (status === "LC Received") counts.lcReceived++;
+      else if (status === "Invoice Created") counts.invoiceCreated++;
+    });
+
+    return counts;
+  }, [bookings]);
+
+  const availableUnits = totalVehiclesInStock - (vehicleMetrics.booked + vehicleMetrics.piCreated + vehicleMetrics.lcReceived + vehicleMetrics.invoiceCreated);
+
+  const statusDistribution = [
+    { name: 'Ready Stock', value: availableUnits > 0 ? availableUnits : 0, color: '#10b981' },
+    { name: 'Allocated', value: vehicleMetrics.booked, color: '#3b82f6' },
+    { name: 'Under PI', value: vehicleMetrics.piCreated, color: '#8b5cf6' },
+    { name: 'LC Received', value: vehicleMetrics.lcReceived, color: '#6366f1' },
+    { name: 'Invoiced', value: vehicleMetrics.invoiceCreated, color: '#14b8a6' }
+  ];
+
+  const orderStats = useMemo(() => ({
     draft: orders.filter(o => o.status === "Draft").length,
     confirmed: orders.filter(o => o.status === "Confirmed").length,
     piGenerated: orders.filter(o => o.status === "PI Generated").length,
     shipped: orders.filter(o => o.status === "Shipped").length,
     delivered: orders.filter(o => o.status === "Delivered").length,
-  };
+  }), [orders]);
 
-  const vehiclesByStatus = {
-    available: availableVehicles,
-    booked: orderStats.confirmed,
-    piGenerated: orderStats.piGenerated,
-    shipped: orderStats.shipped,
-    delivered: orderStats.delivered,
-  };
-
-  /* DATA TRANSFORMATIONS */
-  const ordersByMonth: Record<string, number> = {};
-  orders.forEach((o) => {
-    const month = new Date(o.createdAt).toLocaleString("default", { month: "short" });
-    if (!ordersByMonth[month]) ordersByMonth[month] = 0;
-    ordersByMonth[month]++;
-  });
-
-  const ordersChart = Object.keys(ordersByMonth).map((m) => ({
-    month: m,
-    orders: ordersByMonth[m],
-  }));
-
-  const vehicleStats: Record<string, number> = {};
-  orders.forEach((o) => {
-    o.vehicles?.forEach((v) => {
-      if (v?.name) {
-        if (!vehicleStats[v.name]) vehicleStats[v.name] = 0;
-        vehicleStats[v.name] += (v.quantity ?? 0);
-      }
+  const ordersChartData = useMemo(() => {
+    const ordersByMonth: Record<string, number> = {};
+    orders.forEach((o) => {
+      const date = new Date(o.createdAt);
+      const month = date.toLocaleString("default", { month: "short" });
+      ordersByMonth[month] = (ordersByMonth[month] || 0) + 1;
     });
-  });
+    return Object.entries(ordersByMonth).map(([month, count]) => ({ month, orders: count }));
+  }, [orders]);
 
-  const topVehicles = Object.keys(vehicleStats)
-    .map((v) => ({ model: v, qty: vehicleStats[v] }))
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5);
+  const topVehicles = useMemo(() => {
+    const vehicleStats: Record<string, number> = {};
+    orders.forEach((o) => {
+      o.vehicles?.forEach((v) => {
+        if (v?.name) {
+          vehicleStats[v.name] = (vehicleStats[v.name] || 0) + (v.quantity ?? 0);
+        }
+      });
+    });
+    return Object.entries(vehicleStats)
+      .map(([model, qty]) => ({ model, qty }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+  }, [orders]);
 
-  const statusDistribution = [
-    { name: 'Available', value: vehiclesByStatus.available, color: '#10b981' },
-    { name: 'Booked', value: vehiclesByStatus.booked, color: '#3b82f6' },
-    { name: 'PI Generated', value: vehiclesByStatus.piGenerated, color: '#8b5cf6' },
-    { name: 'In Transit', value: vehiclesByStatus.shipped, color: '#6366f1' },
-    { name: 'Delivered', value: vehiclesByStatus.delivered, color: '#14b8a6' }
-  ];
-
-  if (loadingStats || loadingOrders) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-400">
-        Loading vehicles dashboard...
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-950 p-8 flex flex-col items-center justify-center">
+         <div className="w-12 h-12 border-4 border-[#5243EF] border-t-transparent rounded-full animate-spin mb-4" />
+         <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Hydrating Dashboard...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-gray-950 p-6 lg:p-10 transition-colors duration-300">
+    <div className="p-8 space-y-8 min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-all duration-500 animate-in fade-in">
       
-      {/* HEADER SECTION */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            Vehicle Dashboard
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">
-            Vehicle inventory and export analytics.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <div className="px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300">
-            {new Date().toLocaleDateString()}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-500/10 rounded-xl">
+              <LayoutDashboard size={20} className="text-blue-600" />
+            </div>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Vehicles Dashboard</h1>
           </div>
+          <p className="text-[15px] text-slate-500 font-medium dark:text-gray-400">Inventory flow and export performance monitoring.</p>
         </div>
-      </header>
 
-      {/* KPI GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[
-          { label: "Total Vehicles", val: totalVehicles, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Available", val: vehiclesByStatus.available, color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Booked", val: vehiclesByStatus.booked, color: "text-orange-600", bg: "bg-orange-50" },
-          { label: "PI Generated", val: vehiclesByStatus.piGenerated, color: "text-purple-600", bg: "bg-purple-50" },
-        ].map((kpi, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-            <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{kpi.label}</p>
-            <h3 className={`text-3xl font-black mt-2 ${kpi.color}`}>{kpi.val}</h3>
+        <div className="flex items-center gap-3">
+          <div className="px-5 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm text-sm font-bold text-slate-600 dark:text-gray-300">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* CHARTS SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">
-            Orders Trend
-          </h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={ordersChart}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5f5" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+      {/* KPI GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KpiCard 
+          label="Total Inventory" 
+          value={totalVehiclesInStock} 
+          icon={<Car size={20} />} 
+          color="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400" 
+        />
+        <KpiCard 
+          label="Available Units" 
+          value={availableUnits > 0 ? availableUnits : 0} 
+          icon={<CheckCircle2 size={20} />} 
+          color="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" 
+        />
+        <KpiCard 
+          label="Active Bookings" 
+          value={bookings.length} 
+          icon={<Clock size={20} />} 
+          color="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400" 
+        />
+        <KpiCard 
+          label="Confirmed Pipeline" 
+          value={orderStats.confirmed} 
+          icon={<TrendingUp size={20} />} 
+          color="bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400" 
+        />
+      </div>
+
+      {/* QUICK ACTIONS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ActionTile 
+          title="Vehicle List" 
+          desc="Manage unit build and tracking" 
+          icon={<Car size={22} />} 
+          onClick={() => navigate('/vehicles/list')} 
+        />
+        <ActionTile 
+          title="Order Explorer" 
+          desc="Search across all Client Orders" 
+          icon={<Search size={22} />} 
+          onClick={() => navigate('/orders/add')} 
+        />
+      </div>
+
+      {/* VISUALS SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* RECENT SALES TREND */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-gray-800 transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xl font-black text-slate-800 dark:text-white">Order Volume Trend</h3>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100 dark:border-gray-800 px-3 py-1 rounded-full">Quarterly View</span>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={ordersChartData}>
+              <defs>
+                <linearGradient id="colorOrd" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
               <Tooltip
-                cursor={{ fill: "rgba(148,163,184,0.15)" }}
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "none",
-                  borderRadius: "10px",
-                  color: "#f1f5f9",
-                }}
-                labelStyle={{ color: "#94a3b8" }}
+                contentStyle={{ backgroundColor: "#1e293b", border: "none", borderRadius: "16px", color: "#f1f5f9", padding: "12px" }}
               />
-              <Line type="monotone" dataKey="orders" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
-            </LineChart>
+              <Area type="monotone" dataKey="orders" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorOrd)" />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Status Distribution</h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <RechartsPieChart>
-              <Pie
-                data={statusDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={70}
-                outerRadius={105}
-                paddingAngle={2}
-                dataKey="value"
-                strokeWidth={0}
-              >
-                {statusDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "none",
-                  borderRadius: "10px",
-                  color: "#f1f5f9"
-                }}
-                itemStyle={{ color: "#f1f5f9" }}
-              />
-            </RechartsPieChart>
-          </ResponsiveContainer>
-          <div className="mt-4 flex flex-wrap justify-center gap-4">
+        {/* STATUS PIE */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-gray-800 transition-all hover:shadow-md">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-8">Asset Liquidity</h3>
+          <div className="flex items-center justify-center -mt-6">
+            <ResponsiveContainer width="100%" height={240}>
+              <RechartsPieChart>
+                <Pie
+                  data={statusDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={65}
+                  outerRadius={95}
+                  paddingAngle={5}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  {statusDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#1e293b", border: "none", borderRadius: "16px", color: "#f1f5f9" }}
+                />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 space-y-3">
             {statusDistribution.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{item.name} ({item.value})</span>
+              <div key={index} className="flex items-center justify-between group">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-xs font-bold text-slate-500 dark:text-gray-400 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">{item.name}</span>
+                </div>
+                <span className="text-xs font-black text-slate-900 dark:text-white">{item.value}</span>
               </div>
             ))}
           </div>
         </div>
+
       </div>
 
-      {/* SECONDARY INSIGHTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      {/* TOP MODELS & PIPELINE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        {/* TOP VEHICLES TABLE */}
-        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-            <h3 className="font-bold text-gray-800 dark:text-white">Top Models</h3>
-          </div>
-          <div className="p-2">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs text-gray-400 uppercase tracking-widest">
-                  <th className="px-4 py-3 font-semibold">Model</th>
-                  <th className="px-4 py-3 font-semibold text-right">Units</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                {topVehicles.map((v) => (
-                  <tr key={v.model} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200">{v.model}</td>
-                    <td className="px-4 py-3 text-sm text-right font-bold text-blue-600 dark:text-blue-400">{v.qty}</td>
-                  </tr>
-                ))}
-                {topVehicles.length === 0 && (
-                   <tr><td colSpan={2} className="px-4 py-8 text-center text-gray-500 italic">No vehicles ordered yet</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* TOP MODELS CARDS */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 border border-slate-50 dark:border-gray-800 shadow-sm">
+           <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-black text-slate-800 dark:text-white">Top Performing Models</h3>
+              <Plus size={20} className="text-slate-300 cursor-pointer hover:text-blue-500" />
+           </div>
+           <div className="space-y-4">
+              {topVehicles.map((v, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-[#F8F9FB] dark:bg-gray-800/50 border border-slate-50 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 group transition-all">
+                  <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center text-blue-600 font-bold border border-slate-100 dark:border-gray-800">
+                        {v.model.charAt(0)}
+                     </div>
+                     <span className="font-bold text-slate-700 dark:text-gray-200">{v.model}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                     <span className="text-xs font-black text-blue-600 dark:text-blue-400">{v.qty} Units Ordered</span>
+                     <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                  </div>
+                </div>
+              ))}
+           </div>
         </div>
 
-        {/* SUMMARY BREAKDOWN */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex items-center justify-between p-6 bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-yellow-400 shadow-sm">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Draft Orders</p>
-              <h3 className="text-2xl font-black dark:text-white">{orderStats.draft}</h3>
-            </div>
-            <div className="h-12 w-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center text-yellow-600">📝</div>
-          </div>
-          <div className="flex items-center justify-between p-6 bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-emerald-400 shadow-sm">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Confirmed Orders</p>
-              <h3 className="text-2xl font-black dark:text-white">{orderStats.confirmed}</h3>
-            </div>
-            <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-emerald-600">✅</div>
-          </div>
-          <div className="flex items-center justify-between p-6 bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-indigo-400 shadow-sm">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Shipped Units</p>
-              <h3 className="text-2xl font-black dark:text-white">{orderStats.shipped}</h3>
-            </div>
-            <div className="h-12 w-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600">🚚</div>
-          </div>
-          <div className="flex items-center justify-between p-6 bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-teal-400 shadow-sm">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase">Delivered Units</p>
-              <h3 className="text-2xl font-black dark:text-white">{orderStats.delivered}</h3>
-            </div>
-            <div className="h-12 w-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center text-teal-600">📦</div>
-          </div>
+        {/* PIPELINE OVERVIEW */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+           <PipelineCard label="Vouchers Generated" val={orders.filter(o => o.orderId).length} icon={<Package size={22} />} border="border-l-blue-600" bg="bg-blue-50/50" text="text-blue-600" />
+           <PipelineCard label="Confirmed Pipeline" val={orderStats.confirmed} icon={<ShieldCheck size={22} />} border="border-l-emerald-500" bg="bg-emerald-50/50" text="text-emerald-600" />
+           <PipelineCard label="In Transit" val={orderStats.shipped} icon={<Truck size={22} />} border="border-l-indigo-400" bg="bg-indigo-50/50" text="text-indigo-600" />
+           <PipelineCard label="Total Shipments" val={orderStats.delivered} icon={<CheckCircle2 size={22} />} border="border-l-purple-400" bg="bg-purple-50/50" text="text-purple-600" />
         </div>
+
       </div>
-      
+
     </div>
   );
 };
+
+const KpiCard = ({ label, value, icon, color }: any) => (
+  <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md transition-all">
+    <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-4 shadow-sm`}>
+      {icon}
+    </div>
+    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-tight mb-1">{label}</p>
+    <h3 className="text-2xl font-black text-slate-800 dark:text-white mt-1 tracking-tight">{value}</h3>
+  </div>
+);
+
+const ActionTile = ({ title, desc, icon, onClick }: any) => (
+  <button onClick={onClick} className="cursor-pointer group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all text-left">
+    <div className="flex items-center justify-between relative z-10">
+      <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+        {icon}
+      </div>
+      <ArrowUpRight size={20} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+    </div>
+    <div className="mt-4 relative z-10">
+      <h3 className="font-bold text-slate-800 dark:text-gray-100 text-lg">{title}</h3>
+      <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">{desc}</p>
+    </div>
+  </button>
+);
+
+const PipelineCard = ({ label, val, icon, border, bg, text }: any) => (
+  <div className={`flex items-center justify-between p-6 bg-white dark:bg-gray-900 rounded-2xl border border-slate-100 border-l-4 ${border} shadow-sm transition-all hover:shadow-md`}>
+     <div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-none">{val}</h3>
+     </div>
+     <div className={`h-12 w-12 ${bg} rounded-xl flex items-center justify-center ${text} shadow-sm`}>
+        {icon}
+     </div>
+  </div>
+);
 
 export default Vehicles;
