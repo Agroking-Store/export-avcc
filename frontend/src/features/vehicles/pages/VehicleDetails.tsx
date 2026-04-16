@@ -261,19 +261,8 @@ const VehicleDetails = () => {
                             >
                               <Eye size={18} />
                             </button>
-                            <button
-                              onClick={() => {
-                                const params = new URLSearchParams({
-                                  name: v.name, color: v.color, srNo: v.srNo, expandedIndex: String(v.expandedIndex),
-                                });
-                                navigate(`/vehicles/view/${id}/edit-vehicle/${v.expandedIndex}?${params.toString()}`);
-                              }}
-                              className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                              title="Edit Vehicle"
-                            >
-                              <Edit2 size={18} />
-                            </button>
                           </div>
+
                         </td>
                       </tr>
                     ))}

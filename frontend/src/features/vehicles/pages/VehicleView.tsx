@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Car, Edit3, Hash, Palette, User, Settings } from "lucide-react";
+import { ArrowLeft, Car, Hash, Palette, User } from "lucide-react";
 
 const VehicleView = () => {
   const { id: orderId, vehicleIndex } = useParams();
@@ -129,28 +129,13 @@ const VehicleView = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-end gap-4">
+          <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800 flex justify-center">
              <button
                onClick={() => navigate(`/vehicles/view/${orderId}`, { replace: true })}
                className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
              >
-               Close View
-             </button>
-             <button
-               onClick={() => {
-                 const params = new URLSearchParams({
-                   name: vehicleName,
-                   color: vehicleColor,
-                   srNo,
-                   expandedIndex,
-                 });
-                 navigate(
-                   `/vehicles/view/${orderId}/edit-vehicle/${expandedIndex}?${params.toString()}`,
-                 );
-               }}
-               className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all active:scale-95"
-             >
-               <Settings size={16} /> Manage Vehicle
+               <ArrowLeft size={18} />
+               Back to Order
              </button>
           </div>
 
@@ -161,3 +146,4 @@ const VehicleView = () => {
 };
 
 export default VehicleView;
+

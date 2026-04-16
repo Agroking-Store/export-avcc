@@ -7,7 +7,7 @@ import Vehicles from "./Vehicles";
 import VehicleList from "./VehicleList";
 import VehicleDetails from "./VehicleDetails";
 import VehicleView from "./VehicleView";
-import VehicleEdit from "./VehicleEdit";
+
 
 const VehiclesModule = () => {
   return (
@@ -45,7 +45,7 @@ const VehiclesModule = () => {
             <Route path="list" element={<VehicleList />} />
             <Route path="view/:id" element={<VehicleDetails />} />
             <Route path="view/:id/view-vehicle/:vehicleIndex" element={<VehicleView />} />
-            <Route path="view/:id/edit-vehicle/:vehicleIndex" element={<VehicleEdit />} />
+
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>
