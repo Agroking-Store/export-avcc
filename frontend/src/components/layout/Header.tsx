@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, JSX } from "react";
 import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
-import { logout } from "@/features/auth/authSlice"; // Using alias for consistency
+import { logout } from "@/features/auth/authSlice";
 import { useTheme } from "../../context/ThemeContext";
 import {
   Moon,
@@ -12,24 +12,26 @@ import {
   LogOut,
   ChevronRight,
   LayoutDashboard,
-  Car, // Added for module icons
-  Users, // Added for module icons
-  FileText, // Added for module icons
-  FileCheck, // Added for module icons
-  Truck, // Added for module icons
-  Folders, // Added for default breadcrumb icon
-} from "lucide-react"; // Added ChevronRight and LayoutDashboard
-import { SidebarTrigger } from "@/components/ui/sidebar"; // Assuming SidebarTrigger is for mobile sheet
+  Car,
+  Users,
+  FileText,
+  FileCheck,
+  Truck,
+  Folders,
+} from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbSeparator,
   BreadcrumbPage,
-  BreadcrumbList, // Import BreadcrumbList
-} from "@/components/ui/breadcrumb"; // Assuming shadcn breadcrumb components
+  BreadcrumbList,
+} from "@/components/ui/breadcrumb";
+import axios from "axios";
+import { apiConfig } from "../../config/apiConfig";
 
-// Define module icons outside to avoid re-creation on every render
+// Module icons map
 const moduleIcons: { [key: string]: JSX.Element } = {
   dashboard: <LayoutDashboard size={16} />,
   vehicles: <Car size={16} />,
@@ -38,7 +40,62 @@ const moduleIcons: { [key: string]: JSX.Element } = {
   "letter-of-credit": <FileCheck size={16} />,
   dealers: <Truck size={16} />,
   companies: <Users size={16} />,
-  // Add more as needed for other modules
+};
+
+/** In-memory cache: mongoId → human-readable label */
+const idLabelCache: Record<string, string> = {};
+
+/** Returns true if a URL segment looks like a MongoDB ObjectId (24 hex chars) */
+const isMongoId = (segment: string) => /^[a-f\d]{24}$/i.test(segment);
+
+/**
+ * Resolves a MongoDB ObjectId to a human-readable label by checking the
+ * preceding path segment to determine which API to call.
+ */
+const resolveIdLabel = async (
+  id: string,
+  segments: string[],
+  idx: number
+): Promise<string> => {
+  if (idLabelCache[id]) return idLabelCache[id];
+
+  const parent = idx > 0 ? segments[idx - 1] : "";
+
+  try {
+    let label = "";
+
+    if (segments.includes("vehicles") || parent === "view") {
+      // /vehicles/view/:orderId or nested vehicle routes
+      const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
+      const data = res.data.order || res.data;
+      label = data.orderId || id.slice(-6);
+    } else if (parent === "orders" || segments[0] === "orders") {
+      const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
+      const data = res.data.order || res.data;
+      label = data.orderId || id.slice(-6);
+    } else if (parent === "booking") {
+      const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
+      const data = res.data.order || res.data;
+      label = data.orderId || id.slice(-6);
+    } else if (segments[0] === "dealers") {
+      const res = await axios.get(`${apiConfig.baseURL}/dealers/${id}`);
+      const data = res.data.dealer || res.data;
+      label = data.name || id.slice(-6);
+    } else if (segments[0] === "companies") {
+      const res = await axios.get(`${apiConfig.baseURL}/companies/${id}`);
+      const data = res.data.company || res.data;
+      label = data.name || id.slice(-6);
+    } else {
+      label = id.slice(-6);
+    }
+
+    idLabelCache[id] = label;
+    return label;
+  } catch {
+    const short = id.slice(-6);
+    idLabelCache[id] = short;
+    return short;
+  }
 };
 
 const Header: React.FC = () => {
@@ -49,12 +106,13 @@ const Header: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  /** Triggers re-render once labels are resolved */
+  const [resolvedLabels, setResolvedLabels] = useState<Record<string, string>>({});
+
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
@@ -62,15 +120,25 @@ const Header: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Resolve ObjectId segments whenever the route changes
+  useEffect(() => {
+    const segments = location.pathname.split("/").filter((s) => s !== "");
+    segments.forEach((segment, idx) => {
+      if (isMongoId(segment) && !idLabelCache[segment]) {
+        resolveIdLabel(segment, segments, idx).then((label) => {
+          setResolvedLabels((prev) => ({ ...prev, [segment]: label }));
+        });
+      }
+    });
+  }, [location.pathname]);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login");
   };
 
   const generateBreadcrumbs = (pathname: string) => {
-    const pathSegments = pathname
-      .split("/")
-      .filter((segment) => segment !== "");
+    const pathSegments = pathname.split("/").filter((segment) => segment !== "");
     let currentPath = "";
     const breadcrumbItems: JSX.Element[] = [];
 
@@ -83,19 +151,14 @@ const Header: React.FC = () => {
               to="/dashboard"
               className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
             >
-              {moduleIcons.dashboard} {/* Use the icon for Main Menu */}
+              {moduleIcons.dashboard}
               Main Menu
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {pathname !== "/dashboard" && pathSegments.length > 0 && (
           <BreadcrumbSeparator className="[&>span]:hidden">
-            {" "}
-            {/* Added className to hide default span content */}
-            <ChevronRight
-              size={16}
-              className="text-gray-400 dark:text-gray-600"
-            />
+            <ChevronRight size={16} className="text-gray-400 dark:text-gray-600" />
           </BreadcrumbSeparator>
         )}
       </React.Fragment>
@@ -105,20 +168,29 @@ const Header: React.FC = () => {
       currentPath += `/${segment}`;
       const isLast = index === pathSegments.length - 1;
 
-      // Simple capitalization for display
-      const displayName = segment
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
+      // Human-readable label: resolved API label for IDs, capitalised words otherwise
+      let displayName: string;
+      if (isMongoId(segment)) {
+        displayName =
+          resolvedLabels[segment] ||
+          idLabelCache[segment] ||
+          `${segment.slice(0, 6)}…`;
+      } else {
+        displayName = segment
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }
 
-      const icon = moduleIcons[segment] || <Folders size={16} />; // Get icon for the segment, or use a default File icon
+      const icon = moduleIcons[segment] || <Folders size={16} />;
+      const showIcon = !isMongoId(segment);
 
       breadcrumbItems.push(
         <React.Fragment key={currentPath}>
           <BreadcrumbItem>
             {isLast ? (
               <BreadcrumbPage className="px-2 py-1 rounded-md font-semibold text-gray-900 dark:text-white cursor-default flex items-center gap-1">
-                {icon}
+                {showIcon && icon}
                 {displayName}
               </BreadcrumbPage>
             ) : (
@@ -127,7 +199,7 @@ const Header: React.FC = () => {
                   to={currentPath}
                   className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
                 >
-                  {icon}
+                  {showIcon && icon}
                   {displayName}
                 </Link>
               </BreadcrumbLink>
@@ -135,12 +207,7 @@ const Header: React.FC = () => {
           </BreadcrumbItem>
           {!isLast && (
             <BreadcrumbSeparator className="[&>span]:hidden">
-              {" "}
-              {/* Added className to hide default span content */}
-              <ChevronRight
-                size={16}
-                className="text-gray-400 dark:text-gray-600"
-              />
+              <ChevronRight size={16} className="text-gray-400 dark:text-gray-600" />
             </BreadcrumbSeparator>
           )}
         </React.Fragment>
@@ -153,15 +220,12 @@ const Header: React.FC = () => {
   return (
     <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 md:px-8 transition-colors duration-200 z-10 shadow-sm">
       <div className="flex items-center gap-4">
-        {/* Sidebar trigger for mobile views */}
         <div className="md:hidden">
           <SidebarTrigger />
         </div>
-        {/* Sidebar trigger for desktop views */}
         <div className="hidden md:block">
           <SidebarTrigger />
         </div>
-        {/* Wrapper for breadcrumbs to ensure it takes available space and handles overflow */}
         <div className="flex-1 min-w-0">
           <Breadcrumb className="py-2 px-2 min-w-0 text-base">
             <BreadcrumbList className="flex items-center text-lg space-x-2 flex-nowrap overflow-x-auto list-none">
