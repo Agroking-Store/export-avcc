@@ -3,9 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Eye, FilePenLine, Trash2, Search, Filter, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "react-toastify";
-import DealerNav from "../components/DealerNav";
 
-const Dealers = () => {
+const DealersList = () => {
   const navigate = useNavigate();
   const [dealers, setDealers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,7 +29,9 @@ const Dealers = () => {
     }
   };
 
-  useEffect(() => { fetchDealers(); }, [search, currentPage]);
+  useEffect(() => {
+    fetchDealers();
+  }, [search, currentPage]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -46,8 +47,7 @@ const Dealers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
-
+    <>
       {/* Delete Modal */}
       {deleteId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -63,12 +63,16 @@ const Dealers = () => {
             </div>
             <p className="text-sm text-slate-600 dark:text-gray-300 mb-6">Are you sure you want to delete this dealer?</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteId(null)}
-                className="cursor-pointer px-6 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="cursor-pointer px-6 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-bold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+              >
                 Cancel
               </button>
-              <button onClick={handleDelete}
-                className="cursor-pointer px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl shadow-md shadow-red-200 transition-all active:scale-95">
+              <button
+                onClick={handleDelete}
+                className="cursor-pointer px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl shadow-md shadow-red-200 transition-all active:scale-95"
+              >
                 Delete
               </button>
             </div>
@@ -76,19 +80,18 @@ const Dealers = () => {
         </div>
       )}
 
-      <DealerNav />
-
       <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
-        
         {/* TOP SECTION: TITLE & ADD BUTTON */}
         <div className="px-8 py-6 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">Dealers</h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Manage all your dealers</p>
           </div>
-          
-          <button onClick={() => navigate("/dealers/add")}
-            className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95">
+
+          <button
+            onClick={() => navigate("/dealers/add")}
+            className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+          >
             <Plus size={18} strokeWidth={3} />
             Add Dealer
           </button>
@@ -107,9 +110,13 @@ const Dealers = () => {
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input type="text" placeholder="Search dealer..." value={search}
+            <input
+              type="text"
+              placeholder="Search dealer..."
+              value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 w-72 text-sm bg-slate-50/30 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+              className="pl-10 pr-4 py-2.5 w-72 text-sm bg-slate-50/30 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
           </div>
         </div>
 
@@ -119,7 +126,10 @@ const Dealers = () => {
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
                 {["Dealer ID", "Name", "Contact", "Email", "Address", "GST Number", "Actions"].map((head) => (
-                  <th key={head} className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
+                  <th
+                    key={head}
+                    className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
+                  >
                     {head}
                   </th>
                 ))}
@@ -129,23 +139,38 @@ const Dealers = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {dealers.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-20 text-slate-400 italic">No dealers found</td>
+                  <td colSpan={7} className="text-center py-20 text-slate-400 italic">
+                    No dealers found
+                  </td>
                 </tr>
               ) : (
                 dealers.map((dealer) => (
-                  <tr key={dealer._id} className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40">
+                  <tr
+                    key={dealer._id}
+                    className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40"
+                  >
                     <td className="px-8 py-5 text-center">
                       <span className="bg-[#f1f5f9] dark:bg-gray-800 text-[#475569] dark:text-gray-300 px-3 py-1.5 rounded-lg text-xs font-semibold group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">
                         {dealer.dealerId || dealer._id.slice(-4)}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-center">
-                      <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">{dealer.name}</div>
+                      <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
+                        {dealer.name}
+                      </div>
                     </td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{dealer.contact}</td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{dealer.email || "-"}</td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{dealer.address || "-"}</td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{dealer.gstNumber || "-"}</td>
+                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
+                      {dealer.contact}
+                    </td>
+                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
+                      {dealer.email || "-"}
+                    </td>
+                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
+                      {dealer.address || "-"}
+                    </td>
+                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
+                      {dealer.gstNumber || "-"}
+                    </td>
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">
                         <button
@@ -181,7 +206,8 @@ const Dealers = () => {
         {/* PAGINATION SECTION */}
         <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
           <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
-            Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of {totalPages}
+            Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of{" "}
+            {totalPages}
           </span>
 
           <div className="flex gap-6">
@@ -201,10 +227,9 @@ const Dealers = () => {
             </button>
           </div>
         </div>
-
       </div>
-    </div>
+    </>
   );
 };
 
-export default Dealers;
+export default DealersList;

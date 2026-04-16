@@ -5,7 +5,6 @@ import {
   Phone, Mail, Building2, MapPin, 
   ArrowLeft, ClipboardList, Hash
 } from "lucide-react";
-import DealerNav from "../components/DealerNav";
 
 const DealerDetails = () => {
   const { id } = useParams();
@@ -32,7 +31,7 @@ const DealerDetails = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-96">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
-      <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Loading Profile...</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Loading Profile...</span>
     </div>
   );
 
@@ -40,7 +39,6 @@ const DealerDetails = () => {
 
   return (
     <div className="w-full animate-in fade-in duration-500">
-      <DealerNav />
       
       {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-6">
@@ -51,7 +49,7 @@ const DealerDetails = () => {
         </div>
 
         <button
-          onClick={() => navigate("/dealers")}
+          onClick={() => navigate("/dealers/list")}
           className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"
         >
           <ArrowLeft size={18} />
@@ -63,20 +61,20 @@ const DealerDetails = () => {
         
         {/* LEFT COLUMN */}
         <div className="lg:col-span-9 space-y-6">
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
-            <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 transition-shadow hover:shadow-md">
+            <div className="flex items-center gap-3 mb-8 border-b border-gray-50 dark:border-gray-800 pb-4">
               <ClipboardList size={18} className="text-gray-400" />
-              <h2 className="text-lg font-bold text-[#1B2559]">Dealer Information</h2>
+              <h2 className="text-lg font-bold text-[#1B2559] dark:text-white">Dealer Information</h2>
             </div>
 
             <div className="space-y-6">
-              <div className="group bg-[#F8F9FB] rounded-2xl p-6 flex items-center gap-6 border border-[#F1F3F6] transition-all duration-300 hover:shadow-inner">
-                <div className="w-16 h-16 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-2xl font-black border border-indigo-100 transition-transform group-hover:scale-105">
+              <div className="group bg-[#F8F9FB] dark:bg-gray-800 rounded-2xl p-6 flex items-center gap-6 border border-[#F1F3F6] dark:border-gray-700 transition-all duration-300 hover:shadow-inner">
+                <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-2xl font-black border border-indigo-100 dark:border-indigo-800 transition-transform group-hover:scale-105">
                   {dealer.name?.charAt(0) || "D"}
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-widest mb-0.5">Dealer Name</p>
-                  <h3 className="text-2xl font-bold text-[#2D3748] group-hover:text-indigo-600 transition-colors">{dealer.name}</h3>
+                  <p className="text-[10px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-widest mb-0.5">Dealer Name</p>
+                  <h3 className="text-2xl font-bold text-[#2D3748] dark:text-white group-hover:text-indigo-600 transition-colors">{dealer.name}</h3>
                 </div>
               </div>
 
@@ -92,19 +90,19 @@ const DealerDetails = () => {
 
         {/* SIDEBAR CARDS */}
         <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-6">
-          <div className="bg-[#EBFDF5] rounded-2xl p-5 border border-[#D1FAE5] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#D1FAE5]">
+          <div className="bg-[#EBFDF5] dark:bg-emerald-900/20 rounded-2xl p-5 border border-[#D1FAE5] dark:border-emerald-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#D1FAE5] dark:hover:bg-emerald-900/30">
             <p className="text-[9px] font-bold uppercase tracking-widest mb-2 text-emerald-600">Status</p>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] animate-pulse"></div>
-              <h3 className="text-xl font-bold text-emerald-900">Active</h3>
+              <h3 className="text-xl font-bold text-emerald-900 dark:text-emerald-400">Active</h3>
             </div>
           </div>
 
-          <div className="bg-[#EBF8FF] rounded-2xl p-5 border border-[#BEE3F8] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#BEE3F8]/30 group">
-            <p className="text-[9px] font-bold text-blue-800 uppercase tracking-widest mb-2 flex items-center gap-1.5 transition-colors group-hover:text-blue-900">
+          <div className="bg-[#EBF8FF] dark:bg-blue-900/20 rounded-2xl p-5 border border-[#BEE3F8] dark:border-blue-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#BEE3F8]/30 group">
+            <p className="text-[9px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 transition-colors group-hover:text-blue-900">
               <Building2 size={12} /> Dealer Type
             </p>
-            <h3 className="text-lg font-bold text-blue-800 group-hover:scale-105 transition-transform origin-left">
+            <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300 group-hover:scale-105 transition-transform origin-left">
               Authorized Partner
             </h3>
           </div>

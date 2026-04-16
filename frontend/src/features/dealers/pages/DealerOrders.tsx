@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, Pencil, Check, Calendar } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, Calendar, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "../../../config/apiConfig";
-import DealerNav from "../components/DealerNav";
 
 interface Vehicle {
   hsnCode: string;
@@ -58,9 +57,7 @@ const DealerOrders = () => {
   const [dealers, setDealers] = useState<any[]>([]);
   const [dealerId, setDealerId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [vehicles, setVehicles] = useState<SavedVehicle[]>([
-    { ...emptyVehicle },
-  ]);
+  const [vehicles, setVehicles] = useState<SavedVehicle[]>([{ ...emptyVehicle }]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
 
@@ -72,11 +69,7 @@ const DealerOrders = () => {
 
   const savedCount = vehicles.filter((v) => v.saved).length;
 
-  const handleVehicleChange = (
-    index: number,
-    field: keyof Vehicle,
-    value: any,
-  ) => {
+  const handleVehicleChange = (index: number, field: keyof Vehicle, value: any) => {
     const updated = [...vehicles];
     updated[index] = { ...updated[index], [field]: value };
     setVehicles(updated);
@@ -88,11 +81,9 @@ const DealerOrders = () => {
     if (!v.vehicleName.trim()) newErrors[`vehicleName_${index}`] = "Required";
     if (!v.chassisNo.trim()) newErrors[`chassisNo_${index}`] = "Required";
     if (!v.engineNo.trim()) newErrors[`engineNo_${index}`] = "Required";
-    if (!v.engineCapacity.trim())
-      newErrors[`engineCapacity_${index}`] = "Required";
+    if (!v.engineCapacity.trim()) newErrors[`engineCapacity_${index}`] = "Required";
     if (!v.fuelType.trim()) newErrors[`fuelType_${index}`] = "Required";
-    if (!v.countryOfOrigin.trim())
-      newErrors[`countryOfOrigin_${index}`] = "Required";
+    if (!v.countryOfOrigin.trim()) newErrors[`countryOfOrigin_${index}`] = "Required";
     if (!v.yom) newErrors[`yom_${index}`] = "Required";
     if (!v.fobAmount) newErrors[`fobAmount_${index}`] = "Required";
 
@@ -156,34 +147,27 @@ const DealerOrders = () => {
 
   const inputClass = (disabled: boolean) =>
     `w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:ring-2 focus:ring-blue-500 text-black dark:text-white ${
-      disabled
-        ? "bg-gray-100 dark:bg-gray-700 text-gray-500"
-        : "bg-white dark:bg-gray-800"
+      disabled ? "bg-gray-100 dark:bg-gray-700 text-gray-500" : "bg-white dark:bg-gray-800"
     }`;
 
   return (
-    <div className="space-y-6">
-      <DealerNav />
-
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            New Dealer Order
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-gray-300">
-            Total Vehicles Saved:{" "}
-            <span className="font-bold text-blue-600">{savedCount}</span>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">New Dealer Order</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400">
+            Total Vehicles Saved: <span className="font-bold text-blue-600">{savedCount}</span>
           </p>
         </div>
         <button
           onClick={() => navigate("/dealers/orders")}
-          className="cursor-pointer px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all"
+          className="cursor-pointer flex items-center gap-2 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all"
         >
-          ← Back
+          <ArrowLeft size={18} /> Back
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700 p-8 space-y-8">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 p-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -192,7 +176,7 @@ const DealerOrders = () => {
             <select
               value={dealerId}
               onChange={(e) => setDealerId(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="">Select Dealer</option>
               {dealers.map((d) => (
@@ -210,7 +194,7 @@ const DealerOrders = () => {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
         </div>
@@ -232,7 +216,11 @@ const DealerOrders = () => {
             {vehicles.map((v, i) => (
               <div
                 key={i}
-                className={`p-6 rounded-lg border ${v.saved ? "bg-green-50 dark:bg-green-900/10 border-green-300 dark:border-green-700" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"}`}
+                className={`p-6 rounded-lg border ${
+                  v.saved
+                    ? "bg-green-50 dark:bg-green-900/10 border-green-300 dark:border-green-700"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                }`}
               >
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="font-medium text-slate-800 dark:text-white flex items-center gap-2">
@@ -256,44 +244,16 @@ const DealerOrders = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   {[
                     { label: "HSN Code", field: "hsnCode", type: "text" },
-                    {
-                      label: "Vehicle Name",
-                      field: "vehicleName",
-                      type: "text",
-                    },
-                    {
-                      label: "Exterior Colour",
-                      field: "exteriorColour",
-                      type: "text",
-                    },
+                    { label: "Vehicle Name", field: "vehicleName", type: "text" },
+                    { label: "Exterior Colour", field: "exteriorColour", type: "text" },
                     { label: "Chassis No", field: "chassisNo", type: "text" },
                     { label: "Engine No", field: "engineNo", type: "text" },
-                    {
-                      label: "Engine Capacity",
-                      field: "engineCapacity",
-                      type: "text",
-                    },
+                    { label: "Engine Capacity", field: "engineCapacity", type: "text" },
                     { label: "Fuel Type", field: "fuelType", type: "text" },
-                    {
-                      label: "Country of Origin",
-                      field: "countryOfOrigin",
-                      type: "text",
-                    },
-                    {
-                      label: "Year of Manufacture",
-                      field: "yom",
-                      type: "number",
-                    },
-                    {
-                      label: "FOB Amount (USD)",
-                      field: "fobAmount",
-                      type: "number",
-                    },
-                    {
-                      label: "Freight (USD)",
-                      field: "freight",
-                      type: "number",
-                    },
+                    { label: "Country of Origin", field: "countryOfOrigin", type: "text" },
+                    { label: "Year of Manufacture", field: "yom", type: "number" },
+                    { label: "FOB Amount (USD)", field: "fobAmount", type: "number" },
+                    { label: "Freight (USD)", field: "freight", type: "number" },
                   ].map(({ label, field, type }) => (
                     <div key={field}>
                       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -303,24 +263,18 @@ const DealerOrders = () => {
                         type={type}
                         value={(v as any)[field] || ""}
                         disabled={v.saved}
-                        placeholder={
-                          v.saved ? "" : fieldPlaceholders[field] || ""
-                        }
+                        placeholder={v.saved ? "" : fieldPlaceholders[field] || ""}
                         onChange={(e) =>
                           handleVehicleChange(
                             i,
                             field as keyof Vehicle,
-                            type === "number"
-                              ? parseFloat(e.target.value) || 0
-                              : e.target.value,
+                            type === "number" ? parseFloat(e.target.value) || 0 : e.target.value
                           )
                         }
                         className={inputClass(v.saved)}
                       />
                       {errors[`${field}_${i}`] && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors[`${field}_${i}`]}
-                        </p>
+                        <p className="text-red-500 text-xs mt-1">{errors[`${field}_${i}`]}</p>
                       )}
                     </div>
                   ))}
@@ -358,7 +312,7 @@ const DealerOrders = () => {
           <button
             onClick={handleSubmitOrder}
             disabled={loading}
-            className="cursor-pointer px-8 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white rounded-lg font-medium active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="cursor-pointer px-8 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white rounded-lg font-medium active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-indigo-100 dark:shadow-none"
           >
             {loading ? "Creating..." : "Create Order"}
           </button>

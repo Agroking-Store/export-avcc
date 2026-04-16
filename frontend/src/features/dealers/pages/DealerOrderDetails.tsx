@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import DealerNav from "../components/DealerNav";
 import { 
   ArrowLeft, Eye, Edit2, Car, Calendar, 
   Hash, ClipboardList, TrendingUp, Package, 
@@ -148,7 +147,7 @@ const DealerOrderDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-400">
+      <div className="flex flex-col items-center justify-center h-96 text-gray-500 dark:text-gray-400">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
         <span className="text-[10px] font-bold uppercase tracking-widest ml-4">Loading Order Details...</span>
       </div>
@@ -160,8 +159,7 @@ const DealerOrderDetails = () => {
   }
 
   return (
-    <div className="p-6 lg:p-10 min-h-screen bg-[#f8fafc] dark:bg-gray-950 animate-in fade-in duration-500 transition-colors">
-      <DealerNav />
+    <div className="animate-in fade-in duration-500 transition-colors">
       
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
@@ -278,7 +276,7 @@ const DealerOrderDetails = () => {
                                     const params = new URLSearchParams({ name: v.name, color: v.color, srNo: v.srNo, expandedIndex: String(v.expandedIndex) });
                                     navigate(`/dealers/orders/${id}/vehicle-view/${v.expandedIndex}?${params.toString()}`);
                                   }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${!isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm'}`}
+                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${!isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-sm'}`}
                                   title="View Details"
                                 >
                                   <Eye size={18} />
@@ -289,7 +287,7 @@ const DealerOrderDetails = () => {
                                     const params = new URLSearchParams({ name: v.name, color: v.color, srNo: v.srNo, expandedIndex: String(v.expandedIndex) });
                                     navigate(`/dealers/orders/${id}/vehicle-edit/${v.expandedIndex}?${params.toString()}`);
                                   }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${!isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white border-slate-200 text-blue-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm'}`}
+                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${!isBooked ? 'opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700' : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-blue-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-sm'}`}
                                   title="Edit Vehicle"
                                 >
                                   <Edit2 size={18} />
