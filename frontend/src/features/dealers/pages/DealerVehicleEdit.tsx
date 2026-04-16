@@ -242,7 +242,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       {/* Back */}
       <button
         onClick={() => navigate(`/dealers/orders/${orderId}`)}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
+        className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
       >
         <span className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
           <ArrowLeft size={15} />
@@ -448,14 +448,14 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           <button
             type="button"
             onClick={() => navigate(`/dealers/orders/${orderId}`)}
-            className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="cursor-pointer px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 rounded-xl shadow-sm transition-colors"
+            className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-[#5243EF] hover:bg-[#4335d6] disabled:bg-indigo-400 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
           >
             {saving ? (
               <>

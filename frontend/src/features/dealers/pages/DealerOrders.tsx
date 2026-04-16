@@ -177,7 +177,7 @@ const DealerOrders = () => {
         </div>
         <button
           onClick={() => navigate("/dealers/orders")}
-          className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+          className="cursor-pointer px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all"
         >
           ← Back
         </button>
@@ -222,7 +222,7 @@ const DealerOrders = () => {
             </h3>
             <button
               onClick={addVehicle}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm active:scale-95 transition-all"
             >
               <Plus size={16} /> Add Vehicle
             </button>
@@ -246,7 +246,7 @@ const DealerOrders = () => {
                   {!v.saved && vehicles.length > 1 && (
                     <button
                       onClick={() => removeVehicle(i)}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                      className="cursor-pointer p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg active:scale-95 transition-all"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -330,14 +330,14 @@ const DealerOrders = () => {
                   {!v.saved ? (
                     <button
                       onClick={() => handleSaveVehicle(i)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg"
+                      className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-[#5243EF] hover:bg-[#4335d6] text-white text-sm rounded-lg active:scale-95 transition-all"
                     >
                       <Check size={16} /> Save Vehicle
                     </button>
                   ) : (
                     <button
                       onClick={() => handleEditVehicle(i)}
-                      className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg"
+                      className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg active:scale-95 transition-all"
                     >
                       <Pencil size={16} /> Edit Vehicle
                     </button>
@@ -351,14 +351,14 @@ const DealerOrders = () => {
         <div className="flex justify-end gap-4 pt-6 border-t border-slate-200 dark:border-gray-700">
           <button
             onClick={() => navigate("/dealers/orders")}
-            className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="cursor-pointer px-6 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmitOrder}
             disabled={loading}
-            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+            className="cursor-pointer px-8 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white rounded-lg font-medium active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? "Creating..." : "Create Order"}
           </button>

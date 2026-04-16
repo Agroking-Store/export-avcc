@@ -147,7 +147,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       {/* Back */}
       <button
         onClick={() => navigate(`/dealers/orders/${orderId}`)}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
+        className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
       >
         <span className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
           <ArrowLeft size={15} />
@@ -215,7 +215,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
             const params = new URLSearchParams(searchParams);
 navigate(`/dealers/orders/${orderId}/vehicle-edit/${expandedIndex}?${params.toString()}`);
           }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm transition-colors"
+          className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#5243EF] hover:bg-[#4335d6] rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
         >
           <Edit2 size={14} />
           Edit Vehicle

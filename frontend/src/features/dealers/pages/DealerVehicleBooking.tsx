@@ -189,7 +189,7 @@ const DealerVehicleBooking = () => {
         <div>
           <button
             onClick={() => navigate(`/dealers/orders/${orderId}`)}
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+            className="cursor-pointer inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
           >
             <ArrowLeft size={16} /> Back to Order
           </button>
@@ -425,14 +425,14 @@ const DealerVehicleBooking = () => {
             <button
               type="button"
               onClick={() => navigate(`/dealers/orders/${orderId}`)}
-              className="w-full sm:w-auto px-6 py-3.5 text-gray-700 dark:text-gray-200 font-semibold rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="cursor-pointer w-full sm:w-auto px-6 py-3.5 text-gray-700 dark:text-gray-200 font-semibold rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitLoading || hasErrors}
-              className="w-full sm:w-auto px-10 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 dark:disabled:bg-blue-900/50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2"
+              className="cursor-pointer w-full sm:w-auto px-10 py-3.5 bg-[#5243EF] hover:bg-[#4335d6] disabled:bg-blue-300 dark:disabled:bg-blue-900/50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 active:scale-95"
             >
               {submitLoading ? (
                 <>
