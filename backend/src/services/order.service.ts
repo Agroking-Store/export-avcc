@@ -201,7 +201,7 @@ export const getOrderByIdService = async (id: string) => {
   const order = await Order.findById(id)
     .populate({
       path: "clientId",
-      select: "name companyName country phone address",
+      select: "name companyName country phone email address",
     })
   if (!order) throw new Error("Order not found");
   return order;

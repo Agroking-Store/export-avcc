@@ -85,17 +85,30 @@ const EditClient = () => {
 
     try {
       setLoading(true);
-      await axios.put(`${apiConfig.baseURL}/clients/${id}`, form);
-
-      navigate("/clients/list", {
-        state: { success: "Client updated successfully ✅" },
-      });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error updating client");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const addressParts = form.address.split(",").map((item) => item.trim());
+      
+      const payload = {
+        ...form,
+        address: {
+          houseBuilding: addressParts[0] || "",
+          streetArea: addressParts[1] || "",
+          cityTown: addressParts[2] || "",
+          state: addressParts[3] || "",
+          pincode: addressParts[4] || "",
+          country: addressParts[5] || form.country || "",
+        },
+      };
+      
+      await axios.put(`${apiConfig.baseURL}/clients/${id}`, payload);
+            navigate("/clients/list", {
+              state: { success: "Client updated successfully ✅" },
+            });
+          } catch (error: any) {
+            toast.error(error.response?.data?.message || "Error updating client");
+          } finally {
+            setLoading(false);
+          }
+        };
 
   // UI Styles to match the high-fidelity reference
   const inputStyle =
@@ -116,8 +129,7 @@ const EditClient = () => {
 
         <button
           onClick={() => navigate("/clients/list")}
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
-        >
+          className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"        >
           <ArrowLeft size={18} /> Back to Clients
         </button>
       </div>
@@ -224,16 +236,14 @@ const EditClient = () => {
           <button
             type="button"
             onClick={() => navigate("/clients/list")}
-            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-          >
+            className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"          >
             <X size={16} /> Discard Changes
           </button>
 
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70"
-          >
+            className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"          >
             {loading ? (
               "Updating..."
             ) : (

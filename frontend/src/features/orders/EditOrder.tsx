@@ -146,8 +146,7 @@ const EditOrder = () => {
 
         <button
           onClick={() => navigate("/orders/list")}
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
-        >
+          className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"        >
           <ArrowLeft size={18} /> Back to Orders
         </button>
       </div>
@@ -206,8 +205,7 @@ const EditOrder = () => {
             <button 
               type="button"
               onClick={addVehicle}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
-            >
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"            >
               <Plus size={16} /> Add Vehicle
             </button>
           </div>
@@ -223,8 +221,7 @@ const EditOrder = () => {
                     <button
                       type="button"
                       onClick={() => removeVehicle(i)}
-                      className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-all"
-                    >
+                      className="cursor-pointer text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-all"                    >
                       <Trash2 size={16} />
                     </button>
                   )}
@@ -284,16 +281,14 @@ const EditOrder = () => {
           <button
             type="button"
             onClick={() => navigate("/orders/list")}
-            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-          >
+            className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"          >
             <X size={16} /> Discard Changes
           </button>
 
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70"
-          >
+            className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"          >
             {loading ? "Updating..." : <><Save size={18} /> Update Order</>}
           </button>
         </div>
