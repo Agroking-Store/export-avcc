@@ -68,12 +68,11 @@ const DealerOrderDetails = () => {
           const qty = v.quantity ?? 1;
           for (let qIdx = 0; qIdx < qty; qIdx++) {
             const expandedIndex = globalIndex++;
-            const hasBooking = bookings.some((booking: any) => {
-              if (booking.status !== 'Booked') return false;
-              if (booking.orderId !== id) return false;
-              return booking.vehicles.some((bv: any) => String(bv.srNo) === String(expandedIndex + 1));
-            });
-            statusMap[expandedIndex] = hasBooking ? "Booked" : "Draft";
+            const booking = bookings.find((b: any) => 
+              b.orderId === id && 
+              b.vehicles.some((bv: any) => String(bv.srNo) === String(expandedIndex + 1))
+            );
+            statusMap[expandedIndex] = booking ? (booking.status || "Booked") : "New";
           }
         });
       }
@@ -86,7 +85,7 @@ const DealerOrderDetails = () => {
         order.vehicles.filter(Boolean).forEach((v: any) => {
           const qty = v.quantity ?? 1;
           for (let qIdx = 0; qIdx < qty; qIdx++) {
-            statusMap[globalIndex++] = "Draft";
+            statusMap[globalIndex++] = "New";
           }
         });
         setVehicleStatuses(statusMap);
@@ -110,7 +109,7 @@ const DealerOrderDetails = () => {
       
       if (order.status === "Confirmed") groups[name].booked += qty;
       else if (order.status === "PI Generated") groups[name].piGenerated += qty;
-      else if (order.status === "Draft") groups[name].available += qty;
+      else if (order.status === "New" || order.status === "Draft") groups[name].available += qty;
     });
     
     return Object.values(groups);
@@ -137,10 +136,11 @@ const DealerOrderDetails = () => {
 
   const getStatusColor = (s: string) => {
     switch (s) {
-      case "Draft": return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+      case "New": return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
       case "Booked": return "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
-      case "Confirmed": return "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
-      case "PI Generated": return "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800";
+      case "PI Created": return "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800";
+      case "LC Received": return "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800";
+      case "Invoice Created": return "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800";
       default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
     }
   };
@@ -239,8 +239,8 @@ const DealerOrderDetails = () => {
                       </tr>
                     ) : (
                       expandedVehicles.map((v: any) => {
-                        const vStatus = vehicleStatuses[v.expandedIndex] || 'Draft';
-                        const isBooked = vStatus === 'Booked';
+                        const vStatus = vehicleStatuses[v.expandedIndex] || 'New';
+                        const isBooked = vStatus !== 'New' && vStatus !== 'Draft';
 
                         return (
                           <tr key={v.expandedIndex} className="hover:bg-blue-50/40 dark:hover:bg-gray-800/50 transition-colors group">

@@ -21,7 +21,7 @@ const bookingSchema = Joi.object({
   dealerId: Joi.string().required(),
   date: Joi.string().regex(/^\d{4}-\d{2}-\d{2}$/).required(),
   vehicles: Joi.array().items(vehicleSchema).min(1).required(),
-  status: Joi.string().valid('Draft', 'Booked').default('Draft'),
+  status: Joi.string().valid('New', 'Booked', 'PI Created', 'LC Received', 'Invoice Created').default('New'),
   orderId: Joi.string().optional(),
 });
 
@@ -30,7 +30,7 @@ export const updateBookingSchema = bookingSchema.keys({
   dealerId: Joi.string().optional(),
   date: Joi.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   vehicles: Joi.array().items(vehicleSchema).optional(),
-  status: Joi.string().valid('Draft', 'Booked').optional(),
+  status: Joi.string().valid('New', 'Booked', 'PI Created', 'LC Received', 'Invoice Created').optional(),
 });
 
 export const validateCreateBooking = validate(createBookingSchema);

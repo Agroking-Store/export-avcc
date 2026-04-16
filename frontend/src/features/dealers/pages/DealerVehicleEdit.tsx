@@ -18,6 +18,7 @@ interface VehicleForm {
   fobAmount: number;
   freight: number;
   quantity: number;
+  status: string;
 }
 
 const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
@@ -54,6 +55,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
     fobAmount: 0,
     freight: 0,
     quantity: 1,
+    status: "Booked",
   });
 
   useEffect(() => {
@@ -73,7 +75,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
         const bookings = bookingsRes.data?.data || bookingsRes.data || [];
         let bookingVehicle = null;
         const matchingBooking = bookings.find((b: any) => {
-          if (b.status !== "Booked") return false;
+          if (b.status === "New" || b.status === "Draft") return false;
           if (b.orderId && b.orderId !== orderId) return false;
           return b.vehicles?.some((bv: any) => String(bv.srNo) === String(srNo));
         });
@@ -96,6 +98,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           fobAmount: bookingVehicle?.fobAmount || v?.fobAmount || 0,
           freight: bookingVehicle?.freight || v?.freight || 0,
           quantity: v?.quantity || 1,
+          status: matchingBooking?.status || "Booked",
         };
         setForm(formData);
       } catch {
@@ -180,6 +183,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       };
 
       const response = await bookingApi.update(bookingId, {
+        status: form.status,
         vehicles: [updatedVehicleData],
       });
       console.log("Update response:", response.data);
@@ -363,6 +367,20 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
                   placeholder="e.g. 1496cc"
                   className={inputClass("")}
                 />
+              </div>
+
+              <div>
+                <label className={labelClass}>Booking Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => handleChange("status", e.target.value)}
+                  className={inputClass("status")}
+                >
+                  <option value="Booked">Booked</option>
+                  <option value="PI Created">PI Created</option>
+                  <option value="LC Received">LC Received</option>
+                  <option value="Invoice Created">Invoice Created</option>
+                </select>
               </div>
             </div>
 
