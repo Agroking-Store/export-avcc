@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { bookingApi } from "../../../services/bookingApi";
-import { ArrowLeft, Save, Car, AlertCircle, CheckCircle2 } from "lucide-react";
+import { 
+  ArrowLeft, Save, Car, Hash, Package, 
+  Fuel, Globe, Calendar, DollarSign, X, CheckCircle2, Info
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 interface VehicleForm {
@@ -24,22 +27,20 @@ interface VehicleForm {
 const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
 const DealerVehicleEdit = () => {
-const params = useParams();
-const orderId = params.id;
-const vehicleIndex = params.vehicleIndex;
+  const params = useParams();
+  const orderId = params.id;
+  const vehicleIndex = params.vehicleIndex;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const expandedIndex = parseInt(vehicleIndex || "0");
   const srNo = searchParams.get("srNo") || String(expandedIndex + 1);
-const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
+  const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [orderId2, setOrderId2] = useState("");
-  const [allOrderVehicles, setAllOrderVehicles] = useState<any[]>([]);
   const [bookingId, setBookingId] = useState("");
 
   const [form, setForm] = useState<VehicleForm>({
@@ -63,28 +64,26 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       try {
         const res = await axios.get(`http://localhost:5000/api/v1/orders/${orderId}`);
         const order = res.data.order || res.data;
-        setOrderId2(order.orderId);
         const vehicles = order.vehicles?.filter(Boolean) || [];
-        setAllOrderVehicles(vehicles);
         const v = vehicles[vIdx];
         const name = v?.name || searchParams.get("name") || "";
         const color = v?.color || searchParams.get("color") || "";
         
-        // Fetch booking data for booked vehicle
         const bookingsRes = await bookingApi.getAll();
         const bookings = bookingsRes.data?.data || bookingsRes.data || [];
         let bookingVehicle = null;
         const matchingBooking = bookings.find((b: any) => {
           if (b.status === "New" || b.status === "Draft") return false;
-          if (b.orderId && b.orderId !== orderId) return false;
+          const bOrderId = typeof b.orderId === 'object' ? b.orderId?._id : b.orderId;
+          if (bOrderId !== orderId) return false;
           return b.vehicles?.some((bv: any) => String(bv.srNo) === String(srNo));
         });
+        
         if (matchingBooking) {
           setBookingId(matchingBooking._id);
           bookingVehicle = matchingBooking.vehicles.find((bv: any) => String(bv.srNo) === String(srNo));
         }
         
-        // Merge: bookingVehicle overrides v, fallback searchParams for name/color
         const formData = {
           name,
           color,
@@ -108,17 +107,16 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       }
     };
     load();
-  }, [orderId, vIdx]);
+  }, [orderId, vIdx, srNo]);
 
-  /* ── Validation ── */
   const validateField = (field: keyof VehicleForm): string => {
     switch (field) {
-      case "name": return form.name.trim() ? "" : "Vehicle name is required";
-      case "color": return form.color.trim() ? "" : "Colour is required";
-      case "hsnCode": return form.hsnCode.trim() ? "" : "HSN Code is required";
+      case "name": return form.name.trim() ? "" : "Name is required";
+      case "color": return form.color.trim() ? "" : "Color is required";
+      case "hsnCode": return form.hsnCode.trim() ? "" : "HSN is required";
       case "chassisNo":
-        if (!form.chassisNo.trim()) return "Chassis No is required";
-        if (!CHASSIS_REGEX.test(form.chassisNo.trim())) return "Must be 17 alphanumeric characters (no I, O, Q)";
+        if (!form.chassisNo.trim()) return "Chassis is required";
+        if (!CHASSIS_REGEX.test(form.chassisNo.trim())) return "Invalid 17-char Chassis";
         return "";
       case "engineNo": return form.engineNo.trim() ? "" : "Engine No is required";
       default: return "";
@@ -137,357 +135,213 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleBlur = (field: keyof VehicleForm) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    setErrors((prev) => ({ ...prev, [field]: validateField(field) }));
-  };
-
-  const handleChange = (field: keyof VehicleForm, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (touched[field]) {
-      setTimeout(() => {
-        setErrors((prev) => ({ ...prev, [field]: validateField(field) }));
-      }, 0);
-    }
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateAll()) {
-      toast.error("Please fix errors before saving");
-      return;
-    }
+    if (!validateAll()) return;
     setSaving(true);
-    if (!bookingId) {
-      toast.error("Booking not found for this vehicle. Cannot edit.");
-      setSaving(false);
-      return;
-    }
-
     try {
-      // Create updated vehicle object for the booking
-      const updatedVehicleData = {
-        name: form.name.trim(),
-        color: form.color.trim(),
-        hsnCode: form.hsnCode.trim(),
-        chassisNo: form.chassisNo.trim().toUpperCase(),
-        engineNo: form.engineNo.trim(),
-        engineCapacity: form.engineCapacity.trim(),
-        fuelType: form.fuelType.trim(),
-        countryOfOrigin: form.countryOfOrigin.trim(),
-        yom: form.yom,
-        fobAmount: form.fobAmount,
-        freight: form.freight,
-        quantity: 1,
-        srNo: srNo,
-      };
-
-      const response = await bookingApi.update(bookingId, {
+      if (!bookingId) throw new Error("Booking not found");
+      await bookingApi.update(bookingId, {
         status: form.status,
-        vehicles: [updatedVehicleData],
+        vehicles: [{
+          ...form,
+          chassisNo: form.chassisNo.toUpperCase(),
+          srNo: srNo
+        }],
       });
-      console.log("Update response:", response.data);
-      toast.success("Vehicle updated successfully");
+      toast.success("Successfully updated");
       navigate(`/dealers/orders/${orderId}`);
     } catch (error: any) {
-      console.error("Update error:", error.response?.data || error.message);
-      const msg = error.response?.data?.message || "Server error";
-      toast.error(`Failed to update: ${msg}`);
-      if (msg.includes('already exists')) {
-         setErrors({
-           chassisNo: msg,
-           engineNo: msg
-         });
-      }
+      toast.error(error.response?.data?.message || "Failed to update");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ── Sub-components ── */
-  const FieldError = ({ field }: { field: string }) => {
-    if (!touched[field] || !errors[field]) return null;
-    return (
-      <p className="mt-1.5 flex items-center gap-1 text-red-600 dark:text-red-400 text-xs">
-        <AlertCircle size={11} className="flex-shrink-0" />
-        {errors[field]}
-      </p>
-    );
-  };
+  const inputStyle = (field: string) => 
+    `w-full bg-[#F8F9FB] dark:bg-gray-800 border ${errors[field] ? 'border-red-300' : 'border-[#F1F3F6]'} dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all`;
 
-  const inputBase =
-    "w-full px-3.5 py-2.5 text-sm rounded-lg border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30";
+  const labelStyle = 
+    "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const inputClass = (field: string) =>
-    `${inputBase} ${
-      touched[field] && errors[field]
-        ? "border-red-400 dark:border-red-500 bg-red-50/40 dark:bg-red-900/10"
-        : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400"
-    }`;
-
-  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5";
-  const req = <span className="text-red-500 ml-0.5">*</span>;
-
-  const errorCount = Object.values(errors).filter(Boolean).length;
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 py-20 flex items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
-          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          Loading…
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center h-96">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+      <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Loading Profile...</span>
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-5">
-      {/* Back */}
-      <button
-        onClick={() => navigate(`/dealers/orders/${orderId}`)}
-        className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
-      >
-        <span className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
-          <ArrowLeft size={15} />
-        </span>
-        <span className="text-sm font-medium">Back to Order</span>
-      </button>
-
-      {/* Header */}
-      <div className="bg-gradient-to-br from-amber-600 to-orange-700 rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center gap-4">
-          <div
-            className="w-11 h-11 rounded-full border-2 border-white/30 shadow-inner flex-shrink-0"
-            style={{ backgroundColor: form.color.toLowerCase() || "#6b7280" }}
-          />
-          <div>
-            <p className="text-orange-200 text-xs font-semibold uppercase tracking-widest mb-0.5">
-              Editing Vehicle #{srNo}
-            </p>
-            <h1 className="text-xl font-bold text-white">{form.name || "Vehicle"}</h1>
-            <p className="text-orange-200 text-sm">{orderId2 || `Order #${orderId?.slice(-6)}`}</p>
-          </div>
+    <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10 animate-in fade-in duration-500">
+      
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-10">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit Vehicle Specs</h1>
+          <p className="text-sm text-gray-500 mt-1">Refine information for unit at slot #{srNo}</p>
         </div>
+
+        <button
+          onClick={() => navigate(`/dealers/orders/${orderId}`)}
+          className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
+        >
+          <ArrowLeft size={18} /> Back to Order
+        </button>
       </div>
 
-      <form onSubmit={handleSave} noValidate>
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <Car size={15} className="text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Vehicle Details</h2>
-            <span className="ml-auto text-xs text-gray-400">* required</span>
+      <form onSubmit={handleSave} className="space-y-10">
+
+        {/* PRIMARY DETAILS */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Standard Specifications</h2>
           </div>
 
-          <div className="p-6 space-y-4">
-            {/* Required */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Vehicle Name {req}</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  onBlur={() => handleBlur("name")}
-                  placeholder="e.g. Toyota Corolla"
-                  className={inputClass("name")}
-                />
-                <FieldError field="name" />
-              </div>
-
-              <div>
-                <label className={labelClass}>Exterior Colour {req}</label>
-                <input
-                  type="text"
-                  value={form.color}
-                  onChange={(e) => handleChange("color", e.target.value)}
-                  onBlur={() => handleBlur("color")}
-                  placeholder="e.g. White Pearl"
-                  className={inputClass("color")}
-                />
-                <FieldError field="color" />
-              </div>
-
-              <div>
-                <label className={labelClass}>HSN Code {req}</label>
-                <input
-                  type="text"
-                  value={form.hsnCode}
-                  onChange={(e) => handleChange("hsnCode", e.target.value)}
-                  onBlur={() => handleBlur("hsnCode")}
-                  placeholder="e.g. 8703239090"
-                  className={inputClass("hsnCode")}
-                />
-                <FieldError field="hsnCode" />
-              </div>
-
-              <div>
-                <label className={labelClass}>
-                  Chassis No {req}
-                  <span className="ml-1.5 text-xs font-normal text-gray-400">(17 chars)</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.chassisNo}
-                  onChange={(e) => handleChange("chassisNo", e.target.value.toUpperCase())}
-                  onBlur={() => handleBlur("chassisNo")}
-                  placeholder="e.g. JN1AABZ11U0000001"
-                  maxLength={17}
-                  className={`${inputClass("chassisNo")} font-mono tracking-widest`}
-                />
-                <div className="flex items-center justify-between mt-1">
-                  <FieldError field="chassisNo" />
-                  <span className={`text-xs ml-auto ${form.chassisNo.length === 17 ? "text-emerald-600" : "text-gray-400"}`}>
-                    {form.chassisNo.length}/17
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className={labelClass}>Engine No {req}</label>
-                <input
-                  type="text"
-                  value={form.engineNo}
-                  onChange={(e) => handleChange("engineNo", e.target.value)}
-                  onBlur={() => handleBlur("engineNo")}
-                  placeholder="e.g. 2ZR1234567"
-                  className={`${inputClass("engineNo")} font-mono`}
-                />
-                <FieldError field="engineNo" />
-              </div>
-
-              <div>
-                <label className={labelClass}>Engine Capacity</label>
-                <input
-                  type="text"
-                  value={form.engineCapacity}
-                  onChange={(e) => handleChange("engineCapacity", e.target.value)}
-                  placeholder="e.g. 1496cc"
-                  className={inputClass("")}
-                />
-              </div>
-
-              <div>
-                <label className={labelClass}>Booking Status</label>
-                <select
-                  value={form.status}
-                  onChange={(e) => handleChange("status", e.target.value)}
-                  className={inputClass("status")}
-                >
-                  <option value="Booked">Booked</option>
-                  <option value="PI Created">PI Created</option>
-                  <option value="LC Received">LC Received</option>
-                  <option value="Invoice Created">Invoice Created</option>
-                </select>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <label className={labelStyle}><Car size={14} className="text-indigo-500" /> Vehicle Model / variant Name</label>
+              <input 
+                value={form.name} 
+                onChange={e => setForm({...form, name: e.target.value})} 
+                className={inputStyle('name')}
+                placeholder="TOYOTA LAND CRUISER" 
+              />
+              {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{errors.name}</p>}
             </div>
 
-            <div className="border-t border-dashed border-gray-200 dark:border-gray-700 pt-4">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-4">Optional Details</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Fuel Type</label>
-                  <input
-                    type="text"
-                    value={form.fuelType}
-                    onChange={(e) => handleChange("fuelType", e.target.value)}
-                    placeholder="e.g. Petrol / Diesel / Hybrid"
-                    className={inputClass("")}
-                  />
-                </div>
+            <div>
+              <label className={labelStyle}><Hash size={14} className="text-emerald-500" /> HSN Code</label>
+              <input 
+                value={form.hsnCode} 
+                onChange={e => setForm({...form, hsnCode: e.target.value})} 
+                className={inputStyle('hsnCode')}
+                placeholder="8703.23.01" 
+              />
+              <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: 8703.23.01</p>
+              {errors.hsnCode && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{errors.hsnCode}</p>}
+            </div>
 
-                <div>
-                  <label className={labelClass}>Country of Origin</label>
-                  <input
-                    type="text"
-                    value={form.countryOfOrigin}
-                    onChange={(e) => handleChange("countryOfOrigin", e.target.value)}
-                    placeholder="e.g. Japan"
-                    className={inputClass("")}
-                  />
-                </div>
+            <div>
+              <label className={labelStyle}>Exterior Color</label>
+              <input 
+                value={form.color} 
+                onChange={e => setForm({...form, color: e.target.value})} 
+                className={inputStyle('color')}
+                placeholder="Pearl White" 
+              />
+            </div>
 
-                <div>
-                  <label className={labelClass}>Year of Manufacture (YOM)</label>
-                  <input
-                    type="number"
-                    value={form.yom}
-                    min={1980}
-                    max={new Date().getFullYear() + 1}
-                    onChange={(e) => handleChange("yom", parseInt(e.target.value) || 0)}
-                    className={inputClass("")}
-                  />
-                </div>
+            <div>
+              <label className={labelStyle}>Chassis Number</label>
+              <input 
+                value={form.chassisNo} 
+                onChange={e => setForm({...form, chassisNo: e.target.value.toUpperCase()})} 
+                className={`${inputStyle('chassisNo')} font-mono`}
+                placeholder="A1B2C3D4E5F6G7H8I"
+                maxLength={17}
+              />
+              <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: JN1AAB300X0123456</p>
+              {errors.chassisNo && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{errors.chassisNo}</p>}
+            </div>
 
-                <div>
-                  <label className={labelClass}>FOB Amount (USD)</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                    <input
-                      type="number"
-                      value={form.fobAmount}
-                      min={0}
-                      onChange={(e) => handleChange("fobAmount", parseFloat(e.target.value) || 0)}
-                      className={`${inputClass("")} pl-7`}
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Freight (USD)</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                    <input
-                      type="number"
-                      value={form.freight}
-                      min={0}
-                      onChange={(e) => handleChange("freight", parseFloat(e.target.value) || 0)}
-                      className={`${inputClass("")} pl-7`}
-                    />
-                  </div>
-                </div>
-              </div>
+            <div>
+              <label className={labelStyle}>Engine Number</label>
+              <input 
+                value={form.engineNo} 
+                onChange={e => setForm({...form, engineNo: e.target.value.toUpperCase()})} 
+                className={`${inputStyle('engineNo')} font-mono`}
+                placeholder="1GD-1234567" 
+              />
+              <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: 1GD-1234567</p>
+              {errors.engineNo && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">{errors.engineNo}</p>}
+            </div>
+            
+            <div>
+               <label className={labelStyle}><Info size={14} className="text-indigo-400" /> Lifecycle Status</label>
+               <select
+                 value={form.status}
+                 onChange={e => setForm({...form, status: e.target.value})}
+                 className={inputStyle('')}
+               >
+                 <option value="Booked">Booked</option>
+                 <option value="PI Created">PI Created</option>
+                 <option value="LC Received">LC Received</option>
+                 <option value="Invoice Created">Invoice Created</option>
+               </select>
             </div>
           </div>
         </div>
 
-        {/* Error summary */}
-        {errorCount > 0 && (
-          <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm">
-            <AlertCircle size={15} className="flex-shrink-0" />
-            {errorCount} field{errorCount !== 1 ? "s" : ""} need{errorCount === 1 ? "s" : ""} attention above
+        {/* ADDITIONAL SPECS */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Additional Build Parameters</h2>
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+              <label className={labelStyle}><Fuel size={14} className="text-blue-400" /> Fuel Type</label>
+              <input value={form.fuelType} onChange={e => setForm({...form, fuelType: e.target.value})} className={inputStyle('')} placeholder="DIESEL" />
+            </div>
+            <div>
+              <label className={labelStyle}><Globe size={14} className="text-gray-400" /> Origin</label>
+              <input value={form.countryOfOrigin} onChange={e => setForm({...form, countryOfOrigin: e.target.value})} className={inputStyle('')} placeholder="JAPAN" />
+            </div>
+            <div>
+              <label className={labelStyle}><Package size={14} className="text-amber-500" /> Engine Capacity</label>
+              <input value={form.engineCapacity} onChange={e => setForm({...form, engineCapacity: e.target.value})} className={inputStyle('')} placeholder="2755cc" />
+            </div>
+            <div>
+              <label className={labelStyle}><Calendar size={14} className="text-purple-400" /> MFG Year</label>
+              <input type="number" value={form.yom} onChange={e => setForm({...form, yom: parseInt(e.target.value) || 0})} className={inputStyle('')} />
+            </div>
+          </div>
+        </div>
+
+        {/* PRICING */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Financial Adjustments</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className={labelStyle}><DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)</label>
+              <input type="number" value={form.fobAmount} onChange={e => setForm({...form, fobAmount: parseFloat(e.target.value) || 0})} className={inputStyle('')} />
+            </div>
+            <div>
+              <label className={labelStyle}><DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)</label>
+              <input type="number" value={form.freight} onChange={e => setForm({...form, freight: parseFloat(e.target.value) || 0})} className={inputStyle('')} />
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             onClick={() => navigate(`/dealers/orders/${orderId}`)}
-            className="cursor-pointer px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
-            Cancel
+            <X size={16} /> Discard
           </button>
+
           <button
             type="submit"
             disabled={saving}
-            className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-[#5243EF] hover:bg-[#4335d6] disabled:bg-indigo-400 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
+            className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {saving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Saving…
-              </>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
             ) : (
-              <>
-                <Save size={15} />
-                Save Changes
-              </>
+              <><CheckCircle2 size={18} /> Commit Refinements</>
             )}
           </button>
         </div>
+
       </form>
     </div>
   );
