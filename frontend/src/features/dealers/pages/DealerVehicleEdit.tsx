@@ -73,7 +73,7 @@ const DealerVehicleEdit = () => {
         const bookings = bookingsRes.data?.data || bookingsRes.data || [];
         let bookingVehicle = null;
         const matchingBooking = bookings.find((b: any) => {
-          if (b.status === "New" || b.status === "Draft") return false;
+          if (b.status === "To be Sourced") return false;
           const bOrderId = typeof b.orderId === 'object' ? b.orderId?._id : b.orderId;
           if (bOrderId !== orderId) return false;
           return b.vehicles?.some((bv: any) => String(bv.srNo) === String(srNo));
@@ -264,10 +264,12 @@ const DealerVehicleEdit = () => {
                  onChange={e => setForm({...form, status: e.target.value})}
                  className={inputStyle('')}
                >
-                 <option value="Booked">Booked</option>
-                 <option value="PI Created">PI Created</option>
-                 <option value="LC Received">LC Received</option>
-                 <option value="Invoice Created">Invoice Created</option>
+                 <option value="Booked" className="text-blue-600">Booked</option>
+                 <option value="Payment Done" className="text-green-600">Payment Done</option>
+                 <option value="Transit" className="text-indigo-600">Transit</option>
+                 <option value="JNPT Warehouse" className="text-orange-600">JNPT Warehouse</option>
+                 <option value="Shipped" className="text-purple-600">Shipped</option>
+                 <option value="Commercial Invoice Submitted" className="text-emerald-600">Commercial Invoice Submitted</option>
                </select>
             </div>
           </div>

@@ -72,7 +72,7 @@ const DealerOrderDetails = () => {
               b.orderId === id && 
               b.vehicles.some((bv: any) => String(bv.srNo) === String(expandedIndex + 1))
             );
-            statusMap[expandedIndex] = booking ? (booking.status || "Booked") : "New";
+            statusMap[expandedIndex] = booking ? booking.status : "To be Sourced";
           }
         });
       }
@@ -85,7 +85,7 @@ const DealerOrderDetails = () => {
         order.vehicles.filter(Boolean).forEach((v: any) => {
           const qty = v.quantity ?? 1;
           for (let qIdx = 0; qIdx < qty; qIdx++) {
-            statusMap[globalIndex++] = "New";
+            statusMap[globalIndex++] = "To be Sourced";
           }
         });
         setVehicleStatuses(statusMap);
@@ -111,7 +111,7 @@ const DealerOrderDetails = () => {
       // Calculate based on real-time vehicleStatuses map
       for (let i = 0; i < qty; i++) {
         const vStatus = vehicleStatuses[globalIndex] || 'New';
-        if (vStatus !== 'New' && vStatus !== 'Draft') {
+        if (vStatus !== 'To be Sourced') {
           groups[name].booked += 1;
         } else {
           groups[name].available += 1;
@@ -144,11 +144,13 @@ const DealerOrderDetails = () => {
 
   const getStatusColor = (s: string) => {
     switch (s) {
-      case "New": return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
-      case "Booked": return "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
-      case "PI Created": return "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800";
-      case "LC Received": return "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800";
-      case "Invoice Created": return "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800";
+      case "To be Sourced": return "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+      case "Booked": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
+      case "Payment Done": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800";
+      case "Transit": return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800";
+      case "JNPT Warehouse": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+      case "Shipped": return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+      case "Commercial Invoice Submitted": return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
       default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
     }
   };
@@ -248,7 +250,7 @@ const DealerOrderDetails = () => {
                     ) : (
                       expandedVehicles.map((v: any) => {
                         const vStatus = vehicleStatuses[v.expandedIndex] || 'New';
-                        const isBooked = vStatus !== 'New' && vStatus !== 'Draft';
+                        const isBooked = vStatus !== 'To be Sourced';
 
                         return (
                           <tr key={v.expandedIndex} className="hover:bg-blue-50/40 dark:hover:bg-gray-800/50 transition-colors group">

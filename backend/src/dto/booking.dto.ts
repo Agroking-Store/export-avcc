@@ -16,7 +16,7 @@ export interface CreateBookingDto {
     quantity: number;
     srNo?: string;
   }>;
-  status?: 'New' | 'Booked' | 'PI Created' | 'LC Received' | 'Invoice Created';
+  status?: 'To be Sourced' | 'Booked' | 'Payment Done' | 'Transit' | 'JNPT Warehouse' | 'Shipped' | 'Commercial Invoice Submitted';
   orderId?: string;
 }
 
@@ -38,5 +38,5 @@ export interface UpdateBookingDto {
     quantity: number;
     srNo?: string;
   }>;
-  status?: 'New' | 'Booked' | 'PI Created' | 'LC Received' | 'Invoice Created';
+  status?: 'To be Sourced' | 'Booked' | 'Payment Done' | 'Transit' | 'JNPT Warehouse' | 'Shipped' | 'Commercial Invoice Submitted';
 }

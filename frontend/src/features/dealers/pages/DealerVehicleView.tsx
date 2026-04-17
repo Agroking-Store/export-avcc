@@ -68,7 +68,7 @@ const DealerVehicleView = () => {
           const bookingsRes = await bookingApi.getAll();
           const bookings = bookingsRes.data?.data || bookingsRes.data || [];
           const matchingBooking = bookings.find((b: any) => {
-            if (b.status === "New" || b.status === "Draft") return false;
+            if (b.status === "To be Sourced") return false;
             const bOrderId = typeof b.orderId === 'object' ? b.orderId?._id : b.orderId;
             if (bOrderId !== orderId) return false;
             return b.vehicles?.some(

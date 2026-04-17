@@ -1,37 +1,76 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 import { apiConfig } from "../../../config/apiConfig";
 import { bookingApi } from "../../../services/bookingApi";
 import {
-  ArrowLeft,
-  Eye,
-  Edit2,
-  Phone,
-  Building2,
-  MapPin,
-  Package,
-  TrendingUp,
-  Clock,
-  ClipboardList,
-  Car,
-  Calendar,
-  Hash
+  ArrowLeft, Eye, Phone, Building2, MapPin,
+  TrendingUp, ClipboardList, Car, Calendar, Hash
 } from "lucide-react";
 import { toast } from "react-toastify";
 
-const VehicleDetails = () => {
-  const { id } = useParams();
+interface Vehicle {
+  name?: string;
+  color?: string;
+  quantity?: number;
+}
+
+interface Order {
+  _id?: string;
+  orderId?: string;
+  clientId?: {
+    name?: string;
+    companyName?: string;
+    phone?: string;
+    address?: any;
+  };
+  vehicles?: Vehicle[];
+  vehicleColors?: { expandedIndex: number; color: string }[];
+  status?: string;
+  date?: string;
+  createdAt?: string;
+  voucherNo?: string;
+}
+
+const VehicleDetails: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
-  const [vehicleStatuses, setVehicleStatuses] = useState<Record<string, string>>({});
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("");
+  const [vehicleStatuses, setVehicleStatuses] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (id) fetchOrder();
   }, [id]);
+
+  // ← triggers after order is loaded, just like DealerOrderDetails
+  useEffect(() => {
+    if (order) fetchVehicleStatuses();
+  }, [order]);
+
+  // ← matches the exact same status strings coming from bookingApi
+  const getStatusColor = (s: string): string => {
+    switch (s) {
+      case "To be Sourced":
+        return "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+      case "Booked":
+        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
+      case "Payment Done":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800";
+      case "Transit":
+        return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800";
+      case "JNPT Warehouse":
+        return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
+      case "Shipped":
+        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+      case "Commercial Invoice Submitted":
+        return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
+      default:
+        return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+    }
+  };
 
   const fetchOrder = async () => {
     try {
@@ -40,31 +79,6 @@ const VehicleDetails = () => {
       const data = res.data.order || res.data;
       setOrder(data);
       setStatus(data.status || "Draft");
-      
-      // Fetch unit statuses
-      try {
-        const bookingsRes = await bookingApi.getAll();
-        const bookings = bookingsRes.data?.data || bookingsRes.data || [];
-        const statusMap: Record<string, string> = {};
-        
-        let expandedIndex = 0;
-        data.vehicles?.filter(Boolean).forEach((v: any) => {
-           const qty = v.quantity ?? 1;
-           for (let i = 0; i < qty; i++) {
-             const srNo = String(expandedIndex + 1);
-             const booking = bookings.find((b: any) => 
-               (b.orderId === id || b.orderId?._id === id) &&
-               b.vehicles?.some((bv: any) => String(bv.srNo) === srNo)
-             );
-             statusMap[expandedIndex] = booking ? (booking.status || "Booked") : "New";
-             expandedIndex++;
-           }
-        });
-        setVehicleStatuses(statusMap);
-      } catch (e) {
-        console.error("Error fetching vehicle statuses", e);
-      }
-
     } catch (error) {
       console.error("Error fetching order", error);
       toast.error("Order not found");
@@ -73,59 +87,52 @@ const VehicleDetails = () => {
     }
   };
 
-  const vehicleGroups = (() => {
-    if (!order?.vehicles) return [];
-    const groups: {
-      [key: string]: {
-        name: string;
-        color: string;
-        total: number;
-        booked: number;
-        piGenerated: number;
-        available: number;
-      };
-    } = {};
+  const fetchVehicleStatuses = async () => {
+    try {
+      const res = await bookingApi.getAll();
+      const bookings = res.data?.data || res.data || [];
+      const statusMap: Record<number, string> = {};
 
-    order.vehicles.filter(Boolean).forEach((v: any) => {
-      const qty = v.quantity ?? 1;
-      const name = v.name || "Unknown";
-      const color = v.color || "#6b7280";
-
-      if (!groups[name]) {
-        groups[name] = {
-          name,
-          color,
-          total: 0,
-          booked: 0,
-          piGenerated: 0,
-          available: 0,
-        };
+      if (order?.vehicles) {
+        let globalIndex = 0;
+        order.vehicles.filter(Boolean).forEach((v: Vehicle) => {
+          const qty = v.quantity ?? 1;
+          for (let i = 0; i < qty; i++) {
+            const srNo = String(globalIndex + 1);
+            const booking = bookings.find((b: any) =>
+              (b.orderId === id || b.orderId?._id === id) &&
+              b.vehicles?.some((bv: any) => String(bv.srNo) === srNo)
+            );
+            statusMap[globalIndex] = booking ? booking.status : "To be Sourced";
+            globalIndex++;
+          }
+        });
       }
-
-      groups[name].total += qty;
-
-      if (order.status === "Confirmed") {
-        groups[name].booked += qty;
-      } else if (order.status === "PI Generated") {
-        groups[name].piGenerated += qty;
-      } else if (order.status === "Draft") {
-        groups[name].available += qty;
+      setVehicleStatuses(statusMap);
+    } catch (e) {
+      console.error("Error fetching vehicle statuses", e);
+      if (order?.vehicles) {
+        const statusMap: Record<number, string> = {};
+        let globalIndex = 0;
+        order.vehicles.filter(Boolean).forEach((v: Vehicle) => {
+          const qty = v.quantity ?? 1;
+          for (let i = 0; i < qty; i++) statusMap[globalIndex++] = "To be Sourced";
+        });
+        setVehicleStatuses(statusMap);
       }
-    });
-
-    return Object.values(groups);
-  })();
+    }
+  };
 
   const expandedVehicles = (() => {
     if (!order?.vehicles) return [];
     const result: any[] = [];
     let expandedIndex = 0;
 
-    order.vehicles.filter(Boolean).forEach((v: any, vIdx: number) => {
+    order.vehicles.filter(Boolean).forEach((v: Vehicle, vIdx: number) => {
       const qty = v.quantity ?? 1;
       for (let qIdx = 0; qIdx < qty; qIdx++) {
         const colorOverride = order.vehicleColors?.find(
-          (vc: any) => vc.expandedIndex === expandedIndex,
+          (vc: any) => vc.expandedIndex === expandedIndex
         );
         result.push({
           expandedIndex,
@@ -134,7 +141,7 @@ const VehicleDetails = () => {
           srNo: String(expandedIndex + 1),
           name: v.name || "",
           color: colorOverride ? colorOverride.color : v.color || "",
-          status: vehicleStatuses[expandedIndex] || "New"
+          status: vehicleStatuses[expandedIndex] || "To be Sourced",
         });
         expandedIndex++;
       }
@@ -143,26 +150,11 @@ const VehicleDetails = () => {
     return result;
   })();
 
-  const getStatusColor = (s: string) => {
-    switch (s) {
-      case "New": return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
-      case "Booked": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700";
-      case "PI Created": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700";
-      case "LC Received": return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-700";
-      case "Invoice Created": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700";
-      default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
-    }
-  };
-
-  const formatAddress = (address: any) => {
+  const formatAddress = (address: any): string => {
     if (!address) return "-";
     const parts = [
-      address.houseBuilding,
-      address.streetArea,
-      address.cityTown,
-      address.state,
-      address.pincode,
-      address.country,
+      address.houseBuilding, address.streetArea, address.cityTown,
+      address.state, address.pincode, address.country,
     ].filter(Boolean);
     return parts.join(", ") || "-";
   };
@@ -191,7 +183,7 @@ const VehicleDetails = () => {
 
   return (
     <div className="p-6 lg:p-10 min-h-screen bg-[#f8fafc] dark:bg-gray-950 animate-in fade-in duration-500 transition-colors">
-      
+
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
         <div className="bg-[#1e293b] px-6 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
@@ -200,28 +192,25 @@ const VehicleDetails = () => {
             {order.orderId}
           </span>
         </div>
-
         <button
           onClick={() => navigate("/vehicles/list")}
           className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-gray-800 hover:text-blue-600 active:scale-95"
         >
-          <ArrowLeft size={18} />
-          Back to List
+          <ArrowLeft size={18} /> Back to List
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* LEFT COLUMN */}
         <div className="lg:col-span-9 space-y-8">
-          
+
           {/* CLIENT INFO */}
           <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 p-8 transition-shadow hover:shadow-md">
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 dark:border-gray-800 pb-4">
               <ClipboardList size={20} className="text-blue-500" />
               <h2 className="text-xl font-bold text-[#1B2559] dark:text-white">Client Snapshot</h2>
             </div>
-
             <div className="space-y-6">
               <div className="group bg-[#F8F9FB] dark:bg-gray-800 rounded-2xl p-6 flex items-center gap-6 border border-[#F1F3F6] dark:border-gray-700 transition-all duration-300">
                 <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/40 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 text-2xl font-black border border-blue-100 dark:border-blue-800">
@@ -232,7 +221,6 @@ const VehicleDetails = () => {
                   <h3 className="text-2xl font-bold text-[#2D3748] dark:text-white">{order.clientId?.name || "-"}</h3>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InfoBox label="Company" value={order.clientId?.companyName} icon={Building2} />
                 <InfoBox label="Phone" value={order.clientId?.phone} icon={Phone} />
@@ -241,7 +229,7 @@ const VehicleDetails = () => {
             </div>
           </div>
 
-          {/* VEHICLES EXPANDED */}
+          {/* VEHICLES TABLE */}
           <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-shadow hover:shadow-md">
             <div className="p-8 pb-4 flex justify-between items-center bg-gray-50/30 dark:bg-gray-800/30">
               <div className="flex items-center gap-3">
@@ -252,7 +240,6 @@ const VehicleDetails = () => {
                 {expandedVehicles.length} Units
               </span>
             </div>
-            
             <div className="px-8 pb-8">
               <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                 <table className="w-full">
@@ -273,41 +260,32 @@ const VehicleDetails = () => {
                             {v.srNo}
                           </span>
                         </td>
-                        <td className="px-6 py-5 font-bold text-gray-800 dark:text-gray-200">
-                          {v.name}
-                        </td>
+                        <td className="px-6 py-5 font-bold text-gray-800 dark:text-gray-200">{v.name}</td>
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
-                            <div
-                              className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 shadow-sm"
-                              style={{ backgroundColor: v.color.toLowerCase() }}
-                            />
-                            <span className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                              {v.color}
-                            </span>
+                            <div className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 shadow-sm" style={{ backgroundColor: v.color }} />
+                            <span className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">{v.color}</span>
                           </div>
                         </td>
                         <td className="px-6 py-5 text-center">
-                           <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(v.status)}`}>
-                             {v.status}
-                           </span>
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(v.status)}`}>
+                            {v.status}
+                          </span>
                         </td>
                         <td className="px-6 py-5 text-right">
-                          <div className="flex items-center justify-end gap-3">
-                            <button
-                              onClick={() => {
-                                const params = new URLSearchParams({
-                                  name: v.name, color: v.color, srNo: v.srNo, expandedIndex: String(v.expandedIndex),
-                                });
-                                navigate(`/vehicles/view/${id}/view-vehicle/${v.expandedIndex}?${params.toString()}`);
-                              }}
-                              className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                              title="View Details"
-                            >
-                              <Eye size={18} />
-                            </button>
-                          </div>
-
+                          <button
+                            onClick={() => {
+                              const params = new URLSearchParams({
+                                name: v.name, color: v.color,
+                                srNo: v.srNo, expandedIndex: String(v.expandedIndex),
+                              });
+                              navigate(`/vehicles/view/${id}/view-vehicle/${v.expandedIndex}?${params.toString()}`);
+                            }}
+                            className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -320,12 +298,9 @@ const VehicleDetails = () => {
 
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
-          
           <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-3xl p-6 shadow-xl border border-slate-700">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-              Order Status
-            </p>
-            <h3 className={`text-2xl font-black ${status === 'Draft' ? 'text-yellow-400' : status === 'Confirmed' ? 'text-blue-400' : 'text-emerald-400'}`}>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Order Status</p>
+            <h3 className={`text-2xl font-black ${status === "Draft" ? "text-yellow-400" : status === "Confirmed" ? "text-blue-400" : "text-emerald-400"}`}>
               {status}
             </h3>
           </div>
@@ -335,7 +310,7 @@ const VehicleDetails = () => {
               <Calendar size={12} /> Execution Date
             </p>
             <h3 className="text-xl font-bold text-blue-900 dark:text-blue-200">
-              {new Date(order.date || order.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              {new Date(order.date || order.createdAt || Date.now()).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
             </h3>
           </div>
 
@@ -343,21 +318,18 @@ const VehicleDetails = () => {
             <p className="text-[10px] font-bold text-red-800 dark:text-red-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
               <TrendingUp size={12} /> Order Volume
             </p>
-            <h3 className="text-4xl font-black text-red-800 dark:text-red-300 leading-none">
-              {expandedVehicles.length}
-            </h3>
+            <h3 className="text-4xl font-black text-red-800 dark:text-red-300 leading-none">{expandedVehicles.length}</h3>
             <p className="text-xs font-bold text-red-400 dark:text-red-500 mt-2">Total Units</p>
           </div>
 
           {order.voucherNo && (
             <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm">
-               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                 <ClipboardList size={12} /> Voucher No
-               </p>
-               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{order.voucherNo}</h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                <ClipboardList size={12} /> Voucher No
+              </p>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{order.voucherNo}</h3>
             </div>
           )}
-
         </div>
       </div>
     </div>
