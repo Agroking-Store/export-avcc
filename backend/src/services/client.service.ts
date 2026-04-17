@@ -103,3 +103,13 @@ export const updateClientService = async (
   const updated = await Client.findByIdAndUpdate(id, data, { new: true });
   return updated;
 };
+
+export const getLatestClientsService = async()=>{
+  try {
+    const latestClients = await Client.find().sort({createdAt : -1}).limit(5)
+  return latestClients
+  } catch (error) {
+    throw new Error("Client not recived from backend");
+  }
+  
+}

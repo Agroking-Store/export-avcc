@@ -4,6 +4,7 @@ import {
   getClientsService,
   getClientByIdService,
   updateClientService,
+  getLatestClientsService,
 } from "../services/client.service";
 import {
   validateCreateClient,
@@ -48,4 +49,13 @@ export const updateClient = async (req: Request, res: Response) => {
   }
 };
 
+export const getLatestClients = async (req: Request, res: Response) => {
+  try {
+    const clients = await getLatestClientsService();
+    
+    res.json(clients);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
 

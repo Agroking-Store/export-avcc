@@ -103,5 +103,64 @@ export class BookingService {
       .populate('dealerId', 'name');
   }
 }
+export const getLatestBookingVehiclesService = async () => {
+  try {
+    const bookings = await Booking.aggregate([
+      // 🥇 Step 1: Latest bookings first
+      {
+        $sort: { createdAt: -1, _id: -1 }, // fallback for safety
+      },
+
+      // 🎯 Step 2: Take latest bookings (adjust if needed)
+      {
+        $limit: 5,
+      },
+
+      // 🚗 Step 3: Extract vehicles from those bookings
+      {
+        $unwind: "$vehicles",
+      },
+
+      // 🔗 Step 4: Join dealer info
+      {
+        $lookup: {
+          from: "dealers",
+          localField: "dealerId",
+          foreignField: "_id",
+          as: "dealer",
+        },
+      },
+      { $unwind: "$dealer" },
+
+      // 🎨 Step 5: Shape response
+      {
+        $project: {
+          _id: 0,
+          bookingId: "$_id",
+          date: 1,
+          status: 1,
+          dealerName: "$dealer.name",
+
+          hsnCode: "$vehicles.hsnCode",
+          name: "$vehicles.name",
+          color: "$vehicles.color",
+          chassisNo: "$vehicles.chassisNo",
+          engineNo: "$vehicles.engineNo",
+          quantity: "$vehicles.quantity",
+          srNo: "$vehicles.srNo",
+          fobAmount: "$vehicles.fobAmount",
+        },
+      },
+    ]);
+
+    return {
+      count: bookings.length,
+      data: bookings,
+    };
+  } catch (error) {
+    console.error("Aggregation error:", error);
+    throw new Error("Failed to fetch booking vehicles");
+  }
+};
 
 export default BookingService;

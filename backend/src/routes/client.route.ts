@@ -4,13 +4,14 @@ import {
   getClients,
   getClientById,
   updateClient,
+  getLatestClients,
 } from "../controllers/client.controller";
 
 const router = Router();
 
 router.post("/add", createClient);
 router.get("/", getClients);
+router.get("/getLatestClients",getLatestClients)
 router.get("/:id", getClientById);
 router.put("/:id", updateClient);
-
 export default router;
