@@ -34,11 +34,11 @@ const AppNavigationSidebar: React.FC = () => {
       icon: <FileText size={20} />,
       path: "/proforma-invoice",
     },
-    {
-      name: "Letter of Credit",
-      icon: <FileCheck size={20} />,
-      path: "/letter-of-credit",
-    },
+    // {
+    //   name: "Letter of Credit",
+    //   icon: <FileCheck size={20} />,
+    //   path: "/letter-of-credit",
+    // },
     { name: "Dealers", icon: <Truck size={20} />, path: "/dealers/dashboard" },
     { name: "Companies", icon: <Users size={20} />, path: "/companies" },
   ];
@@ -73,13 +73,13 @@ const AppNavigationSidebar: React.FC = () => {
                 item.name === "Vehicles"
                   ? location.pathname.startsWith("/vehicles")
                   : item.name === "Dealers"
-                  ? location.pathname.startsWith("/dealers")
-                  : item.name === "Clients"
-                  ? location.pathname.startsWith("/clients") ||
-                    location.pathname.startsWith("/orders") // This condition is fine
-                  : item.name === "Companies"
-                  ? location.pathname.startsWith("/companies")
-                  : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
+                    ? location.pathname.startsWith("/dealers")
+                    : item.name === "Clients"
+                      ? location.pathname.startsWith("/clients") ||
+                        location.pathname.startsWith("/orders") // This condition is fine
+                      : item.name === "Companies"
+                        ? location.pathname.startsWith("/companies")
+                        : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
 
               return (
                 <SidebarMenuItem key={item.name}>
@@ -93,7 +93,7 @@ const AppNavigationSidebar: React.FC = () => {
                       "p-6 text-lg transition-colors rounded-lg",
                       isActive // Apply darker active state styles with darker blue border
                         ? "bg-blue-700 text-white dark:bg-blue-800 dark:text-blue-100 dark:border-blue-700 rounded-4xl"
-                        : "text-gray-500 hover:bg-blue-200 dark:hover:bg-blue-800 dark:border-gray-700 rounded-4xl" // Default/hover state styles
+                        : "text-gray-500 hover:bg-blue-200 dark:hover:bg-blue-800 dark:border-gray-700 rounded-4xl", // Default/hover state styles
                     )}
                   >
                     <Link
