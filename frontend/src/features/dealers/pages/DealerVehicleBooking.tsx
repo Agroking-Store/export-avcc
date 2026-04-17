@@ -7,7 +7,8 @@ import {
 import { toast } from 'react-toastify';
 import { bookingApi } from '../../../services/bookingApi';
 import { dealerApi } from '../../../services/dealerApi';
-import Select from '../../../components/common/Select';
+import Select from '../../../components/ui/select';
+
 
 const DealerVehicleBooking = () => {
   const { orderId } = useParams() as { orderId: string };
@@ -78,7 +79,11 @@ const DealerVehicleBooking = () => {
     } else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(vehicle.chassisNo.trim())) {
       newErrors['vehicles.chassisNo'] = 'Invalid Chassis (17 chars)';
     }
-    if (!vehicle.engineNo?.trim()) newErrors['vehicles.engineNo'] = 'Engine number is required';
+    if (!vehicle.engineNo?.trim()) {
+      newErrors['vehicles.engineNo'] = 'Engine number is required';
+    } else if (!/^[A-Z0-9]{10,12}$/i.test(vehicle.engineNo.trim())) {
+      newErrors['vehicles.engineNo'] = 'Invalid format (10-12 alphanumeric, e.g. G3LCSM578833)';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -175,6 +180,7 @@ const DealerVehicleBooking = () => {
               <label className={labelStyle}>
                 <Calendar size={14} className="text-blue-400" /> Booking Date
               </label>
+
               <input
                 type="date"
                 value={bookingDate}
@@ -259,9 +265,9 @@ const DealerVehicleBooking = () => {
                 value={vehicles[0].engineNo}
                 onChange={(e) => handleInputChange('vehicles.engineNo', e.target.value.toUpperCase())}
                 className={`${inputStyle('vehicles.engineNo')} font-mono tracking-wider`}
-                placeholder="1GD-1234567"
+placeholder="G3LCSM578833"
               />
-              <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Example: 1GD-1234567 / 2TR-FE</p>
+              <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Example: G3LCSM578833 (10-12 alphanumeric chars)</p>
               {errors['vehicles.engineNo'] && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors['vehicles.engineNo']}</p>}
             </div>
           </div>

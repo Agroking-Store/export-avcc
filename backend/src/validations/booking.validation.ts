@@ -6,7 +6,11 @@ const vehicleSchema = Joi.object({
   name: Joi.string().required(),
   color: Joi.string().required(),
   chassisNo: Joi.string().required(),
-  engineNo: Joi.string().required(),
+  engineNo: Joi.string().min(10).max(12).regex(/^[A-Z0-9]+$/i).required().messages({
+    'string.min': 'Engine No must be 10-12 characters',
+    'string.max': 'Engine No must be 10-12 characters', 
+    'string.pattern.base': 'Engine No must be alphanumeric (e.g. G3LCSM578833)'
+  }),
   engineCapacity: Joi.string().optional(),
   fuelType: Joi.string().optional(),
   countryOfOrigin: Joi.string().optional(),
