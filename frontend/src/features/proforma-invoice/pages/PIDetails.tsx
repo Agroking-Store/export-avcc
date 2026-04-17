@@ -42,18 +42,32 @@ const PIDetails = () => {
   const fetchPI = async () => {
     try {
       setLoading(true);
-
       const res = await axios.get(
         `${apiConfig.baseURL}/proforma-invoices/${id}`,
       );
-
       setData(res.data);
     } catch (err) {
-      toast.error("Failed to load PI details ❌");
+      toast.error("Failed to load PI details");
     } finally {
       setLoading(false);
     }
   };
+
+  // Inside PIDetails.tsx
+  // const fetchPI = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const res = await axios.get(
+  //       `${apiConfig.baseURL}/proforma-invoices/${id}/data`,
+  //     );
+  //     // console.log("Full PDF Data Payload:", res.data.data);
+  //     setData(res.data.data);
+  //   } catch (err) {
+  //     toast.error("Failed to load PI details");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     if (id) fetchPI();
