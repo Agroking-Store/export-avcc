@@ -111,21 +111,21 @@ const AddClient = () => {
               <label className={labelStyle}>
                 <User size={14} className="text-indigo-500" /> Client Full Name
               </label>
-              <input name="name" value={form.name} onChange={handleChange} className={inputStyle} placeholder="John Doe" />
+              <input name="name" value={form.name} onChange={handleChange} className={inputStyle} placeholder="Rahul Sharma" />
             </div>
 
             <div>
               <label className={labelStyle}>
                 <Phone size={14} className="text-blue-400" /> Contact Number
               </label>
-              <input name="phone" value={form.phone} onChange={handleChange} className={inputStyle} placeholder="+1 (555) 000-0000" />
+              <input name="phone" value={form.phone} onChange={handleChange} className={inputStyle} placeholder="+91 98765 43210" />
             </div>
 
             <div>
               <label className={labelStyle}>
                 <Globe size={14} className="text-emerald-500" /> Region / Country
               </label>
-              <input name="country" value={form.country} onChange={handleChange} className={inputStyle} placeholder="United Arab Emirates" />
+              <input name="country" value={form.country} onChange={handleChange} className={inputStyle} placeholder="India" />
             </div>
 
             <div>
@@ -156,27 +156,27 @@ const AddClient = () => {
               <label className={labelStyle}>
                 <MapPin size={14} className="text-purple-500" /> House / Building No.
               </label>
-              <input name="houseBuilding" value={form.address.houseBuilding} onChange={handleAddressChange} className={inputStyle} placeholder="Suite 405, Business Bay" />
+              <input name="houseBuilding" value={form.address.houseBuilding} onChange={handleAddressChange} className={inputStyle} placeholder="Flat 12B, Sai Residency" />
             </div>
 
             <div>
               <label className={labelStyle}>Street / Area</label>
-              <input name="streetArea" value={form.address.streetArea} onChange={handleAddressChange} className={inputStyle} placeholder="Main Street" />
+              <input name="streetArea" value={form.address.streetArea} onChange={handleAddressChange} className={inputStyle} placeholder="MG Road" />
             </div>
 
             <div>
               <label className={labelStyle}>City / Town</label>
-              <input name="cityTown" value={form.address.cityTown} onChange={handleAddressChange} className={inputStyle} placeholder="Dubai" />
+              <input name="cityTown" value={form.address.cityTown} onChange={handleAddressChange} className={inputStyle} placeholder="Mumbai" />
             </div>
 
             <div>
               <label className={labelStyle}>State / Province</label>
-              <input name="state" value={form.address.state} onChange={handleAddressChange} className={inputStyle} placeholder="Dubai" />
+              <input name="state" value={form.address.state} onChange={handleAddressChange} className={inputStyle} placeholder="Maharashtra" />
             </div>
 
             <div>
               <label className={labelStyle}>Pincode / ZIP</label>
-              <input name="pincode" value={form.address.pincode} onChange={handleAddressChange} className={inputStyle} placeholder="00000" />
+              <input name="pincode" value={form.address.pincode} onChange={handleAddressChange} className={inputStyle} placeholder="400001" />
             </div>
           </div>
         </div>

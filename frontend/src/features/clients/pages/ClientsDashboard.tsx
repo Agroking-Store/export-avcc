@@ -161,14 +161,6 @@ const ClientsDashboard = () => {
             Manage clients and track orders efficiently.
           </p>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-            <span className="text-sm font-bold text-slate-600">
-              {new Date().toLocaleDateString()}
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* KPI CARDS */}
@@ -289,54 +281,37 @@ const ClientsDashboard = () => {
           {recentOrders.length === 0 ? (
             <Empty text="No recent orders found" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wider text-slate-400 font-bold">
-                    <th className="pb-4">Order ID</th>
-                    <th className="pb-4">Client</th>
-                    <th className="pb-4">Status</th>
-                    <th className="pb-4 text-right">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-slate-50">
-                  {recentOrders.map(
-                    (order: any, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-slate-50/50 transition-all"
-                      >
-                        <td className="py-4 font-bold text-slate-700">
-                          {order.orderId || "-"}
-                        </td>
-
-                        <td className="py-4 text-slate-600 font-medium">
-                          {getClientName(
-                            order.clientId
-                          )}
-                        </td>
-
-                        <td className="py-4">
-                          <StatusBadge
-                            status={order.status}
-                          />
-                        </td>
-
-                        <td className="py-4 text-slate-500 text-right text-sm">
-                          {order.date
-                            ? new Date(
-                                order.date
-                              ).toLocaleDateString()
-                            : "-"}
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              {recentOrders.length === 0 ? (
+                <Empty text="No recent orders found" />
+              ) : (
+                recentOrders.map((order: any, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-2xl border border-slate-50 bg-slate-50/30 px-5 py-4 hover:border-blue-100 transition-colors"
+                  >
+                    <div>
+                      <p className="font-bold text-slate-800">
+                        {order.orderId || "-"}
+                      </p>
+            
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {getClientName(order.clientId)}
+                      </p>
+                    </div>
+            
+                    <div className="text-right space-y-2">
+                      <StatusBadge status={order.status} />
+            
+                      <p className="text-xs text-slate-400">
+                        {order.date
+                          ? new Date(order.date).toLocaleDateString()
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>

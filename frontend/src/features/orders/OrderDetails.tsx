@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../config/apiConfig";
-import { toast } from "react-toastify";
 import { 
-  Phone, Mail, Building2, Globe, MapPin, 
+  Phone, Mail, Building2, MapPin, 
   Calendar, Package, ClipboardList,
-  ArrowLeft, RefreshCw, Car, Hash
+  ArrowLeft, Car, User
 } from "lucide-react";
 
 const OrderDetails = () => {
@@ -15,8 +14,6 @@ const OrderDetails = () => {
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("");
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchOrder();
@@ -28,26 +25,10 @@ const OrderDetails = () => {
       const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
       const data = res.data.order || res.data;
       setOrder(data);
-      setStatus(data.status || "Draft");
     } catch (error) {
       console.error("Error fetching order", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const updateStatus = async (newStatus: string) => {
-    try {
-      setUpdatingStatus(true);
-      await axios.put(`${apiConfig.baseURL}/orders/${id}`, { status: newStatus });
-      setStatus(newStatus);
-      navigate("/orders/list", {
-        state: { success: "Order status updated successfully ✅" },
-      });
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Error updating status ❌");
-    } finally {
-      setUpdatingStatus(false);
     }
   };
 
@@ -59,15 +40,6 @@ const OrderDetails = () => {
     ].filter(Boolean);
     return parts.join(", ") || "-";
   };
-
-  const InfoBox = ({ label, value, icon: Icon }: any) => (
-    <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
-      <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2 transition-colors group-hover:text-indigo-500">
-        {Icon && <Icon size={12} />} {label}
-      </p>
-      <p className="text-sm font-semibold text-[#2D3748]">{value || "-"}</p>
-    </div>
-  );
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-96">
@@ -93,7 +65,8 @@ const OrderDetails = () => {
 
         <button
           onClick={() => navigate("/orders/list")}
-          className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"        >
+          className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"
+        >
           <ArrowLeft size={18} />
           Back to Orders
         </button>
@@ -105,31 +78,65 @@ const OrderDetails = () => {
         <div className="lg:col-span-9 space-y-6">
           
           {/* CLIENT INFORMATION CARD */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
-            <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 md:p-6 transition-shadow hover:shadow-md">            
+              <div className="flex items-center gap-2 mb-6 border-b border-gray-50 pb-2">
               <ClipboardList size={18} className="text-gray-400" />
-              <h2 className="text-lg font-bold text-[#1B2559]">Client Details</h2>
+              <h2 className="text-lg font-bold text-[#1B2559]">
+                Client Details
+              </h2>
             </div>
-
-            <div className="space-y-6">
-              <div className="group bg-[#F8F9FB] rounded-2xl p-6 flex items-center gap-6 border border-[#F1F3F6] transition-all duration-300 hover:shadow-inner">
-                <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-2xl font-black border border-blue-100">
-                  {order.clientId?.name?.charAt(0) || "C"}
+          
+            <div className="flex flex-col md:flex-row items-start gap-3">
+              {/* Avatar with Hover Effect */}
+              <div className="group w-14 h-14 shrink-0 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-black shadow-inner transition-all duration-300 hover:scale-105">
+                {order.clientId?.name?.charAt(0) || "C"}
+              </div>
+          
+              {/* Content */}
+              <div className="flex-1 w-full">
+                <div className="flex items-center gap-2">
+                   <User size={20} className="text-indigo-500" />
+                   <h3 className="text-xl font-bold text-slate-800">
+                     {order.clientId?.name || "N/A"}
+                   </h3>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-widest mb-0.5">Purchasing Client</p>
-                  <h3 className="text-2xl font-bold text-[#2D3748] transition-colors">{order.clientId?.name || "N/A"}</h3>
+          
+                <div className="flex items-center gap-2 text-slate-500 font-medium mt-0.5">
+                  <Building2 size={16} className="text-slate-400" />
+                  <span>{order.clientId?.companyName || "No Organization"}</span>
+                </div>
+          
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
+                  
+                  {/* Contact Number Box */}
+                  <div className="group flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-all duration-300 hover:bg-white hover:border-[#005A9C]/30 hover:shadow-md hover:-translate-y-1">
+                    <Phone size={16} className="text-slate-400 transition-colors group-hover:text-[#005A9C]" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider transition-colors group-hover:text-[#005A9C]">Contact Number</span>
+                      <span className="font-semibold text-slate-700">{order.clientId?.phone || "-"}</span>
+                    </div>
+                  </div>
+          
+                  {/* Email Address Box */}
+                  <div className="group flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-all duration-300 hover:bg-white hover:border-[#005A9C]/30 hover:shadow-md hover:-translate-y-1">
+                    <Mail size={16} className="text-slate-400 transition-colors group-hover:text-[#005A9C]" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider transition-colors group-hover:text-[#005A9C]">Email Address</span>
+                      <span className="font-semibold text-slate-700">{order.clientId?.email || "-"}</span>
+                    </div>
+                  </div>
+          
+                  {/* Physical Address Box */}
+                  <div className="group flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-all duration-300 hover:bg-white hover:border-[#005A9C]/30 hover:shadow-md hover:-translate-y-1 md:col-span-2">
+                    <MapPin size={16} className="text-slate-400 transition-colors group-hover:text-[#005A9C]" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider transition-colors group-hover:text-[#005A9C]">Physical Address</span>
+                      <span className="font-semibold text-slate-700">{formatAddress(order.clientId?.address)}</span>
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoBox label="Company" value={order.clientId?.companyName} icon={Building2} />
-                <InfoBox label="Phone" value={order.clientId?.phone} icon={Phone} />
-                <InfoBox label="Email" value={order.clientId?.email} icon={Mail} />
-                <InfoBox label="Country" value={order.clientId?.country} icon={Globe} />
-              </div>
-
-              <InfoBox label="Full Shipping Address" value={formatAddress(order.clientId?.address)} icon={MapPin} />
             </div>
           </div>
 
@@ -178,63 +185,25 @@ const OrderDetails = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Sidebar Stats & Actions */}
+        {/* RIGHT COLUMN: Sidebar Stats */}
         <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-6">
-          
-          {/* STATUS CONTROL CARD */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm transition-all hover:shadow-md">
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <RefreshCw size={12} /> Status Management
-            </p>
-            <div className="space-y-3">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                disabled={updatingStatus}
-                className="cursor-pointer w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"              >
-                <option value="Draft">Draft</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="PI Generated">PI Generated</option>
-              </select>
-              <button
-                onClick={() => updateStatus(status)}
-                disabled={updatingStatus}
-                className="cursor-pointer w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"              >
-                {updatingStatus ? "Updating..." : "Update Status"}
-              </button>
-            </div>
-          </div>
-
-          {/* VOUCHER CARD */}
-          <div className="bg-[#EBF8FF] rounded-2xl p-5 border border-[#BEE3F8] shadow-sm group transition-all hover:-translate-y-1 hover:shadow-lg">
-            <p className="text-[9px] font-bold text-blue-800 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-              <Hash size={12} /> Voucher Number
-            </p>
-            <h3 className="text-xl font-black text-blue-900 truncate">
-              {order.voucherNo || "N/A"}
-            </h3>
-          </div>
-
-          {/* TOTAL QUANTITY CARD */}
           <div className="bg-[#FEE2E2] rounded-2xl p-5 border border-[#FECACA] shadow-sm group transition-all hover:-translate-y-1 hover:shadow-lg">
-            <p className="text-[9px] font-bold text-red-800 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+            <p className="text-[9px] font-bold text-red-800 uppercase tracking-widest mb-1 flex items-center gap-1.5 transition-colors group-hover:text-red-900">
               <Package size={12} /> Total Vehicles
             </p>
-            <h3 className="text-4xl font-black text-red-800 leading-none">
+            <h3 className="text-4xl font-black text-red-800 leading-none transition-transform duration-300 group-hover:scale-105 origin-left">
               {totalQty}
             </h3>
           </div>
 
-          {/* DATE CARD */}
           <div className="bg-[#F0F5FF] rounded-2xl p-5 border border-[#D6E4FF] shadow-sm group transition-all hover:-translate-y-1 hover:shadow-lg">
-            <p className="text-[9px] font-bold text-indigo-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+            <p className="text-[9px] font-bold text-indigo-800 uppercase tracking-widest mb-2 flex items-center gap-1.5 transition-colors group-hover:text-indigo-900">
               <Calendar size={12} /> Order Date
             </p>
-            <h3 className="text-lg font-bold text-indigo-900">
+            <h3 className="text-lg font-bold text-indigo-900 transition-transform duration-300 group-hover:scale-105 origin-left">
               {new Date(order.date).toLocaleDateString()}
             </h3>
           </div>
-
         </div>
 
       </div>
