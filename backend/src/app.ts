@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: config.CORS_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 
 // Body parsing middleware
