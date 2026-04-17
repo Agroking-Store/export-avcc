@@ -25,11 +25,11 @@ const AppSidebar: React.FC = () => {
       icon: <FileText size={20} />,
       path: "/proforma-invoice",
     },
-    {
-      name: "Letter of Credit",
-      icon: <FileCheck size={20} />,
-      path: "/letter-of-credit",
-    },
+    // {
+    //   name: "Letter of Credit",
+    //   icon: <FileCheck size={20} />,
+    //   path: "/letter-of-credit",
+    // },
     { name: "Dealers", icon: <Truck size={20} />, path: "/dealers/dashboard" },
     { name: "Companies", icon: <Users size={20} />, path: "/companies" },
   ];
@@ -47,13 +47,13 @@ const AppSidebar: React.FC = () => {
             item.name === "Vehicles"
               ? location.pathname.startsWith("/vehicles")
               : item.name === "Dealers"
-              ? location.pathname.startsWith("/dealers")
-              : item.name === "Clients"
-              ? location.pathname.startsWith("/clients") ||
-                location.pathname.startsWith("/orders")
-              : item.name === "Companies"
-              ? location.pathname.startsWith("/companies")
-              : location.pathname === item.path;
+                ? location.pathname.startsWith("/dealers")
+                : item.name === "Clients"
+                  ? location.pathname.startsWith("/clients") ||
+                    location.pathname.startsWith("/orders")
+                  : item.name === "Companies"
+                    ? location.pathname.startsWith("/companies")
+                    : location.pathname === item.path;
 
           return (
             <Link
