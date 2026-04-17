@@ -13,7 +13,10 @@ import {
   getOrderDetailWithTracking, // Import the new controller for order details with tracking
   updatePIStatus, // Import the controller for the new route
 } from "../controllers/proforma-invoice.controller";
-import { downloadProformaInvoice } from "../controllers/pdf.controller";
+import {
+  getProformaInvoiceData,
+  downloadProformaInvoice,
+} from "../controllers/pdf.controller";
 import { validate } from "../middleware/validate.middleware";
 import { createPIValidationSchema } from "../validations/proforma-invoice.validation";
 import {
@@ -23,6 +26,7 @@ import {
 import { upload } from "../middleware/upload.middleware";
 
 const router = Router();
+router.get("/:id/data", getProformaInvoiceData);
 router.post("/", validate(createPIValidationSchema), createPI); // Route to create a new PI
 router.get("/dashboard-kpis", getDashboardKPIs); // New route for dashboard KPIs
 router.get("/monthly-pi-value-trend", getMonthlyPIValueTrend); // New route for monthly PI value trend
