@@ -6,7 +6,8 @@ import {
   getVehicle,
   updateVehicle,
   deleteVehicle,
-  bookVehicle
+  bookVehicle,
+  getLatestVehicles
 } from "../controllers/vehicle.controller";
 import { 
   validateCreateVehicle, 

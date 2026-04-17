@@ -1,5 +1,5 @@
 import api from "./api";
-import type { ApiResponse, PaginatedResponse } from "../types/api.types";
+import type { ApiResponse, PaginatedResponse, Vehicle } from "../types/api.types";
 
 // Vehicle interface moved to api.types.ts
 
@@ -19,8 +19,6 @@ export const vehicleApi = {
     const response = await api.get("/vehicles/stats");
     return response.data;
   },
-
-
 
   getById: async (id: string): Promise<ApiResponse<Vehicle>> => {
     const response = await api.get(`/vehicles/${id}`);
