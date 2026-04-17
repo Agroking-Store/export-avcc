@@ -18,6 +18,7 @@ interface VehicleForm {
   fobAmount: number;
   freight: number;
   quantity: number;
+  status: string;
 }
 
 const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
@@ -54,6 +55,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
     fobAmount: 0,
     freight: 0,
     quantity: 1,
+    status: "Booked",
   });
 
   useEffect(() => {
@@ -73,7 +75,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
         const bookings = bookingsRes.data?.data || bookingsRes.data || [];
         let bookingVehicle = null;
         const matchingBooking = bookings.find((b: any) => {
-          if (b.status !== "Booked") return false;
+          if (b.status === "New" || b.status === "Draft") return false;
           if (b.orderId && b.orderId !== orderId) return false;
           return b.vehicles?.some((bv: any) => String(bv.srNo) === String(srNo));
         });
@@ -96,6 +98,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           fobAmount: bookingVehicle?.fobAmount || v?.fobAmount || 0,
           freight: bookingVehicle?.freight || v?.freight || 0,
           quantity: v?.quantity || 1,
+          status: matchingBooking?.status || "Booked",
         };
         setForm(formData);
       } catch {
@@ -180,6 +183,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       };
 
       const response = await bookingApi.update(bookingId, {
+        status: form.status,
         vehicles: [updatedVehicleData],
       });
       console.log("Update response:", response.data);
@@ -242,7 +246,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       {/* Back */}
       <button
         onClick={() => navigate(`/dealers/orders/${orderId}`)}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
+        className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
       >
         <span className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
           <ArrowLeft size={15} />
@@ -364,6 +368,20 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
                   className={inputClass("")}
                 />
               </div>
+
+              <div>
+                <label className={labelClass}>Booking Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => handleChange("status", e.target.value)}
+                  className={inputClass("status")}
+                >
+                  <option value="Booked">Booked</option>
+                  <option value="PI Created">PI Created</option>
+                  <option value="LC Received">LC Received</option>
+                  <option value="Invoice Created">Invoice Created</option>
+                </select>
+              </div>
             </div>
 
             <div className="border-t border-dashed border-gray-200 dark:border-gray-700 pt-4">
@@ -448,14 +466,14 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           <button
             type="button"
             onClick={() => navigate(`/dealers/orders/${orderId}`)}
-            className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="cursor-pointer px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 rounded-xl shadow-sm transition-colors"
+            className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-[#5243EF] hover:bg-[#4335d6] disabled:bg-indigo-400 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
           >
             {saving ? (
               <>

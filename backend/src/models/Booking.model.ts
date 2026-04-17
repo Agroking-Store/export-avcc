@@ -20,7 +20,7 @@ export interface IBooking extends Document {
   dealerId: mongoose.Types.ObjectId;
   date: string;
   vehicles: IBookingVehicle[];
-  status: "Draft" | "Booked";
+  status: "New" | "Booked" | "PI Created" | "LC Received" | "Invoice Created";
   orderId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -53,8 +53,8 @@ const bookingSchema = new Schema<IBooking>(
     vehicles: [bookingVehicleSchema],
     status: {
       type: String,
-      enum: ["Draft", "Booked"],
-      default: "Draft",
+      enum: ["New", "Booked", "PI Created", "LC Received", "Invoice Created"],
+      default: "New",
     },
     orderId: {
       type: mongoose.Schema.Types.ObjectId,

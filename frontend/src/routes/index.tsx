@@ -18,17 +18,7 @@ import ClientsModule from "../features/clients/pages/ClientsModule";
 import OrdersModule from "../features/orders/OrdersModule";
 
 // Dealers
-import DealersDashboard from "../features/dealers/pages/DealersDashboard";
-import Dealers from "../features/dealers/pages/Dealers";
-import AddDealer from "../features/dealers/pages/AddDealer";
-import DealerDetails from "../features/dealers/pages/DealerDetails";
-import EditDealer from "../features/dealers/pages/EditDealer";
-import DealerOrders from "../features/dealers/pages/DealerOrders";
-import DealerOrdersList from "../features/dealers/pages/DealerOrdersList";
-import DealerOrderDetails from "../features/dealers/pages/DealerOrderDetails";
-import DealerVehicleBooking from "../features/dealers/pages/DealerVehicleBooking";
-import DealerVehicleView from "../features/dealers/pages/DealerVehicleView";
-import DealerVehicleEdit from "../features/dealers/pages/DealerVehicleEdit";
+import DealersModule from "../features/dealers/pages/DealersModule";
 
 // PI
 import PIModule from "../features/proforma-invoice/pages/PIModule"; // Import the new PIModule
@@ -39,12 +29,7 @@ import CreateCompany from "../features/company/pages/CreateCompany";
 import CompanyDetails from "../features/company/pages/CompanyDetails";
 
 // Vehicles
-import VehicleNavbar from "../features/vehicles/components/VehicleNavbar";
-import Vehicles from "../features/vehicles/pages/Vehicles";
-import VehicleList from "../features/vehicles/pages/VehicleList";
-import VehicleDetails from "../features/vehicles/pages/VehicleDetails";
-import VehicleView from "../features/vehicles/pages/VehicleView";
-import VehicleEdit from "../features/vehicles/pages/VehicleEdit";
+import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
 
 const AppRoutes: React.FC = () => {
   return (
@@ -63,40 +48,18 @@ const AppRoutes: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
 
           {/* Vehicles */}
-          <Route path="/vehicles" element={<VehicleNavbar />}>
-            <Route index element={<Vehicles />} />
-            <Route path="list" element={<VehicleList />} />
-
-            <Route path="view/:id" element={<VehicleDetails />} />
-            <Route
-              path="view/:id/view-vehicle/:vehicleIndex"
-              element={<VehicleView />}
-            />
-            <Route
-              path="view/:id/edit-vehicle/:vehicleIndex"
-              element={<VehicleEdit />}
-            />
-          </Route>
+          <Route path="/vehicles/*" element={<VehiclesModule />} />
 
           {/* Clients */}
           <Route path="/clients/*" element={<ClientsModule />} />
+          
           {/* Orders - Main module route (general order management) */}
           <Route path="/orders/*" element={<OrdersModule />} />
 
-          {/* Dealers — specific routes BEFORE dynamic :id */}
-          <Route path="/dealers" element={<Dealers />} />
-          <Route path="/dealers/dashboard" element={<DealersDashboard />} />
-          <Route path="/dealers/add" element={<AddDealer />} />
-          <Route path="/dealers/orders/:id" element={<DealerOrderDetails />} />
-          <Route path="/dealers/orders/:id/vehicle-view/:vehicleIndex" element={<DealerVehicleView />} />
-          <Route path="/dealers/orders/:id/vehicle-edit/:vehicleIndex" element={<DealerVehicleEdit />} />
-          <Route path="/dealers/edit/:id" element={<EditDealer />} />
-          <Route path="/dealers/orders" element={<DealerOrdersList />} />
-          <Route path="/dealers/orders/add" element={<DealerOrders />} />
-          <Route path="/dealers/booking/:orderId/:vehicleIndex" element={<DealerVehicleBooking />} />
-          <Route path="/dealers/:id" element={<DealerDetails />} />
+          {/* Dealers */}
+          <Route path="/dealers/*" element={<DealersModule />} />
+
           {/* Proforma Invoice */}
-          {/* Use PIModule for nested PI routes */}
           <Route path="/proforma-invoice/*" element={<PIModule />} />
 
           {/* Companies */}

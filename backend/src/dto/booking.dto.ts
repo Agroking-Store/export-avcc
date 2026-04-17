@@ -16,7 +16,7 @@ export interface CreateBookingDto {
     quantity: number;
     srNo?: string;
   }>;
-  status?: 'Draft' | 'Booked';
+  status?: 'New' | 'Booked' | 'PI Created' | 'LC Received' | 'Invoice Created';
   orderId?: string;
 }
 
@@ -38,5 +38,5 @@ export interface UpdateBookingDto {
     quantity: number;
     srNo?: string;
   }>;
-  status?: 'Draft' | 'Booked';
+  status?: 'New' | 'Booked' | 'PI Created' | 'LC Received' | 'Invoice Created';
 }

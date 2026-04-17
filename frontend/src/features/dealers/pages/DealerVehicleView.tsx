@@ -33,7 +33,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
 
   const [orderVehicle, setOrderVehicle] = useState<VehicleData | null>(null);
   const [bookingVehicle, setBookingVehicle] = useState<any>(null);
-  const [vehicleStatus, setVehicleStatus] = useState("Draft");
+  const [vehicleStatus, setVehicleStatus] = useState("New");
   const [loading, setLoading] = useState(true);
   const [orderId2, setOrderId2] = useState<string>("");
 
@@ -68,7 +68,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           const bookingsRes = await bookingApi.getAll();
           const bookings = bookingsRes.data?.data || bookingsRes.data || [];
           const matchingBooking = bookings.find((b: any) => {
-            if (b.status !== "Booked") return false;
+            if (b.status === "New" || b.status === "Draft") return false;
             if (b.orderId && b.orderId !== orderId) return false;
             return b.vehicles?.some(
               (bv: any) => String(bv.srNo) === String(srNo)
@@ -76,17 +76,17 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
           });
 
           if (matchingBooking) {
-            setVehicleStatus("Booked");
+            setVehicleStatus(matchingBooking.status || "Booked");
             const bv = matchingBooking.vehicles.find(
               (bv: any) => String(bv.srNo) === String(srNo)
             );
             setBookingVehicle(bv || null);
           } else {
-            setVehicleStatus("Draft");
+            setVehicleStatus("New");
           }
         } catch (bookingError) {
           console.warn("Booking data unavailable:", bookingError);
-          setVehicleStatus("Draft");
+          setVehicleStatus("New");
         }
       } catch (orderError) {
         console.error("Order fetch failed:", orderError);
@@ -98,10 +98,17 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
     load();
   }, [orderId, vIdx]);
 
-  const statusBadge =
-    vehicleStatus === "Booked"
-      ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700"
-      : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700";
+  const statusBadge = (() => {
+    switch (vehicleStatus) {
+      case "Booked": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700";
+      case "PI Created": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700";
+      case "LC Received": return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-700";
+      case "Invoice Created": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700";
+      case "New":
+      case "Draft":
+      default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+    }
+  })();
 
   const DetailRow = ({
     icon: Icon,
@@ -147,7 +154,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
       {/* Back */}
       <button
         onClick={() => navigate(`/dealers/orders/${orderId}`)}
-        className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
+        className="cursor-pointer inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group"
       >
         <span className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
           <ArrowLeft size={15} />
@@ -215,7 +222,7 @@ const vIdx = parseInt(searchParams.get("expandedIndex") || "0");
             const params = new URLSearchParams(searchParams);
 navigate(`/dealers/orders/${orderId}/vehicle-edit/${expandedIndex}?${params.toString()}`);
           }}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm transition-colors"
+          className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#5243EF] hover:bg-[#4335d6] rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
         >
           <Edit2 size={14} />
           Edit Vehicle
