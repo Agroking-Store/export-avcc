@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { Request, Response } from "express";
 import {
   createPIService,
@@ -14,6 +15,12 @@ import {
   getOrderDetailWithTrackingService, // Import the new service
 } from "../services/proforma-invoice.service";
 
+import LetterOfCredit from "../models/LetterOfCredit.model";
+import ProformaInvoice from "../models/ProformaInvoice.model";
+
+import path from "path";
+import fs from "fs";
+
 // CREATE PI
 export const createPI = async (req: Request, res: Response) => {
   try {
@@ -28,12 +35,12 @@ export const createPI = async (req: Request, res: Response) => {
 // GET Order Details with PI Tracking
 export const getOrderDetailWithTracking = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { orderId } = req.params;
     const orderDetails = await getOrderDetailWithTrackingService(
-      orderId as string
+      orderId as string,
     );
     res.status(200).json(orderDetails);
   } catch (error: any) {
@@ -51,7 +58,7 @@ export const getSuggestedNextPiNumber = async (req: Request, res: Response) => {
         .json({ message: "Company ID is required to suggest PI number." });
     }
     const suggestedPiNumber = await getSuggestedNextPiNumberService(
-      companyId as string
+      companyId as string,
     );
     res.status(200).json({ piNumber: suggestedPiNumber });
   } catch (error: any) {
@@ -78,7 +85,7 @@ export const getPIStatusDistribution = async (req: Request, res: Response) => {
   try {
     const { timeRange } = req.query;
     const distribution = await getPIStatusDistributionService(
-      timeRange as string
+      timeRange as string,
     );
     res.status(200).json(distribution);
   } catch (error: any) {
@@ -109,7 +116,7 @@ export const getTopClientsByPIValue = async (req: Request, res: Response) => {
     const { timeRange, limit } = req.query;
     const clients = await getTopClientsByPIValueService(
       timeRange as string,
-      Number(limit)
+      Number(limit),
     );
     res.status(200).json(clients);
   } catch (error: any) {
@@ -170,11 +177,74 @@ export const updatePIStatus = async (req: Request, res: Response) => {
 
     const updated = await updatePIStatusService(
       req.params.id as string,
-      status
+      status,
     );
 
     res.json(updated);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// Upload LC
+export const uploadLC = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const piIdString = Array.isArray(id) ? id[0] : id;
+
+    if (!piIdString) {
+      return res.status(400).json({ message: "Invalid PI ID" });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const piObjectId = new Types.ObjectId(piIdString);
+    const filePath = `/uploads/lcs/${file.filename}`;
+
+    await LetterOfCredit.create({
+      pi_id: piObjectId,
+      documentUrl: filePath,
+      status: "uploaded",
+    });
+
+    await updatePIStatusService(piIdString, "lc_received");
+
+    res.status(201).json({
+      message: "LC uploaded successfully",
+      path: filePath,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getLCFile = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const piIdString = Array.isArray(id) ? id[0] : id;
+
+    const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
+      uploadedAt: -1,
+    });
+
+    if (!lc || !lc.documentUrl) {
+      return res
+        .status(404)
+        .json({ message: "Letter of Credit file not found" });
+    }
+
+    const absolutePath = path.join(process.cwd(), lc.documentUrl);
+
+    if (!fs.existsSync(absolutePath)) {
+      return res.status(404).json({ message: "File not found on server disk" });
+    }
+
+    res.sendFile(absolutePath);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

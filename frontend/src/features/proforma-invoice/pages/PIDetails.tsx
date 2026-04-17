@@ -13,9 +13,21 @@ import {
   FileText,
   Edit,
   Loader2,
+  FileUp,
+  MoreVertical,
+  FileDown,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ProformaInvoiceAPI } from "../components/pi.types"; // Import ProformaInvoiceAPI
 import { Button } from "@/components/ui/button";
+import { piApi } from "../components/piApi";
 
 const PIDetails = () => {
   const { id } = useParams();
@@ -24,13 +36,15 @@ const PIDetails = () => {
   const [data, setData] = useState<ProformaInvoiceAPI | null>(null); // Type data as ProformaInvoiceAPI
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [uploadingLC, setUploadingLC] = useState(false);
+  const [viewingLC, setViewingLC] = useState(false);
 
   const fetchPI = async () => {
     try {
       setLoading(true);
 
       const res = await axios.get(
-        `${apiConfig.baseURL}/proforma-invoices/${id}`
+        `${apiConfig.baseURL}/proforma-invoices/${id}`,
       );
 
       setData(res.data);
@@ -44,6 +58,66 @@ const PIDetails = () => {
   useEffect(() => {
     if (id) fetchPI();
   }, [id]);
+
+  const handleLCUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !id) return;
+
+    if (file.type !== "application/pdf") {
+      toast.error("Please upload a PDF file");
+      return;
+    }
+
+    try {
+      setUploadingLC(true);
+      await piApi.uploadLC(id, file);
+      toast.success("Letter of Credit uploaded successfully!");
+      fetchPI();
+    } catch (err) {
+      toast.error("Failed to upload LC");
+    } finally {
+      setUploadingLC(false);
+    }
+  };
+
+  const handleViewLC = async () => {
+    try {
+      setViewingLC(true);
+
+      // Get token (Reusing your existing logic)
+      let token =
+        localStorage.getItem("token") || localStorage.getItem("accessToken");
+      if (!token && localStorage.getItem("user")) {
+        try {
+          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+          token = userObj.token || userObj.accessToken;
+        } catch (e) {}
+      }
+      if (token && token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1);
+      }
+
+      const res = await axios.get(
+        `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`,
+        {
+          responseType: "blob", // Fetch as binary
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+
+      // Create a local URL for the PDF blob
+      const url = window.URL.createObjectURL(
+        new Blob([res.data], { type: "application/pdf" }),
+      );
+
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("LC View error", error);
+      toast.error("Failed to open Letter of Credit ❌");
+    } finally {
+      setViewingLC(false);
+    }
+  };
 
   const handlePdfAction = async (action: "view" | "download") => {
     try {
@@ -65,12 +139,12 @@ const PIDetails = () => {
         {
           responseType: "blob", // Important for receiving binary data
           headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
+        },
       );
 
       // Tag the blob explicitly as a PDF so the browser's native viewer takes over
       const url = window.URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" })
+        new Blob([res.data], { type: "application/pdf" }),
       );
 
       if (action === "view") {
@@ -80,7 +154,7 @@ const PIDetails = () => {
         link.href = url;
         link.setAttribute(
           "download",
-          `${data?.piNumber || "proforma-invoice"}.pdf`
+          `${data?.piNumber || "proforma-invoice"}.pdf`,
         );
         document.body.appendChild(link);
         link.click();
@@ -174,88 +248,147 @@ const PIDetails = () => {
     <div className="bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-          <div className="flex items-center gap-4">
+        {/* HEADER */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-start gap-4">
             <Button
               type="button"
               onClick={() => navigate(-1)}
               variant="outline"
-              size="default"
-              className="h-12 w-12 rounded-full border-gray-300 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-md transition-all duration-200 cursor-pointer"
+              size="icon"
+              className="mt-1 h-10 w-10 rounded-full border-zinc-200 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-all shrink-0"
             >
-              <ChevronLeft className="size-6" strokeWidth={2.5} />
+              <ChevronLeft className="size-5" />
             </Button>
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white flex items-center gap-3">
-                Proforma Invoice
+
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                  Proforma Invoice
+                </h2>
                 {pi && (
                   <span
-                    className={`px-2.5 py-1 text-xs rounded-full border flex items-center gap-1.5 font-medium ${getStatusColor(
-                      pi.status
-                    )}`}
+                    className={`px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full border ${getStatusColor(pi.status)}`}
                   >
-                    {getStatusIcon(pi.status)}
-                    <span className="capitalize">
-                      {pi.status?.replace("_", " ")}
-                    </span>
+                    {pi.status?.replace("_", " ")}
                   </span>
                 )}
-              </h2>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                Ref:{" "}
-                <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                  {pi?.piNumber}
-                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-500 font-medium">
+                <p className="flex items-center gap-1.5">
+                  <span className="text-zinc-400">Ref:</span>
+                  <span className="font-mono text-zinc-900 dark:text-zinc-300">
+                    {pi?.piNumber}
+                  </span>
+                </p>
                 {pi?.order_id && (
-                  <>
-                    <span className="mx-2 text-zinc-300 dark:text-zinc-700">
-                      |
-                    </span>
-                    Order:{" "}
-                    <span className="font-mono text-zinc-700 dark:text-zinc-300">
+                  <p className="flex items-center gap-1.5 border-l border-zinc-300 dark:border-zinc-700 pl-4">
+                    <span className="text-zinc-400">Order:</span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-300">
                       {typeof pi.order_id === "object"
                         ? pi.order_id.orderId
                         : pi.order_id}
                     </span>
-                  </>
+                  </p>
                 )}
-              </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() => navigate(`/proforma-invoice/edit/${id}`)}
-              variant="outline"
-              className="h-10 px-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-            >
-              <Edit className="w-4 h-4 mr-2" /> Edit PI
-            </Button>
-            <Button
-              onClick={() => handlePdfAction("view")}
-              disabled={!pi || downloading}
-              variant="outline"
-              className="h-10 px-4 border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-500 dark:hover:bg-blue-950/30 cursor-pointer transition-colors shadow-sm"
-            >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          <div className="flex items-center gap-2 self-end lg:self-center">
+            {/* GROUP 1: LC ACTIONS */}
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+              {pi?.status === "lc_received" ? (
+                <>
+                  <Button
+                    onClick={handleViewLC}
+                    variant="ghost"
+                    size="sm"
+                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    View LC
+                  </Button>
+                  <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <label
+                          htmlFor="lc-upload"
+                          className="flex items-center w-full cursor-pointer"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" /> Replace LC
+                        </label>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ) : (
-                <Eye className="w-4 h-4 mr-2" />
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-amber-600 hover:bg-amber-50 h-8 gap-2"
+                >
+                  <label htmlFor="lc-upload" className="cursor-pointer">
+                    <FileUp className="w-4 h-4" />
+                    Upload LC
+                  </label>
+                </Button>
               )}
-              {downloading ? "Loading..." : "View PDF"}
-            </Button>
-            <Button
-              onClick={() => handlePdfAction("download")}
-              disabled={!pi || downloading}
-              className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-700 cursor-pointer transition-colors shadow-sm"
-            >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
-              {downloading ? "Generating..." : "Download PDF"}
-            </Button>
+              <input
+                type="file"
+                id="lc-upload"
+                className="hidden"
+                accept=".pdf"
+                onChange={handleLCUpload}
+              />
+            </div>
+
+            {/* GROUP 2: PI PDF ACTIONS */}
+            <div className="flex items-center gap-2 ml-2">
+              <Button
+                onClick={() => handlePdfAction("view")}
+                variant="outline"
+                size="sm"
+                className="h-9 border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                View PI
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-2 border-zinc-200"
+                  >
+                    <FileDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => handlePdfAction("download")}
+                    className="cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate(`/proforma-invoice/edit/${id}`)}
+                    className="cursor-pointer"
+                  >
+                    <Edit className="w-4 h-4 mr-2" /> Edit Details
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -322,7 +455,7 @@ const PIDetails = () => {
                   </p>
                   {formatAddress(
                     (pi.client_id as any)?.address ||
-                      (pi.client_id as any)?.country
+                      (pi.client_id as any)?.country,
                   )}
 
                   <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">

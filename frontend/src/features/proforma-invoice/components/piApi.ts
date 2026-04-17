@@ -53,10 +53,10 @@ export const piApi = {
   },
 
   getOrderDetailWithTracking: async (
-    orderId: string
+    orderId: string,
   ): Promise<OrderDetailData> => {
     const res = await axios.get(
-      `${apiConfig.baseURL}/proforma-invoices/orders/${orderId}/details`
+      `${apiConfig.baseURL}/proforma-invoices/orders/${orderId}/details`,
     );
     return res.data;
   },
@@ -64,18 +64,18 @@ export const piApi = {
   createPI: async (payload: Partial<PIForm> & { totalAmount: number }) => {
     const res = await axios.post(
       `${apiConfig.baseURL}/proforma-invoices`,
-      payload
+      payload,
     );
     return res.data;
   },
 
   updatePI: async (
     id: string,
-    payload: Partial<PIForm> & { totalAmount: number }
+    payload: Partial<PIForm> & { totalAmount: number },
   ) => {
     const res = await axios.put(
       `${apiConfig.baseURL}/proforma-invoices/${id}`,
-      payload
+      payload,
     );
     return res.data;
   },
@@ -94,7 +94,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/next-pi-number`,
       {
         params: { companyId },
-      }
+      },
     );
     return res.data.piNumber;
   },
@@ -104,7 +104,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/dashboard-kpis`,
       {
         params: { timeRange },
-      }
+      },
     );
     return res.data;
   },
@@ -114,7 +114,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/pi-status-distribution`,
       {
         params: { timeRange },
-      }
+      },
     );
     return res.data;
   },
@@ -124,7 +124,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/monthly-pi-value-trend`,
       {
         params: { timeRange },
-      }
+      },
     );
     return res.data;
   },
@@ -134,7 +134,24 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/top-clients-by-pi-value`,
       {
         params: { timeRange, limit },
-      }
+      },
+    );
+    return res.data;
+  },
+
+  uploadLC: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("lcFile", file);
+
+    const res = await axios.post(
+      `${apiConfig.baseURL}/proforma-invoices/${id}/lc`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      },
     );
     return res.data;
   },
