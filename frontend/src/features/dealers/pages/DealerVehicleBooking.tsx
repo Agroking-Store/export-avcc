@@ -2,13 +2,31 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, Users, Car, AlertCircle, Package, Hash, 
-  Globe, Fuel, DollarSign, X, CheckCircle2, Calendar 
+  Globe, Fuel, DollarSign, X, CheckCircle2, Calendar,
+  ChevronLeft, ChevronRight, ChevronsUpDown, Check
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { bookingApi } from '../../../services/bookingApi';
 import { dealerApi } from '../../../services/dealerApi';
-import Select from '../../../components/ui/select';
+import { format } from 'date-fns';
 
+// ── shadcn/ui imports ──────────────────────────────────────────────────────
+import { Button } from '@/components/ui/button';
+import { Calendar as ShadCalendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const DealerVehicleBooking = () => {
   const { orderId } = useParams() as { orderId: string };
@@ -17,8 +35,12 @@ const DealerVehicleBooking = () => {
 
   const [dealers, setDealers] = useState<any[]>([]);
   const [selectedDealer, setSelectedDealer] = useState('');
-  const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bookingDate, setBookingDate] = useState<Date>(new Date());
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  // ── popover open states ──
+  const [dealerOpen, setDealerOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const srNoParam = searchParams.get('srNo') || '';
   const vehicleName = searchParams.get('name') || '';
@@ -97,7 +119,7 @@ const DealerVehicleBooking = () => {
     try {
       await bookingApi.create({
         dealerId: selectedDealer,
-        date: bookingDate,
+        date: bookingDate.toISOString().split('T')[0],
         orderId: orderId,
         vehicles: [{
           hsnCode: vehicles[0].hsnCode,
@@ -131,6 +153,9 @@ const DealerVehicleBooking = () => {
   const labelStyle = 
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
+  // selected dealer label for combobox display
+  const selectedDealerName = dealers.find(d => d._id === selectedDealer)?.name;
+
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10 animate-in fade-in duration-500">
       
@@ -140,7 +165,6 @@ const DealerVehicleBooking = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Book Vehicle</h1>
           <p className="text-sm text-gray-500 mt-1">Assign dealer and unit details for slot #{srNoParam}</p>
         </div>
-
         <button
           onClick={() => navigate(`/dealers/orders/${orderId}`)}
           className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
@@ -159,40 +183,106 @@ const DealerVehicleBooking = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* ── DEALER — shadcn Combobox ── */}
             <div>
               <label className={labelStyle}>
                 <Users size={14} className="text-indigo-500" /> Authorized Dealer
               </label>
-              <Select
-                value={selectedDealer}
-                onChange={(e) => handleInputChange('dealerId', e.target.value)}
-                className={inputStyle('dealerId')}
-              >
-                <option value="">Choose dealer...</option>
-                {dealers.map(dealer => (
-                  <option key={dealer._id} value={dealer._id}>{dealer.name}</option>
-                ))}
-              </Select>
-              {errors.dealerId && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.dealerId}</p>}
+              <Popover open={dealerOpen} onOpenChange={setDealerOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    role="combobox"
+                    aria-expanded={dealerOpen}
+                    className={cn(
+                      inputStyle('dealerId'),
+                      'flex items-center justify-between cursor-pointer'
+                    )}
+                  >
+                    <span className={selectedDealerName ? 'text-[#4A5568] dark:text-gray-200' : 'text-[#A0AEC0]'}>
+                      {selectedDealerName || 'Choose dealer...'}
+                    </span>
+                    <ChevronsUpDown size={16} className="text-[#A0AEC0] shrink-0" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search dealer..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No dealer found.</CommandEmpty>
+                      <CommandGroup>
+                        {dealers.map(dealer => (
+                          <CommandItem
+                            key={dealer._id}
+                            value={dealer.name}
+                            onSelect={() => {
+                              handleInputChange('dealerId', dealer._id);
+                              setDealerOpen(false);
+                            }}
+                          >
+                            {dealer.name}
+                            <Check
+                              className={cn(
+                                'ml-auto h-4 w-4',
+                                selectedDealer === dealer._id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.dealerId && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.dealerId}</p>
+              )}
             </div>
 
+            {/* ── BOOKING DATE — shadcn Calendar ── */}
             <div>
               <label className={labelStyle}>
                 <Calendar size={14} className="text-blue-400" /> Booking Date
               </label>
-
-              <input
-                type="date"
-                value={bookingDate}
-                onChange={(e) => handleInputChange('date', e.target.value)}
-                className={inputStyle('date')}
-              />
-              {errors.date && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.date}</p>}
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      inputStyle('date'),
+                      'flex items-center justify-between cursor-pointer'
+                    )}
+                  >
+                    <span className={bookingDate ? 'text-[#4A5568] dark:text-gray-200' : 'text-[#A0AEC0]'}>
+                      {bookingDate ? format(bookingDate, 'dd MMM yyyy') : 'Pick a date'}
+                    </span>
+                    <Calendar size={16} className="text-[#A0AEC0] shrink-0" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <ShadCalendar
+                    mode="single"
+                    selected={bookingDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        handleInputChange('date', date);
+                        setCalendarOpen(false);
+                      }
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.date && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.date}</p>
+              )}
             </div>
+
           </div>
         </div>
 
-        {/* VEHICLE IDENTIFIERS SECTION */}
+        {/* VEHICLE IDENTIFIERS SECTION — unchanged */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
             <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
@@ -265,7 +355,7 @@ const DealerVehicleBooking = () => {
                 value={vehicles[0].engineNo}
                 onChange={(e) => handleInputChange('vehicles.engineNo', e.target.value.toUpperCase())}
                 className={`${inputStyle('vehicles.engineNo')} font-mono tracking-wider`}
-placeholder="G3LCSM578833"
+                placeholder="G3LCSM578833"
               />
               <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Example: G3LCSM578833 (10-12 alphanumeric chars)</p>
               {errors['vehicles.engineNo'] && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors['vehicles.engineNo']}</p>}
@@ -273,7 +363,7 @@ placeholder="G3LCSM578833"
           </div>
         </div>
 
-        {/* LOGISTICS & SPECS SECTION */}
+        {/* LOGISTICS & SPECS SECTION — unchanged */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
             <div className="h-5 w-1 bg-purple-500 rounded-full"></div>
@@ -283,72 +373,32 @@ placeholder="G3LCSM578833"
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
               <label className={labelStyle}><Fuel size={14} className="text-blue-400" /> Fuel Type</label>
-              <input
-                type="text"
-                value={vehicles[0].fuelType}
-                onChange={(e) => handleInputChange('vehicles.fuelType', e.target.value)}
-                className={inputStyle('')}
-                placeholder="Petrol / Diesel"
-              />
+              <input type="text" value={vehicles[0].fuelType} onChange={(e) => handleInputChange('vehicles.fuelType', e.target.value)} className={inputStyle('')} placeholder="Petrol / Diesel" />
             </div>
-
             <div>
               <label className={labelStyle}><Globe size={14} className="text-emerald-500" /> Origin Country</label>
-              <input
-                type="text"
-                value={vehicles[0].countryOfOrigin}
-                onChange={(e) => handleInputChange('vehicles.countryOfOrigin', e.target.value)}
-                className={inputStyle('')}
-                placeholder="Japan"
-              />
+              <input type="text" value={vehicles[0].countryOfOrigin} onChange={(e) => handleInputChange('vehicles.countryOfOrigin', e.target.value)} className={inputStyle('')} placeholder="Japan" />
             </div>
-
             <div>
               <label className={labelStyle}><Package size={14} className="text-amber-500" /> Engine Capacity</label>
-              <input
-                type="text"
-                value={vehicles[0].engineCapacity}
-                onChange={(e) => handleInputChange('vehicles.engineCapacity', e.target.value)}
-                className={inputStyle('')}
-                placeholder="e.g. 1496cc"
-              />
+              <input type="text" value={vehicles[0].engineCapacity} onChange={(e) => handleInputChange('vehicles.engineCapacity', e.target.value)} className={inputStyle('')} placeholder="e.g. 1496cc" />
             </div>
-
             <div>
               <label className={labelStyle}><Calendar size={14} className="text-indigo-400" /> MFG Year (YOM)</label>
-              <input
-                type="number"
-                value={vehicles[0].yom}
-                onChange={(e) => handleInputChange('vehicles.yom', parseInt(e.target.value) || 0)}
-                className={inputStyle('')}
-              />
+              <input type="number" value={vehicles[0].yom} onChange={(e) => handleInputChange('vehicles.yom', parseInt(e.target.value) || 0)} className={inputStyle('')} />
             </div>
-
             <div className="md:col-span-2">
               <label className={labelStyle}><DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)</label>
-              <input
-                type="number"
-                value={vehicles[0].fobAmount || ''}
-                onChange={(e) => handleInputChange('vehicles.fobAmount', parseFloat(e.target.value) || 0)}
-                className={inputStyle('')}
-                placeholder="0.00"
-              />
+              <input type="number" value={vehicles[0].fobAmount || ''} onChange={(e) => handleInputChange('vehicles.fobAmount', parseFloat(e.target.value) || 0)} className={inputStyle('')} placeholder="0.00" />
             </div>
-
             <div className="md:col-span-2">
               <label className={labelStyle}><DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)</label>
-              <input
-                type="number"
-                value={vehicles[0].freight || ''}
-                onChange={(e) => handleInputChange('vehicles.freight', parseFloat(e.target.value) || 0)}
-                className={inputStyle('')}
-                placeholder="0.00"
-              />
+              <input type="number" value={vehicles[0].freight || ''} onChange={(e) => handleInputChange('vehicles.freight', parseFloat(e.target.value) || 0)} className={inputStyle('')} placeholder="0.00" />
             </div>
           </div>
         </div>
 
-        {/* ACTIONS */}
+        {/* ACTIONS — unchanged */}
         <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
@@ -357,7 +407,6 @@ placeholder="G3LCSM578833"
           >
             <X size={16} /> Discard
           </button>
-
           <button
             type="submit"
             disabled={submitLoading}
