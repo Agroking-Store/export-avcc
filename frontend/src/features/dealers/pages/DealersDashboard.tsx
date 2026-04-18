@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Users, TrendingUp, CheckCircle2, Clock3, UserPlus, PlusCircle, ArrowUpRight } from "lucide-react";
+import {
+  Users,
+  TrendingUp,
+  CheckCircle2,
+  Clock3,
+  UserPlus,
+  PlusCircle,
+  ArrowUpRight,
+} from "lucide-react";
 
 const DealersDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -10,9 +18,10 @@ const DealersDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    axios.get("http://localhost:5000/api/v1/dealers?limit=5&page=1")
-      .then(res => {
+    // setLoading(true);
+    axios
+      .get("http://localhost:5000/api/v1/dealers?limit=5&page=1")
+      .then((res) => {
         setTotalDealers(res.data.total || res.data.data.length);
         setRecentDealers(res.data.data);
       })
@@ -140,8 +149,12 @@ const DealersDashboard: React.FC = () => {
                     {dealer.name?.charAt(0)?.toUpperCase() || "D"}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 dark:text-white">{dealer.name}</p>
-                    <p className="text-xs text-slate-400 dark:text-gray-500 mt-0.5">{dealer.contact}</p>
+                    <p className="font-bold text-slate-800 dark:text-white">
+                      {dealer.name}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-gray-500 mt-0.5">
+                      {dealer.contact}
+                    </p>
                   </div>
                 </div>
                 <span className="px-4 py-1.5 rounded-xl bg-white dark:bg-gray-800 text-sm font-bold text-blue-600 dark:text-blue-400 shadow-sm border border-slate-50 dark:border-gray-700">
@@ -158,7 +171,9 @@ const DealersDashboard: React.FC = () => {
 
 const StatCard = ({ title, value, icon, color }: any) => (
   <div className="rounded-2xl border border-slate-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-md transition-all">
-    <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-4 shadow-sm`}>
+    <div
+      className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-4 shadow-sm`}
+    >
       {icon}
     </div>
     <p className="text-[12px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-tight">
@@ -185,8 +200,12 @@ const ActionCard = ({ title, subtitle, icon, onClick }: any) => (
       />
     </div>
     <div className="mt-4 relative z-10">
-      <h3 className="font-bold text-slate-800 dark:text-white text-lg">{title}</h3>
-      <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">{subtitle}</p>
+      <h3 className="font-bold text-slate-800 dark:text-white text-lg">
+        {title}
+      </h3>
+      <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+        {subtitle}
+      </p>
     </div>
   </button>
 );

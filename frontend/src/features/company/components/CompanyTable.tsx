@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Added Select components
-import { TableCell, TableRow } from "@/components/ui/table";
+import { Table, TableCell, TableRow } from "@/components/ui/table";
 
 interface CompanyTableProps {
   table: ReactTableType<Company>;
@@ -44,11 +44,11 @@ interface CompanyTableProps {
   setSorting: (updater: any) => void; // Added setSorting
   setPagination: (updater: any) => void; // Added setPagination
   setColumnVisibility: (
-    updater: React.SetStateAction<Record<string, boolean>>
+    updater: React.SetStateAction<Record<string, boolean>>,
   ) => void; // Added setColumnVisibility
   generatePagination: (
     currentPage: number,
-    totalPages: number
+    totalPages: number,
   ) => (number | string)[];
   statusFilter: "all" | "active" | "inactive"; // New prop for status filter
   setStatusFilter: (status: "all" | "active" | "inactive") => void; // New prop for setting status filter
@@ -153,6 +153,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
     setPagination, // setPagination is used to reset pageIndex
     setStatusFilter, // Reset status filter
     resetCompanyToDefaultColumns, // resetCompanyToDefaultColumns is called
+    table,
   ]);
 
   return (
@@ -308,7 +309,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -381,7 +382,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -413,7 +414,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
               <SelectContent position="popper" sideOffset={4}>
                 {[5, 10, 25, 50].map(
                   (
-                    pageSize // Increased dropdown text size for pagination selector
+                    pageSize, // Increased dropdown text size for pagination selector
                   ) => (
                     <SelectItem
                       key={pageSize}
@@ -422,7 +423,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                     >
                       {pageSize}
                     </SelectItem>
-                  )
+                  ),
                 )}
               </SelectContent>
             </Select>
@@ -443,7 +444,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
             <div className="items-center space-x-1 flex sm:flex">
               {generatePagination(
                 table.getState().pagination.pageIndex + 1,
-                table.getPageCount()
+                table.getPageCount(),
               ).map((item, idx) =>
                 item === "..." ? (
                   <span key={idx} className="px-2 text-gray-500 text-xs">
@@ -463,7 +464,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                   >
                     {item}
                   </Button>
-                )
+                ),
               )}
             </div>
 

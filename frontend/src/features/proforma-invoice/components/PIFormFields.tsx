@@ -22,9 +22,8 @@ interface PIFormFieldsProps {
   handleVehicleChange: (
     index: number,
     field: keyof VehicleLineItem,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-    value: any
+    value: any,
   ) => void;
   handleClientSelect: (clientId: string) => void;
   handleCompanySelect: (companyId: string) => void; // Renamed from handleDealerSelect
@@ -61,7 +60,6 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   totalAmount,
   numberToWords,
   getRate,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
   getAmount,
 }) => {
@@ -81,7 +79,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   // These are now used for initial population if snapshots are empty, or as fallback
   const initialSelectedClient = clients.find((c) => c._id === form.client_id);
   const initialSelectedCompany = companies.find(
-    (c) => c._id === form.company_id
+    (c) => c._id === form.company_id,
   );
 
   // Use snapshot for display if available, otherwise fallback to initial selected
@@ -212,11 +210,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                       handleVehicleChange(
                         index,
                         "quantity",
-                        Number(e.target.value)
+                        Number(e.target.value),
                       )
                     }
                     className={`${getInputClass(
-                      `v_${index}_quantity`
+                      `v_${index}_quantity`,
                     )} text-center`}
                   />
                 </div>
@@ -232,7 +230,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                       handleVehicleChange(
                         index,
                         "fob",
-                        e.target.value ? Number(e.target.value) : ""
+                        e.target.value ? Number(e.target.value) : "",
                       )
                     }
                     className={`${inputClass} text-right font-mono`}
@@ -250,7 +248,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                       handleVehicleChange(
                         index,
                         "freight",
-                        e.target.value ? Number(e.target.value) : ""
+                        e.target.value ? Number(e.target.value) : "",
                       )
                     }
                     className={`${inputClass} text-right font-mono`}
@@ -360,7 +358,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                         handleVehicleChange(
                           index,
                           "countryOfOrigin",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className={inputClass}
@@ -374,7 +372,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                         handleVehicleChange(
                           index,
                           "engineCapacity",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className={inputClass}
@@ -616,7 +614,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleClientSnapshotChange(
                   "address.houseBuilding",
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={inputClass}
@@ -754,7 +752,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "address.houseBuilding",
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={inputClass}
@@ -768,7 +766,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "address.streetArea",
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={inputClass}
@@ -845,7 +843,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.bankName",
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={inputClass}
@@ -856,7 +854,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.accountNo",
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={inputClass}
@@ -867,7 +865,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.branchIfsc",
-                  e.target.value
+                  e.target.value,
                 )
               }
               className={inputClass}
