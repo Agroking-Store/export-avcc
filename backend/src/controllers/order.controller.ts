@@ -51,17 +51,27 @@ export const updateOrder = async (req: Request, res: Response) => {
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
-    const { status } = req.body;
-    if (!status || !["Draft", "Confirmed"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+    const status = req.body.status as string;
+
+    if (!status) {
+      return res.status(400).json({
+        message: "Status is required",
+      });
     }
 
-    const updated = await updateOrderStatusService(
+    const updatedOrder = await updateOrderStatusService(
       req.params.id as string,
-      status,
+      status
     );
-    res.json(updated);
+
+    res.json({
+      message: "Status updated successfully",
+      data: updatedOrder,
+    });
+
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };

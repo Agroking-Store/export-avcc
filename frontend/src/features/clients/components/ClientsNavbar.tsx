@@ -46,7 +46,7 @@ const ClientsNavbar: React.FC = () => {
             className={`flex items-center gap-2.5 px-6 py-2.5 rounded-[14px] text-[14px] font-bold transition-all duration-300 whitespace-nowrap active:scale-95 ${
               isActive
                 ? "bg-[#1877F2] text-white shadow-md shadow-indigo-200" 
-                : "text-slate-500 hover:text-[#005A9C] hover:bg-[#005A9C]/5"
+                : "text-slate-500 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:shadow-sm"
             }`}
           >
             <Icon

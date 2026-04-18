@@ -304,7 +304,11 @@ export const updateOrderService = async (
 
 export const updateOrderStatusService = async (
   id: string,
-  status: "Draft" | "Confirmed"
-): Promise<IOrder | null> => {
-  return await Order.findByIdAndUpdate(id, { status }, { new: true });
+  status: string
+) => {
+  return await Order.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true }
+  );
 };

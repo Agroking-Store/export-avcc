@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -28,6 +28,10 @@ const OrdersList = () => {
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [newStatus, setNewStatus] = useState("");
 
   const limit = 5;
 
@@ -61,6 +65,62 @@ const OrdersList = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  const orderStatuses = [
+   "To be Sourced",
+   "Booked",
+   "Payment Done",
+   "Transit",
+   "JNPT Warehouse",
+   "Shipped",
+   "Commercial Invoice Submitted"
+  ];
+  
+  const updateStatus = async () => {
+    if (!selectedOrder) return;
+  
+    try {
+      await axios.patch(
+        `http://localhost:5000/api/v1/orders/${selectedOrder._id}/status`,
+        { status: newStatus }
+      );
+  
+      toast.success("Status updated successfully");
+      setShowStatusModal(false);
+      fetchOrders();
+  
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
+  };
+
+  const getStatusStyle = (status?: string) => {
+    switch (status) {
+      case "To be Sourced":
+        return "bg-slate-100 text-slate-600";
+  
+      case "Booked":
+        return "bg-blue-100 text-blue-700";
+  
+      case "Payment Done":
+        return "bg-emerald-100 text-emerald-700";
+  
+      case "Transit":
+        return "bg-orange-100 text-orange-700";
+  
+      case "JNPT Warehouse":
+        return "bg-purple-100 text-purple-700";
+  
+      case "Shipped":
+        return "bg-indigo-100 text-indigo-700";
+  
+      case "Commercial Invoice Submitted":
+        return "bg-cyan-100 text-cyan-700";
+  
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
@@ -164,8 +224,12 @@ const OrdersList = () => {
                     </td>
 
                     <td className="px-8 py-5 text-center">
-                      <span className="bg-[#f1f5f9] dark:bg-gray-800 text-[#64748b] dark:text-slate-400 px-3 py-1 rounded text-xs font-medium">
-                        {order.status || "Draft"}
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(
+                          order.status
+                        )}`}
+                      >
+                        {order.status || "To be Sourced"}
                       </span>
                     </td>
 
@@ -191,6 +255,18 @@ const OrdersList = () => {
                           title="Edit Order"
                         >
                           <FilePenLine size={18} />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setNewStatus(order.status || "");
+                            setShowStatusModal(true);
+                          }}
+                          className="cursor-pointer p-2.5 text-emerald-600 border border-slate-200 rounded-xl bg-white hover:text-white hover:bg-emerald-500 hover:scale-110 transition-all"
+                          title="Change Status"
+                        >
+                          <RefreshCcw size={18} />
                         </button>
                       </div>
                     </td>
@@ -226,6 +302,49 @@ const OrdersList = () => {
         </div>
 
       </div>
+            {showStatusModal && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl w-[420px] p-6 shadow-2xl animate-in zoom-in-95">
+      
+          <h3 className="text-lg font-bold text-slate-800 mb-2">
+            Change Order Status
+          </h3>
+      
+          <p className="text-sm text-slate-500 mb-4">
+            Do you want to change status for{" "}
+            <span className="font-bold text-blue-600">
+              {selectedOrder?.orderId}
+            </span> ?
+          </p>
+      
+          <select
+            value={newStatus}
+            onChange={(e) => setNewStatus(e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 mb-5 outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {orderStatuses.map((status) => (
+              <option key={status}>{status}</option>
+            ))}
+          </select>
+      
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowStatusModal(false)}
+              className="px-5 py-2 rounded-xl border border-slate-200 font-semibold hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+      
+            <button
+              onClick={updateStatus}
+              className="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            >
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+      )}
     </div>
   );
 };
