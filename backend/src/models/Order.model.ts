@@ -1,11 +1,28 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+interface IVehicleColor {
+  vehicleId?: string;
+  color: string;
+  expandedIndex: number;
+  hsnCode?: string;
+  vehicleName?: string;
+  exteriorColour?: string;
+  chassisNo?: string;
+  engineNo?: string;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  fobAmount?: number;
+  freight?: number;
+}
+
 export interface IVehicleItem {
   name: string;
   color: string;
   quantity: number;
   srNo?: string;
-  expandedIndex: number; 
+  expandedIndex: number;
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;
@@ -23,19 +40,19 @@ export interface IOrder extends Document {
   orderId: string;
   voucherNo: string;
   date: Date;
-  clientId: mongoose.Types.ObjectId; 
+  clientId: mongoose.Types.ObjectId;
   vehicles: IVehicleItem[];
   vehicleColors: IVehicleColor[]; // NEW: individual color overrides per expanded slot
   status:
-  | "Sourced"
-  | "Booked"
-  | "VIN Received"
-  | "PI Issued"
-  | "LC Received"
-  | "BV Received"
-  | "HBL Received"
-  | "Bank Submission Done"
-  | "Shipped";
+    | "Sourced"
+    | "Booked"
+    | "VIN Received"
+    | "PI Issued"
+    | "LC Received"
+    | "BV Received"
+    | "HBL Received"
+    | "Bank Submission Done"
+    | "Shipped";
   createdAt: Date;
   __v?: number; // Mongoose version key
   updatedAt: Date;
@@ -73,11 +90,11 @@ const orderSchema = new Schema<IOrder>(
     clientId: {
       type: Schema.Types.ObjectId,
       ref: "Client",
-      required: true, 
+      required: true,
     },
 
     vehicles: { type: [vehicleItemSchema], required: true },
-    vehicleColors: { type: [vehicleColorSchema], default: [] }, 
+    vehicleColors: { type: [vehicleColorSchema], default: [] },
     status: {
       type: String,
       enum: [
@@ -102,7 +119,7 @@ const orderSchema = new Schema<IOrder>(
         return ret;
       },
     },
-  }
+  },
 );
 
 orderSchema.index({ clientId: 1 });
