@@ -67,13 +67,15 @@ const OrdersList = () => {
   }, [location.state]);
 
   const orderStatuses = [
-   "To be Sourced",
-   "Booked",
-   "Payment Done",
-   "Transit",
-   "JNPT Warehouse",
-   "Shipped",
-   "Commercial Invoice Submitted"
+    "Sourced",
+    "Booked",
+    "VIN Received",
+    "PI Issued",
+    "LC Received",
+    "BV Received",
+    "HBL Received",
+    "Bank Submission Done",
+    "Shipped",
   ];
   
   const updateStatus = async () => {
@@ -96,26 +98,32 @@ const OrdersList = () => {
 
   const getStatusStyle = (status?: string) => {
     switch (status) {
-      case "To be Sourced":
-        return "bg-slate-100 text-slate-600";
+      case "Sourced":
+        return "bg-slate-100 text-slate-700";
   
       case "Booked":
         return "bg-blue-100 text-blue-700";
   
-      case "Payment Done":
-        return "bg-emerald-100 text-emerald-700";
+      case "VIN Received":
+        return "bg-violet-100 text-violet-700";
   
-      case "Transit":
-        return "bg-orange-100 text-orange-700";
+      case "PI Issued":
+        return "bg-cyan-100 text-cyan-700";
   
-      case "JNPT Warehouse":
+      case "LC Received":
+        return "bg-amber-100 text-amber-700";
+  
+      case "BV Received":
+        return "bg-pink-100 text-pink-700";
+  
+      case "HBL Received":
         return "bg-purple-100 text-purple-700";
+  
+      case "Bank Submission Done":
+        return "bg-emerald-100 text-emerald-700";
   
       case "Shipped":
         return "bg-indigo-100 text-indigo-700";
-  
-      case "Commercial Invoice Submitted":
-        return "bg-cyan-100 text-cyan-700";
   
       default:
         return "bg-gray-100 text-gray-600";

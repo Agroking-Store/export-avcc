@@ -9,6 +9,7 @@ import {
 import {
   validateCreateOrder,
   validateUpdateOrder,
+  validateOrderStatus,
 } from "../validations/order.validation";
 
 export const createOrder = async (req: Request, res: Response) => {
@@ -49,20 +50,20 @@ export const updateOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const status = req.body.status as string;
 
-    if (!status) {
-      return res.status(400).json({
-        message: "Status is required",
-      });
-    }
+    validateOrderStatus(status);
 
-    const updatedOrder = await updateOrderStatusService(
-      req.params.id as string,
-      status
-    );
+    const updatedOrder =
+      await updateOrderStatusService(
+        req.params.id as string,
+        status
+      );
 
     res.json({
       message: "Status updated successfully",
@@ -70,7 +71,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    res.status(500).json({
+    res.status(400).json({
       message: error.message,
     });
   }

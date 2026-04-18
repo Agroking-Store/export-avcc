@@ -70,3 +70,25 @@ export const validateUpdateOrder = (data: UpdateOrderDto) => {
     }
   }
 };
+
+export const validateOrderStatus = (status: string) => {
+  const allowedStatuses = [
+    "Sourced",
+    "Booked",
+    "VIN Received",
+    "PI Issued",
+    "LC Received",
+    "BV Received",
+    "HBL Received",
+    "Bank Submission Done",
+    "Shipped",
+  ];
+
+  if (!status || status.trim() === "") {
+    throw new Error("Status is required");
+  }
+
+  if (!allowedStatuses.includes(status)) {
+    throw new Error("Invalid order status");
+  }
+};

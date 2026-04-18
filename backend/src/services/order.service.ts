@@ -140,7 +140,7 @@ export const createOrderService = async (
     clientId: data.clientId,
     vehicles,
     vehicleColors: [], // initialize empty
-    status: "Draft",
+    status: "Sourced",
   });
 
   return await order.save();
