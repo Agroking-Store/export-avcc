@@ -78,7 +78,7 @@ const DealersList = () => {
         <table className="w-full text-center">
           <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
             <tr>
-              {["Dealer ID", "Name", "Contact", "Email", "Address", "GST Number", "Actions"].map((head) => (
+              {["Dealer ID", "Name", "Contact", "Email", "Actions"].map((head) => (
                 <th
                   key={head}
                   className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
@@ -92,7 +92,7 @@ const DealersList = () => {
           <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
             {dealers.length === 0 && !loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-20 text-slate-400 italic">
+                <td colSpan={5} className="text-center py-20 text-slate-400 italic">
                   No dealers found
                 </td>
               </tr>
@@ -117,12 +117,6 @@ const DealersList = () => {
                   </td>
                   <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
                     {dealer.email || "-"}
-                  </td>
-                  <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
-                    {dealer.address || "-"}
-                  </td>
-                  <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
-                    {dealer.gstNumber || "-"}
                   </td>
                   <td className="px-8 py-5 text-center">
                     <div className="flex items-center gap-3 justify-center">

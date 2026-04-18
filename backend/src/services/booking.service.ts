@@ -50,6 +50,25 @@ export class BookingService {
     id: string,
     updateData: Partial<IBooking>
   ): Promise<IBooking | null> {
+    const currentBooking = await Booking.findById(id);
+    if (!currentBooking) {
+      throw new Error('Booking not found');
+    }
+
+    const statusOrder: { [key: string]: number } = {
+      'To be Sourced': 0,
+      'Booked': 1,
+      'Payment Done': 2,
+      'Transit': 3,
+      'JNPT Warehouse': 4,
+      'Shipped': 5,
+      'Commercial Invoice Submitted': 6
+    };
+
+    if (updateData.status && statusOrder[currentBooking.status] > statusOrder[updateData.status as string]) {
+      throw new Error(`Status can only be updated to current or next stage. Current: ${currentBooking.status}`);
+    }
+
     if (updateData.vehicles) {
       for (const vehicle of updateData.vehicles) {
         const existingVehicle = await Booking.findOne({

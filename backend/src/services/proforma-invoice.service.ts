@@ -167,7 +167,24 @@ export const createPIService = async (data: any) => {
     amountInWords,
   });
 
-  return await pi.save();
+  const savedPI = await pi.save();
+
+  // Update correlated Booking statuses to "PI Created"
+  if (data.vehicleDetails && data.vehicleDetails.length > 0) {
+    const chassisNumbers = data.vehicleDetails
+      .map((v: any) => v.chassisNo)
+      .filter((c: any) => c && c !== "N/A");
+
+    if (chassisNumbers.length > 0) {
+      // Find bookings containing these chassis numbers and update their status
+      await Booking.updateMany(
+        { "vehicles.chassisNo": { $in: chassisNumbers } },
+        { $set: { status: "PI Created" } }
+      );
+    }
+  }
+
+  return savedPI;
 };
 
 // Helper types for the service function's return value, mirroring frontend's VehicleTracking and AssociatedPI
@@ -1093,6 +1110,20 @@ export const updatePIService = async (id: string, data: any) => {
   const updated = await ProformaInvoice.findByIdAndUpdate(id, data, {
     new: true,
   });
+
+  // Update correlated Booking statuses to "PI Created" if vehicle details changed
+  if (data.vehicleDetails && data.vehicleDetails.length > 0) {
+    const chassisNumbers = data.vehicleDetails
+      .map((v: any) => v.chassisNo)
+      .filter((c: any) => c && c !== "N/A");
+
+    if (chassisNumbers.length > 0) {
+      await Booking.updateMany(
+        { "vehicles.chassisNo": { $in: chassisNumbers } },
+        { $set: { status: "PI Created" } }
+      );
+    }
+  }
 
   return updated;
 };
