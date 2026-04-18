@@ -78,7 +78,6 @@ export const updateProfile = createAsyncThunk(
   },
 );
 
-
 // Slice
 const authSlice = createSlice({
   name: "auth",
@@ -160,7 +159,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = action.payload ?? null;
         authStorage.setUser(action.payload);
         toast.success("Profile updated successfully!");
       })
@@ -174,4 +173,3 @@ const authSlice = createSlice({
 
 export const { clearError, setCredentials } = authSlice.actions;
 export default authSlice.reducer;
-

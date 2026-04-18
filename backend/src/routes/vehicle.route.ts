@@ -7,12 +7,11 @@ import {
   updateVehicle,
   deleteVehicle,
   bookVehicle,
-  getLatestVehicles
 } from "../controllers/vehicle.controller";
-import { 
-  validateCreateVehicle, 
-  validateUpdateVehicle, 
-  validateBookVehicle 
+import {
+  validateCreateVehicle,
+  validateUpdateVehicle,
+  validateBookVehicle,
 } from "../validations/vehicle.validation";
 import { authenticate as authMiddleware } from "../middleware/auth.middleware";
 
@@ -29,4 +28,3 @@ router.delete("/:id", deleteVehicle);
 router.post("/book", validateBookVehicle, bookVehicle);
 
 export default router;
-

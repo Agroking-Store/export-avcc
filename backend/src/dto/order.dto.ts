@@ -2,6 +2,7 @@ export interface VehicleDto {
   name: string;
   color: string;
   quantity: number;
+  srNo?: number | null;
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;
@@ -15,23 +16,42 @@ export interface VehicleDto {
   freight?: number;
 }
 
+// export interface IVehicleItem {
+//   name: string;
+//   color: string;
+//   quantity: number;
+//   srNo?: string;
+// }
+
 export interface IVehicleItem {
   name: string;
   color: string;
   quantity: number;
   srNo?: string;
+  expandedIndex: number;
+  hsnCode?: string;
+  vehicleName?: string;
+  exteriorColour?: string;
+  chassisNo?: string;
+  engineNo?: string;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  fobAmount?: number;
+  freight?: number;
 }
 
 // CREATE DTO
 export interface CreateOrderDto {
-  clientId: string;      
+  clientId: string;
   date: string;
   vehicles: VehicleDto[];
 }
 
 // UPDATE DTO
 export interface UpdateOrderDto {
-  clientId?: string;    
+  clientId?: string;
   date?: string | Date;
   dealerId?: string;
   vehicles?: IVehicleItem[];
@@ -47,5 +67,5 @@ export interface UpdateOrderDto {
     name?: string;
     srNo?: string;
   };
-  vehicles?: VehicleDto[];
+  // vehicles?: VehicleDto[];
 }

@@ -1,9 +1,13 @@
 import Dealer from "../models/Dealer.model";
 
 const generateDealerId = async (): Promise<string> => {
-  const latest = await Dealer.findOne().sort({ createdAt: -1 }).select("dealerId");
+  const latest = await Dealer.findOne()
+    .sort({ createdAt: -1 })
+    .select("dealerId");
   if (!latest || !latest.get("dealerId")) return "DL-001";
-  const num = parseInt(latest.get("dealerId").split("-")[1]) + 1;
+  // const num = parseInt(latest.get("dealerId").split("-")[1]) + 1;
+  const lastDealerId = latest?.get("dealerId") as string;
+  const num = lastDealerId ? parseInt(lastDealerId.split("-")[1]) + 1 : 1;
   return `DL-${String(num).padStart(3, "0")}`;
 };
 
@@ -24,9 +28,17 @@ export const getDealersService = async (query: any) => {
     ];
   }
   const skip = (Number(page) - 1) * Number(limit);
-  const data = await Dealer.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit));
+  const data = await Dealer.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit));
   const total = await Dealer.countDocuments(filter);
-  return { data, total, page: Number(page), totalPages: Math.ceil(total / Number(limit)) };
+  return {
+    data,
+    total,
+    page: Number(page),
+    totalPages: Math.ceil(total / Number(limit)),
+  };
 };
 
 export const getDealerByIdService = async (id: string) => {

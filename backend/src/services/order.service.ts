@@ -6,13 +6,13 @@ import mongoose from "mongoose";
 const generateOrderId = async (): Promise<string> => {
   const latest = await Order.findOne()
     .sort({ createdAt: -1 })
-    .select('orderId');
-    
+    .select("orderId");
+
   if (!latest || !latest.orderId) {
-    return 'ORD-001';
+    return "ORD-001";
   }
-  
-  const numStr = latest.orderId.split('-')[1] || '0';
+
+  const numStr = latest.orderId.split("-")[1] || "0";
   const num = Math.max(1, isNaN(parseInt(numStr)) ? 1 : parseInt(numStr) + 1);
   return `ORD-${String(num).padStart(3, "0")}`;
 };
@@ -21,16 +21,16 @@ const generateVoucherNo = async (): Promise<string> => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   const yearSuffix = `${currentYear}-${nextYear.toString().slice(2)}`;
-  
+
   const latest = await Order.findOne()
     .sort({ createdAt: -1 })
-    .select('voucherNo');
-    
+    .select("voucherNo");
+
   if (!latest || !latest.voucherNo) {
     return `AN/${yearSuffix}/1`;
   }
-  
-  const numStr = latest.voucherNo.split('/').pop() || '0';
+
+  const numStr = latest.voucherNo.split("/").pop() || "0";
   const num = Math.max(1, isNaN(parseInt(numStr)) ? 1 : parseInt(numStr) + 1);
   return `AN/${yearSuffix}/${num}`;
 };
@@ -85,9 +85,8 @@ const generateVoucherNo = async (): Promise<string> => {
 // };
 
 export const createOrderService = async (
-  data: CreateOrderDto
+  data: CreateOrderDto,
 ): Promise<IOrder> => {
-  
   if (!data.clientId) {
     throw new Error("clientId is required");
   }
@@ -108,9 +107,9 @@ export const createOrderService = async (
     nextNumber = lastNumber + 1;
   }
 
-  const orderId = `ORD-${String(nextNumber).padStart(3, "0")}`;
+  // const orderId = `ORD-${String(nextNumber).padStart(3, "0")}`;
 
-  const voucherNo = `AN-${String(nextNumber).padStart(3, "0")}`;
+  // const voucherNo = `AN-${String(nextNumber).padStart(3, "0")}`;
 
   const vehicles = data.vehicles.map((v) => ({
     name: v.name,
@@ -150,9 +149,9 @@ export const getOrdersService = async (query: any) => {
   const { search, page = 1, limit = 10, status } = query;
   let match: any = {};
 
-if (query.clientId) {
-  match.clientId = new mongoose.Types.ObjectId(query.clientId);
-}
+  if (query.clientId) {
+    match.clientId = new mongoose.Types.ObjectId(query.clientId);
+  }
 
   if (search) {
     match.$or = [
@@ -180,7 +179,7 @@ if (query.clientId) {
         clientName: { $arrayElemAt: ["$client.name", 0] },
         companyName: { $arrayElemAt: ["$client.companyName", 0] },
         clientCountry: { $arrayElemAt: ["$client.country", 0] },
-      }
+      },
     },
     { $project: { client: 0 } },
     { $sort: { createdAt: -1 } },
@@ -198,18 +197,17 @@ if (query.clientId) {
 };
 
 export const getOrderByIdService = async (id: string) => {
-  const order = await Order.findById(id)
-    .populate({
-      path: "clientId",
-      select: "name companyName country phone email address",
-    })
+  const order = await Order.findById(id).populate({
+    path: "clientId",
+    select: "name companyName country phone email address",
+  });
   if (!order) throw new Error("Order not found");
   return order;
 };
 
 export const updateOrderService = async (
   id: string,
-  data: UpdateOrderDto
+  data: UpdateOrderDto,
 ): Promise<IOrder | null> => {
   if (data.clientId) {
     const client = await Client.findById(data.clientId);
@@ -253,7 +251,9 @@ export const updateOrderService = async (
     const order = await Order.findById(id);
     if (!order) throw new Error("Order not found");
 
-    const existing = order.vehicleColors.find(vc => vc.expandedIndex === expandedIndex);
+    const existing = order.vehicleColors.find(
+      (vc) => vc.expandedIndex === expandedIndex,
+    );
     if (existing) {
       // Update existing color override
       existing.color = color;
@@ -295,20 +295,19 @@ export const updateOrderService = async (
     finalUpdate.$set = vehicleUpdate;
   }
 
-  if (Object.keys(finalUpdate).length === 0 && Object.keys(vehicleUpdate).length === 0) {
-    return order || await Order.findById(id);
+  if (
+    Object.keys(finalUpdate).length === 0 &&
+    Object.keys(vehicleUpdate).length === 0
+  ) {
+    return order || (await Order.findById(id));
   }
 
-  return await Order.findByIdAndUpdate(id, finalUpdate, { returnDocument: 'after', runValidators: true });
+  return await Order.findByIdAndUpdate(id, finalUpdate, {
+    returnDocument: "after",
+    runValidators: true,
+  });
 };
 
-export const updateOrderStatusService = async (
-  id: string,
-  status: string
-) => {
-  return await Order.findByIdAndUpdate(
-    id,
-    { status },
-    { new: true }
-  );
+export const updateOrderStatusService = async (id: string, status: string) => {
+  return await Order.findByIdAndUpdate(id, { status }, { new: true });
 };
