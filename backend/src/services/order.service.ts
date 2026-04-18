@@ -140,7 +140,7 @@ export const createOrderService = async (
     clientId: data.clientId,
     vehicles,
     vehicleColors: [], // initialize empty
-    status: "Draft",
+    status: "Sourced",
   });
 
   return await order.save();
@@ -304,7 +304,11 @@ export const updateOrderService = async (
 
 export const updateOrderStatusService = async (
   id: string,
-  status: "Draft" | "Confirmed"
-): Promise<IOrder | null> => {
-  return await Order.findByIdAndUpdate(id, { status }, { new: true });
+  status: string
+) => {
+  return await Order.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true }
+  );
 };

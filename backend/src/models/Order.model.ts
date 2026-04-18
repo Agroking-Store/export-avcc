@@ -26,7 +26,16 @@ export interface IOrder extends Document {
   clientId: mongoose.Types.ObjectId; 
   vehicles: IVehicleItem[];
   vehicleColors: IVehicleColor[]; // NEW: individual color overrides per expanded slot
-  status: "Draft" | "Confirmed";
+  status:
+  | "Sourced"
+  | "Booked"
+  | "VIN Received"
+  | "PI Issued"
+  | "LC Received"
+  | "BV Received"
+  | "HBL Received"
+  | "Bank Submission Done"
+  | "Shipped";
   createdAt: Date;
   __v?: number; // Mongoose version key
   updatedAt: Date;
@@ -71,8 +80,18 @@ const orderSchema = new Schema<IOrder>(
     vehicleColors: { type: [vehicleColorSchema], default: [] }, 
     status: {
       type: String,
-      enum: ["Draft", "Confirmed"],
-      default: "Draft",
+      enum: [
+        "Sourced",
+        "Booked",
+        "VIN Received",
+        "PI Issued",
+        "LC Received",
+        "BV Received",
+        "HBL Received",
+        "Bank Submission Done",
+        "Shipped",
+      ],
+      default: "Sourced",
     },
   },
   {

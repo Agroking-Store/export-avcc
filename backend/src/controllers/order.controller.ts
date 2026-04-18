@@ -9,6 +9,7 @@ import {
 import {
   validateCreateOrder,
   validateUpdateOrder,
+  validateOrderStatus,
 } from "../validations/order.validation";
 
 export const createOrder = async (req: Request, res: Response) => {
@@ -49,19 +50,29 @@ export const updateOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const { status } = req.body;
-    if (!status || !["Draft", "Confirmed"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
+    const status = req.body.status as string;
 
-    const updated = await updateOrderStatusService(
-      req.params.id as string,
-      status,
-    );
-    res.json(updated);
+    validateOrderStatus(status);
+
+    const updatedOrder =
+      await updateOrderStatusService(
+        req.params.id as string,
+        status
+      );
+
+    res.json({
+      message: "Status updated successfully",
+      data: updatedOrder,
+    });
+
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({
+      message: error.message,
+    });
   }
 };
