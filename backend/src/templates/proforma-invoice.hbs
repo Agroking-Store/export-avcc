@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             padding: 0;
             background: #fff;
         }
+
         .invoice-container {
             width: 90%;
             max-width: 850px;
@@ -20,6 +22,7 @@
             padding: 20px;
             box-sizing: border-box;
         }
+
         .title {
             text-align: center;
             font-size: 16px;
@@ -27,12 +30,14 @@
             margin-bottom: 5px;
             text-transform: uppercase;
         }
+
         table.invoice-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
         }
-        table.invoice-table th, 
+
+        table.invoice-table th,
         table.invoice-table td {
             border: 1px solid #000;
             padding: 4px 6px;
@@ -41,37 +46,65 @@
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
-        .valign-top { vertical-align: top; }
-        .valign-bottom { vertical-align: bottom; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        .bold { font-weight: bold; }
-        
+
+        .valign-top {
+            vertical-align: top;
+        }
+
+        .valign-bottom {
+            vertical-align: bottom;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
         .label {
             font-size: 10px;
             color: #111;
             margin-bottom: 2px;
             display: block;
         }
+
         .items-header td {
             text-align: center;
             font-weight: normal;
         }
+
         .spec-line {
             font-size: 10px;
             font-style: italic;
             margin-top: 2px;
         }
+
         table.bank-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 11px;
             margin-top: 2px;
         }
+
         table.bank-table td {
             border: none;
             padding: 0;
+        }
+
+        .inline-label {
+            display: inline-block;
+            width: 160px;
+            font-weight: normal;
         }
 
         /* Ensures header repeats on new pages and allows items to slice across pages */
@@ -79,16 +112,20 @@
             table.invoice-table {
                 page-break-inside: auto;
             }
+
             thead {
                 display: table-header-group;
             }
-            tbody tr, tbody td {
+
+            tbody tr,
+            tbody td {
                 page-break-inside: auto;
                 break-inside: auto;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="invoice-container">
         <table class="invoice-table">
@@ -103,157 +140,171 @@
             </colgroup>
 
             <thead>
-            <!-- REPEATING TITLE -->
-            <tr>
-                <td colspan="7" style="border: none; padding-bottom: 10px;">
-                    <div class="title" style="margin: 0;">PROFORMA INVOICE</div>
-                </td>
-            </tr>
-            <!-- HEADER ROWS -->
-            <tr>
-                <td colspan="2" rowspan="3" class="valign-top">
-                    {{!-- <span class="label">Exporter</span> --}}
-                    <div class="bold">{{exporter.name}}</div>
-                    <div style="white-space: pre-wrap;">{{exporter.address}}</div>
-                    <div>GSTIN/UIN: {{exporter.gstin}}</div>
-                    <div>State Name : {{exporter.state}}, Code : {{exporter.stateCode}}</div>
-                </td>
-                <td colspan="2" class="valign-top" >
-                    <span class="label">Voucher No.</span>
-                    <div class="bold">{{invoiceNumber}}</div>
-                </td>
-                <td colspan="3" class="valign-top" >
-                    <span class="label">Dated</span>
-                    <div class="bold">{{date}}</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="valign-top">
-                    <!-- Empty box below Voucher No -->
-                </td>
-                <td colspan="3" class="valign-top">
-                    <span class="label">Mode/Terms of Payment</span>
-                    <div>{{paymentTerms}}</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="valign-top">
-                    <span class="label">Buyer's Ref./Order No.</span>
-                    <div>{{buyersRef}}</div>
-                </td>
-                <td colspan="3" class="valign-top">
-                    <span class="label">Other References</span>
-                    <div>{{otherRef}}</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" rowspan="2" class="valign-top">
-                    <span class="label">Consignee (Ship to)</span>
-                    <div class="bold">{{consignee.name}}</div>
-                    <div style="white-space: pre-wrap;">{{consignee.address}}</div>
-                    <div>State Name : {{consignee.state}}</div>
-                </td>
-                <td colspan="2" class="valign-top">
-                    <span class="label">Dispatched through</span>
-                    <div>{{dispatchedThrough}}</div>
-                </td>
-                <td colspan="3" class="valign-top">
-                    <span class="label">Destination</span>
-                    <div>{{destination}}</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="5" rowspan="2" class="valign-top">
-                    <div style="margin-bottom: 4px;">
-                        <span class="label">Terms of Delivery</span>
-                        <div>{{termsOfDelivery}}</div>
-                    </div>
-                    <div style="margin-bottom: 4px;">
-                        <span class="label">Incoterm</span>
-                        <div>{{incoterm}}</div>
-                    </div>
-                    <div style="margin-bottom: 4px;">
-                        <span class="label">Port of Loading</span>
-                        <div>{{portOfLoading}}</div>
-                    </div>
-                    <div>
-                        <span class="label">Port of Discharge</span>
-                        <div>{{portOfDischarge}}</div>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="valign-top">
-                    <span class="label">Buyer (Bill to)</span>
-                    <div class="bold">{{buyer.name}}</div>
-                    <div style="white-space: pre-wrap;">{{buyer.address}}</div>
-                    <div>State Name : {{buyer.state}}</div>
-                </td>
-            </tr>
+                <!-- REPEATING TITLE -->
+                <tr>
+                    <td colspan="7" style="border: none; padding-bottom: 10px;">
+                        <div class="title" style="margin: 0;">PROFORMA INVOICE</div>
+                    </td>
+                </tr>
+                <!-- HEADER ROWS -->
+                <tr>
+                    <td colspan="2" rowspan="3" class="valign-top">
+                        {{!-- <span class="label">Exporter</span> --}}
+                        <div class="bold">{{exporter.name}}</div>
+                        <div style="white-space: pre-wrap;">{{exporter.address}}</div>
+                        <div>GSTIN/UIN: {{exporter.gstin}}</div>
+                        <div>State Name : {{exporter.state}}, Code : {{exporter.stateCode}}</div>
+                    </td>
+                    <td colspan="2" class="valign-top">
+                        <span class="label">Voucher No.</span>
+                        <div class="bold">{{invoiceNumber}}</div>
+                    </td>
+                    <td colspan="3" class="valign-top">
+                        <span class="label">Dated</span>
+                        <div class="bold">{{date}}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="valign-top">
+                        <!-- Empty box below Voucher No -->
+                    </td>
+                    <td colspan="3" class="valign-top">
+                        <span class="label">Mode/Terms of Payment</span>
+                        <div>{{paymentTerms}}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="valign-top">
+                        <span class="label">Buyer's Ref./Order No.</span>
+                        <div>{{buyersRef}}</div>
+                    </td>
+                    <td colspan="3" class="valign-top">
+                        <span class="label">Other References</span>
+                        <div>{{otherRef}}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" rowspan="2" class="valign-top">
+                        <span class="label">Consignee (Ship to)</span>
+                        <div class="bold">{{consignee.name}}</div>
+                        <div style="white-space: pre-wrap;">{{consignee.address}}</div>
+                        <div>State Name : {{consignee.state}}</div>
+                    </td>
+                    <td colspan="2" class="valign-top">
+                        <span class="label">Dispatched through</span>
+                        <div>{{dispatchedThrough}}</div>
+                    </td>
+                    <td colspan="3" class="valign-top">
+                        <span class="label">Destination</span>
+                        <div>{{destination}}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="5" rowspan="2" class="valign-top">
+                        <div style="margin-bottom: 4px;">
+                            <span class="inline-label">Terms of Delivery :</span>
+                            <span>{{termsOfDelivery}}</span>
+                        </div>
 
-            <!-- ITEMS HEADER -->
-            <tr class="items-header">
-                <td style="width: 5%;">Sl<br>No.</td>
-                <td style="width: 43%;">Description of Goods</td>
-                <td style="width: 12%;">HSN/SAC</td>
-                <td style="width: 10%;">Quantity</td>
-                <td style="width: 12%;">Rate</td>
-                <td style="width: 5%;">per</td>
-                <td style="width: 13%;">Amount</td>
-            </tr>
+                        <div style="margin-bottom: 4px;">
+                            <span class="inline-label">Incoterm :</span>
+                            <span>{{incoterm}}</span>
+                        </div>
+
+                        <div style="margin-bottom: 4px;">
+                            <span class="inline-label">Port of Loading :</span>
+                            <span>{{portOfLoading}}</span>
+                        </div>
+
+                        <div>
+                            <span class="inline-label">Port of Discharge :</span>
+                            <span>{{portOfDischarge}}</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="valign-top">
+                        <span class="label">Buyer (Bill to)</span>
+                        <div class="bold">{{buyer.name}}</div>
+                        <div style="white-space: pre-wrap;">{{buyer.address}}</div>
+                        <div>State Name : {{buyer.state}}</div>
+                    </td>
+                </tr>
+
+                <!-- ITEMS HEADER -->
+                <tr class="items-header">
+                    <td style="width: 5%;">Sl<br>No.</td>
+                    <td style="width: 43%;">Description of Goods</td>
+                    <td style="width: 12%;">HSN/SAC</td>
+                    <td style="width: 10%;">Quantity</td>
+                    <td style="width: 12%;">Rate</td>
+                    <td style="width: 5%;">per</td>
+                    <td style="width: 13%;">Amount</td>
+                </tr>
             </thead>
 
             <tbody>
-            <!-- ITEMS DATA -->
-            {{#each items}}
-            <tr>
-                <td class="text-center">{{slNo}}</td>
-                <td>
-                    <div class="bold">{{description}}</div>
-                    {{#if specs.color}}<div class="spec-line">EXTERIOR COLOUR: {{specs.color}}</div>{{/if}}
-                    {{#if specs.chassisNo}}<div class="spec-line">CHASSIS NO: {{specs.chassisNo}}</div>{{/if}}
-                    {{#if specs.engineNo}}<div class="spec-line">ENGINE NO: {{specs.engineNo}}</div>{{/if}}
-                    {{#if specs.engineCapacity}}<div class="spec-line">ENGINE CAPACITY: {{specs.engineCapacity}}</div>{{/if}}
-                    {{#if specs.fuelType}}<div class="spec-line">FUEL TYPE: {{specs.fuelType}}</div>{{/if}}
-                    {{#if specs.countryOfOrigin}}<div class="spec-line">COUNTRY OF ORIGIN : {{specs.countryOfOrigin}}</div>{{/if}}
-                    {{#if specs.hsn}}<div class="spec-line">HSN CODE: {{specs.hsn}}</div>{{/if}}
-                    {{#if specs.yom}}<div class="spec-line">YOM: {{specs.yom}}</div>{{/if}}
-                    {{#if specs.fob}}<div class="spec-line">FOB: USD {{specs.fob}}</div>{{/if}}
-                    {{#if specs.freight}}<div class="spec-line">FREIGHT: USD {{specs.freight}}</div>{{/if}}
-                </td>
-                <td class="text-center">{{specs.hsn}}</td>
-                <td class="text-center bold">{{qty}} {{per}}</td>
-                <td class="text-right">{{rate}}</td>
-                <td class="text-center">{{per}}</td>
-                <td class="text-right bold">{{amount}}</td>
-            </tr>
-            {{/each}}
+                <!-- ITEMS DATA -->
+                {{#each items}}
+                <tr>
+                    <td class="text-center">{{slNo}}</td>
+                    <td>
+                        <div class="bold">{{description}}</div>
+                        {{#if specs.color}}<div class="spec-line">EXTERIOR COLOUR: {{specs.color}}</div>{{/if}}
+                        {{#if specs.chassisNo}}<div class="spec-line">CHASSIS NO: {{specs.chassisNo}}</div>{{/if}}
+                        {{#if specs.engineNo}}<div class="spec-line">ENGINE NO: {{specs.engineNo}}</div>{{/if}}
+                        {{#if specs.engineCapacity}}<div class="spec-line">ENGINE CAPACITY: {{specs.engineCapacity}}
+                        </div>{{/if}}
+                        {{#if specs.fuelType}}<div class="spec-line">FUEL TYPE: {{specs.fuelType}}</div>{{/if}}
+                        {{#if specs.countryOfOrigin}}<div class="spec-line">COUNTRY OF ORIGIN :
+                            {{specs.countryOfOrigin}}</div>{{/if}}
+                        {{#if specs.hsn}}<div class="spec-line">HSN CODE: {{specs.hsn}}</div>{{/if}}
+                        {{#if specs.yom}}<div class="spec-line">YOM: {{specs.yom}}</div>{{/if}}
+                        {{#if specs.fob}}<div class="spec-line">FOB: USD {{specs.fob}}</div>{{/if}}
+                        {{#if specs.freight}}<div class="spec-line">FREIGHT: USD {{specs.freight}}</div>{{/if}}
+                    </td>
+                    <td class="text-center">{{specs.hsn}}</td>
+                    <td class="text-center bold">{{qty}} {{per}}</td>
+                    <td class="text-right">{{rate}}</td>
+                    <td class="text-center">{{per}}</td>
+                    <td class="text-right bold">{{amount}}</td>
+                </tr>
+                {{/each}}
 
-            <!-- TOTALS & FOOTER -->
-            <tr>
-                <td></td>
-                <td class="text-left bold">Total</td>
-                <td></td>
-                <td class="text-center bold">{{totalQty}} No</td>
-                <td></td>
-                <td></td>
-                <td class="text-right bold">${{totalAmount}}</td>
-            </tr>
-            <tr>
-                <td colspan="2" class="valign-top" style="border-right: none; padding-bottom: 80px;">
-                    <span class="label">Amount Chargeable (in words)</span>
-                    <div class="bold">{{amountInWords}}</div>
-                </td>
-                <td colspan="5" class="valign-top" style="border-left: none; padding-bottom: 80px;">
-                    <span class="label">Company's Bank Details</span>
-                    <table class="bank-table">
-                        <tr><td style="width: 40%;">Bank Name:</td><td class="bold">{{bankDetails.bankName}}</td></tr>
-                        <tr><td>A/c No.:</td><td class="bold">{{bankDetails.accountNo}}</td></tr>
-                        <tr><td>Branch & IFS Code:</td><td class="bold">{{bankDetails.branchIfsc}}</td></tr>
-                    </table>
-                    <div style="border-bottom: 1px solid #000; margin: 4px -6px 0 -6px;"></div>
-                </td>
-            </tr>
+                <!-- TOTALS & FOOTER -->
+                <tr>
+                    <td></td>
+                    <td class="text-left bold">Total</td>
+                    <td></td>
+                    <td class="text-center bold">{{totalQty}} No</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-right bold">${{totalAmount}}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="valign-top" style="border-right: none; padding-bottom: 80px;">
+                        <span class="label">Amount Chargeable (in words)</span>
+                        <div class="bold">{{amountInWords}}</div>
+                    </td>
+                    <td colspan="5" class="valign-top" style="border-left: none; padding-bottom: 80px;">
+                        <span class="label">Company's Bank Details</span>
+                        <table class="bank-table">
+                            <tr>
+                                <td style="width: 40%;">Bank Name:</td>
+                                <td class="bold">{{bankDetails.bankName}}</td>
+                            </tr>
+                            <tr>
+                                <td>A/c No.:</td>
+                                <td class="bold">{{bankDetails.accountNo}}</td>
+                            </tr>
+                            <tr>
+                                <td>Branch & IFS Code:</td>
+                                <td class="bold">{{bankDetails.branchIfsc}}</td>
+                            </tr>
+                        </table>
+                        <div style="border-bottom: 1px solid #000; margin: 4px -6px 0 -6px;"></div>
+                    </td>
+                </tr>
             </tbody>
         </table>
         <div class="text-center" style="font-size: 10px; margin-top: 8px;">
@@ -261,4 +312,5 @@
         </div>
     </div>
 </body>
+
 </html>
