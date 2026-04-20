@@ -44,6 +44,7 @@ const CompanyModule = () => {
             <Route path="dashboard" element={<CompanyDashboard />} />
             <Route path="list" element={<CompanyList />} />
             <Route path="add" element={<CreateCompany />} />
+            <Route path="edit/:id" element={<CreateCompany />} />
             <Route path=":id" element={<CompanyDetails />} />
             <Route
               path="*"

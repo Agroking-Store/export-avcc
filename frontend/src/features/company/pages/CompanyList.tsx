@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; // Keep toast for general messages
-import { Company } from "../components/company.types"; // Keep Company type
-import CompanyTable from "../components/CompanyTable"; // Import CompanyTable
-import { Plus, ChevronsUpDown, FilePenLine } from "lucide-react"; // Keep Plus for the Add Company button
-import { Button } from "@/components/ui/button"; // Keep Button for the Add Company button
+import { useNavigate, useLocation  } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Company } from "../components/company.types";
+import CompanyTable from "../components/CompanyTable";
+import { Plus, ChevronsUpDown, FilePenLine, Eye  } from "lucide-react";
 import { companyApi } from "../components/companyApi";
+
 import {
   ColumnDef,
   getCoreRowModel,
@@ -21,44 +21,52 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
 const CompanyList: React.FC = () => {
-  const navigate = useNavigate(); // Keep navigate for page navigation
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [pageCount, setPageCount] = useState(-1);
-  const [searchInput, setSearchInput] = useState(""); // State for search input
+
+  const [searchInput, setSearchInput] = useState("");
   const [globalFilter, setGlobalFilter] = useState("");
+
   const [sorting, setSorting] = useState<SortingState>([]);
+
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 5,
   });
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    // Default column visibility settings
-    serialNumber: true,
-    companyId: true,
-    name: true,
-    email: false, // Changed to false for default
-    actions: true,
-    phone: false,
-    "address.country": false,
-    isActive: true, // Changed to true for default
-    bankDetails: false, // Add bankDetails to default hidden columns
-  });
+
+  const [columnVisibility, setColumnVisibility] =
+    useState<VisibilityState>({
+      serialNumber: true,
+      companyId: true,
+      name: true,
+      email: false,
+      actions: true,
+      phone: false,
+      "address.country": false,
+      isActive: true,
+      bankDetails: false,
+    });
+
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
-  >("all"); // New state for status filter
+  >("all");
 
-  // Function to generate pagination numbers with ellipsis
   const generatePagination = useCallback(
     (currentPage: number, totalPages: number) => {
       if (totalPages <= 7) {
         return Array.from({ length: totalPages }, (_, i) => i + 1);
       }
+
       if (currentPage <= 3) {
         return [1, 2, 3, 4, "...", totalPages];
       }
+
       if (currentPage >= totalPages - 2) {
         return [
           1,
@@ -69,6 +77,7 @@ const CompanyList: React.FC = () => {
           totalPages,
         ];
       }
+
       return [
         1,
         "...",
@@ -89,9 +98,10 @@ const CompanyList: React.FC = () => {
       limit: number,
       sortBy: string,
       sortOrder: "asc" | "desc",
-      status: "all" | "active" | "inactive" // Added status parameter
+      status: "all" | "active" | "inactive"
     ) => {
       setLoading(true);
+
       try {
         const res = await companyApi.getCompanies(
           search,
@@ -99,15 +109,16 @@ const CompanyList: React.FC = () => {
           limit,
           sortBy,
           sortOrder,
-          status // Pass status to the API call
+          status
         );
-        setCompanies(res.data || []); // Correctly access the array of companies
-        setPageCount(res.totalPages || 1); // Correctly access totalPages
+
+        setCompanies(res.data || []);
+        setPageCount(res.totalPages || 1);
       } catch (error) {
-        console.error("Failed to fetch companies:", error);
+        console.error(error);
         toast.error("Failed to fetch companies.");
-        setCompanies([]); // Clear companies on error
-        setPageCount(1); // Reset page count on error
+        setCompanies([]);
+        setPageCount(1);
       } finally {
         setLoading(false);
       }
@@ -118,107 +129,124 @@ const CompanyList: React.FC = () => {
   const columns = useMemo<ColumnDef<Company>[]>(
     () => [
       {
-        id: "serialNumber",
-        header: () => <div className="font-bold text-gray-700 pl-4">S.No</div>,
-        cell: ({ row }) => (
-          <div className="font-medium text-gray-500 pl-4">
-            {table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-              row.index +
-              1}
-          </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
         accessorKey: "companyId",
         header: ({ column }) => (
           <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
+            className="flex items-center gap-1 mx-auto text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700"
           >
-            Company ID <ChevronsUpDown className="h-3.5 w-3.5" />
+            Company ID
+            <ChevronsUpDown className="h-3 w-3" />
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.companyId}</span>
+          <div className="text-center">
+            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-semibold">
+              {row.original.companyId}
+            </span>
+          </div>
         ),
       },
+
       {
         accessorKey: "name",
         header: ({ column }) => (
           <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
+            className="flex items-center gap-1 mx-auto text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700"
           >
-            Name <ChevronsUpDown className="h-3.5 w-3.5" />
+            Name
+            <ChevronsUpDown className="h-3 w-3" />
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.name}</span>
+          <div className="text-center font-bold text-slate-800">
+            {row.original.name}
+          </div>
         ),
       },
+
       {
         accessorKey: "email",
         header: ({ column }) => (
           <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
+            className="flex items-center gap-1 mx-auto text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700"
           >
-            Email <ChevronsUpDown className="h-3.5 w-3.5" />
+            Email
+            <ChevronsUpDown className="h-3 w-3" />
           </button>
         ),
         cell: ({ row }) => (
-          <span className="text-gray-700">{row.original.email || "N/A"}</span>
+          <div className="text-center text-sm text-slate-600">
+            {row.original.email || "-"}
+          </div>
         ),
       },
+
       {
         accessorKey: "phone",
         header: ({ column }) => (
           <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
+            className="flex items-center gap-1 mx-auto text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700"
           >
-            Phone <ChevronsUpDown className="h-3.5 w-3.5" />
+            Phone
+            <ChevronsUpDown className="h-3 w-3" />
           </button>
         ),
         cell: ({ row }) => (
-          <span className="text-gray-700">{row.original.phone || "N/A"}</span>
+          <div className="text-center text-sm text-slate-600">
+            {row.original.phone || "-"}
+          </div>
         ),
       },
+
       {
         accessorKey: "address.country",
         header: ({ column }) => (
           <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
+            className="flex items-center gap-1 mx-auto text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700"
           >
-            Country <ChevronsUpDown className="h-3.5 w-3.5" />
+            Country
+            <ChevronsUpDown className="h-3 w-3" />
           </button>
         ),
-        cell: (
-          { row } // Access country through the address object
-        ) => (
-          <span className="text-gray-700">
-            {row.original.address?.country || "N/A"}
-          </span>
+        cell: ({ row }) => (
+          <div className="text-center text-sm text-slate-600">
+            {row.original.address?.country || "-"}
+          </div>
         ),
       },
+
       {
         accessorKey: "isActive",
         header: ({ column }) => (
           <button
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 justify-center w-full hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }
+            className="flex items-center gap-1 mx-auto text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-700"
           >
-            Status <ChevronsUpDown className="h-3.5 w-3.5" />
+            Status
+            <ChevronsUpDown className="h-3 w-3" />
           </button>
         ),
         cell: ({ row }) => (
-          <div className="flex justify-center">
+          <div className="text-center">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
                 row.original.isActive
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
@@ -229,36 +257,54 @@ const CompanyList: React.FC = () => {
           </div>
         ),
       },
+
       {
         id: "actions",
         header: () => (
-          <div className="text-center font-bold text-gray-700">Actions</div>
+          <div className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Actions
+          </div>
         ),
+
         cell: ({ row }) => (
           <div className="flex justify-center gap-2">
             <TooltipProvider>
+              {/* VIEW BUTTON */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-10 w-10 p-0 cursor-pointer"
+                  <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent the row's onClick from firing
+                      e.stopPropagation();
+                      navigate(`/companies/${row.original._id}`);
+                    }}
+                    className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 rounded-xl bg-white hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
+                  >
+                    <Eye size={18} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>View Details</TooltipContent>
+              </Tooltip>
+        
+              {/* EDIT BUTTON */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
                       navigate(`/companies/edit/${row.original._id}`);
                     }}
+                    className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 rounded-xl bg-white hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                   >
-                    <FilePenLine className="h-6 w-6 text-blue-600 cursor-pointer" />
-                  </Button>
+                    <FilePenLine size={18} />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent className="text-xs">
-                  Edit Company
-                </TooltipContent>
+                <TooltipContent>Edit Company</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
         ),
-        enableHiding: false, // Actions column should always be visible
+
+        enableHiding: false,
       },
     ],
     [navigate]
@@ -266,8 +312,13 @@ const CompanyList: React.FC = () => {
 
   useEffect(() => {
     const sortParam = sorting.length > 0 ? sorting[0].id : "createdAt";
+
     const sortOrder =
-      sorting.length > 0 ? (sorting[0].desc ? "desc" : "asc") : "desc";
+      sorting.length > 0
+        ? sorting[0].desc
+          ? "desc"
+          : "asc"
+        : "desc";
 
     fetchCompanies(
       globalFilter,
@@ -275,7 +326,7 @@ const CompanyList: React.FC = () => {
       pagination.pageSize,
       sortParam,
       sortOrder,
-      statusFilter // Pass statusFilter to fetchCompanies
+      statusFilter
     );
   }, [
     fetchCompanies,
@@ -283,23 +334,32 @@ const CompanyList: React.FC = () => {
     pagination.pageIndex,
     pagination.pageSize,
     sorting,
-    statusFilter, // Add statusFilter to dependencies
+    statusFilter,
   ]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setGlobalFilter(searchInput);
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      setPagination((prev) => ({
+        ...prev,
+        pageIndex: 0,
+      }));
     }, 500);
+
     return () => clearTimeout(timer);
   }, [searchInput]);
 
   const table = useReactTable({
-    data: companies, // Pass companies data
-    columns: columns, // Use the defined columns
-    getRowId: (row) => row._id, // Explicitly tell react-table to use _id as row ID
-    pageCount: pageCount,
-    state: { pagination, sorting, globalFilter, columnVisibility },
+    data: companies,
+    columns,
+    pageCount,
+    getRowId: (row) => row._id,
+    state: {
+      pagination,
+      sorting,
+      globalFilter,
+      columnVisibility,
+    },
     onPaginationChange: setPagination,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
@@ -309,40 +369,58 @@ const CompanyList: React.FC = () => {
     manualSorting: true,
   });
 
-  return (
-    <div className="p-4 md:p-6 lg:p-8 mx-auto space-y-4 md:space-y-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-          Companies
-        </h1>
-        {/* Add Company Button - remains in CompanyList as it's a page-level action */}
-        <Button
-          onClick={() => navigate("/companies/add")}
-          className="h-10 px-4 shrink-0 rounded-md shadow-sm bg-blue-600 hover:bg-blue-700 text-white transition-colors flex-1 sm:flex-none cursor-pointer"
-        >
-          <Plus className="h-4 w-4 sm:mr-2 cursor-pointer" />
-          <span className="hidden sm:inline">Add Company</span>
-          <span className="sm:hidden">Add</span>
-        </Button>
-      </div>
+  useEffect(() => {
+  const message = sessionStorage.getItem("companySuccessMessage");
 
-      {/* CompanyTable Component - now handles all table UI and interactions */}
-      <CompanyTable
-        table={table}
-        navigate={navigate}
-        pageCount={pageCount}
-        searchInput={searchInput}
-        setSearchInput={setSearchInput}
-        setGlobalFilter={setGlobalFilter}
-        setSorting={setSorting}
-        setPagination={setPagination}
-        setColumnVisibility={setColumnVisibility}
-        generatePagination={generatePagination}
-        piLoading={loading}
-        statusFilter={statusFilter} // Pass statusFilter
-        setStatusFilter={setStatusFilter} // Pass setStatusFilter
-      />
+  if (message) {
+    toast.success(message);
+    sessionStorage.removeItem("companySuccessMessage");
+  }
+}, []);
+
+  return (
+    <div>
+      <div className="bg-white rounded-[20px] shadow-sm border border-slate-200 overflow-hidden">
+        {/* HEADER */}
+        <div className="px-8 py-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-[#0f172a]">
+              Companies
+            </h1>
+
+            <p className="text-sm text-slate-500 mt-1">
+              Manage all registered companies
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/companies/add")}
+            className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+          >
+            <Plus size={18} strokeWidth={3} />
+            Add Company
+          </button>
+        </div>
+
+        {/* TABLE */}
+        <div className="p-0">
+          <CompanyTable
+            table={table}
+            navigate={navigate}
+            pageCount={pageCount}
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            setGlobalFilter={setGlobalFilter}
+            setSorting={setSorting}
+            setPagination={setPagination}
+            setColumnVisibility={setColumnVisibility}
+            generatePagination={generatePagination}
+            piLoading={loading}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+          />
+        </div>
+      </div>
     </div>
   );
 };

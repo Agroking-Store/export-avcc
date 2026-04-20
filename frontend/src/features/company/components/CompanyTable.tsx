@@ -2,61 +2,68 @@ import React, { useCallback } from "react";
 import { type NavigateFunction } from "react-router-dom";
 import { flexRender, Table as ReactTableType } from "@tanstack/react-table";
 import {
-  Inbox, // Added Inbox icon
-  SlidersHorizontal, // Keep SlidersHorizontal for column visibility toggle
-  BrushCleaning, // Changed Check to BrushCleaning icon
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  BrushCleaning,
+  Inbox,
   Check,
 } from "lucide-react";
+
 import { Company } from "./company.types";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+
 import {
   Popover,
   PopoverContent,
   PopoverClose,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input"; // Added Input
+
+import { Input } from "@/components/ui/input";
+
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Added Select components
-import { Table, TableCell, TableRow } from "@/components/ui/table";
+} from "@/components/ui/select";
 
 interface CompanyTableProps {
   table: ReactTableType<Company>;
   piLoading: boolean;
   navigate: NavigateFunction;
-  // companies: Company[]; // Removed as data is accessed via table instance
-  pageCount: number; // Added pageCount
-  searchInput: string; // Added searchInput
-  setSearchInput: (value: string) => void; // Added setSearchInput
-  setGlobalFilter: (value: string) => void; // Added setGlobalFilter
-  setSorting: (updater: any) => void; // Added setSorting
-  setPagination: (updater: any) => void; // Added setPagination
+  pageCount: number;
+  searchInput: string;
+  setSearchInput: (value: string) => void;
+  setGlobalFilter: (value: string) => void;
+  setSorting: (updater: any) => void;
+  setPagination: (updater: any) => void;
   setColumnVisibility: (
-    updater: React.SetStateAction<Record<string, boolean>>,
-  ) => void; // Added setColumnVisibility
+    updater: React.SetStateAction<Record<string, boolean>>
+  ) => void;
   generatePagination: (
     currentPage: number,
-    totalPages: number,
+    totalPages: number
   ) => (number | string)[];
-  statusFilter: "all" | "active" | "inactive"; // New prop for status filter
-  setStatusFilter: (status: "all" | "active" | "inactive") => void; // New prop for setting status filter
+  statusFilter: "all" | "active" | "inactive";
+  setStatusFilter: (status: "all" | "active" | "inactive") => void;
 }
 
 const CompanyTable: React.FC<CompanyTableProps> = ({
-  table, // Add navigate to the destructuring of props
-  navigate, // Add navigate to the destructuring of props
+  table,
+  navigate,
   searchInput,
   setSearchInput,
   setGlobalFilter,
@@ -64,53 +71,51 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   setPagination,
   setColumnVisibility,
   generatePagination,
-  statusFilter, // Destructure new prop
-  setStatusFilter, // Destructure new prop
+  statusFilter,
+  setStatusFilter,
   piLoading,
 }) => {
-  const MIN_COMPANY_COLUMNS = 4; // Minimum dynamic columns to be visible (companyId, name, isActive + 1 more)
-  const MAX_COMPANY_COLUMNS = 6; // Maximum dynamic columns to be visible
+  const MIN_COLUMNS = 4;
+  const MAX_COLUMNS = 6;
 
-  const handleCompanyColumnToggle = (columnId: string) => {
+  const handleColumnToggle = (columnId: string) => {
     const column = table.getColumn(columnId);
     if (!column) return;
 
-    const isVisible = column.getIsVisible();
-    const currentVisibleCount = table
+    const visibleCount = table
       .getVisibleLeafColumns()
       .filter((c) => c.getCanHide()).length;
 
-    if (isVisible && currentVisibleCount <= MIN_COMPANY_COLUMNS) {
-      toast.warning(`At least ${MIN_COMPANY_COLUMNS} columns must be visible!`);
+    if (column.getIsVisible() && visibleCount <= MIN_COLUMNS) {
+      toast.warning(`At least ${MIN_COLUMNS} columns must be visible`);
       return;
     }
-    if (!isVisible && currentVisibleCount >= MAX_COMPANY_COLUMNS) {
-      toast.warning(`Maximum ${MAX_COMPANY_COLUMNS} columns can be visible!`);
+
+    if (!column.getIsVisible() && visibleCount >= MAX_COLUMNS) {
+      toast.warning(`Maximum ${MAX_COLUMNS} columns allowed`);
       return;
     }
-    column.toggleVisibility(!isVisible);
+
+    column.toggleVisibility(!column.getIsVisible());
   };
 
-  const resetCompanyToDefaultColumns = () => {
+  const resetColumns = () => {
     setColumnVisibility({
-      // Use setColumnVisibility from props
-      serialNumber: true,
-      companyId: true, // Default visible
-      name: true, // Default visible
-      email: false, // Default hidden
+      companyId: true,
+      name: true,
+      email: false,
+      phone: false,
+      isActive: true,
       actions: true,
-      phone: false, // Assuming these are default hidden
-      "address.country": false, // Assuming these are default hidden
-      isActive: true, // Default visible
-      "bankDetails.bankName": false, // Default hidden
+      "address.country": false,
+      "bankDetails.bankName": false,
     });
-    toast.success("Columns reset to default.");
+
+    toast.success("Columns reset");
   };
 
-  const getColumnLabel = (columnId: string): string => {
+  const getColumnLabel = (columnId: string) => {
     switch (columnId) {
-      case "serialNumber":
-        return "S.No";
       case "companyId":
         return "Company ID";
       case "name":
@@ -120,251 +125,182 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
       case "phone":
         return "Phone";
       case "address.country":
-      case "address_country":
         return "Country";
       case "isActive":
-      case "is Active":
-        return "Status";
-      case "bankDetails.bankName":
         return "Status";
       case "actions":
         return "Actions";
       default:
-        // Fallback for any other columns, though we expect all to be covered
-        return columnId.replace(/([A-Z])/g, " $1").trim();
+        return columnId;
     }
   };
 
-  const handleClearFilters = useCallback(() => {
+  const clearFilters = useCallback(() => {
     setSearchInput("");
     setGlobalFilter("");
     setSorting([]);
+    setStatusFilter("all");
+
     setPagination({
-      // Reset pagination
       pageIndex: 0,
       pageSize: table.getState().pagination.pageSize,
-    }); // Reset pageIndex
-    resetCompanyToDefaultColumns();
-    toast.info("Filters cleared");
+    });
+
+    resetColumns();
+
+    toast.info("Filters Cleared");
   }, [
     setSearchInput,
-    setGlobalFilter, // setGlobalFilter is used to clear the global filter
-    setSorting, // setSorting is used to clear sorting
-    setPagination, // setPagination is used to reset pageIndex
-    setStatusFilter, // Reset status filter
-    resetCompanyToDefaultColumns, // resetCompanyToDefaultColumns is called
+    setGlobalFilter,
+    setSorting,
+    setStatusFilter,
+    setPagination,
     table,
   ]);
 
   return (
-    // Main container for the table and controls
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
-      <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-3">
-        {/* Search Input */}
-        <div className="relative w-full sm:w-auto grow">
-          <Input
-            placeholder="Search companies..."
-            value={searchInput}
-            onChange={(event) => {
-              setSearchInput(event.target.value);
-              table.setGlobalFilter(event.target.value);
-            }}
-            className="max-w-sm"
-          />
-        </div>
+      <div className="overflow-hidden">
+        {/* TOOLBAR */}
+        <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white">
 
-        {/* Status Filter Chooser */}
-        <div className="w-full sm:w-auto">
-          <Select
-            value={statusFilter}
-            onValueChange={(value: "all" | "active" | "inactive") =>
-              setStatusFilter(value)
-            }
-          >
-            <SelectTrigger className="h-10 px-4 w-full sm:w-37.5 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
-              <SelectValue placeholder="Filter by Status" />
-            </SelectTrigger>
-            <SelectContent
-              side="bottom"
-              align="start"
-              position="popper"
-              className="z-50"
-            >
-              <SelectItem value="all" className="text-base cursor-pointer">
-                All
-              </SelectItem>
-              <SelectItem value="active" className="text-base cursor-pointer">
-                Active
-              </SelectItem>
-              <SelectItem value="inactive" className="text-base cursor-pointer">
-                Inactive
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+  {/* LEFT SIDE */}
+  <div className="flex items-center gap-4 flex-wrap">
 
-        <div className="flex gap-3 w-full sm:w-auto justify-end">
-          {/* Clear Filters Button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  onClick={handleClearFilters}
-                  className="h-10 w-10 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <BrushCleaning className="h-4 w-4 text-gray-500 cursor-pointer" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
-                Clear Filters
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {/* Column Visibility for Company Table */}{" "}
-          {/* This was already wrapped correctly */}
-          <Popover>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-10 w-10 p-0 shrink-0 rounded-md shadow-sm border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <SlidersHorizontal className="h-4 w-4 text-gray-500 cursor-pointer" />
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white text-xs px-2 py-1 rounded">
-                  Toggle Columns
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <PopoverContent
-              side="bottom"
-              align="end"
-              sideOffset={4}
-              className="w-60 bg-white shadow-xl border rounded-xl z-60 flex flex-col" // Increased z-index
+    {/* FILTER */}
+    <Select
+      value={statusFilter}
+      onValueChange={(value: any) => setStatusFilter(value)}
+    >
+      <SelectTrigger className="h-[44px] px-4 min-w-[210px] rounded-xl border border-blue-200 bg-blue-50/50 text-blue-600 text-sm font-medium shadow-none">
+        <Filter size={16} className="mr-2 text-blue-500" />
+        <SelectValue />
+      </SelectTrigger>
+
+      <SelectContent>
+        <SelectItem value="all">Filter: All Companies</SelectItem>
+        <SelectItem value="active">Filter: Active</SelectItem>
+        <SelectItem value="inactive">Filter: Inactive</SelectItem>
+      </SelectContent>
+    </Select>
+
+    {/* CLEAR */}
+    <button
+      onClick={clearFilters}
+      className="h-[44px] w-[44px] rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+    >
+      <BrushCleaning size={17} className="mx-auto" />
+    </button>
+
+    {/* COLUMNS */}
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="h-[44px] w-[44px] rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer">
+          <SlidersHorizontal size={17} className="mx-auto" />
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="start"
+        className="w-60 rounded-xl border bg-white shadow-xl p-0"
+      >
+        <div className="text-xs font-semibold text-slate-500 border-b px-3 py-2">
+          Visible Columns
+        </div>
+      
+        <div className="max-h-72 overflow-y-auto p-2 space-y-1">
+          {table
+            .getAllLeafColumns()
+            .filter((column) => column.getCanHide())
+            .map((column) => (
+              <div
+                key={column.id}
+                onClick={() => handleColumnToggle(column.id)}
+                className="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer text-sm"
+              >
+                <span>{getColumnLabel(column.id)}</span>
+      
+                {column.getIsVisible() && (
+                  <Check className="w-4 h-4 text-blue-600" />
+                )}
+              </div>
+            ))}
+        </div>
+      
+        <div className="border-t p-2">
+          <PopoverClose asChild>
+            <Button
+              onClick={resetColumns}
+              variant="outline"
+              className="w-full rounded-lg"
             >
-              <div className="text-xs font-semibold border-b px-3 py-2 text-gray-500">
-                Visible Columns (
-                {
-                  table.getVisibleLeafColumns().filter((c) => c.getCanHide())
-                    .length
-                }
-                /{MAX_COMPANY_COLUMNS})
-              </div>
-              <div className="max-h-65 overflow-y-auto px-1">
-                {table
-                  .getAllLeafColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => (
-                    <div
-                      key={column.id}
-                      onClick={() => handleCompanyColumnToggle(column.id)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer hover:bg-gray-100 text-sm ${
-                        column.getIsVisible()
-                          ? "text-blue-700"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="text-sm">
-                        {getColumnLabel(column.id)}
-                      </span>
-                      {column.getIsVisible() && (
-                        <Check className="h-4 w-4 text-blue-600" />
-                      )}
-                    </div>
-                  ))}
-              </div>
-              <div className="border-t p-2">
-                <PopoverClose asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs"
-                    onClick={resetCompanyToDefaultColumns}
-                  >
-                    Reset to Default
-                  </Button>
-                </PopoverClose>
-              </div>
-            </PopoverContent>
+              Reset
+            </Button>
+          </PopoverClose>
+        </div>
+      </PopoverContent>
           </Popover>
         </div>
+
+      {/* SEARCH */}
+      <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
+          />
+      
+          <Input
+            placeholder="Search company..."
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              table.setGlobalFilter(e.target.value);
+            }}
+            className="h-[44px] pl-10 pr-4 w-80 text-sm bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+      
       </div>
-      <div className="relative overflow-x-auto border-t border-gray-200">
-        {" "}
-        {/* Added border-t */}
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left text-gray-500">
-            <thead className="text-sm text-gray-700 uppercase bg-gray-50">
+
+        {/* TABLE */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-center">
+            <thead className="bg-slate-50 border-y border-slate-100">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} scope="col" className="px-6 py-3">
+                    <th
+                      key={header.id}
+                      className="px-8 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </th>
                   ))}
                 </tr>
               ))}
             </thead>
-            <tbody>
+
+            <tbody className="divide-y divide-slate-100">
               {piLoading ? (
                 Array.from({
                   length: table.getState().pagination.pageSize,
-                }).map((_, rowIndex) => (
-                  <TableRow key={rowIndex} className="hover:bg-gray-100">
-                    <TableCell>
-                      <div className="h-4 w-6 rounded bg-gray-200 animate-pulse" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-20 rounded bg-gray-200 animate-pulse" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-32 rounded bg-gray-200 animate-pulse mb-2" />
-                      <div className="h-3 w-16 rounded bg-gray-200 animate-pulse" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-16 rounded bg-gray-200 animate-pulse mx-auto" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-6 w-24 rounded-full bg-gray-200 animate-pulse mx-auto" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-20 rounded bg-gray-200 animate-pulse mx-auto" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-center gap-2">
-                        <div className="h-9 w-9 rounded bg-gray-200 animate-pulse" />
-                        <div className="h-9 w-9 rounded bg-gray-200 animate-pulse" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                }).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={10} className="py-6">
+                      <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4 mx-auto"></div>
+                    </td>
+                  </tr>
                 ))
-              ) : table.getRowCount() === 0 ? (
+              ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={
-                      table.getAllColumns().length
-                    } /* Use table.getAllColumns().length here */
-                    className="h-40 text-center p-4"
-                  >
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl min-h-40 bg-gray-50 text-center p-8">
-                      <Inbox className="h-12 w-12 text-gray-400 mb-4" />
-                      <p className="text-gray-600 font-medium text-lg">
-                        No Companies found!
-                      </p>
-                      <p className="text-gray-400">
-                        Adjust your filters or search term.
-                      </p>
+                  <td colSpan={20} className="py-20">
+                    <div className="flex flex-col items-center gap-3 text-slate-400">
+                      <Inbox size={42} />
+                      <p>No Companies Found</p>
                     </div>
                   </td>
                 </tr>
@@ -372,17 +308,16 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    onClick={() => navigate(`/companies/${row.original._id}`)} // Make the entire row clickable
-                    className="bg-white border-b hover:bg-gray-50 cursor-pointer" // Add cursor-pointer for UX
+                    className="group transition-colors duration-200 hover:bg-blue-50/40"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className="px-6 py-2 text-base font-bold"
+                        className="px-8 py-5 text-sm font-medium text-slate-700"
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )}
                       </td>
                     ))}
@@ -392,103 +327,40 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* PAGINATION */}
-      {table.getPageCount() > 0 && (
-        <div className="flex flex-col lg:flex-row justify-between items-center p-4 border-t border-gray-200 bg-white gap-4">
-          {/* Left: Items per row */}
-          <div className="flex items-center gap-2 w-full lg:w-1/3 justify-center lg:justify-start">
-            <span className="text-sm text-gray-500">Show</span>
-            <Select
-              value={table.getState().pagination.pageSize.toString()}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value));
-              }}
-            >
-              <SelectTrigger className="h-8 w-17.5 px-2 py-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base cursor-pointer">
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
-              </SelectTrigger>
-              <SelectContent position="popper" sideOffset={4}>
-                {[5, 10, 25, 50].map(
-                  (
-                    pageSize, // Increased dropdown text size for pagination selector
-                  ) => (
-                    <SelectItem
-                      key={pageSize}
-                      value={pageSize.toString()}
-                      className="text-base cursor-pointer"
-                    >
-                      {pageSize}
-                    </SelectItem>
-                  ),
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Center: Pagination Buttons */}
-          <div className="flex items-center justify-center space-x-1 w-full lg:w-1/3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="text-sm border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
-            >
-              Prev
-            </Button>
-
-            <div className="items-center space-x-1 flex sm:flex">
-              {generatePagination(
-                table.getState().pagination.pageIndex + 1,
-                table.getPageCount(),
-              ).map((item, idx) =>
-                item === "..." ? (
-                  <span key={idx} className="px-2 text-gray-500 text-xs">
-                    ...
-                  </span>
-                ) : (
-                  <Button
-                    key={idx}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.setPageIndex((item as number) - 1)}
-                    className={`text-xs h-8 w-8 p-0 transition-colors cursor-pointer ${
-                      table.getState().pagination.pageIndex + 1 === item
-                        ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
-                        : "border-gray-300 text-gray-700 hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50"
-                    }`}
-                  >
-                    {item}
-                  </Button>
-                ),
-              )}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="text-sm border-gray-300 h-8 px-3 transition-colors hover:text-blue-600 hover:border-blue-600 hover:bg-blue-50 cursor-pointer"
-            >
-              Next
-            </Button>
-          </div>
-
-          {/* Right: Page indicator */}
-          <div className="flex justify-center lg:justify-end w-full lg:w-1/3">
-            <span className="text-sm text-gray-500">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+        {/* PAGINATION */}
+        {table.getPageCount() > 0 && (
+          <div className="px-8 py-5 flex justify-between items-center bg-white">
+            <span className="text-sm text-slate-500 font-medium">
+              Page{" "}
+              <span className="text-[#0f172a] font-bold">
+                {table.getState().pagination.pageIndex + 1}
+              </span>{" "}
+              of {table.getPageCount()}
             </span>
+
+            <div className="flex gap-6 items-center">
+              <button
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="cursor-pointer flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-blue-600 hover:-translate-x-1 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={18} />
+                Prev
+              </button>
+
+              <button
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="cursor-pointer flex items-center gap-1 text-sm font-bold text-[#0f172a] hover:text-blue-600 hover:translate-x-1 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                Next
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
   );
 };
 
