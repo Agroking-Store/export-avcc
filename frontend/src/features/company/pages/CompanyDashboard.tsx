@@ -45,7 +45,7 @@ setCompanies(res.data || []);
 
 /* PI FETCH START */
 const piRes = await axios.get(
-  `${apiConfig.baseURL}/proforma-invoice`,
+  `${apiConfig.baseURL}/proforma-invoices`,
   {
     params: {
       page: 1,
@@ -54,33 +54,34 @@ const piRes = await axios.get(
   }
 );
 
-const piData = piRes.data.data || [];
+console.log("PI RESPONSE:", piRes.data);
 
-const map: any = {};
+const piRows = piRes.data?.data || [];
 
-piData.forEach((pi: any) => {
+const companyMap: Record<string, number> = {};
+
+piRows.forEach((item: any) => {
   const companyName =
-    pi.company_id?.name || "Unknown";
+    item.company_id?.name ||
+    item.companySnapshot?.name ||
+    "Unknown";
 
-  if (!map[companyName]) {
-    map[companyName] = 0;
+  if (!companyMap[companyName]) {
+    companyMap[companyName] = 0;
   }
 
-  map[companyName] += 1;
+  companyMap[companyName]++;
 });
 
-const grouped = Object.entries(map)
+const topCompanies = Object.entries(companyMap)
   .map(([name, count]) => ({
     name,
     count,
   }))
-  .sort(
-    (a: any, b: any) =>
-      b.count - a.count
-  )
+  .sort((a, b) => b.count - a.count)
   .slice(0, 5);
 
-setPiStats(grouped);
+setPiStats(topCompanies);
 /* PI FETCH END */
     } catch (error) {
       toast.error("Failed to load company dashboard.");
@@ -269,7 +270,7 @@ setPiStats(grouped);
             </div>
         
             <h2 className="font-bold text-slate-800 text-lg">
-              Proforma Invoices
+              Top Companies
             </h2>
           </div>
         

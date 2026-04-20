@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
+import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight, Waypoints } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -271,10 +271,10 @@ const OrdersList = () => {
                             setNewStatus(order.status || "");
                             setShowStatusModal(true);
                           }}
-                          className="cursor-pointer p-2.5 text-emerald-600 border border-slate-200 rounded-xl bg-white hover:text-white hover:bg-emerald-500 hover:scale-110 transition-all"
+                          className="cursor-pointer p-2.5 text-emerald-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="Change Status"
                         >
-                          <RefreshCcw size={18} />
+                          <Waypoints size={18} />
                         </button>
                       </div>
                     </td>
