@@ -303,7 +303,8 @@ export const updateOrderService = async (
   }
 
   return await Order.findByIdAndUpdate(id, finalUpdate, {
-    returnDocument: "after",
+    // returnDocument: "after",
+    new: true,
     runValidators: true,
   });
 };

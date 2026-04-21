@@ -152,7 +152,8 @@ export class AuthService {
     const { password, role, ...updateData } = data;
 
     const user = await User.findByIdAndUpdate(userId, updateData, {
-      returnDocument: 'after',
+      // returnDocument: 'after',
+      new: true,
       runValidators: true,
     });
 

@@ -98,7 +98,8 @@ export class BookingService {
     }
 
   return await Booking.findByIdAndUpdate(id, updateData, { 
-    returnDocument: 'after'
+    // returnDocument: 'after'
+    new: true,
    }).populate('dealerId', 'name contact');
   }
 
