@@ -41,6 +41,26 @@ const STATUS_OPTIONS = [
   "Commercial Invoice Submitted",
 ];
 
+const STATUS_ORDER: { [key: string]: number } = {
+  "To be Sourced": 0,
+  "Booked": 1,
+  "Payment Done": 2,
+  "Transit": 3,
+  "JNPT Warehouse": 4,
+  "Shipped": 5,
+  "Commercial Invoice Submitted": 6
+};
+
+const getValidNextStatuses = (currentStatus: string): string[] => {
+  const currentIndex = STATUS_ORDER[currentStatus];
+  const validNext: string[] = [currentStatus];
+  if (currentIndex + 1 <= 6) {
+    const nextStatus = Object.keys(STATUS_ORDER).find(key => STATUS_ORDER[key] === currentIndex + 1);
+    if (nextStatus) validNext.push(nextStatus);
+  }
+  return validNext.filter(s => s !== "To be Sourced"); // exclude sourcing
+};
+
 interface StatusPopupProps {
   vehicle: { srNo: string; name: string; expandedIndex: number };
   currentStatus: string;
@@ -60,6 +80,7 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
     onClose();
   };
 
+  // close on backdrop click
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -70,7 +91,7 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
     >
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-2xl w-80 p-6 animate-in fade-in zoom-in-95 duration-200">
-
+        
         {/* Header */}
         <div className="flex justify-between items-start mb-5">
           <div>
@@ -89,19 +110,24 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
 
         {/* Status options */}
         <div className="space-y-2 mb-5">
-          {STATUS_OPTIONS.map((s) => (
+          {getValidNextStatuses(currentStatus).map((s) => (
             <button
               key={s}
               onClick={() => setSelected(s)}
               className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all ${
                 selected === s
-                  ? "bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-600 dark:text-indigo-300"
+                  ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-300"
                   : "bg-gray-50 border-gray-100 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               {s}
             </button>
           ))}
+          {getValidNextStatuses(currentStatus).length === 1 && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-bold text-center py-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
+              No further status updates available
+            </p>
+          )}
         </div>
 
         {/* Footer */}
@@ -115,7 +141,7 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
           <button
             onClick={handleSave}
             disabled={saving || selected === currentStatus}
-            className="flex-grow py-2.5 px-5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white text-xs font-bold uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-2 flex-grow py-2.5 px-5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white text-xs font-bold uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {saving ? (
               <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/30 border-t-white" />
@@ -166,7 +192,7 @@ const VehicleDetails: React.FC = () => {
       case "JNPT Warehouse":
         return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
       case "Shipped":
-        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
       case "Commercial Invoice Submitted":
         return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
       default:
@@ -435,11 +461,7 @@ const VehicleDetails: React.FC = () => {
                                       currentStatus: v.status,
                                     });
                                   }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 hover:scale-110 ${
-                                    !isBooked
-                                      ? "opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700"
-                                      : "bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-amber-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-sm"
-                                  }`}
+                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 hover:scale-110 ${!isBooked ? "opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700" : "bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-amber-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-sm"}`}
                                   title="Update Status"
                                 >
                                   <Zap size={18} />
@@ -459,12 +481,7 @@ const VehicleDetails: React.FC = () => {
 
           {/* RIGHT COLUMN */}
           <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
-            <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-3xl p-6 shadow-xl border border-slate-700">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Order Status</p>
-              <h3 className={`text-2xl font-black ${status === "Draft" ? "text-yellow-400" : status === "Confirmed" ? "text-blue-400" : "text-emerald-400"}`}>
-                {status}
-              </h3>
-            </div>
+
 
             <div className="bg-[#EBF8FF] dark:bg-blue-900/20 rounded-3xl p-6 border border-[#BEE3F8] dark:border-blue-800/50 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
               <p className="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">

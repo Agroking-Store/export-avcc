@@ -10,6 +10,7 @@ import {
   PlusCircle,
   ArrowUpRight,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 const DealersDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const DealersDashboard: React.FC = () => {
         setTotalDealers(res.data.total || res.data.data.length);
         setRecentDealers(res.data.data);
       })
-      .catch(console.error)
+      .catch((error: any) => toast.error(error.response?.data?.message || "Failed to load dashboard"))
       .finally(() => setLoading(false));
   }, []);
 

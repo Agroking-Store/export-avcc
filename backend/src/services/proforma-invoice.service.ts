@@ -169,20 +169,7 @@ export const createPIService = async (data: any) => {
 
   const savedPI = await pi.save();
 
-  // Update correlated Booking statuses to "PI Created"
-  if (data.vehicleDetails && data.vehicleDetails.length > 0) {
-    const chassisNumbers = data.vehicleDetails
-      .map((v: any) => v.chassisNo)
-      .filter((c: any) => c && c !== "N/A");
-
-    if (chassisNumbers.length > 0) {
-      // Find bookings containing these chassis numbers and update their status
-      await Booking.updateMany(
-        { "vehicles.chassisNo": { $in: chassisNumbers } },
-        { $set: { status: "PI Created" } }
-      );
-    }
-  }
+  // Booking status update removed — "PI Created" status no longer exists in the system
 
   return savedPI;
 };
@@ -1111,19 +1098,7 @@ export const updatePIService = async (id: string, data: any) => {
     new: true,
   });
 
-  // Update correlated Booking statuses to "PI Created" if vehicle details changed
-  if (data.vehicleDetails && data.vehicleDetails.length > 0) {
-    const chassisNumbers = data.vehicleDetails
-      .map((v: any) => v.chassisNo)
-      .filter((c: any) => c && c !== "N/A");
-
-    if (chassisNumbers.length > 0) {
-      await Booking.updateMany(
-        { "vehicles.chassisNo": { $in: chassisNumbers } },
-        { $set: { status: "PI Created" } }
-      );
-    }
-  }
+  // Booking status update removed — "PI Created" status no longer exists in the system
 
   return updated;
 };

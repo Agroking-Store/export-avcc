@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
 import { 
   User, Phone, Mail, MapPin, Hash,
   ArrowLeft, X, Save 
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 const EditDealer = () => {
   const { id } = useParams();
@@ -16,7 +16,7 @@ const EditDealer = () => {
   useEffect(() => {
     axios.get(`http://localhost:5000/api/v1/dealers/${id}`)
       .then(res => setForm(res.data.data))
-      .catch(console.error);
+      .catch((error: any) => toast.error(error.response?.data?.message || "Failed to load dealer"));
   }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,8 +29,8 @@ const EditDealer = () => {
       await axios.put(`http://localhost:5000/api/v1/dealers/${id}`, form);
       toast.success("Dealer updated successfully!");
       navigate("/dealers/list");
-    } catch {
-      toast.error("Update failed");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update dealer");
     } finally {
       setLoading(false);
     }

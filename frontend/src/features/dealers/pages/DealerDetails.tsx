@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Hash,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 const InfoBox = ({ label, value, icon: Icon }: any) => (
   <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
@@ -34,7 +35,8 @@ const DealerDetails = () => {
         setDealer(res.data.data);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error: any) => {
+        toast.error(error.response?.data?.message || "Failed to load dealer");
         setLoading(false);
       });
   }, [id]);

@@ -21,8 +21,8 @@ const DealersList = () => {
       });
       setDealers(res.data.data);
       setTotalPages(res.data.totalPages || 1);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch dealers");
     } finally {
       setLoading(false);
     }
