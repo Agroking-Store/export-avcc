@@ -282,12 +282,18 @@
                     <td class="text-right bold">${{totalAmount}}</td>
                 </tr>
                 <tr>
-                    <td colspan="2" class="valign-top" style="border-right: none; padding-bottom: 80px;">
+                    <!-- LEFT SIDE -->
+                    <td colspan="2" class="valign-top"
+                        style="border-right: none; border-bottom: 1px solid #000; padding-bottom: 80px;">
                         <span class="label">Amount Chargeable (in words)</span>
                         <div class="bold">{{amountInWords}}</div>
                     </td>
 
-                    <td colspan="5" class="valign-top" style="border-left: none; padding-bottom: 20px;">
+
+                    <!-- RIGHT SIDE -->
+                    <td colspan="5" class="valign-top"
+                        style="border-left: none; border-bottom: 1px solid #222; padding-bottom: 0;">
+
                         <span class="label">Company's Bank Details</span>
 
                         <table class="bank-table">
@@ -305,20 +311,36 @@
                             </tr>
                         </table>
 
-                        <!-- FULL WIDTH LINE -->
-                        <div style="border-top: 1px solid #000; margin: 6px -6px 0 -6px;"></div>
+                        <!-- LINE ABOVE COMPANY NAME -->
+                        <div style="border-top: 1px solid #333; margin: 6px -8px 0 0px;"></div>
 
-                        <!-- COMPANY NAME -->
-                        <div class="bold" style="margin-top: 6px;">
-                            for {{exporter.name}}
-                        </div>
+                        <!-- EXPORTER + SIGNATURE WITH VERTICAL LINE -->
+                        <div style="display: table; width: 100%; ">
 
-                        <!-- BIG SPACE (this is important) -->
-                        <div style="height: 90px;"></div>
+                            <!-- LEFT EMPTY AREA (creates vertical divider) -->
+                            <div
+                                style="display: table-cell; width: 0%; border-right: 1px solid #333; height: 51px; margin-left: -20px;">
+                            </div>
 
-                        <!-- SIGNATURE TEXT -->
-                        <div style="text-align: right; font-size: 12px; padding-right: 10px;">
-                            Authorised Signatory
+                            <!-- RIGHT SIDE CONTENT -->
+                            <div style="
+            display: table-cell;
+            width: 35%;
+            vertical-align: bottom;
+            padding-right: 2px;
+        ">
+                                <div class="bold" style="margin-bottom: 9px; padding-left:4px;">
+                                    for {{exporter.name}}
+                                </div>
+
+                                <!-- HORIZONTAL LINE -->
+                                <div style="border-top: 1px solid #333; margin: 7px -7px 8px -1px;"></div>
+
+                                <div style="text-align: right; font-size: 12px;">
+                                    Authorised Signatory
+                                </div>
+                            </div>
+
                         </div>
                     </td>
                 </tr>
