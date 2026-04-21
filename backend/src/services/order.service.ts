@@ -308,6 +308,37 @@ export const updateOrderService = async (
   });
 };
 
-export const updateOrderStatusService = async (id: string, status: string) => {
-  return await Order.findByIdAndUpdate(id, { status }, { new: true });
+export const updateOrderStatusService = async (
+  id: string,
+  status: string
+) => {
+  const flow = [
+    "Sourced",
+    "Booked",
+    "VIN Received",
+    "PI Issued",
+    "LC Received",
+    "BV Received",
+    "HBL Received",
+    "Bank Submission Done",
+    "Shipped",
+  ];
+
+  const order = await Order.findById(id);
+
+  if (!order) throw new Error("Order not found");
+
+  const currentIndex = flow.indexOf(order.status);
+  const nextStatus = flow[currentIndex + 1];
+
+  if (status !== nextStatus) {
+    throw new Error(
+      `Only next status allowed: ${nextStatus}`
+    );
+  }
+
+  order.status = status;
+  await order.save();
+
+  return order;
 };
