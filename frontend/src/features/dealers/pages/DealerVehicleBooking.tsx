@@ -374,7 +374,7 @@ const DealerVehicleBooking = () => {
         {/* LOGISTICS & SPECS SECTION — unchanged */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
-            <div className="h-5 w-1 bg-purple-500 rounded-full"></div>
+            <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
             <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Logistics & Specifications</h2>
           </div>
 

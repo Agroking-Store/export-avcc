@@ -44,6 +44,16 @@ interface VehicleForm {
 
 const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
+const STATUS_ORDER: { [key: string]: number } = {
+  "To be Sourced": 0,
+  "Booked": 1,
+  "Payment Done": 2,
+  "Transit": 3,
+  "JNPT Warehouse": 4,
+  "Shipped": 5,
+  "Commercial Invoice Submitted": 6
+};
+
 const STATUS_OPTIONS = [
   { value: "Booked", label: "Booked" },
   { value: "Payment Done", label: "Payment Done" },
@@ -52,6 +62,18 @@ const STATUS_OPTIONS = [
   { value: "Shipped", label: "Shipped" },
   { value: "Commercial Invoice Submitted", label: "Commercial Invoice Submitted" },
 ];
+
+const getValidNextStatuses = (currentStatus: string): {value: string, label: string}[] => {
+  const currentIndex = STATUS_ORDER[currentStatus];
+  const valid: {value: string, label: string}[] = [{value: currentStatus, label: currentStatus}];
+  if (currentIndex + 1 <= 6) {
+    const nextKey = Object.keys(STATUS_ORDER).find(k => STATUS_ORDER[k as any] === currentIndex + 1);
+    if (nextKey) {
+      valid.push({value: nextKey, label: nextKey});
+    }
+  }
+  return valid.filter(s => s.value !== "To be Sourced");
+};
 
 const DealerVehicleEdit = () => {
   const params = useParams();
@@ -271,7 +293,7 @@ const DealerVehicleEdit = () => {
                   <Command>
                     <CommandList>
                       <CommandGroup>
-                        {STATUS_OPTIONS.map((s) => (
+                        {getValidNextStatuses(form.status).map((s) => (
                           <CommandItem
                             key={s.value}
                             value={s.value}
@@ -318,7 +340,7 @@ const DealerVehicleEdit = () => {
               <input value={form.engineCapacity} onChange={e => setForm({ ...form, engineCapacity: e.target.value })} className={inputStyle("")} placeholder="2755cc" />
             </div>
             <div>
-              <label className={labelStyle}><Calendar size={14} className="text-purple-400" /> MFG Year</label>
+              <label className={labelStyle}><Calendar size={14} className="text-blue-400" /> MFG Year</label>
               <input type="number" value={form.yom} onChange={e => setForm({ ...form, yom: parseInt(e.target.value) || 0 })} className={inputStyle("")} />
             </div>
           </div>

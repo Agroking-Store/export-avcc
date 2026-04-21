@@ -20,6 +20,26 @@ const STATUS_OPTIONS = [
   "Commercial Invoice Submitted",
 ];
 
+const STATUS_ORDER: { [key: string]: number } = {
+  "To be Sourced": 0,
+  "Booked": 1,
+  "Payment Done": 2,
+  "Transit": 3,
+  "JNPT Warehouse": 4,
+  "Shipped": 5,
+  "Commercial Invoice Submitted": 6
+};
+
+const getValidNextStatuses = (currentStatus: string): string[] => {
+  const currentIndex = STATUS_ORDER[currentStatus];
+  const validNext: string[] = [currentStatus];
+  if (currentIndex + 1 <= 6) {
+    const nextStatus = Object.keys(STATUS_ORDER).find(key => STATUS_ORDER[key] === currentIndex + 1);
+    if (nextStatus) validNext.push(nextStatus);
+  }
+  return validNext.filter(s => s !== "To be Sourced"); // exclude sourcing
+};
+
 interface StatusPopupProps {
   vehicle: { srNo: string; name: string; expandedIndex: number };
   currentStatus: string;
@@ -69,19 +89,24 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
 
         {/* Status options */}
         <div className="space-y-2 mb-5">
-          {STATUS_OPTIONS.map((s) => (
+          {getValidNextStatuses(currentStatus).map((s) => (
             <button
               key={s}
               onClick={() => setSelected(s)}
               className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all ${
                 selected === s
-                  ? "bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-600 dark:text-indigo-300"
+                  ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-300"
                   : "bg-gray-50 border-gray-100 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               {s}
             </button>
           ))}
+          {getValidNextStatuses(currentStatus).length === 1 && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-bold text-center py-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
+              No further status updates available
+            </p>
+          )}
         </div>
 
         {/* Footer */}
@@ -273,7 +298,7 @@ const DealerOrderDetails = () => {
       case "Payment Done": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800";
       case "Transit": return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800";
       case "JNPT Warehouse": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
-      case "Shipped": return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+      case "Shipped": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
       case "Commercial Invoice Submitted": return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
       default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
     }
