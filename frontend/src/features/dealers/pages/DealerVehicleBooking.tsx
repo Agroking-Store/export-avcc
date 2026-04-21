@@ -63,6 +63,7 @@ const DealerVehicleBooking = () => {
     }
   ]);
 
+  const [bookingAmount, setBookingAmount] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -76,6 +77,8 @@ const DealerVehicleBooking = () => {
       setSelectedDealer(value);
     } else if (field === 'date') {
       setBookingDate(value);
+    } else if (field === 'bookingAmount') {
+      setBookingAmount(value);
     } else {
       const newVehicles = [...vehicles];
       const fieldParts = field.split('.');
@@ -107,6 +110,10 @@ const DealerVehicleBooking = () => {
       newErrors['vehicles.engineNo'] = 'Invalid format (10-12 alphanumeric, e.g. G3LCSM578833)';
     }
 
+    if (!bookingAmount || bookingAmount <= 0) {
+      newErrors.bookingAmount = 'Booking amount is required and must be greater than 0';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -120,6 +127,7 @@ const DealerVehicleBooking = () => {
       await bookingApi.create({
         dealerId: selectedDealer,
         date: bookingDate.toISOString().split('T')[0],
+        bookingAmount,
         orderId: orderId,
         vehicles: [{
           hsnCode: vehicles[0].hsnCode,
@@ -398,8 +406,40 @@ const DealerVehicleBooking = () => {
           </div>
         </div>
 
-        {/* ACTIONS — unchanged */}
-        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
+        {/* BOOKING SUMMARY SECTION */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-amber-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Booking Summary</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            <div className="md:col-span-1">
+              <label className={labelStyle}>
+                <span className="text-amber-500 font-bold text-lg">₹</span> Booking Amount
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={bookingAmount || ''}
+                onChange={(e) => handleInputChange('bookingAmount', parseFloat(e.target.value) || 0)}
+                className={`${inputStyle('bookingAmount')} w-full md:w-1/2`}
+                placeholder="0.00"
+              />
+              {errors.bookingAmount && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">
+                  {errors.bookingAmount}
+                </p>
+              )}
+              <p className="text-[10px] text-gray-400 mt-1.5 ml-1">
+                Final negotiated booking value in Rupees
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800"> 
           <button
             type="button"
             onClick={() => navigate(`/dealers/orders/${orderId}`)}

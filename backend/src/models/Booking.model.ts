@@ -60,6 +60,11 @@ const bookingSchema = new Schema<IBooking>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
     },
+    bookingAmount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
   },
   {
     timestamps: true,
