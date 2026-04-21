@@ -388,10 +388,22 @@ const Dashboard: React.FC = () => {
                 {/* STATUS */}
                 <td className="px-6 py-4">
                   <span
-                    className={`flex items-center gap-2 w-fit px-3 py-1 rounded-full text-xs font-medium bg-${order.color}-100 text-${order.color}-700`}
+                    className={`flex items-center gap-2 w-fit px-3 py-1 rounded-full text-xs font-medium
+      ${order.status === "Completed"
+                        ? "bg-green-100 text-green-700"
+                        : order.status === "Processing"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
                   >
                     <span
-                      className={`w-2 h-2 rounded-full bg-${order.color}-500`}
+                      className={`w-2 h-2 rounded-full
+        ${order.status === "Completed"
+                          ? "bg-green-500"
+                          : order.status === "Processing"
+                            ? "bg-yellow-500"
+                            : "bg-blue-500"
+                        }`}
                     ></span>
                     {order.status}
                   </span>
@@ -441,11 +453,10 @@ const Dashboard: React.FC = () => {
               onClick={() =>
                 setActiveModule(mod as "Clients" | "Booked Vehicles")
               }
-              className={`pb-2 text-sm whitespace-nowrap transition cursor-pointer ${
-                activeModule === mod
+              className={`pb-2 text-sm whitespace-nowrap transition cursor-pointer ${activeModule === mod
                   ? "border-b-2 border-indigo-600 text-indigo-600 font-semibold"
                   : "text-gray-500 hover:text-gray-700"
-              }`}
+                }`}
             >
               {mod}
             </button>
