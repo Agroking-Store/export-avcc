@@ -332,13 +332,14 @@ const DealerOrderDetails = () => {
         
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-2.5 rounded-xl shadow-lg border border-blue-500/30 flex items-center group cursor-default">
-            <Hash size={16} className="text-blue-100 mr-2" />
-            <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-blue-200 transition-colors">
+          <div className="bg-[#1e293b] px-6 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
+            <Hash size={16} className="text-blue-400 mr-2" />
+            <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-blue-300 transition-colors">
               {order.orderId}
             </span>
           </div>
           <button
+
             onClick={() => navigate("/dealers/orders")}
             className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-gray-800 hover:text-indigo-600 active:scale-95"
           >
