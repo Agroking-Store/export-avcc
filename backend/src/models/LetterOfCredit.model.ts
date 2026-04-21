@@ -7,6 +7,7 @@ export interface ILetterOfCredit extends Document {
   documentUrl: string;
   status: "uploaded" | "verified" | "rejected";
   uploadedAt: Date;
+  extractedData?: any; // 🔥 add this
 }
 
 const letterOfCreditSchema = new Schema<ILetterOfCredit>(
@@ -18,6 +19,9 @@ const letterOfCreditSchema = new Schema<ILetterOfCredit>(
     },
     lcNumber: { type: String },
     documentUrl: { type: String, required: true },
+    extractedData: {
+      type: Object, // 🔥 add this
+    },
     status: {
       type: String,
       enum: ["uploaded", "verified", "rejected"],

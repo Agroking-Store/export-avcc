@@ -7,6 +7,16 @@ export interface IVehicle extends Document {
   chassisNo: string;
   status: "Available" | "Booked";
   bookedBy?: mongoose.Types.ObjectId | null;
+  documents: {
+    form20?: string;
+    form21?: string;
+    form22?: string;
+    tempRegCert?: string;
+    bvCertificate?: string;
+  };
+  isCRTMUploaded: boolean;
+  isBVUploaded: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +33,15 @@ const vehicleSchema = new Schema<IVehicle>(
       default: "Available",
     },
     bookedBy: { type: Schema.Types.ObjectId, ref: "Client", default: null },
+    documents: {
+      form20: { type: String, default: "" },
+      form21: { type: String, default: "" },
+      form22: { type: String, default: "" },
+      tempRegCert: { type: String, default: "" },
+      bvCertificate: { type: String, default: "" },
+    },
+    isCRTMUploaded: { type: Boolean, default: false },
+    isBVUploaded: { type: Boolean, default: false },
   },
   {
     timestamps: true,

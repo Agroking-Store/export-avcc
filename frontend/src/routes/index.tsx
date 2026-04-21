@@ -24,9 +24,7 @@ import DealersModule from "../features/dealers/pages/DealersModule";
 import PIModule from "../features/proforma-invoice/pages/PIModule"; // Import the new PIModule
 
 // Companies
-import CompanyList from "../features/company/pages/CompanyList";
-import CreateCompany from "../features/company/pages/CreateCompany";
-import CompanyDetails from "../features/company/pages/CompanyDetails";
+import CompanyModule from "../features/company/pages/CompanyModule";
 
 // Vehicles
 import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
@@ -63,10 +61,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/proforma-invoice/*" element={<PIModule />} />
 
           {/* Companies */}
-          <Route path="/companies" element={<CompanyList />} />
-          <Route path="/companies/add" element={<CreateCompany />} />
-          <Route path="/companies/edit/:id" element={<CreateCompany />} />
-          <Route path="/companies/:id" element={<CompanyDetails />} />
+          <Route path="/companies/*" element={<CompanyModule />} />
 
           {/* Coming Soon */}
           <Route
