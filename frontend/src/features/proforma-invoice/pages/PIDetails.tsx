@@ -312,58 +312,69 @@ const PIDetails = () => {
 
           <div className="flex items-center gap-2 self-end lg:self-center">
             {/* GROUP 1: LC ACTIONS */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              {pi?.status === "lc_received" ? (
-                <>
-                  <Button
-                    onClick={handleViewLC}
-                    variant="ghost"
-                    size="sm"
-                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View LC
-                  </Button>
-                  <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1" />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="cursor-pointer">
-                        <label
-                          htmlFor="lc-upload"
-                          className="flex items-center w-full cursor-pointer"
-                        >
-                          <RefreshCw className="w-4 h-4 mr-2" /> Replace LC
-                        </label>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              ) : (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-amber-600 hover:bg-amber-50 h-8 gap-2"
-                >
-                  <label htmlFor="lc-upload" className="cursor-pointer">
-                    <FileUp className="w-4 h-4" />
-                    Upload LC
-                  </label>
-                </Button>
-              )}
-              <input
-                type="file"
-                id="lc-upload"
-                className="hidden"
-                accept=".pdf"
-                onChange={handleLCUpload}
-              />
-            </div>
+            <div className="flex items-center gap-2">
+
+  {/* TAX INVOICE BUTTON */}
+  <Button
+    onClick={() =>
+      navigate(`/proforma-invoice/create-tax-invoice/${id}`)
+    }
+    variant="outline"
+    size="sm"
+    className="h-9 border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
+  >
+    <FileText className="w-4 h-4" />
+    Generate Tax Invoice
+  </Button>
+
+  {/* LC BUTTON */}
+  <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+
+    <Button
+      onClick={handleViewLC}
+      variant="ghost"
+      size="sm"
+      className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-2"
+    >
+      <Eye className="w-4 h-4" />
+      View LC
+    </Button>
+
+    <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1" />
+
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem className="cursor-pointer">
+          <label
+            htmlFor="lc-upload"
+            className="flex items-center w-full cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Replace LC
+          </label>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+
+    <input
+      type="file"
+      id="lc-upload"
+      className="hidden"
+      accept=".pdf"
+      onChange={handleLCUpload}
+    />
+  </div>
+</div>
 
             {/* GROUP 2: PI PDF ACTIONS */}
             <div className="flex items-center gap-2 ml-2">

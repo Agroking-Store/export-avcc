@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Tax Invoice</title>
+
+<style>
+*{ box-sizing:border-box; }
+
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  margin:0;
+  padding:4px;
+  font-size:9px;
+  color:#000;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+td,th{
+  border:1px solid #000;
+  padding:4px;
+  vertical-align:top;
+}
+
+.center{ text-align:center; }
+.right{ text-align:right; }
+.bold{ font-weight:bold; }
+.small{ font-size:10px; }
+.tiny{ font-size:9px; }
+
+.title{
+  text-align:center;
+  font-size:24px;
+  font-weight:bold;
+  margin:4px 0 8px;
+}
+
+.mt4{ margin-top:4px; }
+.mt6{ margin-top:6px; }
+.mt8{ margin-top:8px; }
+
+.no-border td{
+  border:none;
+}
+
+.rowh{
+  height:24px;
+}
+
+.goods-row{
+  height:92px;
+}
+
+.sign{
+  height:70px;
+}
+
+.wrap{
+  white-space:pre-line;
+}
+tr, td, div {
+  page-break-inside: avoid;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="title">INVOICE</div>
+
+<!-- TOP MASTER SECTION -->
+<!-- TOP MASTER SECTION -->
+<table>
+<tr>
+<!-- LEFT COLUMN -->
+<td width="46%" style="padding:0;">
+
+  <table style="width:100%; border-collapse:collapse;">
+    <tr>
+      <td style="height:115px;">
+        <div class="bold">Exporter</div><br>
+
+        {{exporter.name}}<br>
+{{exporter.address.houseBuilding}}<br>
+{{exporter.address.streetArea}}<br>
+{{exporter.address.cityTown}} - {{exporter.address.pincode}}<br>
+{{exporter.address.state}}, {{exporter.address.country}}<br><br>
+
+GST NO - {{exporter.gstNumber}}<br>
+IEC NO - {{exporter.iecNo}}
+      </td>
+    </tr>
+
+    <tr>
+      <td style="height:105px;">
+        <div class="bold">Consignee</div><br>
+
+{{buyer.companyName}}<br>
+{{#if buyer.address.houseBuilding}}{{buyer.address.houseBuilding}}<br>{{/if}}
+{{#if buyer.address.streetArea}}{{buyer.address.streetArea}}<br>{{/if}}
+{{buyer.address.cityTown}}<br>
+{{buyer.address.country}}
+      </td>
+    </tr>
+  </table>
+
+</td>
+
+<!-- RIGHT COLUMN -->
+<td width="54%" style="padding:0;">
+
+<table style="width:100%; border-collapse:collapse;">
+
+<tr>
+<td width="60%">Invoice No & Dt.</td>
+<td>{{invoiceNo}} Dtd. {{invoiceDate}}</td>
+</tr>
+
+<tr>
+<td>Buyers Order & Dt</td>
+<td>{{buyerOrderDate}}</td>
+</tr>
+
+<tr>
+<td>Other Reference</td>
+<td class="bold small">
+{{otherReference}}<br>
+PI No - {{piNo}} Dt {{piDate}}
+</td>
+</tr>
+
+<tr><td colspan="2" style="height:18px;"></td></tr>
+<tr><td colspan="2" style="height:18px;"></td></tr>
+
+<tr>
+<td colspan="2" style="height:138px; vertical-align:top;">
+
+<div class="bold">DRAWBACK SHIPMENT- {{drawbackShipment}}</div>
+<div class="bold">RODTEP SCHEME CODE - {{rodtepSchemeCode}}</div>
+<div class="bold">END USE CODE - {{endUseCode}}</div>
+<div class="bold">IGST PAYMENT STATUS - {{igstPaymentStatus}}</div>
+<div class="bold">SHIPMENT EXPORT UNDER IGST - {{shipmentExportUnderIgst}}</div>
+<div class="bold">IEC NO - {{exporter.iecNo}}</div>
+<div class="bold" style="color:red;">
+AD CODE - {{adCode}}
+</div>
+
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+<!-- META GRID -->
+<!-- EXACT SHIPPING SECTION -->
+<table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+
+<!-- ROW 1 -->
+<tr>
+<td width="16%" style="border:1px solid #000;">
+Pre -<br>Carriage
+</td>
+
+<td width="6%" class="center" style="border:1px solid #000;">
+{{preCarriage}}
+</td>
+
+<td width="24%" style="border:1px solid #000;">
+Place of Rcpt by Pre Carrier<br>
+{{placeReceipt}}
+</td>
+
+<td width="31%" style="padding:0; border:1px solid #000;">
+
+<table style="width:100%; border-collapse:collapse;">
+<tr>
+<td class="center bold"
+style="
+border:none;
+border-bottom:1px solid #000;
+padding:2px;
+">
+Country of Origin
+</td>
+</tr>
+
+<tr>
+<td class="center"
+style="border:none; padding:2px;">
+{{countryOrigin}}
+</td>
+</tr>
+</table>
+
+</td>
+
+<td width="23%" style="padding:0; border:1px solid #000;">
+
+<table style="width:100%; border-collapse:collapse;">
+<tr>
+<td class="center bold"
+style="
+border:none;
+border-bottom:1px solid #000;
+padding:2px;
+">
+Country of Destination
+</td>
+</tr>
+
+<tr>
+<td style="border:none; padding:2px;">
+{{countryDestination}}
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+
+<!-- ROW 2 -->
+<tr>
+<td style="border:1px solid #000;">
+Vessel/<br>Flight
+</td>
+
+<td class="center" style="border:1px solid #000;">
+{{vesselFlight}}
+</td>
+
+<td style="border:1px solid #000;">
+Port of Loading<br>
+{{portOfLoading}}
+</td>
+
+<td colspan="2" rowspan="2"
+style="
+border:1px solid #000;
+vertical-align:top;
+padding:4px;
+line-height:1.2;
+">
+
+<div class="bold">
+Terms of Delivery and Payment
+</div>
+
+<div class="bold">
+State of Origin of Goods - {{stateOfOrigin}}
+</div>
+
+<div class="bold">
+District of Origin of Goods - {{districtOfOrigin}} 
+</div>
+
+<br>
+
+<div class="bold">
+{{termsOfDelivery}}
+</div>
+
+</td>
+</tr>
+
+<!-- REPLACE ONLY ROW 3 WITH THIS -->
+
+<tr>
+<td style="padding:0; border:1px solid #000;" colspan="3">
+
+<table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+
+<tr>
+<td width="55%"
+style="
+border:none;
+border-right:1px solid #000;
+border-bottom:1px solid #000;
+padding:2px;
+">
+Port of Discharge
+</td>
+
+<td width="45%"
+style="
+border:none;
+border-bottom:1px solid #000;
+padding:2px;
+">
+Place of Delivery
+</td>
+</tr>
+
+<tr>
+<td
+style="
+border:none;
+border-right:1px solid #000;
+padding:2px;
+">
+{{portOfDischarge}}
+</td>
+
+<td style="border:none; padding:2px;">
+{{placeDelivery}}
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+<!-- EXACT GOODS TABLE -->
+
+<table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+
+<thead>
+<tr>
+<th width="17%">Marks & Nos<br>Container No</th>
+<th width="6%">No & Kind<br>of Pkgs</th>
+<th width="33%">Description of Goods</th>
+<th width="11%">Quantity<br>In Nos</th>
+<th width="9%">Rate<br>DDU<br>{{shipmentMode}}</th>
+<th width="9%">Amount<br>In USD</th>
+<th width="15%">RMKS<br>(IF ANY)</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+
+<!-- LEFT BIG COLUMN -->
+<td style="padding:0; vertical-align:top;">
+
+<table style="width:100%; border-collapse:collapse; height:100%;">
+
+<tr>
+<td style="border:none; border-bottom:1px solid #000; height:145px; vertical-align:top; padding:6px;">
+<div class="bold">{{countryDestination}}</div>
+<div class="bold">{{portOfDischarge}}</div>
+</td>
+</tr>
+
+<tr>
+<td style="border:none; border-bottom:1px solid #000; text-align:center; height:55px;">
+Total No of Cartons<br><br>
+{{totalCartons}} Nos
+</td>
+</tr>
+
+<tr>
+<td style="border:none; border-bottom:1px solid #000; text-align:center; height:60px;">
+Total Net.Wt.<br><br>
+{{netWeight}} K.G.
+</td>
+</tr>
+
+<tr>
+<td style="border:none; text-align:center; height:60px;">
+Total Gross.Wt.<br><br>
+{{grossWeight}} K.G.
+</td>
+</tr>
+
+</table>
+
+</td>
+
+<!-- SR NO -->
+<td style="vertical-align:top; text-align:center; padding:4px;">
+
+<div class="bold" style="margin-bottom:8px;">
+Sr no
+</div>
+
+{{#each items}}
+<div style="margin-top:28px;" class="bold">
+{{sr}}
+</div>
+{{/each}}
+
+</td>
+
+<!-- DESCRIPTION -->
+<td style="vertical-align:top; padding:4px;">
+
+{{#each items}}
+<div style="margin-top:18px; page-break-inside:avoid;">
+
+<div class="bold">
+{{model}}
+</div>
+
+<div class="bold">
+AUTOMATIC
+</div>
+
+EXTERIOR COLOUR : {{color}}<br>
+CHASSIS NO : {{chassisNo}}<br>
+ENGINE NO : {{engineNo}}<br>
+ENGINE CAPACITY : 998cc<br>
+FUEL TYPE : PETROL<br>
+COUNTRY OF ORIGIN : {{../countryOrigin}}<br>
+HSN CODE : {{hsn}}<br>
+DBK SR.NO : 870302
+
+</div>
+{{/each}}
+
+</td>
+
+<!-- QTY -->
+<td style="vertical-align:top; text-align:center; padding:4px;">
+
+{{#each items}}
+<div style="margin-top:78px;">
+{{qty}}
+</div>
+{{/each}}
+
+<div style="margin-top:50px;" class="bold">
+{{totalCartons}}<br>Pcs
+</div>
+
+</td>
+
+<!-- RATE -->
+<td style="vertical-align:top; text-align:right; padding-right:6px;">
+
+{{#each items}}
+<div style="margin-top:78px;">
+$ {{rate}}
+</div>
+{{/each}}
+
+</td>
+
+<!-- AMOUNT -->
+<td style="vertical-align:top; text-align:right; padding-right:6px;">
+
+{{#each items}}
+<div style="margin-top:78px;">
+$ {{amount}}
+</div>
+{{/each}}
+
+</td>
+
+<!-- RMKS -->
+<td>{{#if remarks}}{{remarks}}{{/if}}</td>
+</tr>
+
+</tbody>
+</table>
+<!-- EXACT BOTTOM SECTION -->
+
+<table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+
+<!-- AMOUNT IN WORDS -->
+<tr>
+<td width="70%" style="padding:4px;">
+Amount Chargeable<br>
+(In Words)
+</td>
+
+<td width="20%" class="bold center" style="word-break:break-word;">
+US DOLLAR $ - {{amountWords}}
+</td>
+
+<td width="6%" class="center">
+Total
+</td>
+
+<td width="8%" class="bold center">
+$ {{grandTotal}}
+</td>
+</tr>
+
+<!-- MAIN BOTTOM ROW -->
+<tr>
+
+<!-- LEFT DECLARATION -->
+<td colspan="2" style="padding:0; vertical-align:top;">
+
+<table style="width:100%; border-collapse:collapse;">
+
+<tr>
+<td style="border:none; border-bottom:1px solid #000; padding:4px;">
+
+<div class="bold">Declaration</div>
+
+<div class="bold">
+DBK001-
+</div>
+
+"I declare that no input tax credit of the Central Goods and Services Tax or of the
+Integrated Goods and Services Tax has been availed for any of the inputs or input services
+used in the manufacture of the export goods."
+
+</td>
+</tr>
+
+<tr>
+<td style="border:none; border-bottom:1px solid #000; padding:4px;">
+
+<div class="bold">
+DBK003-
+</div>
+
+"I declare that CENVAT credit on the inputs or input services used in the
+manufacture of the export goods has not been carried forward in terms of the Central Goods
+and Services Tax Act, 2017."
+
+<br><br>
+
+We declare that this invoice shows the actual price of the goods
+described and that all particulars are true and correct.
+
+<br>
+
+We intend to claim rewards under Merchandise Exports From India Scheme (MEIS)
+RoDTEP Scheme
+
+</td>
+</tr>
+
+<tr>
+<td style="border:none; padding:4px;">
+
+<div class="bold">
+STATEMENT ON ORIGIN
+</div>
+
+The Exporter {{exporter.name}}<br>
+{{exporter.address.houseBuilding}}<br>
+{{exporter.address.streetArea}}<br>
+{{exporter.address.cityTown}} - {{exporter.address.pincode}}<br>
+{{exporter.address.state}}, {{exporter.address.country}}
+
+<br><br>
+
+Of the products covered<br>
+by this document declares that, except where otherwise clearly indicated,
+these products are of indian preferential origin according to rules of origin
+of the generalized system of preferences of the european union and that the
+origin criterion met is 'P'
+
+</td>
+</tr>
+
+</table>
+
+</td>
+
+<!-- RIGHT SIDE -->
+<td colspan="2" style="padding:0; vertical-align:top;">
+
+<table style="width:100%; border-collapse:collapse; height:100%;">
+
+<!-- SIGN -->
+<tr>
+<td style="height:130px; border:none; border-bottom:1px solid #000; padding:4px;">
+<div class="bold">
+Sign & Date
+</div>
+</td>
+</tr>
+
+<!-- BANK -->
+<tr>
+<td style="border:none; padding:0;">
+
+<table style="width:100%; border-collapse:collapse;">
+
+<tr>
+<td colspan="2" class="bold" style="padding:4px; border-bottom:1px solid #000;">
+BANK DETAILS
+</td>
+</tr>
+
+<tr>
+<td width="40%" style="padding:2px;">NAME -</td>
+<td style="padding:2px;">{{bankName}}</td>
+</tr>
+
+<tr>
+<td style="padding:2px;">ACCOUNT NO -</td>
+<td style="padding:2px;">{{accountNo}}</td>
+</tr>
+
+<tr>
+<td style="padding:2px;">IFSC Code -</td>
+<td style="padding:2px;">{{ifsc}}</td>
+</tr>
+
+<tr>
+<td style="padding:2px;">SWIFT code:</td>
+<td style="padding:2px;">{{swiftCode}}</td>
+</tr>
+
+<tr><td style="height:80px;"></td><td></td></tr>
+
+</table>
+
+</td>
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+</body>
+</html>
