@@ -222,29 +222,62 @@ export const uploadLC = async (req: Request, res: Response) => {
   }
 };
 
+// export const getLCFile = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+//     const piIdString = Array.isArray(id) ? id[0] : id;
+
+//     const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
+//       uploadedAt: -1,
+//     });
+
+//     if (!lc || !lc.documentUrl) {
+//       return res
+//         .status(404)
+//         .json({ message: "Letter of Credit file not found" });
+//     }
+
+//     const absolutePath = path.join(process.cwd(), lc.documentUrl);
+
+//     if (!fs.existsSync(absolutePath)) {
+//       return res.status(404).json({ message: "File not found on server disk" });
+//     }
+
+//     res.sendFile(absolutePath);
+//   } catch (error: any) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
 export const getLCFile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const piIdString = Array.isArray(id) ? id[0] : id;
 
-    const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
-      uploadedAt: -1,
-    });
+    const lc = await LetterOfCredit.findOne({ pi_id: piIdString })
+      .sort({ uploadedAt: -1 });
 
     if (!lc || !lc.documentUrl) {
-      return res
-        .status(404)
-        .json({ message: "Letter of Credit file not found" });
+      return res.status(404).json({ message: "Letter of Credit file not found" });
     }
 
     const absolutePath = path.join(process.cwd(), lc.documentUrl);
 
     if (!fs.existsSync(absolutePath)) {
+      console.error("File missing on disk:", absolutePath);
       return res.status(404).json({ message: "File not found on server disk" });
     }
 
+    // Important headers for reliable PDF viewing
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="letter-of-credit.pdf"');
+    // Optional: add cache control
+    res.setHeader("Cache-Control", "no-cache");
+
     res.sendFile(absolutePath);
   } catch (error: any) {
+    console.error("getLCFile error:", error);
     res.status(500).json({ message: error.message });
   }
 };
