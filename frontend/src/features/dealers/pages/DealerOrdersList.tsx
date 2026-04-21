@@ -56,16 +56,49 @@ const DealerOrdersList = () => {
     fetchOrders();
   }, [search, statusFilter, currentPage]);
 
-  const getStatusColor = (status: string) => {
+  const orderStatuses = [
+    "Sourced",
+    "Booked",
+    "VIN Received",
+    "PI Issued",
+    "LC Received",
+    "BV Received",
+    "HBL Received",
+    "Bank Submission Done",
+    "Shipped",
+  ];
+
+  const getStatusStyle = (status?: string) => {
     switch (status) {
-      case "Draft":
-        return "bg-[#f1f5f9] dark:bg-gray-800 text-[#64748b] dark:text-slate-400";
-      case "Confirmed":
-        return "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
-      case "PI Generated":
-        return "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
+      case "Sourced":
+        return "bg-slate-100 text-slate-700";
+
+      case "Booked":
+        return "bg-blue-100 text-blue-700";
+
+      case "VIN Received":
+        return "bg-violet-100 text-violet-700";
+
+      case "PI Issued":
+        return "bg-cyan-100 text-cyan-700";
+
+      case "LC Received":
+        return "bg-amber-100 text-amber-700";
+
+      case "BV Received":
+        return "bg-pink-100 text-pink-700";
+
+      case "HBL Received":
+        return "bg-purple-100 text-purple-700";
+
+      case "Bank Submission Done":
+        return "bg-emerald-100 text-emerald-700";
+
+      case "Shipped":
+        return "bg-indigo-100 text-indigo-700";
+
       default:
-        return "bg-[#f1f5f9] dark:bg-gray-800 text-[#64748b] dark:text-slate-400";
+        return "bg-gray-100 text-gray-600";
     }
   };
 
@@ -100,9 +133,9 @@ const DealerOrdersList = () => {
               className="cursor-pointer appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800"
             >
               <option value="All">All Statuses</option>
-              <option value="Draft">Draft</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="PI Generated">PI Generated</option>
+              {orderStatuses.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none">
               <svg
@@ -206,13 +239,13 @@ const DealerOrdersList = () => {
                     </div>
                   </td>
                   <td className="px-8 py-5 text-center">
-                    <span
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${getStatusColor(
-                        order.status || ""
-                      )}`}
-                    >
-                      {order.status}
-                    </span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(
+                          order.status
+                        )}`}
+                      >
+                        {order.status || "To be Sourced"}
+                      </span>
                   </td>
                   <td className="px-8 py-5 text-center text-sm font-medium text-slate-500 dark:text-gray-400">
                     {order.date
