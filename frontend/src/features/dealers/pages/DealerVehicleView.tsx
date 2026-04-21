@@ -86,13 +86,12 @@ const DealerVehicleView = () => {
           } else {
             setVehicleStatus("New");
           }
-        } catch (bookingError) {
-          console.warn("Booking data unavailable:", bookingError);
+        } catch (bookingError: any) {
+          toast.error(bookingError.response?.data?.message || "Failed to fetch booking data");
           setVehicleStatus("New");
         }
-      } catch (orderError) {
-        console.error("Order fetch failed:", orderError);
-        toast.error("Order not found");
+      } catch (orderError: any) {
+        toast.error(orderError.response?.data?.message || "Failed to fetch order");
       } finally {
         setLoading(false);
       }

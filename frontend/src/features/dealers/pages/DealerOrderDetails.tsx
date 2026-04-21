@@ -182,9 +182,8 @@ const DealerOrderDetails = () => {
       const data = res.data.order || res.data;
       setOrder(data);
       setStatus(data.status || "Draft");
-    } catch (error) {
-      console.error("Error fetching order", error);
-      toast.error("Order not found");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch order");
     } finally {
       setLoading(false);
     }
@@ -216,7 +215,7 @@ const DealerOrderDetails = () => {
       setVehicleStatuses(statusMap);
       setBookingMap(bMap);
     } catch (error) {
-      console.error("Error fetching vehicle statuses", error);
+      toast.error(error.response?.data?.message || "Failed to fetch vehicle statuses");
       if (order?.vehicles) {
         const statusMap: { [key: string]: string } = {};
         let globalIndex = 0;
