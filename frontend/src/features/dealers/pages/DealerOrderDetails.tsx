@@ -506,12 +506,7 @@ const DealerOrderDetails = () => {
 
           {/* RIGHT COLUMN */}
           <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 shadow-xl border border-blue-500/50">
-              <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1">Order Status</p>
-              <h3 className={`text-2xl font-black ${status === "Draft" ? "text-yellow-300" : status === "Confirmed" ? "text-white" : "text-emerald-300"}`}>
-                {status}
-              </h3>
-            </div>
+
 
             <div className="bg-[#EBF8FF] dark:bg-blue-900/20 rounded-3xl p-6 border border-[#BEE3F8] dark:border-blue-800/50 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
               <p className="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
