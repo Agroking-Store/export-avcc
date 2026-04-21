@@ -188,7 +188,7 @@ const DealerVehicleEdit = () => {
           srNo: srNo,
         }],
       });
-      toast.success("Successfully updated");
+toast.success("Successfully updated");
       navigate(`/dealers/orders/${orderId}`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update");

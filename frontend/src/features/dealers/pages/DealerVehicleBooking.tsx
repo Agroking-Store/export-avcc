@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/useToast';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, Users, Car, AlertCircle, Package, Hash, 
@@ -146,8 +147,13 @@ const DealerVehicleBooking = () => {
         }],
         status: 'Booked'
       });
-      toast.success('Vehicle booked successfully');
-      navigate(`/dealers/orders/${orderId}`);
+
+      const { success } = useToast();
+      success("Vehicle booked successfully!");
+
+setTimeout(() => {
+        navigate(`/dealers/orders/${orderId}`);
+      }, 500);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Booking failed');
     } finally {
