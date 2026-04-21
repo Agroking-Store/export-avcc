@@ -139,7 +139,7 @@ export const piApi = {
     return res.data;
   },
 
-  uploadLC: async (id: string, file: File) => {
+  uploadLC: async (id: string, file: File, config?: any ) => {
     const formData = new FormData();
     formData.append("lcFile", file);
 
@@ -148,9 +148,9 @@ export const piApi = {
       formData,
       {
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${getAuthToken()}`,
         },
+        ...config,
       },
     );
     return res.data;
