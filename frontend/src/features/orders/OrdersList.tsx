@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight, Waypoints } from "lucide-react";
+import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -77,6 +77,14 @@ const OrdersList = () => {
     "Bank Submission Done",
     "Shipped",
   ];
+
+  const getAllowedNextStatus = (currentStatus?: string) => {
+    const currentIndex = orderStatuses.indexOf(currentStatus || "Sourced");
+  
+    if (currentIndex === -1) return orderStatuses[0];
+  
+    return orderStatuses[currentIndex + 1] || currentStatus;
+  };
   
   const updateStatus = async () => {
     if (!selectedOrder) return;
@@ -274,7 +282,7 @@ const OrdersList = () => {
                           className="cursor-pointer p-2.5 text-emerald-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="Change Status"
                         >
-                          <Waypoints size={18} />
+                          <Zap size={18} />
                         </button>
                       </div>
                     </td>
@@ -325,27 +333,68 @@ const OrdersList = () => {
             </span> ?
           </p>
       
+    <div className="relative mb-6 group">
+      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1 mb-2 block">
+        Select New Status
+      </label>
+      
+      <div className="relative">
           <select
             value={newStatus}
             onChange={(e) => setNewStatus(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 mb-5 outline-none focus:ring-2 focus:ring-blue-500"
+            className="cursor-pointer appearance-none w-full rounded-xl border-2 border-slate-100 bg-slate-50/50 px-5 py-4 text-sm font-bold text-slate-700 outline-none transition-all hover:border-blue-200 hover:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 shadow-sm"
           >
-            {orderStatuses.map((status) => (
-              <option key={status}>{status}</option>
-            ))}
+            {orderStatuses.map((status, index) => {
+              const currentIndex = orderStatuses.indexOf(selectedOrder?.status || "Sourced");
+              const isNext = index === currentIndex + 1;
+              const isCurrent = index === currentIndex;
+      
+              return (
+                <option
+                  key={status}
+                  value={status}
+                  disabled={!isNext && !isCurrent}
+                  className="py-2 font-semibold"
+                >
+                  {isCurrent ? "📍 " : ""}
+                  {status}
+                  {isNext && newStatus !== status
+                    ? " — (Recommended Next Step)"
+                    : ""}
+                </option>
+              );
+            })}
           </select>
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 rounded-lg bg-white border border-slate-100 shadow-sm text-blue-600 group-hover:text-blue-700 transition-colors">
+                <svg width="12" height="8" viewBox="0 0 12 8" fill="none" className="transition-transform group-focus-within:rotate-180">
+                  <path
+                    d="M1 1.5L6 6.5L11 1.5"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+            
+            <p className="mt-2 text-[10px] text-slate-400 flex items-center gap-1.5 ml-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+              Only the current stage and the immediate next step can be selected.
+            </p>
+          </div>
       
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setShowStatusModal(false)}
-              className="px-5 py-2 rounded-xl border border-slate-200 font-semibold hover:bg-slate-50"
+              className="cursor-pointer px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-all"
             >
               Cancel
             </button>
       
             <button
               onClick={updateStatus}
-              className="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+              className="cursor-pointer px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:opacity-95 shadow-md transition-all"
             >
               Update
             </button>
