@@ -117,7 +117,7 @@ const ClientDetails = () => {
                 <InfoBox label="Phone Number" value={client?.phone} icon={Phone} />
                 <InfoBox label="Email Address" value={client?.email} icon={Mail} />
                 <InfoBox label="Company Name" value={client?.companyName} icon={Building2} />
-                <InfoBox label="Country" value={client?.country} icon={Globe} />
+                <InfoBox label="Country" value={client?.address?.country || "-"} icon={Globe} />
               </div>
 
               <InfoBox label="Full Address" value={formatAddress(client?.address)} icon={MapPin} />

@@ -5,7 +5,6 @@ export interface IClient extends Document {
   name: string;
   email: string;
   phone: string;
-  country: string;
   companyName: string;
   address?: {
     houseBuilding?: string;
@@ -51,11 +50,7 @@ const clientSchema = new Schema<IClient>(
       unique: true,
       match: [/^[0-9]{10,15}$/, "Please provide a valid phone number"],
     },
-    country: {
-      type: String,
-      required: [true, "Country is required"],
-      trim: true,
-    },
+
     companyName: {
       type: String,
       required: [true, "Company name is required"],
@@ -67,7 +62,11 @@ const clientSchema = new Schema<IClient>(
       cityTown: { type: String, trim: true },
       state: { type: String, trim: true },
       pincode: { type: String, trim: true },
-      country: { type: String, trim: true },
+      country: {
+        type: String,
+        trim: true,
+        required: [true, "Country is required"],
+      },
     },
     isActive: {
       type: Boolean,

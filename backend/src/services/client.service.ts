@@ -36,9 +36,9 @@ export const getClientsService = async (query: any) => {
     match.$or = [
       { name: { $regex: search, $options: "i" } },
       { clientCode: { $regex: search, $options: "i" } },
-      { country: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
       { phone: { $regex: search, $options: "i" } },
+      { companyName: { $regex: search, $options: "i" } },
       { "address.cityTown": { $regex: search, $options: "i" } },
       { "address.state": { $regex: search, $options: "i" } },
       { "address.country": { $regex: search, $options: "i" } },

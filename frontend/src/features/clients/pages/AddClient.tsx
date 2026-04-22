@@ -22,7 +22,6 @@ const AddClient = () => {
     name: "",
     phone: "",
     email: "",
-    country: "",
     companyName: "",
     address: {
       houseBuilding: "",
@@ -52,6 +51,7 @@ const AddClient = () => {
     if (!form.phone.trim()) return "Phone is required";
     if (!form.email.trim()) return "Email is required";
     if (!form.companyName.trim()) return "Company name is required";
+    if (!form.address.country.trim()) return "Country is required";
     return null;
   };
 

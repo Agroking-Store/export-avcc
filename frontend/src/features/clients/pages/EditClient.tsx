@@ -54,7 +54,7 @@ const EditClient = () => {
       setForm({
         name: client.name || "",
         phone: client.phone || "",
-        country: client.country || "",
+        country: client.address?.country || "",
         email: client.email || "",
         address: formatAddress(client.address),
         companyName: client.companyName || "",
@@ -88,14 +88,17 @@ const EditClient = () => {
       const addressParts = form.address.split(",").map((item) => item.trim());
       
       const payload = {
-        ...form,
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        companyName: form.companyName,
         address: {
           houseBuilding: addressParts[0] || "",
           streetArea: addressParts[1] || "",
           cityTown: addressParts[2] || "",
           state: addressParts[3] || "",
           pincode: addressParts[4] || "",
-          country: addressParts[5] || form.country || "",
+          country: form.country || addressParts[5] || "",
         },
       };
       

@@ -7,7 +7,10 @@ const clientAddressDetailsSchema = Joi.object({
   cityTown: Joi.string().trim().allow(""),
   state: Joi.string().trim().allow(""),
   pincode: Joi.string().trim().allow(""),
-  country: Joi.string().trim().allow(""),
+  country: Joi.string().trim().required().messages({
+    "any.required": "Country is required",
+    "string.empty": "Country is required",
+  }),
 });
 
 const createClientSchema = Joi.object<CreateClientDto>({
@@ -23,9 +26,6 @@ const createClientSchema = Joi.object<CreateClientDto>({
       "string.pattern.base": "Phone must be 10-15 digits",
       "any.required": "Phone is required",
     }),
-  country: Joi.string().trim().required().messages({
-    "any.required": "Country is required",
-  }),
   email: Joi.string().trim().email().required().messages({
     "string.email": "Invalid email format",
     "any.required": "Email is required",
@@ -44,7 +44,6 @@ const updateClientSchema = Joi.object<UpdateClientDto>({
     .messages({
       "string.pattern.base": "Phone must be 10-15 digits",
     }),
-  country: Joi.string().trim(),
   email: Joi.string().trim().email(),
   companyName: Joi.string().trim(),
   address: clientAddressDetailsSchema,
