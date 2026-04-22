@@ -212,6 +212,13 @@ export const uploadVehicleDocuments = async (req: Request, res: Response) => {
         { new: true },
       );
 
+      if (!updatedBooking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking vehicle not found after update",
+        });
+      }
+
       return res.json({
         success: true,
         message: "Booking Vehicle documents updated",
@@ -263,7 +270,10 @@ export const uploadVehicleDocuments = async (req: Request, res: Response) => {
 
 export const getVehicleFile = async (req: Request, res: Response) => {
   try {
-    const { id, field } = req.params;
+    const { id } = req.params;
+    const field = Array.isArray(req.params.field)
+      ? req.params.field[0]
+      : req.params.field;
     const { download } = req.query; // Check if user wants to force download
 
     // 1. Find the vehicle in either Bookings or Standalone

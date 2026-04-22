@@ -214,8 +214,8 @@ const DealerOrderDetails = () => {
       }
       setVehicleStatuses(statusMap);
       setBookingMap(bMap);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch vehicle statuses");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to fetch vehicle statuses");
       if (order?.vehicles) {
         const statusMap: { [key: string]: string } = {};
         let globalIndex = 0;

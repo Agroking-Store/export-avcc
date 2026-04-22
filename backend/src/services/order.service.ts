@@ -338,7 +338,7 @@ export const updateOrderStatusService = async (
     );
   }
 
-  order.status = status;
+  order.status = status as IOrder["status"];
   await order.save();
 
   return order;

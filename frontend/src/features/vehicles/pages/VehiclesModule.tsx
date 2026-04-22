@@ -5,6 +5,13 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Pages
 import Vehicles from "./Vehicles";
 import VehicleList from "./VehicleList";
+import AddVehicle from "./AddVehicle";
+import EditVehicle from "./EditVehicle";
+import VehicleItemDetails from "./VehicleItemDetails";
+import VehicleOrdersList from "./VehicleOrdersList";
+import AddVehicleOrder from "./AddVehicleOrder";
+import EditVehicleOrder from "./EditVehicleOrder";
+import VehicleOrderDetails from "./VehicleOrderDetails";
 import VehicleDetails from "./VehicleDetails";
 import VehicleView from "./VehicleView";
 
@@ -43,6 +50,13 @@ const VehiclesModule = () => {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Vehicles />} />
             <Route path="list" element={<VehicleList />} />
+            <Route path="add" element={<AddVehicle />} />
+            <Route path="list/:id" element={<VehicleItemDetails />} />
+            <Route path="edit/:id" element={<EditVehicle />} />
+            <Route path="orders" element={<VehicleOrdersList />} />
+            <Route path="orders/add" element={<AddVehicleOrder />} />
+            <Route path="orders/:id" element={<VehicleOrderDetails />} />
+            <Route path="orders/edit/:id" element={<EditVehicleOrder />} />
             <Route path="view/:id" element={<VehicleDetails />} />
             <Route path="view/:id/view-vehicle/:vehicleIndex" element={<VehicleView />} />
 
