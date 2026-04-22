@@ -30,7 +30,6 @@ export interface IBooking extends Document {
   dealerId: mongoose.Types.ObjectId;
   date: string;
   vehicles: IBookingVehicle[];
-  bookingAmount: number;
   status:
     | "To be Sourced"
     | "Booked"

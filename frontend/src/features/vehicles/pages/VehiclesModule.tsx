@@ -12,6 +12,9 @@ import VehicleOrdersList from "./VehicleOrdersList";
 import AddVehicleOrder from "./AddVehicleOrder";
 import EditVehicleOrder from "./EditVehicleOrder";
 import VehicleOrderDetails from "./VehicleOrderDetails";
+import VehicleOrderVehicleBooking from "./VehicleOrderVehicleBooking";
+import VehicleOrderVehicleEdit from "./VehicleOrderVehicleEdit";
+import VehicleOrderVehicleView from "./VehicleOrderVehicleView";
 import VehicleDetails from "./VehicleDetails";
 import VehicleView from "./VehicleView";
 
@@ -57,6 +60,9 @@ const VehiclesModule = () => {
             <Route path="orders/add" element={<AddVehicleOrder />} />
             <Route path="orders/:id" element={<VehicleOrderDetails />} />
             <Route path="orders/edit/:id" element={<EditVehicleOrder />} />
+            <Route path="orders/:id/book/:vehicleIndex" element={<VehicleOrderVehicleBooking />} />
+            <Route path="orders/:id/unit-edit/:vehicleIndex" element={<VehicleOrderVehicleEdit />} />
+            <Route path="orders/:id/unit-view/:vehicleIndex" element={<VehicleOrderVehicleView />} />
             <Route path="view/:id" element={<VehicleDetails />} />
             <Route path="view/:id/view-vehicle/:vehicleIndex" element={<VehicleView />} />
 
