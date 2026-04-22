@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -7,12 +7,31 @@ import {
   Car,
   Save,
   User,
-  X,
+  Users,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import {
   VehicleListItem,
   vehicleManagementApi,
 } from "../vehicleManagementApi";
+import { Button } from "@/components/ui/button";
+import { Calendar as ShadCalendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 const AddVehicleOrder = () => {
   const navigate = useNavigate();
@@ -26,8 +45,13 @@ const AddVehicleOrder = () => {
     clientId: "",
     vehicleId: "",
     orderDate: new Date().toISOString().split("T")[0],
-    quantity: "1",
+    quantity: "",
   });
+
+  // New states for combobox and calendar
+  const [clientOpen, setClientOpen] = useState(false);
+  const [vehicleOpen, setVehicleOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -51,10 +75,28 @@ const AddVehicleOrder = () => {
     [vehicles, form.vehicleId],
   );
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  const handleInputChange = useCallback((
+    field: string, 
+    value: any
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleClientSelect = (clientId: string) => {
+    handleInputChange("clientId", clientId);
+    setClientOpen(false);
+  };
+
+  const handleVehicleSelect = (vehicleId: string) => {
+    handleInputChange("vehicleId", vehicleId);
+    setVehicleOpen(false);
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      handleInputChange("orderDate", date.toISOString().split("T")[0]);
+      setDateOpen(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,6 +145,14 @@ const AddVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
+  const selectedClientName = clients.find(
+    (client) => client._id === form.clientId
+  )?.name;
+
+  const selectedVehicleName = selectedVehicle 
+    ? `${selectedVehicle.brandName} ${selectedVehicle.modelName} - ${selectedVehicle.variant} (${selectedVehicle.color})`
+    : "";
+
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
       <div className="flex justify-between items-center mb-10">
@@ -135,57 +185,144 @@ const AddVehicleOrder = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className={labelStyle}>
-                <User size={14} className="text-indigo-500" /> Client
+                <Users size={14} className="text-indigo-500" /> Client
               </label>
-              <select
-                name="clientId"
-                value={form.clientId}
-                onChange={handleChange}
-                className={`${inputStyle} cursor-pointer`}
-                disabled={optionsLoading}
-              >
-                <option value="">Select client</option>
-                {clients.map((client) => (
-                  <option key={client._id} value={client._id}>
-                    {client.name}
-                    {client.companyName ? ` - ${client.companyName}` : ""}
-                  </option>
-                ))}
-              </select>
+              <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      inputStyle,
+                      "flex items-center justify-between cursor-pointer",
+                    )}
+                    disabled={optionsLoading}
+                  >
+                    <span
+                      className={
+                        selectedClientName ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"
+                      }
+                    >
+                      {selectedClientName || "Choose client..."}
+                    </span>
+                    <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search client..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
+                            key={client._id}
+                            value={client.name}
+                            onSelect={() => handleClientSelect(client._id)}
+                          >
+                            {client.name}
+                            {client.companyName ? ` - ${client.companyName}` : ""}
+                            <Check
+                              className={cn(
+                                "ml-auto h-4 w-4",
+                                form.clientId === client._id
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
               <label className={labelStyle}>
                 <Calendar size={14} className="text-blue-400" /> Date
               </label>
-              <input
-                name="orderDate"
-                type="date"
-                value={form.orderDate}
-                onChange={handleChange}
-                className={`${inputStyle} cursor-pointer`}
-              />
+              <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      inputStyle,
+                      "flex items-center justify-between cursor-pointer",
+                    )}
+                  >
+                    <span className={form.orderDate ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
+                      {form.orderDate ? new Date(form.orderDate).toLocaleDateString('en-GB') : "Pick a date"}
+                    </span>
+                    <Calendar size={16} className="text-[#A0AEC0]" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <ShadCalendar
+                    mode="single"
+                    selected={form.orderDate ? new Date(form.orderDate) : undefined}
+                    onSelect={handleCalendarSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
               <label className={labelStyle}>
                 <Car size={14} className="text-emerald-500" /> Vehicle
               </label>
-              <select
-                name="vehicleId"
-                value={form.vehicleId}
-                onChange={handleChange}
-                className={`${inputStyle} cursor-pointer`}
-                disabled={optionsLoading}
-              >
-                <option value="">Select vehicle</option>
-                {vehicles.map((vehicle) => (
-                  <option key={vehicle._id} value={vehicle._id}>
-                    {vehicle.brandName} {vehicle.modelName} - {vehicle.variant} (
-                    {vehicle.color})
-                  </option>
-                ))}
-              </select>
+              <Popover open={vehicleOpen} onOpenChange={setVehicleOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      inputStyle,
+                      "flex items-center justify-between cursor-pointer",
+                    )}
+                    disabled={optionsLoading}
+                  >
+                    <span
+                      className={
+                        selectedVehicleName ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"
+                      }
+                    >
+                      {selectedVehicleName || "Choose vehicle..."}
+                    </span>
+                    <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search vehicle..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No vehicle found.</CommandEmpty>
+                      <CommandGroup>
+                        {vehicles.map((vehicle) => {
+                          const vehicleLabel = `${vehicle.brandName} ${vehicle.modelName} - ${vehicle.variant} (${vehicle.color})`;
+                          return (
+                            <CommandItem
+                              key={vehicle._id}
+                              value={vehicleLabel}
+                              onSelect={() => handleVehicleSelect(vehicle._id)}
+                            >
+                              {vehicleLabel}
+                              <Check
+                                className={cn(
+                                  "ml-auto h-4 w-4",
+                                  form.vehicleId === vehicle._id
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
@@ -198,8 +335,8 @@ const AddVehicleOrder = () => {
                 min="1"
                 max={selectedVehicle?.quantity || 1}
                 value={form.quantity}
-                onChange={handleChange}
-                className={inputStyle}
+                onChange={(e) => handleInputChange("quantity", e.target.value)}
+                className={`${inputStyle} w-32`}
                 placeholder="1"
               />
               {selectedVehicle && (

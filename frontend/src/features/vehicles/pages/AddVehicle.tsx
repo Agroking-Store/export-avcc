@@ -19,7 +19,7 @@ const AddVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
-    quantity: "1",
+    quantity: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
