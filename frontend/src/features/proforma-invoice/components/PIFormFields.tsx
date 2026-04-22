@@ -419,12 +419,15 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
         <h3 className={sectionTitleClass}>Document Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelClass}>Voucher No (PI Number)</label>
+            <label className={labelClass}>PI Number (Auto Generated)</label>
             <input
               value={form.piNumber}
-              onChange={(e) => handlePiNumberChange(e.target.value)} // Allow editing
-              className={inputClass} // Use standard input class
-              placeholder="e.g. PI-2026-001"
+              onChange={(e) =>
+                handlePiNumberChange(e.target.value)
+              }
+              readOnly
+              className={`${inputClass} bg-gray-50 cursor-not-allowed`}
+              placeholder="Auto Generated"
             />
           </div>
           <div>

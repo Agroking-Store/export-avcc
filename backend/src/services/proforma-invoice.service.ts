@@ -73,34 +73,76 @@ const numberToWords = (num: number): string => {
 };
 
 // Helper to generate the next PI number based on company/year/sequential
-const generateNextPiNumber = async (companyId: string): Promise<string> => {
+const generateNextPiNumber = async (
+  companyId: string
+): Promise<string> => {
   if (!companyId) {
-    throw new Error("Company (Exporter) is required to generate PI number.");
+    throw new Error(
+      "Company is required."
+    );
   }
-  const company = await Company.findById(companyId);
+
+  const company =
+    await Company.findById(
+      companyId
+    );
+
   if (!company) {
-    throw new Error("Company (Exporter) not found.");
+    throw new Error(
+      "Company not found."
+    );
   }
 
-  const companyShortCode = getCompanyShortCode(company.name);
-  const financialYear = getFinancialYear(new Date()); // Use current date for PI generation
+  const initials =
+    getCompanyShortCode(
+      company.name
+    );
 
-  const piNumberPrefix = `${companyShortCode}/${financialYear}/`;
+  const fy =
+    getFinancialYear(
+      new Date()
+    );
 
-  const lastPI = await ProformaInvoice.findOne({
-    company_id: companyId, // Filter by specific company
-    piNumber: { $regex: `^${piNumberPrefix}\\d+$` }, // Match PI numbers starting with the prefix and ending with digits
-  }).sort({ piNumber: -1 }); // Sort by piNumber descending to get the highest sequential number
+  const prefix = `${initials}/EX/PI/${fy}/`;
 
-  let nextSequentialNumber = 1;
-  if (lastPI && lastPI.piNumber) {
-    const lastPart = lastPI.piNumber.split("/").pop(); // Get the last part (e.g., "10")
-    if (lastPart && !isNaN(Number(lastPart))) {
-      nextSequentialNumber = Number(lastPart) + 1;
-    }
+  const invoices =
+  await ProformaInvoice.find({
+    company_id: companyId,
+    piNumber: {
+      $regex: `^${prefix}\\d+$`,
+    },
+  });
+
+let maxSeq = 0;
+
+invoices.forEach((pi) => {
+  if (!pi.piNumber)
+    return;
+
+  const parts =
+    pi.piNumber.split("/");
+
+  const num =
+    Number(
+      parts[
+        parts.length - 1
+      ]
+    );
+
+  if (
+    !isNaN(num) &&
+    num > maxSeq
+  ) {
+    maxSeq = num;
   }
+});
 
-  return `${piNumberPrefix}${String(nextSequentialNumber).padStart(2, "0")}`; // Pad with leading zero if needed, e.g., 01, 02, ..., 10
+const nextSeq =
+  maxSeq + 1;
+
+  return `${prefix}${String(
+    nextSeq
+  ).padStart(3, "0")}`;
 };
 
 // New service to get the suggested next PI number
@@ -111,25 +153,40 @@ export const getSuggestedNextPiNumberService = async (companyId: string) => {
 // Helper to get financial year from a date
 const getFinancialYear = (date: Date): string => {
   const year = date.getFullYear();
-  const month = date.getMonth(); // 0-indexed (0 for Jan, 11 for Dec)
+  const month = date.getMonth();
 
   if (month >= 3) {
-    // April (3) to December (11)
-    return `${year}-${String(year + 1).slice(2)}`;
+    const start = String(year).slice(2);
+    const end = String(year + 1).slice(2);
+    return `${start}-${end}`;
   } else {
-    // January (0) to March (2)
-    return `${year - 1}-${String(year).slice(2)}`;
+    const start = String(year - 1).slice(2);
+    const end = String(year).slice(2);
+    return `${start}-${end}`;
   }
 };
 
 // Helper to derive company short code
-const getCompanyShortCode = (companyName: string): string => {
+const getCompanyShortCode = (
+  companyName: string
+): string => {
   if (!companyName) return "XX";
-  const words = companyName.split(" ");
-  if (words.length > 0 && words[0].length >= 2) {
-    return words[0].substring(0, 2).toUpperCase();
+
+  const words = companyName
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  if (words.length >= 2) {
+    return (
+      words[0][0] +
+      words[1][0]
+    ).toUpperCase();
   }
-  return companyName.substring(0, 2).toUpperCase(); // Fallback for single-word names less than 2 chars
+
+  return companyName
+    .substring(0, 2)
+    .toUpperCase();
 };
 
 // CREATE PI
