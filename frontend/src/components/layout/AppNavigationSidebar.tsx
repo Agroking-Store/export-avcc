@@ -17,9 +17,12 @@ import {
   SidebarGroup,
 } from "../ui/sidebar";
 import { cn } from "@/lib/utils";
+import { ShieldCheck } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
 
 const AppNavigationSidebar: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   const menuItems = [
     {
@@ -42,6 +45,14 @@ const AppNavigationSidebar: React.FC = () => {
     { name: "Dealers", icon: <Truck size={20} />, path: "/dealers/dashboard" },
     { name: "Companies", icon: <Users size={20} />, path: "/companies" },
   ];
+
+  if (user?.role === "admin") {
+    menuItems.push({
+      name: "User Management",
+      icon: <ShieldCheck size={20} />,
+      path: "/user-management",
+    });
+  }
 
   return (
     <>

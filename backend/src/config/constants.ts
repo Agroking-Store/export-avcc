@@ -1,8 +1,12 @@
 export const ROLES = {
   ADMIN: "admin",
-  MANAGER: "manager",
-  EMPLOYEE: "employee",
+  SOURCING: "sourcing_team",
+  ACCOUNTANT: "accountant",
+  CLIENT: "client",
+  DEALER: "dealer",
 } as const;
+
+export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const VEHICLE_STATUS = {
   PENDING: "pending",

@@ -29,6 +29,9 @@ import CompanyModule from "../features/company/pages/CompanyModule";
 // Vehicles
 import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
 
+// Admin
+import UserManagementModule from "../features/admin/pages/UserManagementModule";
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -50,7 +53,7 @@ const AppRoutes: React.FC = () => {
 
           {/* Clients */}
           <Route path="/clients/*" element={<ClientsModule />} />
-          
+
           {/* Orders - Main module route (general order management) */}
           <Route path="/orders/*" element={<OrdersModule />} />
 
@@ -62,6 +65,9 @@ const AppRoutes: React.FC = () => {
 
           {/* Companies */}
           <Route path="/companies/*" element={<CompanyModule />} />
+
+          {/* Admin - User Management */}
+          <Route path="/user-management/*" element={<UserManagementModule />} />
 
           {/* Coming Soon */}
           <Route
