@@ -773,10 +773,6 @@ const VehicleOrderDetails = () => {
                 />
               </div>
 
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-                Payment reference removed as requested. Only dealer amount is needed here.
-              </div>
-
               <button
                 onClick={handleConfirmPayment}
                 disabled={paymentSaving}
