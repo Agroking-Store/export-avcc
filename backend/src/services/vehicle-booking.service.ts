@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { VehicleBooking, VehicleBookingStatus } from "../models/VehicleBooking.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
 
@@ -67,14 +69,31 @@ export const uploadQuotation = async (bookingId: string, filePath: string) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
-  if (!["pending", "rejected"].includes(booking.status)) {
-    throw new Error("Quotation can only be uploaded when status is pending or rejected");
+  if (!["pending", "rejected", "quotation_uploaded"].includes(booking.status)) {
+    throw new Error(
+      "Quotation can only be uploaded when status is pending, rejected, or awaiting approval",
+    );
   }
 
+  const previousQuotation = booking.quotationFile;
   booking.quotationFile = filePath;
   booking.status = "quotation_uploaded";
-  booking.rejectionReason = ""; // clear any previous rejection
-  return await booking.save();
+  booking.rejectionReason = "";
+
+  const updatedBooking = await booking.save();
+
+  if (previousQuotation && previousQuotation !== filePath) {
+    const previousAbsolutePath = path.join(
+      process.cwd(),
+      previousQuotation.replace(/^\/+/, ""),
+    );
+
+    if (fs.existsSync(previousAbsolutePath)) {
+      fs.unlinkSync(previousAbsolutePath);
+    }
+  }
+
+  return updatedBooking;
 };
 
 /**
@@ -113,12 +132,11 @@ export const rejectBooking = async (bookingId: string, reason: string) => {
 };
 
 /**
- * Confirm payment with amount and reference
+ * Confirm payment with amount only
  */
 export const confirmPayment = async (
   bookingId: string,
   amount: number,
-  reference: string,
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
@@ -131,12 +149,8 @@ export const confirmPayment = async (
     throw new Error("Payment amount must be greater than 0");
   }
 
-  if (!reference || !reference.trim()) {
-    throw new Error("Payment reference is required");
-  }
-
   booking.paymentAmount = amount;
-  booking.paymentReference = reference.trim();
+  booking.paymentReference = "";
   booking.status = "payment_done";
   return await booking.save();
 };

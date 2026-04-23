@@ -63,16 +63,11 @@ export const vehicleBookingApi = {
     return response.data as VehicleBookingItem;
   },
 
-  confirmPayment: async (
-    bookingId: string,
-    amount: number,
-    reference: string,
-  ) => {
+  confirmPayment: async (bookingId: string, amount: number) => {
     const response = await api.post(
       `/vehicle-bookings/${bookingId}/confirm-payment`,
       {
         amount,
-        reference,
       },
     );
     return response.data as VehicleBookingItem;

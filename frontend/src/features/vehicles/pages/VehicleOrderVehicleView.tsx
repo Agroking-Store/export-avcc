@@ -6,7 +6,6 @@ import {
   FileText,
   Hash,
   IndianRupee,
-  Package,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -97,12 +96,7 @@ const VehicleOrderVehicleView = () => {
     {
       icon: IndianRupee,
       label: "Payment Amount",
-      value: booking.paymentAmount ? `₹${booking.paymentAmount}` : "-",
-    },
-    {
-      icon: Package,
-      label: "Payment Reference",
-      value: booking.paymentReference || "-",
+      value: booking.paymentAmount ? `Rs. ${booking.paymentAmount}` : "-",
     },
     {
       icon: ShieldCheck,
@@ -141,7 +135,7 @@ const VehicleOrderVehicleView = () => {
             onClick={() => navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
-            <Package size={16} />
+            <Truck size={16} />
             Edit
           </button>
           <button

@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { Request, Response } from "express";
 import {
   getBookingsByOrderId,
@@ -43,6 +45,19 @@ export const uploadQuotationHandler = async (req: Request, res: Response) => {
     const booking = await uploadQuotation(req.params.id as string, filePath);
     res.json(booking);
   } catch (error: any) {
+    if (req.file?.filename) {
+      const uploadedAbsolutePath = path.join(
+        process.cwd(),
+        "uploads",
+        "quotations",
+        req.file.filename,
+      );
+
+      if (fs.existsSync(uploadedAbsolutePath)) {
+        fs.unlinkSync(uploadedAbsolutePath);
+      }
+    }
+
     res.status(400).json({ message: error.message });
   }
 };
@@ -68,11 +83,10 @@ export const rejectHandler = async (req: Request, res: Response) => {
 
 export const confirmPaymentHandler = async (req: Request, res: Response) => {
   try {
-    const { amount, reference } = req.body;
+    const { amount } = req.body;
     const booking = await confirmPayment(
       req.params.id as string,
       Number(amount),
-      reference,
     );
     res.json(booking);
   } catch (error: any) {
