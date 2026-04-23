@@ -3,16 +3,16 @@ import { VehicleListItem } from "../models/VehicleListItem.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
 
 interface CreateVehicleOrderDto {
-  clientId: string;
+  clientId?: string;
   vehicleId: string;
-  orderDate: string;
+  orderDate?: string;
   quantity: number;
 }
 
 interface UpdateVehicleOrderDto {
-  clientId: string;
+  clientId?: string;
   vehicleId: string;
-  orderDate: string;
+  orderDate?: string;
   quantity: number;
   status?: "Pending" | "Confirmed" | "Completed";
 }
@@ -31,17 +31,18 @@ const generateVehicleOrderNumber = async (): Promise<string> => {
 };
 
 export const createVehicleOrderService = async (data: CreateVehicleOrderDto) => {
-  const [client, vehicle] = await Promise.all([
-    Client.findById(data.clientId),
-    VehicleListItem.findById(data.vehicleId),
-  ]);
-
-  if (!client) {
-    throw new Error("Client not found");
-  }
+  const vehicle = await VehicleListItem.findById(data.vehicleId);
 
   if (!vehicle) {
     throw new Error("Vehicle not found");
+  }
+
+  let client = null;
+  if (data.clientId) {
+    client = await Client.findById(data.clientId);
+    if (!client) {
+      throw new Error("Client not found");
+    }
   }
 
   const orderQuantity = Number(data.quantity);
@@ -51,24 +52,32 @@ export const createVehicleOrderService = async (data: CreateVehicleOrderDto) => 
 
   const orderNumber = await generateVehicleOrderNumber();
 
-  const order = new VehicleOrder({
+  const orderData: any = {
     orderNumber,
-    clientId: client._id as any,
     vehicleId: vehicle._id as any,
-    orderDate: new Date(data.orderDate),
     quantity: orderQuantity,
     status: "Pending",
-    clientSnapshot: {
-      name: client.name,
-      companyName: client.companyName,
-    },
     vehicleSnapshot: {
       brandName: vehicle.brandName,
       modelName: vehicle.modelName,
       variant: vehicle.variant,
       color: vehicle.color,
     },
-  });
+  };
+
+  if (client) {
+    orderData.clientId = client._id as any;
+    orderData.clientSnapshot = {
+      name: client.name,
+      companyName: client.companyName,
+    };
+  }
+
+  if (data.orderDate) {
+    orderData.orderDate = new Date(data.orderDate);
+  }
+
+  const order = new VehicleOrder(orderData);
 
   await order.save();
 
@@ -86,7 +95,6 @@ export const getVehicleOrdersService = async (query: any) => {
   if (search) {
     match.$or = [
       { orderNumber: { $regex: search, $options: "i" } },
-      { "clientSnapshot.name": { $regex: search, $options: "i" } },
       { "vehicleSnapshot.brandName": { $regex: search, $options: "i" } },
       { "vehicleSnapshot.modelName": { $regex: search, $options: "i" } },
       { "vehicleSnapshot.variant": { $regex: search, $options: "i" } },
@@ -130,17 +138,17 @@ export const updateVehicleOrderService = async (
     throw new Error("Vehicle order not found");
   }
 
-  const [client, vehicle] = await Promise.all([
-    Client.findById(data.clientId),
-    VehicleListItem.findById(data.vehicleId),
-  ]);
-
-  if (!client) {
-    throw new Error("Client not found");
-  }
-
+  const vehicle = await VehicleListItem.findById(data.vehicleId);
   if (!vehicle) {
     throw new Error("Vehicle not found");
+  }
+
+  let client = null;
+  if (data.clientId) {
+    client = await Client.findById(data.clientId);
+    if (!client) {
+      throw new Error("Client not found");
+    }
   }
 
   const requestedQuantity = Number(data.quantity);
@@ -148,15 +156,21 @@ export const updateVehicleOrderService = async (
     throw new Error("Quantity must be at least 1");
   }
 
-  order.clientId = client._id as any;
+  if (client) {
+    order.clientId = client._id as any;
+    order.clientSnapshot = {
+      name: client.name,
+      companyName: client.companyName,
+    };
+  } else {
+    order.clientId = undefined;
+    order.clientSnapshot = undefined;
+  }
+
   order.vehicleId = vehicle._id as any;
-  order.orderDate = new Date(data.orderDate);
+  order.orderDate = data.orderDate ? new Date(data.orderDate) : undefined;
   order.quantity = requestedQuantity;
   order.status = data.status || order.status;
-  order.clientSnapshot = {
-    name: client.name,
-    companyName: client.companyName,
-  };
   order.vehicleSnapshot = {
     brandName: vehicle.brandName,
     modelName: vehicle.modelName,

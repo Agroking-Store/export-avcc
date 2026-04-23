@@ -14,12 +14,12 @@ export interface VehicleListItem {
 export interface VehicleOrderItem {
   _id: string;
   orderNumber: string;
-  clientId: string;
+  clientId?: string;
   vehicleId: string;
-  orderDate: string;
+  orderDate?: string;
   quantity: number;
   status: "Pending" | "Confirmed" | "Completed";
-  clientSnapshot: {
+  clientSnapshot?: {
     name: string;
     companyName?: string;
   };
@@ -91,9 +91,9 @@ export const vehicleManagementApi = {
   },
 
   createVehicleOrder: async (payload: {
-    clientId: string;
+    clientId?: string;
     vehicleId: string;
-    orderDate: string;
+    orderDate?: string;
     quantity: number;
   }) => {
     const response = await api.post("/vehicle-orders", payload);
@@ -108,9 +108,9 @@ export const vehicleManagementApi = {
   updateVehicleOrder: async (
     id: string,
     payload: {
-      clientId: string;
+      clientId?: string;
       vehicleId: string;
-      orderDate: string;
+      orderDate?: string;
       quantity: number;
       status?: "Pending" | "Confirmed" | "Completed";
     },

@@ -10,14 +10,14 @@ export const createVehicleOrder = async (req: Request, res: Response) => {
   try {
     const { clientId, vehicleId, orderDate, quantity } = req.body;
 
-    if (!clientId || !vehicleId || !orderDate || !quantity) {
-      throw new Error("Client, vehicle, date, and quantity are required");
+    if (!vehicleId || !quantity) {
+      throw new Error("Vehicle and quantity are required");
     }
 
     const order = await createVehicleOrderService({
-      clientId,
+      clientId: clientId || undefined,
       vehicleId,
-      orderDate,
+      orderDate: orderDate || undefined,
       quantity: Number(quantity),
     });
 
@@ -49,14 +49,14 @@ export const updateVehicleOrder = async (req: Request, res: Response) => {
   try {
     const { clientId, vehicleId, orderDate, quantity, status } = req.body;
 
-    if (!clientId || !vehicleId || !orderDate || !quantity) {
-      throw new Error("Client, vehicle, date, and quantity are required");
+    if (!vehicleId || !quantity) {
+      throw new Error("Vehicle and quantity are required");
     }
 
     const order = await updateVehicleOrderService(req.params.id as string, {
-      clientId,
+      clientId: clientId || undefined,
       vehicleId,
-      orderDate,
+      orderDate: orderDate || undefined,
       quantity: Number(quantity),
       status,
     });

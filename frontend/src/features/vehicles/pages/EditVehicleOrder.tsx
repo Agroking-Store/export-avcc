@@ -3,11 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   ArrowLeft,
-  Calendar,
   Car,
   Save,
-  User,
-  Users,
   ChevronsUpDown,
   Check,
 } from "lucide-react";
@@ -15,8 +12,6 @@ import {
   VehicleListItem,
   vehicleManagementApi,
 } from "../vehicleManagementApi";
-import { Button } from "@/components/ui/button";
-import { Calendar as ShadCalendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -38,20 +33,15 @@ const EditVehicleOrder = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
-  const [clients, setClients] = useState<Array<{ _id: string; name: string; companyName?: string }>>([]);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
   const [form, setForm] = useState({
-    clientId: "",
     vehicleId: "",
-    orderDate: "",
     quantity: "",
     status: "Pending" as "Pending" | "Confirmed" | "Completed",
   });
 
-  // New states for combobox and calendar
-  const [clientOpen, setClientOpen] = useState(false);
+  // New states for combobox
   const [vehicleOpen, setVehicleOpen] = useState(false);
-  const [dateOpen, setDateOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -62,12 +52,9 @@ const EditVehicleOrder = () => {
           vehicleManagementApi.getVehicleOrderById(id as string),
         ]);
 
-        setClients(options.clients || []);
         setVehicles(options.vehicles || []);
         setForm({
-          clientId: order.clientId,
           vehicleId: order.vehicleId,
-          orderDate: new Date(order.orderDate).toISOString().split("T")[0],
           quantity: String(order.quantity),
           status: order.status,
         });
@@ -93,21 +80,9 @@ const EditVehicleOrder = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleClientSelect = (clientId: string) => {
-    handleInputChange("clientId", clientId);
-    setClientOpen(false);
-  };
-
   const handleVehicleSelect = (vehicleId: string) => {
     handleInputChange("vehicleId", vehicleId);
     setVehicleOpen(false);
-  };
-
-  const handleCalendarSelect = (date: Date | undefined) => {
-    if (date) {
-      handleInputChange("orderDate", date.toISOString().split("T")[0]);
-      setDateOpen(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,9 +91,7 @@ const EditVehicleOrder = () => {
     try {
       setLoading(true);
       await vehicleManagementApi.updateVehicleOrder(id as string, {
-        clientId: form.clientId,
         vehicleId: form.vehicleId,
-        orderDate: form.orderDate,
         quantity: Number(form.quantity),
         status: form.status,
       });
@@ -139,10 +112,6 @@ const EditVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const selectedClientName = clients.find(
-    (client) => client._id === form.clientId
-  )?.name;
-
   const selectedVehicleName = selectedVehicle 
     ? `${selectedVehicle.brandName} ${selectedVehicle.modelName} - ${selectedVehicle.variant} (${selectedVehicle.color})`
     : "";
@@ -152,7 +121,7 @@ const EditVehicleOrder = () => {
       <div className="flex justify-between items-center mb-10">
         <div>
 Edit Required Vehicle
-          <p className="text-sm text-gray-500 mt-1">Update client, vehicle, quantity and status</p>
+          <p className="text-sm text-gray-500 mt-1">Update vehicle, quantity and status</p>
         </div>
 
         <button
@@ -171,87 +140,6 @@ Edit Required Vehicle
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}><Users size={14} className="text-indigo-500" /> Client</label>
-              <Popover open={clientOpen} onOpenChange={setClientOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      inputStyle,
-                      "flex items-center justify-between cursor-pointer",
-                    )}
-                    disabled={optionsLoading}
-                  >
-                    <span
-                      className={
-                        selectedClientName ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"
-                      }
-                    >
-                      {selectedClientName || "Choose client..."}
-                    </span>
-                    <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search client..." className="h-9" />
-                    <CommandList>
-                      <CommandEmpty>No client found.</CommandEmpty>
-                      <CommandGroup>
-                        {clients.map((client) => (
-                          <CommandItem
-                            key={client._id}
-                            value={client.name}
-                            onSelect={() => handleClientSelect(client._id)}
-                          >
-                            {client.name}
-                            {client.companyName ? ` - ${client.companyName}` : ""}
-                            <Check
-                              className={cn(
-                                "ml-auto h-4 w-4",
-                                form.clientId === client._id
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div>
-              <label className={labelStyle}><Calendar size={14} className="text-blue-400" /> Date</label>
-              <Popover open={dateOpen} onOpenChange={setDateOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      inputStyle,
-                      "flex items-center justify-between cursor-pointer",
-                    )}
-                  >
-                    <span className={form.orderDate ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
-                      {form.orderDate ? new Date(form.orderDate).toLocaleDateString('en-GB') : "Pick a date"}
-                    </span>
-                    <Calendar size={16} className="text-[#A0AEC0]" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <ShadCalendar
-                    mode="single"
-                    selected={form.orderDate ? new Date(form.orderDate) : undefined}
-                    onSelect={handleCalendarSelect}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
             <div>
               <label className={labelStyle}><Car size={14} className="text-emerald-500" /> Vehicle</label>
               <Popover open={vehicleOpen} onOpenChange={setVehicleOpen}>

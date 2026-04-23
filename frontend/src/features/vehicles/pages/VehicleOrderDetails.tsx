@@ -2,15 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Calendar,
   Car,
   ClipboardList,
   Eye,
   FilePenLine,
-  Hash,
-  Package,
   PlusCircle,
-  User,
   X,
   Zap,
 } from "lucide-react";
@@ -288,15 +284,7 @@ const VehicleOrderDetails = () => {
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2">
-                    <User size={12} /> Client
-                  </p>
-                  <p className="text-sm font-semibold text-[#2D3748]">
-                    {order.clientSnapshot.name}
-                  </p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
                   <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2">
                     <Car size={12} /> Vehicle
@@ -307,10 +295,10 @@ const VehicleOrderDetails = () => {
                 </div>
                 <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
                   <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2">
-                    <Calendar size={12} /> Order Date
+                    <Car size={12} /> Variant / Color
                   </p>
                   <p className="text-sm font-semibold text-[#2D3748]">
-                    {new Date(order.orderDate).toLocaleDateString()}
+                    {order.vehicleSnapshot.variant} - {order.vehicleSnapshot.color}
                   </p>
                 </div>
               </div>

@@ -2,12 +2,12 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IVehicleOrder extends Document {
   orderNumber: string;
-  clientId: mongoose.Types.ObjectId;
+  clientId?: mongoose.Types.ObjectId;
   vehicleId: mongoose.Types.ObjectId;
-  orderDate: Date;
+  orderDate?: Date;
   quantity: number;
   status: "Pending" | "Confirmed" | "Completed";
-  clientSnapshot: {
+  clientSnapshot?: {
     name: string;
     companyName?: string;
   };
@@ -32,7 +32,7 @@ const vehicleOrderSchema = new Schema<IVehicleOrder>(
     clientId: {
       type: Schema.Types.ObjectId,
       ref: "Client",
-      required: true,
+      required: false,
     },
     vehicleId: {
       type: Schema.Types.ObjectId,
@@ -41,7 +41,7 @@ const vehicleOrderSchema = new Schema<IVehicleOrder>(
     },
     orderDate: {
       type: Date,
-      required: true,
+      required: false,
     },
     quantity: {
       type: Number,
@@ -54,7 +54,7 @@ const vehicleOrderSchema = new Schema<IVehicleOrder>(
       default: "Pending",
     },
     clientSnapshot: {
-      name: { type: String, required: true, trim: true },
+      name: { type: String, required: false, trim: true },
       companyName: { type: String, trim: true },
     },
     vehicleSnapshot: {
