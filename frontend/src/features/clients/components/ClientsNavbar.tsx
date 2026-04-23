@@ -15,12 +15,12 @@ const tabs = [
     path: "/clients/list",
     icon: Users,
   },
-  {
-    key: "orders",
-    label: "Orders",
-    path: "/orders/list",
-    icon: ShoppingCart,
-  },
+  // {
+  //   key: "orders",
+  //   label: "Orders",
+  //   path: "/orders/list",
+  //   icon: ShoppingCart,
+  // },
 ];
 
 const ClientsNavbar: React.FC = () => {
