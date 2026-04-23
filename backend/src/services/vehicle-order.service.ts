@@ -148,22 +148,6 @@ export const updateVehicleOrderService = async (
     throw new Error("Quantity must be at least 1");
   }
 
-  if (isSameVehicle) {
-    // No stock adjustment for same vehicle
-  } else {
-    const previousVehicle = await VehicleListItem.findById(order.vehicleId);
-    if (previousVehicle) {
-      previousVehicle.quantity += order.quantity;
-      previousVehicle.status =
-        previousVehicle.quantity > 0 ? "Available" : "Out of Stock";
-      await previousVehicle.save();
-    }
-
-    vehicle.quantity = availableStock - requestedQuantity;
-    vehicle.status = vehicle.quantity > 0 ? "Available" : "Out of Stock";
-    await vehicle.save();
-  }
-
   order.clientId = client._id as any;
   order.vehicleId = vehicle._id as any;
   order.orderDate = new Date(data.orderDate);
