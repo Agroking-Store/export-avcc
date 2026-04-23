@@ -19,10 +19,12 @@ import {
 } from "../controllers/pdf.controller";
 import { validate } from "../middleware/validate.middleware";
 import { createPIValidationSchema } from "../validations/proforma-invoice.validation";
-import {
-  uploadLC,
-  getLCFile,
-} from "../controllers/proforma-invoice.controller";
+// import {
+//   uploadLC,
+//   getLCFile,
+// } from "../controllers/proforma-invoice.controller";
+import { uploadLC } from "../controllers/lc.controller";
+import { getLCFile } from "../controllers/proforma-invoice.controller";
 import { upload } from "../middleware/upload.middleware";
 
 const router = Router();
@@ -41,6 +43,7 @@ router.get("/:id", getPIById);
 router.put("/:id", validate(createPIValidationSchema), updatePI); // Keep this line
 router.patch("/:id/status", updatePIStatus);
 router.post("/:id/lc", upload.single("lcFile"), uploadLC);
+
 router.get("/:id/lc/view", getLCFile);
 
 export default router;

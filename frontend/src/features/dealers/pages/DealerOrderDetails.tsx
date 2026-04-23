@@ -20,6 +20,26 @@ const STATUS_OPTIONS = [
   "Commercial Invoice Submitted",
 ];
 
+const STATUS_ORDER: { [key: string]: number } = {
+  "To be Sourced": 0,
+  "Booked": 1,
+  "Payment Done": 2,
+  "Transit": 3,
+  "JNPT Warehouse": 4,
+  "Shipped": 5,
+  "Commercial Invoice Submitted": 6
+};
+
+const getValidNextStatuses = (currentStatus: string): string[] => {
+  const currentIndex = STATUS_ORDER[currentStatus];
+  const validNext: string[] = [currentStatus];
+  if (currentIndex + 1 <= 6) {
+    const nextStatus = Object.keys(STATUS_ORDER).find(key => STATUS_ORDER[key] === currentIndex + 1);
+    if (nextStatus) validNext.push(nextStatus);
+  }
+  return validNext.filter(s => s !== "To be Sourced"); // exclude sourcing
+};
+
 interface StatusPopupProps {
   vehicle: { srNo: string; name: string; expandedIndex: number };
   currentStatus: string;
@@ -69,19 +89,24 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
 
         {/* Status options */}
         <div className="space-y-2 mb-5">
-          {STATUS_OPTIONS.map((s) => (
+          {getValidNextStatuses(currentStatus).map((s) => (
             <button
               key={s}
               onClick={() => setSelected(s)}
               className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all ${
                 selected === s
-                  ? "bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-600 dark:text-indigo-300"
+                  ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-300"
                   : "bg-gray-50 border-gray-100 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               {s}
             </button>
           ))}
+          {getValidNextStatuses(currentStatus).length === 1 && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-bold text-center py-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
+              No further status updates available
+            </p>
+          )}
         </div>
 
         {/* Footer */}
@@ -157,9 +182,8 @@ const DealerOrderDetails = () => {
       const data = res.data.order || res.data;
       setOrder(data);
       setStatus(data.status || "Draft");
-    } catch (error) {
-      console.error("Error fetching order", error);
-      toast.error("Order not found");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch order");
     } finally {
       setLoading(false);
     }
@@ -191,7 +215,7 @@ const DealerOrderDetails = () => {
       setVehicleStatuses(statusMap);
       setBookingMap(bMap);
     } catch (error) {
-      console.error("Error fetching vehicle statuses", error);
+      toast.error(error.response?.data?.message || "Failed to fetch vehicle statuses");
       if (order?.vehicles) {
         const statusMap: { [key: string]: string } = {};
         let globalIndex = 0;
@@ -273,7 +297,7 @@ const DealerOrderDetails = () => {
       case "Payment Done": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800";
       case "Transit": return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800";
       case "JNPT Warehouse": return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
-      case "Shipped": return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+      case "Shipped": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800";
       case "Commercial Invoice Submitted": return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800";
       default: return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
     }
@@ -308,13 +332,14 @@ const DealerOrderDetails = () => {
         
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-2.5 rounded-xl shadow-lg border border-blue-500/30 flex items-center group cursor-default">
-            <Hash size={16} className="text-blue-100 mr-2" />
-            <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-blue-200 transition-colors">
+          <div className="bg-[#1e293b] px-6 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
+            <Hash size={16} className="text-blue-400 mr-2" />
+            <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-blue-300 transition-colors">
               {order.orderId}
             </span>
           </div>
           <button
+
             onClick={() => navigate("/dealers/orders")}
             className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-gray-800 hover:text-indigo-600 active:scale-95"
           >
@@ -482,12 +507,7 @@ const DealerOrderDetails = () => {
 
           {/* RIGHT COLUMN */}
           <div className="lg:col-span-3 space-y-6 lg:sticky lg:top-8">
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 shadow-xl border border-blue-500/50">
-              <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1">Order Status</p>
-              <h3 className={`text-2xl font-black ${status === "Draft" ? "text-yellow-300" : status === "Confirmed" ? "text-white" : "text-emerald-300"}`}>
-                {status}
-              </h3>
-            </div>
+
 
             <div className="bg-[#EBF8FF] dark:bg-blue-900/20 rounded-3xl p-6 border border-[#BEE3F8] dark:border-blue-800/50 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
               <p className="text-[10px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">

@@ -1,6 +1,7 @@
 export interface CreateBookingDto {
   dealerId: string;
   date: string;
+  bookingAmount: number;
   vehicles: Array<{
     hsnCode: string;
     name: string;
@@ -23,6 +24,7 @@ export interface CreateBookingDto {
 export interface UpdateBookingDto {
   dealerId?: string;
   date?: string;
+  bookingAmount?: number;
   vehicles?: Array<{
     hsnCode: string;
     name: string;

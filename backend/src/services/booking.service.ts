@@ -65,8 +65,12 @@ export class BookingService {
       'Commercial Invoice Submitted': 6
     };
 
-    if (updateData.status && statusOrder[currentBooking.status] > statusOrder[updateData.status as string]) {
-      throw new Error(`Status can only be updated to current or next stage. Current: ${currentBooking.status}`);
+    if (updateData.status) {
+      const currentIndex = statusOrder[currentBooking.status];
+      const newIndex = statusOrder[updateData.status as string];
+      if (newIndex !== currentIndex && newIndex !== currentIndex + 1) {
+        throw new Error(`Status must be current ("${currentBooking.status}") or next stage only. Cannot skip to "${updateData.status}".`);
+      }
     }
 
     if (updateData.vehicles) {
@@ -98,7 +102,8 @@ export class BookingService {
     }
 
   return await Booking.findByIdAndUpdate(id, updateData, { 
-    returnDocument: 'after'
+    // returnDocument: 'after'
+    new: true,
    }).populate('dealerId', 'name contact');
   }
 

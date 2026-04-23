@@ -30,8 +30,8 @@ const AddDealer = () => {
       await axios.post("http://localhost:5000/api/v1/dealers", form);
       toast.success("Dealer added successfully!");
       navigate("/dealers/list");
-    } catch {
-      toast.error("Failed to add dealer");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add dealer");
     } finally {
       setLoading(false);
     }

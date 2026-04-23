@@ -14,13 +14,30 @@ export interface IBookingVehicle {
   freight: number;
   quantity: number;
   srNo?: string;
+
+  documents?: {
+    form20?: string;
+    form21?: string;
+    form22?: string;
+    tempRegCert?: string;
+    bvCertificate?: string;
+  };
+  isCRTMUploaded?: boolean;
+  isBVUploaded?: boolean;
 }
 
 export interface IBooking extends Document {
   dealerId: mongoose.Types.ObjectId;
   date: string;
   vehicles: IBookingVehicle[];
-status: "To be Sourced" | "Booked" | "Payment Done" | "Transit" | "JNPT Warehouse" | "Shipped" | "Commercial Invoice Submitted";
+  status:
+    | "To be Sourced"
+    | "Booked"
+    | "Payment Done"
+    | "Transit"
+    | "JNPT Warehouse"
+    | "Shipped"
+    | "Commercial Invoice Submitted";
   orderId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +57,15 @@ const bookingVehicleSchema = new Schema<IBookingVehicle>({
   freight: { type: Number, default: 0 },
   quantity: { type: Number, default: 1 },
   srNo: { type: String },
+  documents: {
+    form20: { type: String, default: "" },
+    form21: { type: String, default: "" },
+    form22: { type: String, default: "" },
+    tempRegCert: { type: String, default: "" },
+    bvCertificate: { type: String, default: "" },
+  },
+  isCRTMUploaded: { type: Boolean, default: false },
+  isBVUploaded: { type: Boolean, default: false },
 });
 
 const bookingSchema = new Schema<IBooking>(
@@ -53,21 +79,34 @@ const bookingSchema = new Schema<IBooking>(
     vehicles: [bookingVehicleSchema],
     status: {
       type: String,
-      enum: ["To be Sourced", "Booked", "Payment Done", "Transit", "JNPT Warehouse", "Shipped", "Commercial Invoice Submitted"],
+      enum: [
+        "To be Sourced",
+        "Booked",
+        "Payment Done",
+        "Transit",
+        "JNPT Warehouse",
+        "Shipped",
+        "Commercial Invoice Submitted",
+      ],
       default: "To be Sourced",
     },
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
     },
+    bookingAmount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const Booking: Model<IBooking> = mongoose.model<IBooking>(
   "Booking",
   bookingSchema,
-  "DealerBooking"
+  "DealerBooking",
 );
