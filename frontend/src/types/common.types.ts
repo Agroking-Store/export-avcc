@@ -1,7 +1,12 @@
-export type UserRole = "admin" | "manager" | "employee";
+export type UserRole =
+  | "admin"
+  | "sourcing_team"
+  | "accountant"
+  | "client"
+  | "dealer";
 
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   role: UserRole;
