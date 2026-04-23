@@ -19,7 +19,6 @@ const AddVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
-    quantity: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,10 +38,7 @@ const AddVehicle = () => {
       return;
     }
 
-    if (Number(form.quantity) < 1) {
-      toast.error("Quantity must be at least 1");
-      return;
-    }
+
 
     try {
       setLoading(true);
@@ -51,7 +47,7 @@ const AddVehicle = () => {
         modelName: form.modelName.trim(),
         variant: form.variant.trim(),
         color: form.color.trim(),
-        quantity: Number(form.quantity),
+        quantity: 1,
       });
 
       navigate("/vehicles/list", {
@@ -152,20 +148,6 @@ const AddVehicle = () => {
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className={labelStyle}>
-                <Hash size={14} className="text-amber-500" /> Quantity
-              </label>
-              <input
-                name="quantity"
-                type="number"
-                min="1"
-                value={form.quantity}
-                onChange={handleChange}
-                className={inputStyle}
-                placeholder="1"
-              />
-            </div>
           </div>
         </div>
 

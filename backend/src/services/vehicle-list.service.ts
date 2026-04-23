@@ -65,7 +65,7 @@ export const getVehicleOrderFormOptionsService = async () => {
     Client.find({})
       .select("name companyName")
       .sort({ createdAt: -1 }),
-    VehicleListItem.find({ quantity: { $gt: 0 } })
+    VehicleListItem.find({})
       .select("brandName modelName variant color quantity status")
       .sort({ createdAt: -1 }),
   ]);

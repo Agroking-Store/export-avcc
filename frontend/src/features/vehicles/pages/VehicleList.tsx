@@ -118,7 +118,6 @@ const VehicleList = () => {
                   "Model Name",
                   "Variant",
                   "Color",
-                  "Quantity",
                   "Status",
                   "Actions",
                 ].map((head) => (
@@ -135,13 +134,13 @@ const VehicleList = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-20 text-slate-400 italic">
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
                     Loading vehicles...
                   </td>
                 </tr>
               ) : vehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-20 text-slate-400 italic">
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
                     No vehicles found
                   </td>
                 </tr>
@@ -166,9 +165,6 @@ const VehicleList = () => {
                     </td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
                       {vehicle.color}
-                    </td>
-                    <td className="px-8 py-5 text-center text-sm font-semibold text-slate-600 dark:text-gray-300">
-                      {vehicle.quantity}
                     </td>
                     <td className="px-8 py-5 text-center">
                       <span

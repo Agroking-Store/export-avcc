@@ -49,10 +49,6 @@ export const createVehicleOrderService = async (data: CreateVehicleOrderDto) => 
     throw new Error("Quantity must be at least 1");
   }
 
-  if (orderQuantity > vehicle.quantity) {
-    throw new Error("Requested quantity exceeds available stock");
-  }
-
   const orderNumber = await generateVehicleOrderNumber();
 
   const order = new VehicleOrder({
@@ -74,10 +70,7 @@ export const createVehicleOrderService = async (data: CreateVehicleOrderDto) => 
     },
   });
 
-  vehicle.quantity -= orderQuantity;
-  vehicle.status = vehicle.quantity > 0 ? "Available" : "Out of Stock";
-
-  await Promise.all([order.save(), vehicle.save()]);
+  await order.save();
 
   return order;
 };
@@ -155,19 +148,8 @@ export const updateVehicleOrderService = async (
     throw new Error("Quantity must be at least 1");
   }
 
-  const isSameVehicle = order.vehicleId.toString() === vehicle._id.toString();
-  const availableStock = isSameVehicle
-    ? vehicle.quantity + order.quantity
-    : vehicle.quantity;
-
-  if (requestedQuantity > availableStock) {
-    throw new Error("Requested quantity exceeds available stock");
-  }
-
   if (isSameVehicle) {
-    vehicle.quantity = availableStock - requestedQuantity;
-    vehicle.status = vehicle.quantity > 0 ? "Available" : "Out of Stock";
-    await vehicle.save();
+    // No stock adjustment for same vehicle
   } else {
     const previousVehicle = await VehicleListItem.findById(order.vehicleId);
     if (previousVehicle) {
