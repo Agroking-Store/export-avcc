@@ -313,17 +313,12 @@ Edit Required Vehicle
                 name="quantity" 
                 type="number" 
                 min="1" 
-                max={selectedVehicle?.quantity || undefined} 
                 value={form.quantity} 
                 onChange={(e) => handleInputChange("quantity", e.target.value)}
                 className={inputStyle} 
                 placeholder="0"
               />
-              {selectedVehicle && (
-                <p className="text-xs text-slate-400 mt-2">
-                  Available stock: {selectedVehicle.quantity}
-                </p>
-              )}
+
             </div>
 
             <div className="md:col-span-2">
