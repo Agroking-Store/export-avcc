@@ -34,9 +34,10 @@ td,th{
 
 .title{
   text-align:center;
-  font-size:24px;
-  font-weight:bold;
-  margin:4px 0 8px;
+  font-size:10px;
+  font-weight:normal;
+  margin:0;
+  line-height:1.1;
 }
 
 .mt4{ margin-top:4px; }
@@ -71,7 +72,45 @@ tr, td, div {
 
 <body>
 
-<div class="title">INVOICE</div>
+<table style="width:100%; border-collapse:collapse; margin-bottom:1px;">
+<tr>
+<td style="border:1px solid #000; padding:1px 0;">
+
+<table style="width:100%; border-collapse:collapse;">
+<tr>
+
+<td
+style="
+width:58%;
+border:none;
+text-align:right;
+padding-right:55px;
+font-size:10px;
+font-weight:normal;
+"
+>
+INVOICE
+</td>
+
+<td
+style="
+width:42%;
+border:none;
+text-align:left;
+padding-left:10px;
+font-size:10px;
+font-weight:normal;
+"
+>
+Page - I
+</td>
+
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
 
 <!-- TOP MASTER SECTION -->
 <!-- TOP MASTER SECTION -->
@@ -467,20 +506,20 @@ $ {{amount}}
 
 <!-- AMOUNT IN WORDS -->
 <tr>
-<td width="70%" style="padding:4px;">
+<td width="58%" style="padding:4px;">
 Amount Chargeable<br>
 (In Words)
 </td>
 
-<td width="20%" class="bold center" style="word-break:break-word;">
+<td width="14%" class="bold center" style="word-break:break-word;">
 US DOLLAR $ - {{amountWords}}
 </td>
 
-<td width="6%" class="center">
+<td width="10%" class="center">
 Total
 </td>
 
-<td width="8%" class="bold center">
+<td width="18%" class="bold center">
 $ {{grandTotal}}
 </td>
 </tr>
