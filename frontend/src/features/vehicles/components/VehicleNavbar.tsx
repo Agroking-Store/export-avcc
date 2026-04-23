@@ -17,7 +17,7 @@ const tabs = [
   },
   {
     key: "orders",
-    label: "Vehicle Order",
+    label: "Required Vehicles",
     path: "/vehicles/orders",
     icon: ClipboardList,
   },

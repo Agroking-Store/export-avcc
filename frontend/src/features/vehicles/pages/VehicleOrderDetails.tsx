@@ -274,7 +274,7 @@ const VehicleOrderDetails = () => {
             className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"
           >
             <ArrowLeft size={18} />
-            Back to Orders
+            Back to Required Vehicles
           </button>
         </div>
 
@@ -284,7 +284,7 @@ const VehicleOrderDetails = () => {
               <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
                 <ClipboardList size={20} className="text-blue-500" />
                 <h2 className="text-xl font-bold text-[#1B2559]">
-                  Vehicle Order Information
+                  Required Vehicle Information
                 </h2>
               </div>
 

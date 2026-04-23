@@ -235,8 +235,8 @@ const Vehicles: React.FC = () => {
           onClick={() => navigate('/vehicles/list')} 
         />
         <ActionTile 
-          title="Vehicle Orders" 
-          desc="Create orders from the vehicle list" 
+          title="Required Vehicles"
+          desc="Add required vehicles from the vehicle list"
           icon={<Search size={22} />} 
           onClick={() => navigate('/vehicles/orders')} 
         />

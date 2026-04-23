@@ -125,11 +125,11 @@ const AddVehicleOrder = () => {
       });
 
       navigate("/vehicles/orders", {
-        state: { success: "Vehicle order created successfully" },
+        state: { success: "Required vehicle added successfully" },
       });
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to create vehicle order",
+        error.response?.data?.message || "Failed to add required vehicle",
       );
     } finally {
       setLoading(false);
@@ -155,7 +155,7 @@ const AddVehicleOrder = () => {
       <div className="flex justify-between items-center mb-10">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            Create Vehicle Order
+            Add Required Vehicle
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Link a client with an item from the vehicle list
@@ -166,7 +166,7 @@ const AddVehicleOrder = () => {
           onClick={() => navigate("/vehicles/orders")}
           className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
         >
-          <ArrowLeft size={18} /> Back to Vehicle Orders
+          <ArrowLeft size={18} /> Back to Required Vehicles
         </button>
       </div>
 
@@ -354,7 +354,7 @@ const AddVehicleOrder = () => {
             disabled={loading || optionsLoading}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><Save size={18} /> Create Order</>}
+            {loading ? "Saving..." : <><Save size={18} /> Add Vehicle</>}
           </button>
         </div>
       </form>

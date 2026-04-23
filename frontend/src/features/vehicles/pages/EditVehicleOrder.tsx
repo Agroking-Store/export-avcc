@@ -124,7 +124,7 @@ const EditVehicleOrder = () => {
       });
 
       navigate("/vehicles/orders", {
-        state: { success: "Vehicle order updated successfully" },
+        state: { success: "Required vehicle updated successfully" },
       });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update order");
@@ -151,7 +151,7 @@ const EditVehicleOrder = () => {
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
       <div className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit Vehicle Order</h1>
+Edit Required Vehicle
           <p className="text-sm text-gray-500 mt-1">Update client, vehicle, quantity and status</p>
         </div>
 
@@ -159,7 +159,7 @@ const EditVehicleOrder = () => {
           onClick={() => navigate("/vehicles/orders")}
           className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
         >
-          <ArrowLeft size={18} /> Back to Vehicle Orders
+          <ArrowLeft size={18} /> Back to Required Vehicles
         </button>
       </div>
 

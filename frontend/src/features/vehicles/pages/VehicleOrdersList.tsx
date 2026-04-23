@@ -86,10 +86,10 @@ const VehicleOrdersList = () => {
         <div className="px-8 py-6 flex justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
-              Vehicle Orders
+Required Vehicles
             </h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-              Create and track orders from your dedicated vehicle list
+              Create and track required vehicles from your dedicated vehicle list
             </p>
           </div>
 
@@ -101,8 +101,7 @@ const VehicleOrdersList = () => {
               onClick={() => navigate("/vehicles/orders/add")}
               className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
             >
-              <Plus size={18} strokeWidth={3} />
-              Create Order
+              <Plus size={18} strokeWidth={3} />Add Required Vehicle
             </button>
           </div>
         </div>
@@ -176,7 +175,7 @@ const VehicleOrdersList = () => {
               ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-20 text-slate-400 italic">
-                    No vehicle orders found
+                    No required vehicles found
                   </td>
                 </tr>
               ) : (
