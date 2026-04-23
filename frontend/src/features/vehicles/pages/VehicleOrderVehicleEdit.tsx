@@ -1,220 +1,77 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Calendar,
-  Car,
-  Check,
-  CheckCircle2,
-  ChevronsUpDown,
-  DollarSign,
-  Fuel,
-  Globe,
-  Hash,
-  Info,
-  Package,
-  X,
-} from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, Package, Truck } from "lucide-react";
 import { toast } from "react-toastify";
-import { bookingApi } from "../../../services/bookingApi";
+import { vehicleManagementApi } from "../vehicleManagementApi";
 import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-
-interface VehicleForm {
-  name: string;
-  color: string;
-  hsnCode: string;
-  chassisNo: string;
-  engineNo: string;
-  engineCapacity: string;
-  fuelType: string;
-  countryOfOrigin: string;
-  yom: number;
-  fobAmount: number;
-  freight: number;
-  status: string;
-}
-
-const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
-
-const STATUS_ORDER: Record<string, number> = {
-  "To be Sourced": 0,
-  Booked: 1,
-  "Payment Done": 2,
-  Transit: 3,
-  "JNPT Warehouse": 4,
-  Shipped: 5,
-  "Commercial Invoice Submitted": 6,
-};
-
-const getValidNextStatuses = (currentStatus: string) => {
-  const currentIndex = STATUS_ORDER[currentStatus];
-  const valid = [{ value: currentStatus, label: currentStatus }];
-
-  if (currentIndex + 1 <= 6) {
-    const nextKey = Object.keys(STATUS_ORDER).find(
-      (key) => STATUS_ORDER[key] === currentIndex + 1,
-    );
-
-    if (nextKey) {
-      valid.push({ value: nextKey, label: nextKey });
-    }
-  }
-
-  return valid.filter((status) => status.value !== "To be Sourced");
-};
+  VehicleBookingItem,
+  vehicleBookingApi,
+} from "../../../services/vehicleBookingApi";
 
 const VehicleOrderVehicleEdit = () => {
-  const { id: orderId, vehicleIndex } = useParams();
+  const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  const expandedIndex = parseInt(vehicleIndex || "0", 10);
-  const srNo = searchParams.get("srNo") || String(expandedIndex + 1);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [bookingId, setBookingId] = useState("");
-  const [existingVehicle, setExistingVehicle] = useState<any>(null);
-  const [form, setForm] = useState<VehicleForm>({
-    name: searchParams.get("name") || "",
-    color: searchParams.get("color") || "",
-    hsnCode: "",
-    chassisNo: "",
-    engineNo: "",
-    engineCapacity: "",
-    fuelType: "",
-    countryOfOrigin: "",
-    yom: new Date().getFullYear(),
-    fobAmount: 0,
-    freight: 0,
-    status: "Booked",
-  });
+  const [order, setOrder] = useState<any>(null);
+  const [booking, setBooking] = useState<VehicleBookingItem | null>(null);
+  const [engineNumber, setEngineNumber] = useState("");
+  const [chassisNumber, setChassisNumber] = useState("");
 
   useEffect(() => {
     const load = async () => {
+      if (!id || vehicleIndex === undefined) return;
+
       try {
-        const bookingsRes = await bookingApi.getAll();
-        const bookings = bookingsRes.data?.data || bookingsRes.data || [];
+        setLoading(true);
+        const [orderRes, bookingRes] = await Promise.all([
+          vehicleManagementApi.getVehicleOrderById(id),
+          vehicleBookingApi.getByOrder(id),
+        ]);
 
-        const matchingBooking = bookings.find(
-          (booking: any) =>
-            (booking.orderId === orderId || booking.orderId?._id === orderId) &&
-            booking.vehicles?.some(
-              (vehicle: any) => String(vehicle.srNo) === String(srNo),
-            ),
-        );
+        const currentBooking =
+          bookingRes.find(
+            (item) => item.vehicleIndex === Number(vehicleIndex),
+          ) || null;
 
-        if (!matchingBooking) {
-          throw new Error("Booking not found for this unit");
-        }
-
-        const bookedVehicle = matchingBooking.vehicles.find(
-          (vehicle: any) => String(vehicle.srNo) === String(srNo),
-        );
-
-        setBookingId(matchingBooking._id);
-        setExistingVehicle(bookedVehicle);
-        setForm({
-          name: bookedVehicle?.name || searchParams.get("name") || "",
-          color: bookedVehicle?.color || searchParams.get("color") || "",
-          hsnCode: bookedVehicle?.hsnCode || "",
-          chassisNo: bookedVehicle?.chassisNo || "",
-          engineNo: bookedVehicle?.engineNo || "",
-          engineCapacity: bookedVehicle?.engineCapacity || "",
-          fuelType: bookedVehicle?.fuelType || "",
-          countryOfOrigin: bookedVehicle?.countryOfOrigin || "",
-          yom: bookedVehicle?.yom || new Date().getFullYear(),
-          fobAmount: bookedVehicle?.fobAmount || 0,
-          freight: bookedVehicle?.freight || 0,
-          status: matchingBooking.status || "Booked",
-        });
+        setOrder(orderRes);
+        setBooking(currentBooking);
+        setEngineNumber(currentBooking?.engineNumber || "");
+        setChassisNumber(currentBooking?.chassisNumber || "");
       } catch (error: any) {
-        toast.error(error.message || "Failed to load vehicle");
+        toast.error(error.response?.data?.message || "Failed to load vehicle details");
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [orderId, searchParams, srNo]);
+  }, [id, vehicleIndex]);
 
-  const validateAll = () => {
-    const required: (keyof VehicleForm)[] = [
-      "name",
-      "color",
-      "hsnCode",
-      "chassisNo",
-      "engineNo",
-    ];
-    const nextErrors: Record<string, string> = {};
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
 
-    required.forEach((field) => {
-      if (field === "chassisNo") {
-        if (!form.chassisNo.trim()) {
-          nextErrors.chassisNo = "Chassis is required";
-        } else if (!CHASSIS_REGEX.test(form.chassisNo.trim())) {
-          nextErrors.chassisNo = "Invalid 17-char Chassis";
-        }
-        return;
-      }
-
-      if (!form[field]?.toString().trim()) {
-        nextErrors[field] = `${field} is required`;
-      }
-    });
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateAll()) return;
-    if (!bookingId) {
-      toast.error("Booking not found");
+    if (!booking) return;
+    if (!engineNumber.trim() || !chassisNumber.trim()) {
+      toast.error("Engine number and chassis number are required");
       return;
     }
 
-    setSaving(true);
-
     try {
-      await bookingApi.update(bookingId, {
-        status: form.status,
-        vehicles: [
-          {
-            ...existingVehicle,
-            ...form,
-            chassisNo: form.chassisNo.toUpperCase(),
-            engineNo: form.engineNo.toUpperCase(),
-            srNo,
-          },
-        ],
+      setSaving(true);
+      const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
+        engineNumber: engineNumber.trim(),
+        chassisNumber: chassisNumber.trim(),
       });
 
-      toast.success("Vehicle updated successfully");
-
-      const params = new URLSearchParams({
-        srNo,
-        expandedIndex: String(expandedIndex),
-        name: form.name,
-        color: form.color,
-      });
-
-      navigate(`/vehicles/orders/${orderId}/unit-view/${expandedIndex}?${params.toString()}`);
+      setBooking(updated);
+      toast.success(
+        updated.status === "chassis_received"
+          ? "Engine and chassis numbers saved. Vehicle is now in transit."
+          : "Vehicle details updated",
+      );
+      navigate(`/vehicles/orders/${id}`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update vehicle");
     } finally {
@@ -222,346 +79,124 @@ const VehicleOrderVehicleEdit = () => {
     }
   };
 
-  const inputStyle = (field: string) =>
-    `w-full bg-[#F8F9FB] border ${
-      errors[field] ? "border-red-300" : "border-[#F1F3F6]"
-    } rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all`;
+  const markDelivered = async () => {
+    if (!booking) return;
 
-  const labelStyle =
-    "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider mb-2";
+    try {
+      setSaving(true);
+      await vehicleBookingApi.updateStatus(booking._id, "delivered");
+      toast.success("Vehicle marked as delivered");
+      navigate(`/vehicles/orders/${id}`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update status");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
-        <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-          Loading Unit...
-        </span>
+      <div className="rounded-[24px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+        Loading vehicle details...
+      </div>
+    );
+  }
+
+  if (!order || !booking) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        Vehicle booking details not found.
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-white rounded-[2rem] shadow-sm border border-gray-100 px-6 py-8 md:px-10 md:py-10 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center mb-10">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Edit Vehicle Specs</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Update booked unit details for slot #{srNo}
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+            Unit {booking.vehicleIndex + 1}
+          </p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color}
           </p>
         </div>
+
         <button
-          onClick={() =>
-            navigate(
-              `/vehicles/orders/${orderId}/unit-view/${expandedIndex}?${new URLSearchParams({
-                srNo,
-                expandedIndex: String(expandedIndex),
-                name: form.name,
-                color: form.color,
-              }).toString()}`,
-            )
-          }
-          className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
+          onClick={() => navigate(`/vehicles/orders/${id}`)}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
         >
-          <ArrowLeft size={18} /> Back to Unit View
+          <ArrowLeft size={16} />
+          Back to Order
         </button>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-10">
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
-            <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700">
-              Standard Specifications
-            </h2>
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"
+      >
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Package size={16} />
+              Engine Number
+            </label>
+            <input
+              type="text"
+              value={engineNumber}
+              onChange={(event) => setEngineNumber(event.target.value.toUpperCase())}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
+              placeholder="Enter engine number"
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <label className={labelStyle}>
-                <Car size={14} className="text-indigo-500" /> Vehicle Model / variant
-                Name
-              </label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className={inputStyle("name")}
-                placeholder="TOYOTA LAND CRUISER"
-              />
-              {errors.name && (
-                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
-                  {errors.name}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> HSN Code
-              </label>
-              <input
-                value={form.hsnCode}
-                onChange={(e) => setForm({ ...form, hsnCode: e.target.value })}
-                className={inputStyle("hsnCode")}
-                placeholder="8703.23.01"
-              />
-              {errors.hsnCode && (
-                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
-                  {errors.hsnCode}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelStyle}>Exterior Color</label>
-              <input
-                value={form.color}
-                onChange={(e) => setForm({ ...form, color: e.target.value })}
-                className={inputStyle("color")}
-                placeholder="Pearl White"
-              />
-              {errors.color && (
-                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
-                  {errors.color}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelStyle}>Chassis Number</label>
-              <input
-                value={form.chassisNo}
-                onChange={(e) =>
-                  setForm({ ...form, chassisNo: e.target.value.toUpperCase() })
-                }
-                className={`${inputStyle("chassisNo")} font-mono`}
-                placeholder="JN1AAB300X0123456"
-                maxLength={17}
-              />
-              {errors.chassisNo && (
-                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
-                  {errors.chassisNo}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelStyle}>Engine Number</label>
-              <input
-                value={form.engineNo}
-                onChange={(e) =>
-                  setForm({ ...form, engineNo: e.target.value.toUpperCase() })
-                }
-                className={`${inputStyle("engineNo")} font-mono`}
-                placeholder="1GD-1234567"
-              />
-              {errors.engineNo && (
-                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
-                  {errors.engineNo}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Info size={14} className="text-indigo-400" /> Lifecycle Status
-              </label>
-              <Popover open={statusOpen} onOpenChange={setStatusOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    role="combobox"
-                    aria-expanded={statusOpen}
-                    className={cn(
-                      inputStyle(""),
-                      "flex items-center justify-between cursor-pointer",
-                    )}
-                  >
-                    <span className="text-[#4A5568]">
-                      {form.status || "Select status..."}
-                    </span>
-                    <ChevronsUpDown size={16} className="text-[#A0AEC0] shrink-0" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-[--radix-popover-trigger-width] p-0"
-                  align="start"
-                >
-                  <Command>
-                    <CommandList>
-                      <CommandGroup>
-                        {getValidNextStatuses(form.status).map((status) => (
-                          <CommandItem
-                            key={status.value}
-                            value={status.value}
-                            onSelect={() => {
-                              setForm({ ...form, status: status.value });
-                              setStatusOpen(false);
-                            }}
-                          >
-                            {status.label}
-                            <Check
-                              className={cn(
-                                "ml-auto h-4 w-4",
-                                form.status === status.value
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Truck size={16} />
+              Chassis Number
+            </label>
+            <input
+              type="text"
+              value={chassisNumber}
+              onChange={(event) => setChassisNumber(event.target.value.toUpperCase())}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
+              placeholder="Enter chassis number"
+            />
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
-            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700">
-              Additional Build Parameters
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div>
-              <label className={labelStyle}>
-                <Fuel size={14} className="text-blue-400" /> Fuel Type
-              </label>
-              <input
-                value={form.fuelType}
-                onChange={(e) => setForm({ ...form, fuelType: e.target.value })}
-                className={inputStyle("")}
-                placeholder="DIESEL"
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Globe size={14} className="text-gray-400" /> Origin
-              </label>
-              <input
-                value={form.countryOfOrigin}
-                onChange={(e) =>
-                  setForm({ ...form, countryOfOrigin: e.target.value })
-                }
-                className={inputStyle("")}
-                placeholder="JAPAN"
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Package size={14} className="text-amber-500" /> Engine Capacity
-              </label>
-              <input
-                value={form.engineCapacity}
-                onChange={(e) =>
-                  setForm({ ...form, engineCapacity: e.target.value })
-                }
-                className={inputStyle("")}
-                placeholder="2755cc"
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Calendar size={14} className="text-blue-400" /> MFG Year
-              </label>
-              <input
-                type="number"
-                value={form.yom}
-                onChange={(e) =>
-                  setForm({ ...form, yom: parseInt(e.target.value, 10) || 0 })
-                }
-                className={inputStyle("")}
-              />
-            </div>
-          </div>
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          Current status: <span className="font-semibold text-slate-900">{booking.status}</span>
+          <p className="mt-1">
+            Once both engine and chassis numbers are saved after payment, status moves to
+            <span className="font-semibold text-slate-900"> chassis_received</span>.
+          </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
-            <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700">
-              Financial Adjustments
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>
-                <DollarSign size={14} className="text-emerald-600" /> FOB Amount
-                (USD)
-              </label>
-              <input
-                type="number"
-                value={form.fobAmount}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    fobAmount: parseFloat(e.target.value) || 0,
-                  })
-                }
-                className={inputStyle("")}
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <DollarSign size={14} className="text-blue-600" /> Freight Charges
-                (USD)
-              </label>
-              <input
-                type="number"
-                value={form.freight}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    freight: parseFloat(e.target.value) || 0,
-                  })
-                }
-                className={inputStyle("")}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                `/vehicles/orders/${orderId}/unit-view/${expandedIndex}?${new URLSearchParams({
-                  srNo,
-                  expandedIndex: String(expandedIndex),
-                  name: form.name,
-                  color: form.color,
-                }).toString()}`,
-              )
-            }
-            className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-all"
-          >
-            <X size={16} /> Discard
-          </button>
-
+        <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="submit"
             disabled={saving}
-            className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? (
-              "Saving..."
-            ) : (
-              <>
-                <CheckCircle2 size={18} /> Save Changes
-              </>
-            )}
+            <CheckCircle2 size={16} />
+            Save Details
           </button>
+
+          {booking.status === "chassis_received" && (
+            <button
+              type="button"
+              onClick={markDelivered}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Truck size={16} />
+              Mark Delivered
+            </button>
+          )}
         </div>
       </form>
     </div>

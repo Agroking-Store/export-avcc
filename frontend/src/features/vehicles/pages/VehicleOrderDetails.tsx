@@ -1,473 +1,719 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Car,
-  ClipboardList,
+  CheckCircle2,
+  CircleAlert,
   Eye,
   FilePenLine,
-  PlusCircle,
+  FileText,
+  IndianRupee,
+  RefreshCw,
+  ShieldCheck,
+  Truck,
+  Upload,
   X,
-  Zap,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { bookingApi } from "../../../services/bookingApi";
+import { apiConfig } from "../../../config/apiConfig";
 import {
   VehicleOrderItem,
   vehicleManagementApi,
 } from "../vehicleManagementApi";
+import {
+  VehicleBookingItem,
+  VehicleBookingStatus,
+  vehicleBookingApi,
+} from "../../../services/vehicleBookingApi";
 
-const STATUS_ORDER: Record<string, number> = {
-  "To be Sourced": 0,
-  Booked: 1,
-  "Payment Done": 2,
-  Transit: 3,
-  "JNPT Warehouse": 4,
-  Shipped: 5,
-  "Commercial Invoice Submitted": 6,
+const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
+
+const STATUS_META: Record<
+  VehicleBookingStatus,
+  { label: string; badge: string }
+> = {
+  pending: {
+    label: "Quotation Pending",
+    badge: "bg-slate-100 text-slate-700 border-slate-200",
+  },
+  quotation_uploaded: {
+    label: "Awaiting Approval",
+    badge: "bg-amber-100 text-amber-700 border-amber-200",
+  },
+  approved: {
+    label: "Approved",
+    badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  },
+  rejected: {
+    label: "Rejected",
+    badge: "bg-rose-100 text-rose-700 border-rose-200",
+  },
+  payment_done: {
+    label: "Awaiting Chassis/Engine No.",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+  },
+  chassis_received: {
+    label: "In Transit",
+    badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  },
+  delivered: {
+    label: "Delivered",
+    badge: "bg-green-100 text-green-700 border-green-200",
+  },
 };
 
-const getValidNextStatuses = (currentStatus: string): string[] => {
-  const currentIndex = STATUS_ORDER[currentStatus];
-  const validNext: string[] = [currentStatus];
-  if (currentIndex + 1 <= 6) {
-    const nextStatus = Object.keys(STATUS_ORDER).find(
-      (key) => STATUS_ORDER[key] === currentIndex + 1,
-    );
-    if (nextStatus) validNext.push(nextStatus);
-  }
-  return validNext.filter((status) => status !== "To be Sourced");
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Booked":
-      return "bg-blue-50 text-blue-700 border-blue-200";
-    case "Payment Done":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    case "Transit":
-      return "bg-indigo-50 text-indigo-700 border-indigo-200";
-    case "JNPT Warehouse":
-      return "bg-orange-50 text-orange-700 border-orange-200";
-    case "Shipped":
-      return "bg-blue-50 text-blue-700 border-blue-200";
-    case "Commercial Invoice Submitted":
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    default:
-      return "bg-gray-100 text-gray-600 border-gray-200";
-  }
-};
-
-interface StatusPopupProps {
-  vehicle: { srNo: string; name: string; expandedIndex: number };
-  currentStatus: string;
-  onClose: () => void;
-  onSave: (expandedIndex: number, newStatus: string) => Promise<void>;
-}
-
-const StatusPopup = ({
-  vehicle,
-  currentStatus,
-  onClose,
-  onSave,
-}: StatusPopupProps) => {
-  const [selected, setSelected] = useState(currentStatus);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (selected === currentStatus) {
-      onClose();
-      return;
-    }
-    setSaving(true);
-    await onSave(vehicle.expandedIndex, selected);
-    setSaving(false);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-80 p-6">
-        <div className="flex justify-between items-start mb-5">
-          <div>
-            <p className="text-sm font-bold text-gray-800">Update vehicle status</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Unit #{vehicle.srNo} - {vehicle.name}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="space-y-2 mb-5">
-          {getValidNextStatuses(currentStatus).map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelected(status)}
-              className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all ${
-                selected === status
-                  ? "bg-blue-50 border-blue-300 text-blue-700"
-                  : "bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || selected === currentStatus}
-            className="flex-1 py-2.5 px-5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white text-xs font-bold uppercase tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "Saving..." : "Update status"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+const getQuotationUrl = (filePath?: string) =>
+  filePath ? `${API_ORIGIN}${filePath}` : "";
 
 const VehicleOrderDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
   const [order, setOrder] = useState<VehicleOrderItem | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [vehicleStatuses, setVehicleStatuses] = useState<Record<number, string>>(
-    {},
-  );
-  const [bookingMap, setBookingMap] = useState<Record<number, string>>({});
-  const [statusPopup, setStatusPopup] = useState<{
-    vehicle: { srNo: string; name: string; expandedIndex: number };
-    currentStatus: string;
-  } | null>(null);
+  const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [quotationModalOpen, setQuotationModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [activeBooking, setActiveBooking] = useState<VehicleBookingItem | null>(null);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [quotationSaving, setQuotationSaving] = useState(false);
+
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [paymentSaving, setPaymentSaving] = useState(false);
+
+  const reminderToastCount = useRef(0);
+
+  const fetchData = async (showLoader = false) => {
+    if (!id) return;
+
+    try {
+      if (showLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
+      const [orderRes, bookingRes] = await Promise.all([
+        vehicleManagementApi.getVehicleOrderById(id),
+        vehicleBookingApi.getByOrder(id),
+      ]);
+
+      setOrder(orderRes);
+      setBookings(Array.isArray(bookingRes) ? bookingRes : []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load vehicle order");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const fetchReminders = async () => {
+    if (!id) return;
+
+    try {
+      const due = await vehicleBookingApi.getDueReminders(id, 2);
+      if (due.length > reminderToastCount.current) {
+        toast.info(
+          `${due.length} vehicle${due.length > 1 ? "s" : ""} still need engine/chassis numbers.`,
+        );
+      }
+      reminderToastCount.current = due.length;
+    } catch {
+      // Keep reminder polling silent
+    }
+  };
 
   useEffect(() => {
-    const loadOrder = async () => {
-      try {
-        setLoading(true);
-        const data = await vehicleManagementApi.getVehicleOrderById(id as string);
-        setOrder(data);
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load order");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) loadOrder();
+    fetchData(true);
   }, [id]);
 
   useEffect(() => {
-    const loadStatuses = async () => {
-      if (!order || !id) return;
-      try {
-        const res = await bookingApi.getAll();
-        const bookings = res.data?.data || res.data || [];
-        const statusMap: Record<number, string> = {};
-        const map: Record<number, string> = {};
+    if (!id) return;
 
-        for (let i = 0; i < order.quantity; i++) {
-          const srNo = String(i + 1);
-          const booking = bookings.find(
-            (item: any) =>
-              (item.orderId === id || item.orderId?._id === id) &&
-              item.vehicles?.some((vehicle: any) => String(vehicle.srNo) === srNo),
-          );
-          statusMap[i] = booking ? booking.status : "To be Sourced";
-          if (booking) map[i] = booking._id;
-        }
+    fetchReminders();
+    const interval = window.setInterval(() => {
+      fetchData(false);
+      fetchReminders();
+    }, 120000);
 
-        setVehicleStatuses(statusMap);
-        setBookingMap(map);
-      } catch (error) {
-        console.error("Error loading booking statuses", error);
-      }
-    };
+    return () => window.clearInterval(interval);
+  }, [id]);
 
-    loadStatuses();
-  }, [order, id]);
+  const units = useMemo(() => {
+    if (!order) return [];
 
-  const handleStatusUpdate = async (
-    expandedIndex: number,
-    newStatus: string,
-  ) => {
-    const bookingId = bookingMap[expandedIndex];
-    if (!bookingId) {
-      toast.error("Booking not found for this vehicle");
+    return Array.from({ length: order.quantity }, (_, vehicleIndex) => {
+      const booking =
+        bookings.find((item) => item.vehicleIndex === vehicleIndex) || null;
+
+      return {
+        booking,
+        vehicleIndex,
+        unitNo: vehicleIndex + 1,
+        name: `${order.vehicleSnapshot.brandName} ${order.vehicleSnapshot.modelName}`.trim(),
+        variant: order.vehicleSnapshot.variant,
+        color: order.vehicleSnapshot.color,
+      };
+    });
+  }, [bookings, order]);
+
+  const pendingReminderUnits = useMemo(
+    () =>
+      units.filter(
+        ({ booking }) =>
+          booking?.status === "payment_done" &&
+          (!booking.engineNumber || !booking.chassisNumber),
+      ),
+    [units],
+  );
+
+  const openQuotationModal = (booking: VehicleBookingItem) => {
+    setActiveBooking(booking);
+    setSelectedFile(null);
+    setRejectReason(booking.rejectionReason || "");
+    setQuotationModalOpen(true);
+  };
+
+  const openPaymentModal = (booking: VehicleBookingItem) => {
+    setActiveBooking(booking);
+    setPaymentAmount(booking.paymentAmount ? String(booking.paymentAmount) : "");
+    setPaymentReference(booking.paymentReference || "");
+    setPaymentModalOpen(true);
+  };
+
+  const syncBooking = (updated: VehicleBookingItem) => {
+    setBookings((current) =>
+      current.map((item) => (item._id === updated._id ? updated : item)),
+    );
+    setActiveBooking(updated);
+  };
+
+  const closeQuotationModal = () => {
+    setQuotationModalOpen(false);
+    setActiveBooking(null);
+    setSelectedFile(null);
+    setRejectReason("");
+  };
+
+  const closePaymentModal = () => {
+    setPaymentModalOpen(false);
+    setActiveBooking(null);
+    setPaymentAmount("");
+    setPaymentReference("");
+  };
+
+  const handleQuotationUpload = async () => {
+    if (!activeBooking) return;
+    if (!selectedFile) {
+      toast.error("Please select a quotation file");
       return;
     }
+
     try {
-      await bookingApi.update(bookingId, { status: newStatus });
-      setVehicleStatuses((prev) => ({ ...prev, [expandedIndex]: newStatus }));
-      toast.success("Status updated successfully");
+      setQuotationSaving(true);
+      const updated = await vehicleBookingApi.uploadQuotation(
+        activeBooking._id,
+        selectedFile,
+      );
+      syncBooking(updated);
+      toast.success("Quotation uploaded successfully");
+      setSelectedFile(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to upload quotation");
+    } finally {
+      setQuotationSaving(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!activeBooking) return;
+
+    try {
+      setQuotationSaving(true);
+      const updated = await vehicleBookingApi.approve(activeBooking._id);
+      syncBooking(updated);
+      toast.success("Vehicle approved");
+      closeQuotationModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Approval failed");
+    } finally {
+      setQuotationSaving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!activeBooking) return;
+    if (!rejectReason.trim()) {
+      toast.error("Rejection reason is required");
+      return;
+    }
+
+    try {
+      setQuotationSaving(true);
+      const updated = await vehicleBookingApi.reject(
+        activeBooking._id,
+        rejectReason,
+      );
+      syncBooking(updated);
+      toast.success("Vehicle rejected");
+      closeQuotationModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Rejection failed");
+    } finally {
+      setQuotationSaving(false);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!activeBooking) return;
+
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Dealer amount is required");
+      return;
+    }
+
+    if (!paymentReference.trim()) {
+      toast.error("Payment reference is required");
+      return;
+    }
+
+    try {
+      setPaymentSaving(true);
+      const updated = await vehicleBookingApi.confirmPayment(
+        activeBooking._id,
+        amount,
+        paymentReference,
+      );
+      syncBooking(updated);
+      toast.success("Vehicle booking confirmed");
+      closePaymentModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Payment confirmation failed");
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
+
+  const handleMarkDelivered = async (booking: VehicleBookingItem) => {
+    try {
+      const updated = await vehicleBookingApi.updateStatus(booking._id, "delivered");
+      setBookings((current) =>
+        current.map((item) => (item._id === updated._id ? updated : item)),
+      );
+      toast.success("Vehicle marked as delivered");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update status");
     }
   };
 
-  const expandedVehicles = useMemo(() => {
-    if (!order) return [];
-    return Array.from({ length: order.quantity }, (_, index) => ({
-      expandedIndex: index,
-      srNo: String(index + 1),
-      name: `${order.vehicleSnapshot.brandName} ${order.vehicleSnapshot.modelName}`,
-      color: order.vehicleSnapshot.color,
-      variant: order.vehicleSnapshot.variant,
-      status: vehicleStatuses[index] || "To be Sourced",
-    }));
-  }, [order, vehicleStatuses]);
-
-  const bookedCount = expandedVehicles.filter(
-    (vehicle) => vehicle.status !== "To be Sourced",
-  ).length;
+  const renderPrimaryAction = (booking: VehicleBookingItem) => {
+    switch (booking.status) {
+      case "pending":
+      case "rejected":
+        return (
+          <button
+            onClick={() => openQuotationModal(booking)}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
+          >
+            <Upload size={14} />
+            Upload Quotation
+          </button>
+        );
+      case "quotation_uploaded":
+        return (
+          <button
+            onClick={() => openQuotationModal(booking)}
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-600"
+          >
+            <FileText size={14} />
+            Review Quotation
+          </button>
+        );
+      case "approved":
+        return (
+          <button
+            onClick={() => openPaymentModal(booking)}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+          >
+            <IndianRupee size={14} />
+            Confirm Booking
+          </button>
+        );
+      case "payment_done":
+        return (
+          <button
+            onClick={() =>
+              navigate(`/vehicles/orders/${id}/unit-edit/${booking.vehicleIndex}`)
+            }
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+          >
+            <FilePenLine size={14} />
+            Add Engine/Chassis
+          </button>
+        );
+      case "chassis_received":
+        return (
+          <button
+            onClick={() => handleMarkDelivered(booking)}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+          >
+            <Truck size={14} />
+            Mark Delivered
+          </button>
+        );
+      case "delivered":
+        return (
+          <button
+            onClick={() =>
+              navigate(`/vehicles/orders/${id}/unit-view/${booking.vehicleIndex}`)
+            }
+            className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
+          >
+            <Eye size={14} />
+            View Details
+          </button>
+        );
+      default:
+        return null;
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
-        <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-          Loading Order...
-        </span>
+      <div className="rounded-[24px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+        Loading vehicle order details...
       </div>
     );
   }
 
-  if (!order) return null;
+  if (!order) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        Vehicle order not found.
+      </div>
+    );
+  }
 
   return (
     <>
-      {statusPopup && (
-        <StatusPopup
-          vehicle={statusPopup.vehicle}
-          currentStatus={statusPopup.currentStatus}
-          onClose={() => setStatusPopup(null)}
-          onSave={handleStatusUpdate}
-        />
-      )}
-
-      <div className="w-full animate-in fade-in duration-500">
-        <div className="flex justify-between items-center mb-6">
-          <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
-            <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-indigo-300 transition-colors">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="mb-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
               {order.orderNumber}
-            </span>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color} · {order.quantity} units
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Client: {order.clientSnapshot?.name || "Not assigned"}
+            </p>
           </div>
 
-          <button
-            onClick={() => navigate("/vehicles/orders")}
-            className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"
-          >
-            <ArrowLeft size={18} />
-            Back to Required Vehicles
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => fetchData(false)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+              Refresh
+            </button>
+            <button
+              onClick={() => navigate("/vehicles/orders")}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              <ArrowLeft size={16} />
+              Back to Orders
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-12 space-y-8">
-            <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 transition-shadow hover:shadow-md">
-              <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
-                <ClipboardList size={20} className="text-blue-500" />
-                <h2 className="text-xl font-bold text-[#1B2559]">
-                  Required Vehicle Information
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2">
-                    <Car size={12} /> Vehicle
-                  </p>
-                  <p className="text-sm font-semibold text-[#2D3748]">
-                    {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
-                  </p>
-                </div>
-                <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2">
-                    <Car size={12} /> Variant / Color
-                  </p>
-                  <p className="text-sm font-semibold text-[#2D3748]">
-                    {order.vehicleSnapshot.variant} - {order.vehicleSnapshot.color}
-                  </p>
-                </div>
+        {pendingReminderUnits.length > 0 && (
+          <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <CircleAlert size={18} className="mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-semibold text-amber-900">
+                  Engine/chassis number still pending
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  Unit{" "}
+                  {pendingReminderUnits.map((item) => item.unitNo).join(", ")}{" "}
+                  still need manual engine/chassis update. Reminder tracking will continue until both values are filled.
+                </p>
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden transition-shadow hover:shadow-md">
-              <div className="p-8 pb-4 flex justify-between items-center bg-gray-50/30">
-                <div className="flex items-center gap-3">
-                  <Car size={20} className="text-emerald-500" />
-                  <h2 className="text-xl font-bold text-[#1B2559]">
-                    Individual Vehicles
-                  </h2>
-                </div>
-                <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
-                  {expandedVehicles.length} Units
-                </span>
-              </div>
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Vehicle List</h2>
+              <p className="text-sm text-slate-500">
+                Each vehicle moves through quotation, approval, payment and delivery status.
+              </p>
+            </div>
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {units.length} units
+            </div>
+          </div>
 
-              <div className="px-8 pb-8">
-                <div className="overflow-x-auto rounded-xl border border-gray-100">
-                  <table className="w-full text-center">
-                    <thead className="bg-[#F8F9FB] text-[#A3AED0] uppercase text-[10px] font-bold tracking-widest">
-                      <tr>
-                        <th className="px-6 py-4 text-center">Unit #</th>
-                        <th className="px-6 py-4 text-left">Model Summary</th>
-                        <th className="px-6 py-4 text-left">Color / Variant</th>
-                        <th className="px-6 py-4 text-center">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {expandedVehicles.map((vehicle) => {
-                        const isBooked = vehicle.status !== "To be Sourced";
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4">Unit</th>
+                  <th className="px-6 py-4">Vehicle</th>
+                  <th className="px-6 py-4">Color</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {units.map(({ booking, vehicleIndex, unitNo, name, variant, color }) => {
+                  if (!booking) return null;
 
-                        return (
-                          <tr
-                            key={vehicle.expandedIndex}
-                            className="hover:bg-blue-50/40 transition-colors group"
+                  const statusMeta = STATUS_META[booking.status];
+
+                  return (
+                    <tr key={booking._id} className="align-top">
+                      <td className="px-6 py-5">
+                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">
+                          {unitNo}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <p className="font-semibold text-slate-900">{name}</p>
+                        <p className="mt-1 text-sm text-slate-500">{variant}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Booking ID: {booking._id.slice(-6).toUpperCase()}
+                        </p>
+                      </td>
+                      <td className="px-6 py-5 text-sm text-slate-600">{color}</td>
+                      <td className="px-6 py-5">
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badge}`}
+                        >
+                          {statusMeta.label}
+                        </span>
+                        {booking.rejectionReason && booking.status === "rejected" && (
+                          <p className="mt-2 max-w-xs text-xs text-rose-600">
+                            Reason: {booking.rejectionReason}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {renderPrimaryAction(booking)}
+                          <button
+                            onClick={() =>
+                              navigate(`/vehicles/orders/${id}/unit-view/${vehicleIndex}`)
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
                           >
-                            <td className="px-6 py-5">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-sm font-black text-gray-400 group-hover:text-blue-500 group-hover:bg-blue-100 transition-colors">
-                                {vehicle.srNo}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-left font-bold text-gray-800">
-                              {vehicle.name}
-                            </td>
-                            <td className="px-6 py-5 text-left">
-                              <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 rounded-full border border-gray-300 shadow-sm bg-slate-200"></div>
-                                <span className="text-xs font-black uppercase tracking-wider text-gray-500">
-                                  {vehicle.color} - {vehicle.variant}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-5">
-                              <span
-                                className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusColor(vehicle.status)}`}
-                              >
-                                {vehicle.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => {
-                                    const params = new URLSearchParams({
-                                      name: vehicle.name,
-                                      color: vehicle.color,
-                                      srNo: vehicle.srNo,
-                                      expandedIndex: String(vehicle.expandedIndex),
-                                      variant: vehicle.variant,
-                                    });
-                                    navigate(
-                                      `/vehicles/orders/${id}/unit-view/${vehicle.expandedIndex}?${params.toString()}`,
-                                    );
-                                  }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${
-                                    !isBooked
-                                      ? "opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400"
-                                      : "bg-white border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm"
-                                  }`}
-                                  title="View Details"
-                                >
-                                  <Eye size={18} />
-                                </button>
-
-                                {/* Edit Button - same as dealerorderdetails */}
-                                <button
-                                  onClick={() => {
-                                    if (!isBooked) return;
-                                    const params = new URLSearchParams({
-                                      name: vehicle.name,
-                                      color: vehicle.color,
-                                      srNo: vehicle.srNo,
-                                      expandedIndex: String(vehicle.expandedIndex),
-                                      variant: vehicle.variant,
-                                    });
-                                    navigate(
-                                      `/vehicles/orders/${id}/unit-edit/${vehicle.expandedIndex}?${params.toString()}`,
-                                    );
-                                  }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 hover:scale-110 ${
-                                    !isBooked
-                                      ? "opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400"
-                                      : "bg-white border-slate-200 text-blue-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm"
-                                  }`}
-                                  title="Edit Vehicle"
-                                >
-                                  <FilePenLine size={18} />
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    if (!isBooked) return;
-                                    setStatusPopup({
-                                      vehicle: {
-                                        srNo: vehicle.srNo,
-                                        name: vehicle.name,
-                                        expandedIndex: vehicle.expandedIndex,
-                                      },
-                                      currentStatus: vehicle.status,
-                                    });
-                                  }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${
-                                    !isBooked
-                                      ? "opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400"
-                                      : "bg-white border-slate-200 text-amber-500 hover:text-amber-600 hover:border-amber-300 hover:bg-amber-50 hover:shadow-sm"
-                                  }`}
-                                  title="Update Status"
-                                >
-                                  <Zap size={18} />
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    if (isBooked) return;
-                                    const params = new URLSearchParams({
-                                      name: vehicle.name,
-                                      color: vehicle.color,
-                                      srNo: vehicle.srNo,
-                                      variant: vehicle.variant,
-                                    });
-                                    navigate(
-                                      `/vehicles/orders/${id}/book/${vehicle.expandedIndex}?${params.toString()}`,
-                                    );
-                                  }}
-                                  className={`cursor-pointer p-2.5 rounded-xl border transition-all duration-200 active:scale-95 ${
-                                    isBooked
-                                      ? "opacity-30 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400"
-                                      : "bg-white border-slate-200 text-emerald-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-sm"
-                                  }`}
-                                  title="Book Vehicle"
-                                >
-                                  <PlusCircle size={18} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+                            <Eye size={14} />
+                            View
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                          >
+                            <FilePenLine size={14} />
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+
+      {quotationModalOpen && activeBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-2xl rounded-[28px] bg-white p-6 shadow-2xl">
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Unit {activeBooking.vehicleIndex + 1}
+                </p>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Quotation Approval
+                </h3>
+              </div>
+              <button
+                onClick={closeQuotationModal}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Upload PDF/Image quotation
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  onChange={(event) =>
+                    setSelectedFile(event.target.files?.[0] || null)
+                  }
+                  className="block w-full text-sm text-slate-600"
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  PDF, JPG, PNG, WebP supported. You can replace the file anytime before approval.
+                </p>
+              </div>
+
+              {activeBooking.quotationFile && (
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <FileText size={18} className="text-blue-600" />
+                  <p className="text-sm font-medium text-blue-900">
+                    Quotation already uploaded for this unit.
+                  </p>
+                  <button
+                    onClick={() => window.open(getQuotationUrl(activeBooking.quotationFile), "_blank")}
+                    className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    <Eye size={14} />
+                    View
+                  </button>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleQuotationUpload}
+                  disabled={quotationSaving}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Upload size={16} />
+                  {activeBooking.quotationFile ? "Replace Quotation" : "Upload Quotation"}
+                </button>
+              </div>
+
+              {activeBooking.quotationFile &&
+                activeBooking.status === "quotation_uploaded" && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="mb-4 flex items-center gap-2 text-emerald-800">
+                    <ShieldCheck size={18} />
+                    <p className="font-semibold">Approval Actions</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <textarea
+                      value={rejectReason}
+                      onChange={(event) => setRejectReason(event.target.value)}
+                      rows={3}
+                      placeholder="Enter rejection reason if you want to reject..."
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                    />
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={handleApprove}
+                        disabled={quotationSaving}
+                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <CheckCircle2 size={16} />
+                        Approve
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={quotationSaving}
+                        className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <X size={16} />
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paymentModalOpen && activeBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-xl rounded-[28px] bg-white p-6 shadow-2xl">
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Unit {activeBooking.vehicleIndex + 1}
+                </p>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Confirm Booking Payment
+                </h3>
+              </div>
+              <button
+                onClick={closePaymentModal}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Amount paid to dealer
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(event) => setPaymentAmount(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                  placeholder="Enter payment amount"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Payment reference number
+                </label>
+                <input
+                  type="text"
+                  value={paymentReference}
+                  onChange={(event) => setPaymentReference(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                  placeholder="UTR / transaction ID"
+                />
+              </div>
+
+              <button
+                onClick={handleConfirmPayment}
+                disabled={paymentSaving}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <IndianRupee size={16} />
+                Confirm Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

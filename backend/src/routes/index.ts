@@ -5,6 +5,7 @@ import orderRoutes from "./order.route";
 import vehicleRoutes from "./vehicle.route";
 import vehicleListRoutes from "./vehicle-list.route";
 import vehicleOrderRoutes from "./vehicle-order.route";
+import vehicleBookingRoutes from "./vehicle-booking.route";
 import proformaInvoiceRoutes from "./proforma-invoice.route";
 import bookingRoutes from "./booking.route";
 
@@ -18,6 +19,7 @@ router.use("/orders", orderRoutes);
 router.use("/vehicles", vehicleRoutes);
 router.use("/vehicle-list", vehicleListRoutes);
 router.use("/vehicle-orders", vehicleOrderRoutes);
+router.use("/vehicle-bookings", vehicleBookingRoutes);
 router.use("/proforma-invoices", proformaInvoiceRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/vehicles", vehicleRoutes);
