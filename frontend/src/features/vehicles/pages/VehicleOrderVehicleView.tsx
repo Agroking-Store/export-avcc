@@ -192,14 +192,14 @@ const VehicleOrderVehicleView = () => {
           <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
             <button
               onClick={() => setIsDocModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
             >
               <Upload size={14} />
               UPLOAD
             </button>
             <button
               onClick={() => setIsViewModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
             >
               <Eye size={14} />
               VIEW LIBRARY
@@ -210,14 +210,14 @@ const VehicleOrderVehicleView = () => {
           <div className="flex items-center gap-2 bg-purple-50 p-1.5 rounded-2xl border border-purple-200 shadow-sm">
             <button
               onClick={() => setIsDealerInvoiceModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
             >
               <Upload size={14} />
               DEALER INVOICE
             </button>
             <button
               onClick={() => setIsDealerInvoiceViewOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-100 active:scale-95"
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-100 active:scale-95"
             >
               <Eye size={14} />
               VIEW INVOICE
@@ -226,14 +226,14 @@ const VehicleOrderVehicleView = () => {
 
           <button
             onClick={() => navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <Truck size={16} />
             Edit
           </button>
           <button
             onClick={() => navigate(`/vehicles/orders/${id}`)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <ArrowLeft size={16} />
             Back to Order
@@ -282,7 +282,7 @@ const VehicleOrderVehicleView = () => {
               </div>
               <button
                 onClick={() => window.open(quotationUrl, "_blank")}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
               >
                 <Eye size={16} />
                 View quotation

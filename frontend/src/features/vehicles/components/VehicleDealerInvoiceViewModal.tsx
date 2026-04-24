@@ -52,7 +52,7 @@ const VehicleDealerInvoiceViewModal = ({ isOpen, onClose, booking }: Props) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+            className="cursor-pointer p-2 hover:bg-slate-200 rounded-full transition-colors"
           >
             <X size={20} />
           </button>
@@ -86,13 +86,13 @@ const VehicleDealerInvoiceViewModal = ({ isOpen, onClose, booking }: Props) => {
                     href={getFileUrl(false)}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50 transition-all shadow-sm"
+                    className="cursor-pointer p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50 transition-all shadow-sm"
                   >
                     <Eye size={16} />
                   </a>
                   <a
                     href={getFileUrl(true)}
-                    className="p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm"
+                    className="cursor-pointer p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm"
                   >
                     <Download size={16} />
                   </a>
@@ -105,7 +105,7 @@ const VehicleDealerInvoiceViewModal = ({ isOpen, onClose, booking }: Props) => {
         <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-800 text-white rounded-xl font-bold text-xs hover:bg-slate-900 transition-colors"
+            className="cursor-pointer px-6 py-2 bg-slate-800 text-white rounded-xl font-bold text-xs hover:bg-slate-900 transition-colors"
           >
             CLOSE
           </button>

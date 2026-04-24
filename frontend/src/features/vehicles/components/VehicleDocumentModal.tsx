@@ -116,7 +116,7 @@ const VehicleDocumentModal = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+            className="cursor-pointer p-2 hover:bg-slate-200 rounded-full transition-colors"
           >
             <X size={20} />
           </button>
@@ -155,7 +155,7 @@ const VehicleDocumentModal = ({
                 <button
                   disabled={loading}
                   onClick={() => handleUpload("CRTM")}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md"
+                  className="cursor-pointer w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md"
                 >
                   {loading ? "Uploading..." : "Submit CRTM Documents"}
                 </button>
@@ -196,7 +196,7 @@ const VehicleDocumentModal = ({
                 <button
                   disabled={loading || !isCRTMDone}
                   onClick={() => handleUpload("BV")}
-                  className="w-full py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md"
+                  className="cursor-pointer w-full py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md"
                 >
                   {loading ? "Uploading..." : "Submit BV Certificate"}
                 </button>

@@ -69,7 +69,7 @@ const VehicleDealerInvoiceModal = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+            className="cursor-pointer p-2 hover:bg-slate-200 rounded-full transition-colors"
           >
             <X size={20} />
           </button>
@@ -129,7 +129,7 @@ const VehicleDealerInvoiceModal = ({
             <button
               disabled={loading || !file}
               onClick={handleUpload}
-              className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading
                 ? "Uploading..."
