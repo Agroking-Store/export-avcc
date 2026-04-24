@@ -11,9 +11,9 @@ import {
 
 interface ClientDetailsData {
   client: IClient;
-  orders: any[];
-  totalOrders: number;
-  lastTransaction: string | null;
+  vehicleOrders: any[];
+  totalVehicleOrders: number;
+  lastBooking: string | null;
 }
 
 const ClientDetails = () => {
@@ -53,7 +53,7 @@ const ClientDetails = () => {
   };
 
   const client = data?.client;
-  const orders = data?.orders || [];
+  const orders = data?.vehicleOrders || [];
 
   const InfoBox = ({ label, value, icon: Icon }: any) => (
     <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-3 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
@@ -138,7 +138,7 @@ const ClientDetails = () => {
             <div className="p-6 md:p-8 pb-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <ShoppingCart size={18} className="text-gray-400" />
-                <h2 className="text-lg font-bold text-[#1B2559]">Order History</h2>
+                <h2 className="text-lg font-bold text-[#1B2559]">Vehicle Orders</h2>
               </div>
               <span className="bg-gray-50 text-[10px] font-bold px-3 py-1 rounded-full text-gray-400 uppercase tracking-widest">
                 {orders.length} Orders
@@ -150,31 +150,39 @@ const ClientDetails = () => {
                 <table className="w-full">
                   <thead className="bg-[#F8F9FB] text-[#A3AED0] uppercase text-[9px] font-bold tracking-widest">
                     <tr>
-                      <th className="px-5 py-4 text-left">Order ID</th>
-                      <th className="px-5 py-4 text-left">Qty</th>
-                      <th className="px-5 py-4 text-left">Status</th>
+                      <th className="px-5 py-4 text-left">Order No</th>
+                      <th className="px-5 py-4 text-left">Vehicle </th>
+                      <th className="px-5 py-4 text-left">Chassis </th>
+                      <th className="px-5 py-4 text-left">Status </th>
                       <th className="px-5 py-4 text-left">Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {orders.map((order: any) => (
-                      <tr 
-                        key={order._id} 
-                        className="hover:bg-indigo-50/30 transition-all cursor-pointer group" 
-                        onClick={() => navigate(`/orders/${order._id}`)}
+                      <tr
+                        key={order._id}
+                        className="hover:bg-indigo-50/30 transition-all"
                       >
-                        <td className="px-5 py-4 font-bold text-indigo-500 text-sm group-hover:translate-x-1 transition-transform">{order.orderId}</td>
-                        <td className="px-5 py-4 text-sm font-semibold text-gray-600">
-                          <span className="group-hover:text-indigo-600 transition-colors">
-                            {order.vehicles?.reduce((sum: number, v: any) => sum + (v.quantity ?? 0), 0) || 0}
-                          </span>
+                        <td className="px-5 py-4 font-bold text-indigo-500 text-sm">
+                          {order.orderId?.orderNumber || "-"}
                         </td>
+                  
+                        <td className="px-5 py-4 text-sm font-semibold text-gray-700">
+                          {order.orderId?.vehicleSnapshot?.brandName}{" "}
+                          {order.orderId?.vehicleSnapshot?.modelName}
+                        </td>
+                  
+                        <td className="px-5 py-4 text-sm text-gray-600">
+                          {order.chassisNumber || "Pending"}
+                        </td>
+                  
                         <td className="px-5 py-4">
-                          <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider group-hover:bg-amber-200 transition-colors">
-                            {order.status || 'DRAFT'}
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-lg text-[10px] font-bold uppercase">
+                            {order.status}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-gray-400 text-xs font-medium group-hover:text-gray-600 transition-colors">
+                  
+                        <td className="px-5 py-4 text-xs text-gray-500">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
@@ -200,19 +208,21 @@ const ClientDetails = () => {
 
           <div className="bg-[#FEE2E2] rounded-2xl p-5 border border-[#FECACA] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#FCA5A5]/20 group">
             <p className="text-[9px] font-bold text-red-800 uppercase tracking-widest mb-1 flex items-center gap-1.5 transition-colors group-hover:text-red-900">
-              <Package size={12} /> Total Orders
+              <Package size={12} /> Total Vehicle Orders
             </p>
             <h3 className="text-3xl font-black text-red-800 leading-none group-hover:scale-105 transition-transform origin-left">
-              {data?.totalOrders || 0}
+              {data?.totalVehicleOrders || 0}
             </h3>
           </div>
 
           <div className="bg-[#EBF8FF] rounded-2xl p-5 border border-[#BEE3F8] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#BEE3F8]/30 group">
             <p className="text-[9px] font-bold text-blue-800 uppercase tracking-widest mb-2 flex items-center gap-1.5 transition-colors group-hover:text-blue-900">
-              <Calendar size={12} /> Last Transaction
+              <Calendar size={12} /> Last Booking
             </p>
             <h3 className="text-lg font-bold text-blue-800 group-hover:scale-105 transition-transform origin-left">
-              {data?.lastTransaction ? new Date(data.lastTransaction).toLocaleDateString() : "N/A"}
+              {data?.lastBooking
+                ? new Date(data.lastBooking).toLocaleDateString()
+                : "N/A"}
             </h3>
           </div>
         </div>
