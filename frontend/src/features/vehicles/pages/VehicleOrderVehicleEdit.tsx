@@ -182,31 +182,36 @@ const VehicleOrderVehicleEdit = () => {
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 cursor-pointer"
+                  disabled={!engineNumber.trim() || !chassisNumber.trim()}
+                  className="inline-flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span className={deliveryDate ? "text-slate-700" : "text-slate-400"}>
-                    {deliveryDate
-                      ? new Date(deliveryDate).toLocaleDateString()
-                      : "Select date..."}
+                    {!engineNumber.trim() || !chassisNumber.trim()
+                      ? "Fill engine & chassis first"
+                      : deliveryDate
+                        ? new Date(deliveryDate).toLocaleDateString()
+                        : "Select date..."}
                   </span>
                   <CalendarIcon size={16} className="text-slate-400" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={deliveryDate ? new Date(deliveryDate) : undefined}
-                  onSelect={(date) => {
-                    if (date) {
-                      setDeliveryDate(date.toISOString().split("T")[0]);
-                    } else {
-                      setDeliveryDate("");
-                    }
-                    setCalendarOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
+              {engineNumber.trim() && chassisNumber.trim() && (
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={deliveryDate ? new Date(deliveryDate) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        setDeliveryDate(date.toISOString().split("T")[0]);
+                      } else {
+                        setDeliveryDate("");
+                      }
+                      setCalendarOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              )}
             </Popover>
           </div>
         </div>

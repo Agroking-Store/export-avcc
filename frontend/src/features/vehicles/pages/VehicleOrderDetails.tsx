@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Calendar,
   Check,
   CheckCircle2,
   ChevronsUpDown,
@@ -214,6 +215,48 @@ const VehicleOrderDetails = () => {
       ),
     [units],
   );
+
+  const upcomingDeliveryReminders = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return units
+      .filter(
+        ({ booking }) =>
+          booking?.deliveryDate &&
+          booking.status !== "delivered",
+      )
+      .map(({ booking, unitNo }) => {
+        const delivery = new Date(booking!.deliveryDate!);
+        delivery.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil(
+          (delivery.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        return { booking, unitNo, diffDays };
+      })
+      .filter(({ diffDays }) => diffDays >= 0)
+      .sort((a, b) => a.diffDays - b.diffDays);
+  }, [units]);
+
+  const overdueDeliveryAlerts = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return units
+      .filter(
+        ({ booking }) =>
+          booking?.deliveryDate &&
+          booking.status !== "delivered",
+      )
+      .map(({ booking, unitNo }) => {
+        const delivery = new Date(booking!.deliveryDate!);
+        delivery.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil(
+          (today.getTime() - delivery.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        return { booking, unitNo, diffDays };
+      })
+      .filter(({ diffDays }) => diffDays > 0)
+      .sort((a, b) => b.diffDays - a.diffDays);
+  }, [units]);
 
   const summaryCards = useMemo(
     () => [
@@ -560,6 +603,64 @@ const VehicleOrderDetails = () => {
           </div>
         )}
 
+        {overdueDeliveryAlerts.length > 0 && (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <CircleAlert size={18} className="mt-0.5 text-rose-600" />
+              <div className="w-full">
+                <p className="font-semibold text-rose-900">
+                  Delivery overdue
+                </p>
+                <div className="mt-2 space-y-2">
+                  {overdueDeliveryAlerts.map(({ unitNo, diffDays, booking }) => (
+                    <div key={unitNo} className="flex items-center justify-between rounded-xl border border-rose-200 bg-white px-4 py-2.5">
+                      <div className="flex items-center gap-2 text-sm text-rose-800">
+                        <Calendar size={14} className="text-rose-500" />
+                        <span>Unit {unitNo}</span>
+                        <span className="text-xs text-rose-600">
+                          ({new Date(booking!.deliveryDate!).toLocaleDateString()})
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+                        {diffDays} day{diffDays > 1 ? "s" : ""} overdue
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {upcomingDeliveryReminders.length > 0 && (
+          <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <Calendar size={18} className="mt-0.5 text-blue-600" />
+              <div className="w-full">
+                <p className="font-semibold text-blue-900">
+                  Upcoming delivery reminders
+                </p>
+                <div className="mt-2 space-y-2">
+                  {upcomingDeliveryReminders.map(({ unitNo, diffDays, booking }) => (
+                    <div key={unitNo} className="flex items-center justify-between rounded-xl border border-blue-200 bg-white px-4 py-2.5">
+                      <div className="flex items-center gap-2 text-sm text-blue-800">
+                        <Calendar size={14} className="text-blue-500" />
+                        <span>Unit {unitNo}</span>
+                        <span className="text-xs text-blue-600">
+                          ({new Date(booking!.deliveryDate!).toLocaleDateString()})
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                        {diffDays === 0 ? "Today" : `${diffDays} day${diffDays > 1 ? "s" : ""} left`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map((card) => (
             <div
@@ -640,11 +741,19 @@ const VehicleOrderDetails = () => {
                           </div>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badge}`}
-                          >
-                            {statusMeta.label}
-                          </span>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <span
+                              className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badge}`}
+                            >
+                              {statusMeta.label}
+                            </span>
+                            {booking.deliveryDate && booking.status !== "delivered" && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                                <Calendar size={10} />
+                                {new Date(booking.deliveryDate).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           <div className="inline-flex items-center justify-center gap-3">
