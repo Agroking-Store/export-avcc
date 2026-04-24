@@ -10,6 +10,7 @@ import {
   Truck,
   Upload,
   FileCheck,
+  Receipt,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "../../../config/apiConfig";
@@ -21,6 +22,8 @@ import {
 } from "../../../services/vehicleBookingApi";
 import VehicleBookingDocumentModal from "../components/VehicleBookingDocumentModal";
 import VehicleBookingDocumentViewModal from "../components/VehicleBookingDocumentViewModal";
+import VehicleDealerInvoiceModal from "../components/VehicleDealerInvoiceModal";
+import VehicleDealerInvoiceViewModal from "../components/VehicleDealerInvoiceViewModal";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 
@@ -45,6 +48,8 @@ const VehicleOrderVehicleView = () => {
   // Modal States
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDealerInvoiceModalOpen, setIsDealerInvoiceModalOpen] = useState(false);
+  const [isDealerInvoiceViewOpen, setIsDealerInvoiceViewOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!id || vehicleIndex === undefined) return;
@@ -130,10 +135,16 @@ const VehicleOrderVehicleView = () => {
           ? "CRTM Uploaded"
           : "Pending",
     },
+    {
+      icon: Receipt,
+      label: "Dealer Invoice",
+      value: booking.isDealerInvoiceUploaded ? "Uploaded" : "Not Uploaded",
+    },
   ];
 
   return (
     <div className="space-y-6">
+      {/* HEADER */}
       <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -148,7 +159,7 @@ const VehicleOrderVehicleView = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {/* DOC MANAGEMENT BUTTON GROUP */}
+          {/* CRTM DOC MANAGEMENT BUTTON GROUP */}
           <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
             <button
               onClick={() => setIsDocModalOpen(true)}
@@ -157,13 +168,30 @@ const VehicleOrderVehicleView = () => {
               <Upload size={14} />
               UPLOAD
             </button>
-
             <button
               onClick={() => setIsViewModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
             >
               <Eye size={14} />
               VIEW LIBRARY
+            </button>
+          </div>
+
+          {/* DEALER INVOICE BUTTON GROUP */}
+          <div className="flex items-center gap-2 bg-purple-50 p-1.5 rounded-2xl border border-purple-200 shadow-sm">
+            <button
+              onClick={() => setIsDealerInvoiceModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
+            >
+              <Upload size={14} />
+              DEALER INVOICE
+            </button>
+            <button
+              onClick={() => setIsDealerInvoiceViewOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-100 active:scale-95"
+            >
+              <Eye size={14} />
+              VIEW INVOICE
             </button>
           </div>
 
@@ -184,6 +212,7 @@ const VehicleOrderVehicleView = () => {
         </div>
       </div>
 
+      {/* INFO CARDS */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {infoCards.map(({ icon: Icon, label, value }) => (
           <div
@@ -208,6 +237,7 @@ const VehicleOrderVehicleView = () => {
         </div>
       )}
 
+      {/* QUOTATION SECTION */}
       <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900">Quotation</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -236,11 +266,11 @@ const VehicleOrderVehicleView = () => {
       </div>
 
       {/* MODALS */}
-      {isDocModalOpen && (
+      {isDocModalOpen && booking && (
         <VehicleBookingDocumentModal
           isOpen={isDocModalOpen}
           onClose={() => setIsDocModalOpen(false)}
-          vehicle={booking}
+          booking={booking}
           onSuccess={() => {
             setIsDocModalOpen(false);
             loadData();
@@ -248,11 +278,31 @@ const VehicleOrderVehicleView = () => {
         />
       )}
 
-      {isViewModalOpen && (
+      {isViewModalOpen && booking && (
         <VehicleBookingDocumentViewModal
           isOpen={isViewModalOpen}
           onClose={() => setIsViewModalOpen(false)}
-          vehicle={booking}
+          booking={booking}
+        />
+      )}
+
+      {isDealerInvoiceModalOpen && booking && (
+        <VehicleDealerInvoiceModal
+          isOpen={isDealerInvoiceModalOpen}
+          onClose={() => setIsDealerInvoiceModalOpen(false)}
+          booking={booking}
+          onSuccess={() => {
+            setIsDealerInvoiceModalOpen(false);
+            loadData();
+          }}
+        />
+      )}
+
+      {isDealerInvoiceViewOpen && booking && (
+        <VehicleDealerInvoiceViewModal
+          isOpen={isDealerInvoiceViewOpen}
+          onClose={() => setIsDealerInvoiceViewOpen(false)}
+          booking={booking}
         />
       )}
     </div>
@@ -260,3 +310,4 @@ const VehicleOrderVehicleView = () => {
 };
 
 export default VehicleOrderVehicleView;
+

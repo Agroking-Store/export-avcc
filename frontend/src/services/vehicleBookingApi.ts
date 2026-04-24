@@ -36,9 +36,11 @@ export interface VehicleBookingItem {
     form22?: string;
     tempRegCert?: string;
     bvCertificate?: string;
+    dealerInvoice?: string;
   };
   isCRTMUploaded?: boolean;
   isBVUploaded?: boolean;
+  isDealerInvoiceUploaded?: boolean;
   createdAt: string;
   updatedAt: string;
 }

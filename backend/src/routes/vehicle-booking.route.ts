@@ -96,6 +96,7 @@ router.post(
     { name: "form22", maxCount: 1 },
     { name: "tempRegCert", maxCount: 1 },
     { name: "bvCertificate", maxCount: 1 },
+    { name: "dealerInvoice", maxCount: 1 },
   ]),
   uploadBookingDocumentsHandler,
 );

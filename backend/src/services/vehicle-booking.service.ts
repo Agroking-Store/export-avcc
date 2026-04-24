@@ -283,6 +283,8 @@ export const uploadBookingDocuments = async (
     updateData["tempRegCert"] = files["tempRegCert"][0].path;
   if (files["bvCertificate"])
     updateData["bvCertificate"] = files["bvCertificate"][0].path;
+  if (files["dealerInvoice"])
+    updateData["dealerInvoice"] = files["dealerInvoice"][0].path;
 
   const newDocs = { ...booking.documents, ...updateData };
   const isCRTMComplete = !!(
@@ -292,10 +294,12 @@ export const uploadBookingDocuments = async (
     newDocs.tempRegCert
   );
   const isBVComplete = !!newDocs.bvCertificate;
+  const isDealerInvoiceComplete = !!newDocs.dealerInvoice;
 
   booking.documents = newDocs;
   booking.isCRTMUploaded = isCRTMComplete;
   booking.isBVUploaded = isBVComplete;
+  booking.isDealerInvoiceUploaded = isDealerInvoiceComplete;
 
   return await booking.save();
 };

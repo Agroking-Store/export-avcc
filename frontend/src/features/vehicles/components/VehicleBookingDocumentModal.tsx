@@ -2,26 +2,27 @@ import React, { useState } from "react";
 import { X, Upload, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
+import { VehicleBookingItem } from "../../../services/vehicleBookingApi";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  vehicle: any;
+  booking: VehicleBookingItem;
   onSuccess: () => void;
 }
 
 const VehicleBookingDocumentModal = ({
   isOpen,
   onClose,
-  vehicle,
+  booking,
   onSuccess,
 }: Props) => {
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<any>({});
 
   // States for Steps
-  const isCRTMDone = !!vehicle?.isCRTMUploaded;
-  const isBVDone = !!vehicle?.isBVUploaded;
+  const isCRTMDone = !!booking?.isCRTMUploaded;
+  const isBVDone = !!booking?.isBVUploaded;
 
   if (!isOpen) return null;
 
@@ -63,7 +64,7 @@ const VehicleBookingDocumentModal = ({
         formData.append("bvCertificate", files.bvCertificate);
       }
 
-      await api.post(`/vehicle-bookings/${vehicle._id}/documents`, formData, {
+      await api.post(`/vehicle-bookings/${booking._id}/documents`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

@@ -35,9 +35,11 @@ export interface IVehicleBooking extends Document {
     form22?: string;
     tempRegCert?: string;
     bvCertificate?: string;
+    dealerInvoice?: string;
   };
   isCRTMUploaded: boolean;
   isBVUploaded: boolean;
+  isDealerInvoiceUploaded: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -124,9 +126,11 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       form22: { type: String, default: "" },
       tempRegCert: { type: String, default: "" },
       bvCertificate: { type: String, default: "" },
+      dealerInvoice: { type: String, default: "" },
     },
     isCRTMUploaded: { type: Boolean, default: false },
     isBVUploaded: { type: Boolean, default: false },
+    isDealerInvoiceUploaded: { type: Boolean, default: false },
   },
   {
     timestamps: true,

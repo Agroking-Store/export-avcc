@@ -1,14 +1,15 @@
 import React from "react";
 import { X, Eye, Download, FileText, AlertCircle } from "lucide-react";
 import { apiConfig } from "@/config/apiConfig";
+import { VehicleBookingItem } from "../../../services/vehicleBookingApi";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  vehicle: any;
+  booking: VehicleBookingItem;
 }
 
-const VehicleBookingDocumentViewModal = ({ isOpen, onClose, vehicle }: Props) => {
+const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) => {
   if (!isOpen) return null;
 
   const token =
@@ -22,6 +23,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, vehicle }: Props) =>
     { label: "Form 22", key: "form22" },
     { label: "Temporary Registration", key: "tempRegCert" },
     { label: "BV Certificate", key: "bvCertificate" },
+    { label: "Dealer Invoice", key: "dealerInvoice" },
   ];
 
   const getFileUrl = (field: string, download = false) => {
@@ -29,23 +31,20 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, vehicle }: Props) =>
       ? apiConfig.baseURL.slice(0, -1)
       : apiConfig.baseURL;
 
-    const baseUrl = `${cleanBaseUrl}/vehicle-bookings/${vehicle._id}/files/${field}`;
+    const baseUrl = `${cleanBaseUrl}/vehicle-bookings/${booking._id}/files/${field}`;
     const params = new URLSearchParams();
 
     if (download) params.append("download", "true");
-
     if (token) {
       params.append("token", token);
     } else {
-      console.error(
-        "CRITICAL: No token found in localStorage. Check key name.",
-      );
+      console.error("CRITICAL: No token found in localStorage.");
     }
 
     return `${baseUrl}?${params.toString()}`;
   };
 
-  const hasAnyDoc = docs.some((d) => vehicle?.documents?.[d.key]);
+  const hasAnyDoc = docs.some((d) => booking?.documents?.[d.key as keyof typeof booking.documents]);
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -76,7 +75,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, vehicle }: Props) =>
           ) : (
             <div className="space-y-3">
               {docs.map((doc) => {
-                const hasFile = vehicle?.documents?.[doc.key];
+                const hasFile = booking?.documents?.[doc.key as keyof typeof booking.documents];
                 if (!hasFile) return null;
 
                 return (
