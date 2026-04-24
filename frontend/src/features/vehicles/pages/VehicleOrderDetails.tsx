@@ -458,7 +458,7 @@ const VehicleOrderDetails = () => {
 
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const primaryActionClass =
-      "inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0";
+      "cursor-pointer inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0";
 
     switch (booking.status) {
       case "pending":
@@ -514,13 +514,13 @@ const VehicleOrderDetails = () => {
             Mark Delivered
           </button>
         );
-      case "delivered":
+        case "delivered":
         return (
           <button
             onClick={() =>
               navigate(`/vehicles/orders/${id}/unit-view/${booking.vehicleIndex}`)
             }
-            className="inline-flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+            className="cursor-pointer inline-flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
           >
             <Eye size={14} />
             View Details
@@ -569,14 +569,14 @@ const VehicleOrderDetails = () => {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => fetchData(false)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
             >
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
               Refresh
             </button>
             <button
               onClick={() => navigate("/vehicles/orders")}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
             >
               <ArrowLeft size={16} />
               Back to Orders
@@ -766,7 +766,7 @@ const VehicleOrderDetails = () => {
                               )}
                               <button
                                 onClick={() => openClientModal(booking)}
-                                className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                className={`cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
                                   booking.assignedClientId
                                     ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                                     : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -827,7 +827,7 @@ const VehicleOrderDetails = () => {
               </div>
               <button
                 onClick={closeQuotationModal}
-                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+                className="cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
               >
                 <X size={16} />
               </button>
@@ -859,7 +859,7 @@ const VehicleOrderDetails = () => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+                    className="cursor-pointer mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
                   >
                     <Upload size={16} />
                     Choose File
@@ -884,7 +884,7 @@ const VehicleOrderDetails = () => {
                     onClick={() =>
                       window.open(getQuotationUrl(activeBooking.quotationFile), "_blank")
                     }
-                    className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                    className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
                     <Eye size={14} />
                     View File
@@ -896,7 +896,7 @@ const VehicleOrderDetails = () => {
                 <button
                   onClick={handleQuotationUpload}
                   disabled={quotationSaving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Upload size={16} />
                   {activeBooking.quotationFile ? "Replace File" : "Upload File"}
@@ -924,7 +924,7 @@ const VehicleOrderDetails = () => {
                         <button
                           onClick={handleApprove}
                           disabled={quotationSaving}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <CheckCircle2 size={16} />
                           Approve
@@ -932,7 +932,7 @@ const VehicleOrderDetails = () => {
                         <button
                           onClick={handleReject}
                           disabled={quotationSaving}
-                          className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <X size={16} />
                           Reject
@@ -960,7 +960,7 @@ const VehicleOrderDetails = () => {
               </div>
               <button
                 onClick={closePaymentModal}
-                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+                className="cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
               >
                 <X size={16} />
               </button>
@@ -985,7 +985,7 @@ const VehicleOrderDetails = () => {
               <button
                 onClick={handleConfirmPayment}
                 disabled={paymentSaving}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <IndianRupee size={16} />
                 Confirm Payment
@@ -1009,7 +1009,7 @@ const VehicleOrderDetails = () => {
               </div>
               <button
                 onClick={closeClientModal}
-                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+                className="cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
               >
                 <X size={16} />
               </button>
@@ -1087,7 +1087,7 @@ const VehicleOrderDetails = () => {
               <button
                 onClick={handleAssignClient}
                 disabled={clientSaving}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Check size={16} />
                 Allot
