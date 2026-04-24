@@ -498,8 +498,7 @@ const VehicleOrderDetails = () => {
             onClick={() =>
               navigate(`/vehicles/orders/${id}/unit-edit/${booking.vehicleIndex}`)
             }
-            disabled={!booking.assignedClientId}
-            className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700`}
           >
             <FilePenLine size={14} />
             Add Engine/Chassis
@@ -767,18 +766,15 @@ const VehicleOrderDetails = () => {
                               )}
                               <button
                                 onClick={() => openClientModal(booking)}
-                                disabled={!["payment_done", "chassis_received", "delivered"].includes(booking.status)}
                                 className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
                                   booking.assignedClientId
                                     ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                                     : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                }`}
                                 title={
-                                  !["payment_done", "chassis_received", "delivered"].includes(booking.status)
-                                    ? "Client allotment unlocks after payment"
-                                    : booking.assignedClientId
-                                      ? "Client Allotted"
-                                      : "Allot Client"
+                                  booking.assignedClientId
+                                    ? "Client Allotted"
+                                    : "Allot Client"
                                 }
                               >
                                 <Check size={16} />
