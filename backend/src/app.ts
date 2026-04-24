@@ -37,6 +37,9 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Static file serving for uploads
+app.use("/uploads", express.static("uploads"));
+
 // API routes
 app.use("/api/v1", routes);
 app.use("/api/v1/dealers", dealerRoutes);

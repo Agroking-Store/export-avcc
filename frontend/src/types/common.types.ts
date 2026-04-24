@@ -1,5 +1,7 @@
 export type UserRole =
   | "admin"
+  | "manager"
+  | "employee"
   | "sourcing_team"
   | "accountant"
   | "client"
