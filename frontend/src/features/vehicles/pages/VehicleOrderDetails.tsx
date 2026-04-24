@@ -731,12 +731,6 @@ const VehicleOrderDetails = () => {
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           <p className="truncate font-semibold text-slate-900">{name}</p>
                           <p className="truncate text-sm text-slate-500">{variant}</p>
-                          <p className="truncate text-sm text-slate-500 mt-1">
-                            Allotted to:{" "}
-                            <span className="font-semibold text-slate-700">
-                              {booking.assignedClientSnapshot?.name || "-"}
-                            </span>
-                          </p>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           <div className="inline-flex items-center justify-center gap-3 text-sm text-slate-600">
@@ -765,25 +759,34 @@ const VehicleOrderDetails = () => {
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           <div className="inline-flex items-center justify-center gap-3">
                             {renderPrimaryAction(booking)}
-                            <button
-                              onClick={() => openClientModal(booking)}
-                              disabled={!["payment_done", "chassis_received", "delivered"].includes(booking.status)}
-                              className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
-                                booking.assignedClientId
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                              } disabled:cursor-not-allowed disabled:opacity-50`}
-                              title={
-                                !["payment_done", "chassis_received", "delivered"].includes(booking.status)
-                                  ? "Client allotment unlocks after payment"
-                                  : booking.assignedClientId
-                                    ? "Client Allotted"
-                                    : "Allot Client"
-                              }
-                            >
-                              <Check size={16} />
-                              {booking.assignedClientId ? "Client Allotted" : "Allot Client"}
-                            </button>
+                            <div className="flex flex-col items-center gap-1">
+                              {booking.assignedClientId && (
+                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                  Allotted to
+                                </span>
+                              )}
+                              <button
+                                onClick={() => openClientModal(booking)}
+                                disabled={!["payment_done", "chassis_received", "delivered"].includes(booking.status)}
+                                className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                  booking.assignedClientId
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                } disabled:cursor-not-allowed disabled:opacity-50`}
+                                title={
+                                  !["payment_done", "chassis_received", "delivered"].includes(booking.status)
+                                    ? "Client allotment unlocks after payment"
+                                    : booking.assignedClientId
+                                      ? "Client Allotted"
+                                      : "Allot Client"
+                                }
+                              >
+                                <Check size={16} />
+                                {booking.assignedClientId
+                                  ? booking.assignedClientSnapshot?.name
+                                  : "Allot Client"}
+                              </button>
+                            </div>
                             <button
                               onClick={() =>
                                 navigate(`/vehicles/orders/${id}/unit-view/${vehicleIndex}`)
