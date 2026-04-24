@@ -22,6 +22,10 @@ const VehicleOrderVehicleEdit = () => {
   const [chassisNumber, setChassisNumber] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
+
+  const validateChassis = (value: string) => /^[A-Z0-9]{17}$/i.test(value.trim());
+  const validateEngine = (value: string) => /^[A-Z0-9]{6,20}$/i.test(value.trim());
 
   useEffect(() => {
     const load = async () => {
@@ -47,6 +51,7 @@ const VehicleOrderVehicleEdit = () => {
 
         setOrder(orderRes);
         setBooking(currentBooking);
+        setAllBookings(bookingRes);
         setEngineNumber(currentBooking?.engineNumber || "");
         setChassisNumber(currentBooking?.chassisNumber || "");
         setDeliveryDate(currentBooking?.deliveryDate ? currentBooking.deliveryDate.split("T")[0] : "");
@@ -69,11 +74,39 @@ const VehicleOrderVehicleEdit = () => {
       return;
     }
 
+    const eng = engineNumber.trim().toUpperCase();
+    const chassis = chassisNumber.trim().toUpperCase();
+
+    if (!validateEngine(eng)) {
+      toast.error("Engine number must be 6-20 alphanumeric characters");
+      return;
+    }
+    if (!validateChassis(chassis)) {
+      toast.error("Chassis number must be exactly 17 alphanumeric characters");
+      return;
+    }
+
+    const duplicateEngine = allBookings.find(
+      (b) => b._id !== booking._id && b.engineNumber?.toUpperCase() === eng,
+    );
+    const duplicateChassis = allBookings.find(
+      (b) => b._id !== booking._id && b.chassisNumber?.toUpperCase() === chassis,
+    );
+
+    if (duplicateEngine) {
+      toast.error(`Engine number already used by Unit ${duplicateEngine.vehicleIndex + 1}`);
+      return;
+    }
+    if (duplicateChassis) {
+      toast.error(`Chassis number already used by Unit ${duplicateChassis.vehicleIndex + 1}`);
+      return;
+    }
+
     try {
       setSaving(true);
       const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
-        engineNumber: engineNumber.trim(),
-        chassisNumber: chassisNumber.trim(),
+        engineNumber: eng,
+        chassisNumber: chassis,
         deliveryDate: deliveryDate || undefined,
       });
 
@@ -152,31 +185,35 @@ const VehicleOrderVehicleEdit = () => {
       >
         <div className="grid gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <Package size={16} />
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Package size={14} className="text-amber-500" />
               Engine Number
             </label>
             <input
               type="text"
               value={engineNumber}
               onChange={(event) => setEngineNumber(event.target.value.toUpperCase())}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-              placeholder="Enter engine number"
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. G3LCSM578833"
+              maxLength={20}
             />
+            <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: G3LCSM578833</p>
           </div>
 
           <div>
-            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <Truck size={16} />
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Truck size={14} className="text-emerald-500" />
               Chassis Number
             </label>
             <input
               type="text"
               value={chassisNumber}
               onChange={(event) => setChassisNumber(event.target.value.toUpperCase())}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-              placeholder="Enter chassis number"
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. MALFK81AVSD035213"
+              maxLength={17}
             />
+            <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: MALFK81AVSD035213</p>
           </div>
 
           <div>

@@ -171,11 +171,36 @@ export const updateChassisEngine = async (
     throw new Error("Client must be allotted before adding engine/chassis details");
   }
 
-  if (data.chassisNumber !== undefined) {
-    booking.chassisNumber = data.chassisNumber.trim();
+  const chassisNum = data.chassisNumber?.trim().toUpperCase();
+  const engineNum = data.engineNumber?.trim().toUpperCase();
+
+  if (engineNum !== undefined) {
+    if (!/^[A-Z0-9]{6,20}$/.test(engineNum)) {
+      throw new Error("Engine number must be 6-20 alphanumeric characters");
+    }
+    const dupEngine = await VehicleBooking.findOne({
+      _id: { $ne: bookingId },
+      engineNumber: { $regex: new RegExp(`^${engineNum}$`, "i") },
+    });
+    if (dupEngine) throw new Error("Engine number already exists for another vehicle");
   }
-  if (data.engineNumber !== undefined) {
-    booking.engineNumber = data.engineNumber.trim();
+
+  if (chassisNum !== undefined) {
+    if (!/^[A-Z0-9]{17}$/.test(chassisNum)) {
+      throw new Error("Chassis number must be exactly 17 alphanumeric characters");
+    }
+    const dupChassis = await VehicleBooking.findOne({
+      _id: { $ne: bookingId },
+      chassisNumber: { $regex: new RegExp(`^${chassisNum}$`, "i") },
+    });
+    if (dupChassis) throw new Error("Chassis number already exists for another vehicle");
+  }
+
+  if (chassisNum !== undefined) {
+    booking.chassisNumber = chassisNum;
+  }
+  if (engineNum !== undefined) {
+    booking.engineNumber = engineNum;
   }
   if (data.deliveryDate !== undefined) {
     booking.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate) : undefined;
