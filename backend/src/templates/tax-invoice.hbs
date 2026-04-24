@@ -10,7 +10,7 @@
 body{
   font-family: Arial, Helvetica, sans-serif;
   margin:0;
-  padding:4px;
+  padding:16px;
   font-size:9px;
   color:#000;
 }
@@ -63,6 +63,34 @@ td,th{
 .wrap{
   white-space:pre-line;
 }
+
+/* remove double side borders in right top block */
+.right-block td{
+  border-left:none;
+  border-right:none;
+}
+
+.right-block tr:first-child td{
+  border-top:none;
+}
+
+.goods-table{
+  position: relative;
+}
+
+.goods-table:before{
+  content:"";
+  position:absolute;
+  top:-2px;
+  left:40%;
+  height:2px;
+  border-left:1px solid #000;
+}
+
+.goods-first-row td{
+  border-top:none;
+}
+
 tr, td, div {
   page-break-inside: avoid;
 }
@@ -113,37 +141,36 @@ Page - I
 </table>
 
 <!-- TOP MASTER SECTION -->
-<!-- TOP MASTER SECTION -->
-<table>
+<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
 <tr>
 <!-- LEFT COLUMN -->
-<td width="46%" style="padding:0;">
+<td width="46%" style="padding:0; border:none; border-right:1px solid #000;">
 
-  <table style="width:100%; border-collapse:collapse;">
+  <table style="width:100%; border-collapse:collapse; border:none;">
     <tr>
-      <td style="height:115px;">
+      <td style="padding:6px; vertical-align:top; min-height:115px; border:none; border-bottom:1px solid #000;">
         <div class="bold">Exporter</div><br>
 
         {{exporter.name}}<br>
-{{exporter.address.houseBuilding}}<br>
-{{exporter.address.streetArea}}<br>
-{{exporter.address.cityTown}} - {{exporter.address.pincode}}<br>
-{{exporter.address.state}}, {{exporter.address.country}}<br><br>
+        {{exporter.address.houseBuilding}}<br>
+        {{exporter.address.streetArea}}<br>
+        {{exporter.address.cityTown}} - {{exporter.address.pincode}}<br>
+        {{exporter.address.state}}, {{exporter.address.country}}<br><br>
 
-GST NO - {{exporter.gstNumber}}<br>
-IEC NO - {{exporter.iecNo}}
+        GST NO - {{exporter.gstNumber}}<br>
+        IEC NO - {{exporter.iecNo}}
       </td>
     </tr>
 
     <tr>
-      <td style="height:105px;">
+      <td style="padding:6px; vertical-align:top; border:none;">
         <div class="bold">Consignee</div><br>
 
-{{buyer.companyName}}<br>
-{{#if buyer.address.houseBuilding}}{{buyer.address.houseBuilding}}<br>{{/if}}
-{{#if buyer.address.streetArea}}{{buyer.address.streetArea}}<br>{{/if}}
-{{buyer.address.cityTown}}<br>
-{{buyer.address.country}}
+        {{buyer.companyName}}<br>
+        {{#if buyer.address.houseBuilding}}{{buyer.address.houseBuilding}}<br>{{/if}}
+        {{#if buyer.address.streetArea}}{{buyer.address.streetArea}}<br>{{/if}}
+        {{buyer.address.cityTown}}<br>
+        {{buyer.address.country}}
       </td>
     </tr>
   </table>
@@ -151,13 +178,19 @@ IEC NO - {{exporter.iecNo}}
 </td>
 
 <!-- RIGHT COLUMN -->
-<td width="54%" style="padding:0;">
+<td width="54%" style="padding:0; border:none;">
 
-<table style="width:100%; border-collapse:collapse;">
+<table class="right-block" style="width:100%; border-collapse:collapse; border:none;">
 
 <tr>
-<td width="60%">Invoice No & Dt.</td>
-<td>{{invoiceNo}} Dtd. {{invoiceDate}}</td>
+<td width="60%" style="border-top:none; border-left:none;">Invoice No & Dt.</td>
+<td style="border-top:none; border-right:none;">{{invoiceNo}} Dtd. {{invoiceDate}}</td>
+</tr>
+
+<!-- EMPTY ROW BELOW INVOICE -->
+<tr>
+<td>&nbsp;</td>
+<td></td>
 </tr>
 
 <tr>
@@ -167,17 +200,43 @@ IEC NO - {{exporter.iecNo}}
 
 <tr>
 <td>Other Reference</td>
-<td class="bold small">
+<td
+style="
+font-size:7px;
+font-weight:bold;
+line-height:1;
+padding:1px 3px;
+vertical-align:middle;
+"
+>
 {{otherReference}}<br>
 PI No - {{piNo}} Dt {{piDate}}
 </td>
 </tr>
+<!-- EMPTY ROW 1 -->
+<tr>
+<td>&nbsp;</td>
+<td></td>
+</tr>
 
-<tr><td colspan="2" style="height:18px;"></td></tr>
-<tr><td colspan="2" style="height:18px;"></td></tr>
+<!-- EMPTY ROW 2 -->
+<tr>
+<td>&nbsp;</td>
+<td></td>
+</tr>
 
 <tr>
-<td colspan="2" style="height:138px; vertical-align:top;">
+<td
+colspan="2"
+style="
+padding:6px;
+vertical-align:top;
+border-top:none;
+border-left:none;
+border-right:none;
+border-bottom:none;
+"
+>
 
 <div class="bold">DRAWBACK SHIPMENT- {{drawbackShipment}}</div>
 <div class="bold">RODTEP SCHEME CODE - {{rodtepSchemeCode}}</div>
@@ -204,20 +263,47 @@ AD CODE - {{adCode}}
 
 <!-- ROW 1 -->
 <tr>
-<td width="16%" style="border:1px solid #000;">
+<td width="17%" style="border:1px solid #000; border-top:none;">
 Pre -<br>Carriage
 </td>
 
-<td width="6%" class="center" style="border:1px solid #000;">
+<td width="6%" style="border:1px solid #000; border-top:none;">
 {{preCarriage}}
 </td>
 
-<td width="24%" style="border:1px solid #000;">
-Place of Rcpt by Pre Carrier<br>
+<td width="23%" style="padding:0; border:1px solid #000; border-top:none;">
+
+<table style="width:100%; border-collapse:collapse;">
+
+<tr>
+<td
+style="
+border:none;
+border-bottom:1px solid #000;
+padding:2px;
+font-weight:bold;
+"
+>
+Place of Rcpt by Pre Carrier
+</td>
+</tr>
+
+<tr>
+<td
+style="
+border:none;
+padding:2px;
+"
+>
 {{placeReceipt}}
 </td>
+</tr>
 
-<td width="31%" style="padding:0; border:1px solid #000;">
+</table>
+
+</td>
+
+<td width="31%" style="padding:0; border:1px solid #000; border-top:none;">
 
 <table style="width:100%; border-collapse:collapse;">
 <tr>
@@ -241,7 +327,7 @@ style="border:none; padding:2px;">
 
 </td>
 
-<td width="23%" style="padding:0; border:1px solid #000;">
+<td width="23%" style="padding:0; border:1px solid #000; border-top:none;">
 
 <table style="width:100%; border-collapse:collapse;">
 <tr>
@@ -275,9 +361,36 @@ Vessel/<br>Flight
 {{vesselFlight}}
 </td>
 
-<td style="border:1px solid #000;">
-Port of Loading<br>
+<td style="padding:0; border:1px solid #000;">
+
+<table style="width:100%; border-collapse:collapse;">
+
+<tr>
+<td
+style="
+border:none;
+border-bottom:1px solid #000;
+padding:2px;
+font-weight:normal;
+"
+>
+Port of Loading
+</td>
+</tr>
+
+<tr>
+<td
+style="
+border:none;
+padding:2px;
+"
+>
 {{portOfLoading}}
+</td>
+</tr>
+
+</table>
+
 </td>
 
 <td colspan="2" rowspan="2"
@@ -317,7 +430,7 @@ District of Origin of Goods - {{districtOfOrigin}}
 <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
 
 <tr>
-<td width="55%"
+<td width="50%"
 style="
 border:none;
 border-right:1px solid #000;
@@ -327,7 +440,7 @@ padding:2px;
 Port of Discharge
 </td>
 
-<td width="45%"
+<td width="50%"
 style="
 border:none;
 border-bottom:1px solid #000;
@@ -347,7 +460,13 @@ padding:2px;
 {{portOfDischarge}}
 </td>
 
-<td style="border:none; padding:2px;">
+<td
+style="
+border:none;
+border-left:1px solid #000;
+padding:2px;
+"
+>
 {{placeDelivery}}
 </td>
 </tr>
@@ -359,23 +478,56 @@ padding:2px;
 </table>
 <!-- EXACT GOODS TABLE -->
 
-<table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+<table class="goods-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px; margin-top:-2px;">
 
 <thead>
 <tr>
-<th width="17%">Marks & Nos<br>Container No</th>
-<th width="6%">No & Kind<br>of Pkgs</th>
-<th width="33%">Description of Goods</th>
-<th width="11%">Quantity<br>In Nos</th>
-<th width="9%">Rate<br>DDU<br>{{shipmentMode}}</th>
-<th width="9%">Amount<br>In USD</th>
-<th width="15%">RMKS<br>(IF ANY)</th>
+
+<th width="17%" style="border-top:none;">
+Marks & Nos<br>Container No
+</th>
+
+<th
+width="6%"
+style="
+border-top:none;
+border-right:1px solid #000;
+position:relative;
+top:-1px;
+"
+>
+No & Kind<br>of Pkgs
+</th>
+
+<th
+width="33%"
+style="border-top:none; border-left:none;"
+>
+Description of Goods
+</th>
+
+<th width="11%" style="border-top:none;">
+Quantity<br>In Nos
+</th>
+
+<th width="9%" style="border-top:none;">
+Rate<br>DDU<br>{{shipmentMode}}
+</th>
+
+<th width="9%" style="border-top:none;">
+Amount<br>In USD
+</th>
+
+<th width="15%" style="border-top:none;">
+RMKS<br>(IF ANY)
+</th>
+
 </tr>
 </thead>
 
 <tbody>
 
-<tr>
+<tr class="goods-first-row">
 
 <!-- LEFT BIG COLUMN -->
 <td style="padding:0; vertical-align:top;">
@@ -502,26 +654,65 @@ $ {{amount}}
 </table>
 <!-- EXACT BOTTOM SECTION -->
 
-<table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px;">
+<table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:11px; margin-top:-1px;">
 
 <!-- AMOUNT IN WORDS -->
 <tr>
-<td width="58%" style="padding:4px;">
+
+<td
+width="20%"
+style="
+padding:4px;
+border-top:none;
+border-right:none;
+"
+>
 Amount Chargeable<br>
 (In Words)
 </td>
 
-<td width="14%" class="bold center" style="word-break:break-word;">
+<td
+width="47%"
+class="bold center"
+style="
+border-top:none;
+border-left:none;
+white-space:nowrap;
+font-size:10px;
+vertical-align:middle;
+height:34px;
+line-height:1.1;
+"
+>
 US DOLLAR $ - {{amountWords}}
 </td>
 
-<td width="10%" class="center">
+<td
+width="9%"
+class="center"
+style="
+border-top:none;
+padding:0;
+text-align:center;
+vertical-align:middle;
+"
+>
 Total
 </td>
 
-<td width="18%" class="bold center">
+<td
+width="24%"
+class="bold"
+style="
+border-top:none;
+padding:0 0 0 8px;
+text-align:left;
+vertical-align:middle;
+"
+>
 $ {{grandTotal}}
 </td>
+
 </tr>
 
 <!-- MAIN BOTTOM ROW -->
@@ -530,7 +721,7 @@ $ {{grandTotal}}
 <!-- LEFT DECLARATION -->
 <td colspan="2" style="padding:0; vertical-align:top;">
 
-<table style="width:100%; border-collapse:collapse;">
+<table style="width:100%; border-collapse:collapse; border:none;">
 
 <tr>
 <td style="border:none; border-bottom:1px solid #000; padding:4px;">

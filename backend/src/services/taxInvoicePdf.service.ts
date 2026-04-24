@@ -46,13 +46,13 @@ export const generateTaxInvoicePDF = async (
 
   landscape: false,
 
-  scale: 0.74,
+  scale: 0.72,
 
   margin: {
-    top: "3mm",
-    bottom: "3mm",
-    left: "3mm",
-    right: "3mm",
+    top: "12mm",
+    bottom: "12mm",
+    left: "16mm",
+    right: "16mm",
   },
 });
 
