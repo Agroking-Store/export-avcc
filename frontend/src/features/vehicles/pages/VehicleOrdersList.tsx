@@ -1,57 +1,73 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Search,
-  Plus,
   ChevronLeft,
   ChevronRight,
+  Filter,
+  Plus,
+  Search,
   Eye,
   FilePenLine,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
-  VehicleListItem,
+  VehicleOrderItem,
   vehicleManagementApi,
 } from "../vehicleManagementApi";
 
-const VehicleList = () => {
+const statuses = ["All", "Pending", "Confirmed", "Completed"];
+
+const getStatusStyle = (status: VehicleOrderItem["status"]) => {
+  switch (status) {
+    case "Confirmed":
+      return "bg-blue-100 text-blue-700";
+    case "Completed":
+      return "bg-emerald-100 text-emerald-700";
+    default:
+      return "bg-amber-100 text-amber-700";
+  }
+};
+
+const VehicleOrdersList = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
+  const [orders, setOrders] = useState<VehicleOrderItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const lastToastMessage = useRef<string | null>(null);
 
   const limit = 5;
 
-  const fetchVehicles = async () => {
+  const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await vehicleManagementApi.getVehicleList({
+      const res = await vehicleManagementApi.getVehicleOrders({
         search,
+        status,
         page: currentPage,
         limit,
       });
-      setVehicles(res.data || []);
+
+      setOrders(res.data || []);
       setTotalPages(res.totalPages || 1);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch vehicles");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch orders");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchVehicles();
-  }, [search, currentPage]);
+    fetchOrders();
+  }, [search, status, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, status]);
 
   useEffect(() => {
     if (location.state?.success) {
@@ -70,23 +86,22 @@ const VehicleList = () => {
         <div className="px-8 py-6 flex justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
-              Vehicle List
+Required Vehicles
             </h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-              Maintain a dedicated vehicle inventory list
+              Create and track required vehicles from your dedicated vehicle list
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
-              {vehicles.length} Vehicles
+              {orders.length} Orders
             </span>
             <button
-              onClick={() => navigate("/vehicles/add")}
+              onClick={() => navigate("/vehicles/orders/add")}
               className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
             >
-              <Plus size={18} strokeWidth={3} />
-              Add Vehicle
+              <Plus size={18} strokeWidth={3} />Add Required Vehicle
             </button>
           </div>
         </div>
@@ -94,6 +109,25 @@ const VehicleList = () => {
         <hr className="border-slate-100 dark:border-gray-800" />
 
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
+                <Filter size={16} />
+              </div>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="cursor-pointer appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800"
+              >
+                {statuses.map((item) => (
+                  <option key={item} value={item}>
+                    {item === "All" ? "All Statuses" : item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -114,10 +148,8 @@ const VehicleList = () => {
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
                 {[
-                  "Brand Name",
-                  "Model Name",
-                  "Variant",
-                  "Color",
+                  "Vehicle",
+                  "Quantity",
                   "Status",
                   "Actions",
                 ].map((head) => (
@@ -134,62 +166,54 @@ const VehicleList = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
-                    Loading vehicles...
+                  <td colSpan={4} className="text-center py-20 text-slate-400 italic">
+                    Loading orders...
                   </td>
                 </tr>
-              ) : vehicles.length === 0 ? (
+              ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
-                    No vehicles found
+                  <td colSpan={4} className="text-center py-20 text-slate-400 italic">
+                    No required vehicles found
                   </td>
                 </tr>
               ) : (
-                vehicles.map((vehicle) => (
+                orders.map((order) => (
                   <tr
-                    key={vehicle._id}
+                    key={order._id}
                     className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40"
                   >
                     <td className="px-8 py-5 text-center">
                       <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
-                        {vehicle.brandName}
+                        {order.vehicleSnapshot.brandName}{" "}
+                        {order.vehicleSnapshot.modelName}
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-gray-500">
+                        {order.vehicleSnapshot.variant} - {order.vehicleSnapshot.color}
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-center">
-                      <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
-                        {vehicle.modelName}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
-                      {vehicle.variant}
-                    </td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
-                      {vehicle.color}
+                    <td className="px-8 py-5 text-center text-sm font-semibold text-slate-600 dark:text-gray-300">
+                      {order.quantity}
                     </td>
                     <td className="px-8 py-5 text-center">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                          vehicle.status === "Available"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(order.status)}`}
                       >
-                        {vehicle.status}
+                        {order.status}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">
                         <button
-                          onClick={() => navigate(`/vehicles/list/${vehicle._id}`)}
+                          onClick={() => navigate(`/vehicles/orders/${order._id}`)}
                           className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                          title="View Vehicle"
+                          title="View Order"
                         >
                           <Eye size={18} />
                         </button>
                         <button
-                          onClick={() => navigate(`/vehicles/edit/${vehicle._id}`)}
+                          onClick={() => navigate(`/vehicles/orders/edit/${order._id}`)}
                           className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                          title="Edit Vehicle"
+                          title="Edit Order"
                         >
                           <FilePenLine size={18} />
                         </button>
@@ -229,4 +253,4 @@ const VehicleList = () => {
   );
 };
 
-export default VehicleList;
+export default VehicleOrdersList;

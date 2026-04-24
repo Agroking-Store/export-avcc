@@ -1,49 +1,84 @@
-import { Request, Response, NextFunction } from 'express';
-import { createVehicleSchema, updateVehicleSchema, bookVehicleSchema } from '../dto/vehicle.dto';
+import { Request, Response, NextFunction } from "express";
+import {
+  createVehicleSchema,
+  updateVehicleSchema,
+  bookVehicleSchema,
+} from "../dto/vehicle.dto";
 
 const formatJoiError = (error: any) => {
   return error.details.map((detail: any) => ({
     path: detail.path,
-    message: detail.message.replace(/['"]+/g, '')
+    message: detail.message.replace(/['"]+/g, ""),
   }));
 };
 
-export const validateCreateVehicle = (req: Request, res: Response, next: NextFunction) => {
-  const { error, value } = createVehicleSchema.validate(req.body, { abortEarly: false });
+const validateSchema = (schema: any, payload: unknown) => {
+  const { error, value } = schema.validate(payload, { abortEarly: false });
+
   if (error) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed',
-      details: formatJoiError(error)
-    });
+    const details = formatJoiError(error);
+    throw new Error(details.map((detail: any) => detail.message).join(", "));
   }
-  req.body = value;
-  next();
+
+  return value;
 };
 
-export const validateUpdateVehicle = (req: Request, res: Response, next: NextFunction) => {
-  const { error, value } = updateVehicleSchema.validate(req.body, { abortEarly: false });
-  if (error) {
+export const assertCreateVehicle = (data: unknown) =>
+  validateSchema(createVehicleSchema, data);
+
+export const assertUpdateVehicle = (data: unknown) =>
+  validateSchema(updateVehicleSchema, data);
+
+export const assertBookVehicle = (data: unknown) =>
+  validateSchema(bookVehicleSchema, data);
+
+export const validateCreateVehicle = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    req.body = assertCreateVehicle(req.body);
+    next();
+  } catch (error: any) {
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
-      details: formatJoiError(error)
+      error: "Validation failed",
+      message: error.message,
     });
   }
-  req.body = value;
-  next();
 };
 
-export const validateBookVehicle = (req: Request, res: Response, next: NextFunction) => {
-  const { error, value } = bookVehicleSchema.validate(req.body, { abortEarly: false });
-  if (error) {
+export const validateUpdateVehicle = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    req.body = assertUpdateVehicle(req.body);
+    next();
+  } catch (error: any) {
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
-      details: formatJoiError(error)
+      error: "Validation failed",
+      message: error.message,
     });
   }
-  req.body = value;
-  next();
 };
 
+export const validateBookVehicle = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    req.body = assertBookVehicle(req.body);
+    next();
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      error: "Validation failed",
+      message: error.message,
+    });
+  }
+};

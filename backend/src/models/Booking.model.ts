@@ -39,6 +39,7 @@ export interface IBooking extends Document {
     | "Shipped"
     | "Commercial Invoice Submitted";
   orderId?: mongoose.Types.ObjectId;
+  bookingAmount: number;
   createdAt: Date;
   updatedAt: Date;
 }

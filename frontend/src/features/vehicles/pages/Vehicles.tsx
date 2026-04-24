@@ -230,15 +230,15 @@ const Vehicles: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ActionTile 
           title="Vehicle List" 
-          desc="Manage unit build and tracking" 
+          desc="Manage dedicated vehicle inventory" 
           icon={<Car size={22} />} 
           onClick={() => navigate('/vehicles/list')} 
         />
         <ActionTile 
-          title="Order Explorer" 
-          desc="Search across all Client Orders" 
+          title="Required Vehicles"
+          desc="Add required vehicles from the vehicle list"
           icon={<Search size={22} />} 
-          onClick={() => navigate('/orders/add')} 
+          onClick={() => navigate('/vehicles/orders')} 
         />
       </div>
 

@@ -38,13 +38,19 @@ const getNodeEnv = (): "development" | "production" | "test" => {
 
 export const config: EnvConfig = {
   NODE_ENV: getNodeEnv(),
-  PORT: parseInt(getEnvVariable("PORT"), 10),
-  MONGODB_URI: getEnvVariable("MONGODB_URI"),
-  JWT_SECRET: getEnvVariable("JWT_SECRET"),
+  PORT: parseInt(getEnvVariable("PORT", "5000"), 10),
+  MONGODB_URI: getEnvVariable(
+    "MONGODB_URI",
+    "mongodb://127.0.0.1:27017/export-avcc",
+  ),
+  JWT_SECRET: getEnvVariable("JWT_SECRET", "export-avcc-dev-secret"),
   JWT_EXPIRE: getEnvVariable("JWT_EXPIRE", "1d"),
-  JWT_REFRESH_SECRET: getEnvVariable("JWT_REFRESH_SECRET"),
+  JWT_REFRESH_SECRET: getEnvVariable(
+    "JWT_REFRESH_SECRET",
+    "export-avcc-dev-refresh-secret",
+  ),
   JWT_REFRESH_EXPIRE: getEnvVariable("JWT_REFRESH_EXPIRE", "7d"),
-  CORS_ORIGIN: getEnvVariable("CORS_ORIGIN"),
+  CORS_ORIGIN: getEnvVariable("CORS_ORIGIN", "http://localhost:5173"),
   UPLOAD_PATH: getEnvVariable("UPLOAD_PATH", "./uploads"),
-  MAX_FILE_SIZE: parseInt(getEnvVariable("MAX_FILE_SIZE")),
+  MAX_FILE_SIZE: parseInt(getEnvVariable("MAX_FILE_SIZE", "5242880"), 10),
 };

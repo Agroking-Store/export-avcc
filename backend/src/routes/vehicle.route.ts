@@ -26,7 +26,7 @@ router.post("/", validateCreateVehicle, createVehicle);
 router.get("/", getVehicles);
 router.get("/stats", getVehicleStats);
 router.get("/:id", getVehicle);
-router.put("/:id", updateVehicle);
+router.put("/:id", validateUpdateVehicle, updateVehicle);
 router.delete("/:id", deleteVehicle);
 router.post("/book", validateBookVehicle, bookVehicle);
 
