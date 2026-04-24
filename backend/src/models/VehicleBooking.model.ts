@@ -26,6 +26,7 @@ export interface IVehicleBooking extends Document {
   paymentReference?: string;
   engineNumber?: string;
   chassisNumber?: string;
+  deliveryDate?: Date;
   lastReminderAt?: Date;
   reminderCount?: number;
   createdAt: Date;
@@ -96,6 +97,9 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       default: "",
       trim: true,
+    },
+    deliveryDate: {
+      type: Date,
     },
     lastReminderAt: {
       type: Date,

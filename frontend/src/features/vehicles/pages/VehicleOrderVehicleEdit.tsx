@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Package, Truck } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Package, Truck } from "lucide-react";
 import { toast } from "react-toastify";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import {
   VehicleBookingItem,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 const VehicleOrderVehicleEdit = () => {
   const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
@@ -18,6 +20,8 @@ const VehicleOrderVehicleEdit = () => {
   const [booking, setBooking] = useState<VehicleBookingItem | null>(null);
   const [engineNumber, setEngineNumber] = useState("");
   const [chassisNumber, setChassisNumber] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -39,6 +43,7 @@ const VehicleOrderVehicleEdit = () => {
         setBooking(currentBooking);
         setEngineNumber(currentBooking?.engineNumber || "");
         setChassisNumber(currentBooking?.chassisNumber || "");
+        setDeliveryDate(currentBooking?.deliveryDate ? currentBooking.deliveryDate.split("T")[0] : "");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle details");
       } finally {
@@ -63,6 +68,7 @@ const VehicleOrderVehicleEdit = () => {
       const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
         engineNumber: engineNumber.trim(),
         chassisNumber: chassisNumber.trim(),
+        deliveryDate: deliveryDate || undefined,
       });
 
       setBooking(updated);
@@ -165,6 +171,43 @@ const VehicleOrderVehicleEdit = () => {
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
               placeholder="Enter chassis number"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Calendar size={16} />
+              Date of Delivery
+            </label>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 cursor-pointer"
+                >
+                  <span className={deliveryDate ? "text-slate-700" : "text-slate-400"}>
+                    {deliveryDate
+                      ? new Date(deliveryDate).toLocaleDateString()
+                      : "Select date..."}
+                  </span>
+                  <CalendarIcon size={16} className="text-slate-400" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={deliveryDate ? new Date(deliveryDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      setDeliveryDate(date.toISOString().split("T")[0]);
+                    } else {
+                      setDeliveryDate("");
+                    }
+                    setCalendarOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 

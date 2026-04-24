@@ -162,7 +162,7 @@ export const confirmPayment = async (
  */
 export const updateChassisEngine = async (
   bookingId: string,
-  data: { chassisNumber?: string; engineNumber?: string },
+  data: { chassisNumber?: string; engineNumber?: string; deliveryDate?: string },
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
@@ -172,6 +172,9 @@ export const updateChassisEngine = async (
   }
   if (data.engineNumber !== undefined) {
     booking.engineNumber = data.engineNumber.trim();
+  }
+  if (data.deliveryDate !== undefined) {
+    booking.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate) : undefined;
   }
 
   // Auto-advance status if both are filled and status is payment_done

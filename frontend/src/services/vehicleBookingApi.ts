@@ -27,6 +27,7 @@ export interface VehicleBookingItem {
   paymentReference?: string;
   engineNumber?: string;
   chassisNumber?: string;
+  deliveryDate?: string;
   lastReminderAt?: string;
   reminderCount?: number;
   createdAt: string;
@@ -81,7 +82,7 @@ export const vehicleBookingApi = {
 
   updateChassisEngine: async (
     bookingId: string,
-    payload: { chassisNumber?: string; engineNumber?: string },
+    payload: { chassisNumber?: string; engineNumber?: string; deliveryDate?: string },
   ) => {
     const response = await api.patch(
       `/vehicle-bookings/${bookingId}/chassis-engine`,
