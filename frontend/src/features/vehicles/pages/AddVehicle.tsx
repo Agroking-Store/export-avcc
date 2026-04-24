@@ -7,77 +7,104 @@ import {
   DollarSign,
   Hash,
   Palette,
+  Plus,
   Save,
+  Trash2,
   X,
 } from "lucide-react";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 
+interface VehicleForm {
+  brandName: string;
+  modelName: string;
+  variant: string;
+  color: string;
+  fobAmount: string;
+  freight: string;
+}
+
+const emptyVehicle = (): VehicleForm => ({
+  brandName: "",
+  modelName: "",
+  variant: "",
+  color: "",
+  fobAmount: "",
+  freight: "",
+});
+
 const AddVehicle = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    brandName: "",
-    modelName: "",
-    variant: "",
-    color: "",
-    fobAmount: "",
-    freight: "",
-  });
+  const [vehicles, setVehicles] = useState<VehicleForm[]>([emptyVehicle()]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (index: number, field: keyof VehicleForm, value: string) => {
+    setVehicles((prev) =>
+      prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
+    );
   };
 
-  const handleNumberChange = (field: string, value: string) => {
+  const handleNumberChange = (index: number, field: keyof VehicleForm, value: string) => {
     const num = parseFloat(value);
     if (value === "" || num >= 0) {
-      setForm((prev) => ({ ...prev, [field]: value }));
+      handleChange(index, field, value);
     }
+  };
+
+  const addVehicle = () => {
+    setVehicles((prev) => [...prev, emptyVehicle()]);
+  };
+
+  const removeVehicle = (index: number) => {
+    if (vehicles.length <= 1) {
+      toast.error("At least one vehicle entry is required");
+      return;
+    }
+    setVehicles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const validate = (): boolean => {
+    for (let i = 0; i < vehicles.length; i++) {
+      const v = vehicles[i];
+      if (!v.brandName.trim() || !v.modelName.trim() || !v.variant.trim() || !v.color.trim()) {
+        toast.error(`All vehicle fields are required for entry ${i + 1}`);
+        return false;
+      }
+      const fob = parseFloat(v.fobAmount);
+      if (v.fobAmount !== "" && (isNaN(fob) || fob < 0)) {
+        toast.error(`FOB Amount cannot be negative for entry ${i + 1}`);
+        return false;
+      }
+      const freight = parseFloat(v.freight);
+      if (v.freight !== "" && (isNaN(freight) || freight < 0)) {
+        toast.error(`Freight cannot be negative for entry ${i + 1}`);
+        return false;
+      }
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (
-      !form.brandName.trim() ||
-      !form.modelName.trim() ||
-      !form.variant.trim() ||
-      !form.color.trim()
-    ) {
-      toast.error("All vehicle fields are required");
-      return;
-    }
-
-    const fobAmount = parseFloat(form.fobAmount);
-    const freight = parseFloat(form.freight);
-
-    if (form.fobAmount !== "" && (isNaN(fobAmount) || fobAmount < 0)) {
-      toast.error("FOB Amount cannot be negative");
-      return;
-    }
-    if (form.freight !== "" && (isNaN(freight) || freight < 0)) {
-      toast.error("Freight cannot be negative");
-      return;
-    }
-
-
+    if (!validate()) return;
 
     try {
       setLoading(true);
-      await vehicleManagementApi.createVehicle({
-        brandName: form.brandName.trim(),
-        modelName: form.modelName.trim(),
-        variant: form.variant.trim(),
-        color: form.color.trim(),
-        fobAmount: form.fobAmount !== "" ? parseFloat(form.fobAmount) : 0,
-        freight: form.freight !== "" ? parseFloat(form.freight) : 0,
-      });
+      const payload = vehicles.map((v) => ({
+        brandName: v.brandName.trim(),
+        modelName: v.modelName.trim(),
+        variant: v.variant.trim(),
+        color: v.color.trim(),
+        fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
+        freight: v.freight !== "" ? parseFloat(v.freight) : 0,
+      }));
+
+      await vehicleManagementApi.createVehiclesBulk(payload);
 
       navigate("/vehicles/list", {
-        state: { success: "Vehicle added successfully" },
+        state: { success: `${vehicles.length} vehicle(s) added successfully` },
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to add vehicle");
+      toast.error(error.response?.data?.message || "Failed to add vehicles");
     } finally {
       setLoading(false);
     }
@@ -97,7 +124,7 @@ const AddVehicle = () => {
             Add Vehicle
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Create a dedicated vehicle list item
+            Create one or more dedicated vehicle list items
           </p>
         </div>
 
@@ -109,114 +136,148 @@ const AddVehicle = () => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10">
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
-            <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-              Vehicle Details
-            </h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {vehicles.map((vehicle, index) => (
+          <div
+            key={index}
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 md:p-8 space-y-6"
+          >
+            {/* Card Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                  {index + 1}
+                </div>
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  Vehicle Entry {index + 1}
+                </h2>
+              </div>
+              {vehicles.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeVehicle(index)}
+                  className="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  <Trash2 size={14} /> Remove
+                </button>
+              )}
+            </div>
+
+            {/* Vehicle Details */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+                <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  Vehicle Details
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>
+                    <Car size={14} className="text-indigo-500" /> Brand Name
+                  </label>
+                  <input
+                    value={vehicle.brandName}
+                    onChange={(e) => handleChange(index, "brandName", e.target.value)}
+                    className={inputStyle}
+                    placeholder="Toyota"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Car size={14} className="text-blue-400" /> Model Name
+                  </label>
+                  <input
+                    value={vehicle.modelName}
+                    onChange={(e) => handleChange(index, "modelName", e.target.value)}
+                    className={inputStyle}
+                    placeholder="Land Cruiser"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Hash size={14} className="text-emerald-500" /> Variant
+                  </label>
+                  <input
+                    value={vehicle.variant}
+                    onChange={(e) => handleChange(index, "variant", e.target.value)}
+                    className={inputStyle}
+                    placeholder="ZX Diesel"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Palette size={14} className="text-rose-400" /> Color
+                  </label>
+                  <input
+                    value={vehicle.color}
+                    onChange={(e) => handleChange(index, "color", e.target.value)}
+                    className={inputStyle}
+                    placeholder="White Pearl"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+                <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  Pricing
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>
+                    <DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={vehicle.fobAmount}
+                    onChange={(e) => handleNumberChange(index, "fobAmount", e.target.value)}
+                    className={inputStyle}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={vehicle.freight}
+                    onChange={(e) => handleNumberChange(index, "freight", e.target.value)}
+                    className={inputStyle}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
+        ))}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>
-                <Car size={14} className="text-indigo-500" /> Brand Name
-              </label>
-              <input
-                name="brandName"
-                value={form.brandName}
-                onChange={handleChange}
-                className={inputStyle}
-                placeholder="Toyota"
-              />
-            </div>
+        {/* Add Another Vehicle Button */}
+        <button
+          type="button"
+          onClick={addVehicle}
+          className="cursor-pointer w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-indigo-200 text-indigo-600 font-bold text-sm uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-300 transition-all"
+        >
+          <Plus size={18} /> Add Another Vehicle
+        </button>
 
-            <div>
-              <label className={labelStyle}>
-                <Car size={14} className="text-blue-400" /> Model Name
-              </label>
-              <input
-                name="modelName"
-                value={form.modelName}
-                onChange={handleChange}
-                className={inputStyle}
-                placeholder="Land Cruiser"
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> Variant
-              </label>
-              <input
-                name="variant"
-                value={form.variant}
-                onChange={handleChange}
-                className={inputStyle}
-                placeholder="ZX Diesel"
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <Palette size={14} className="text-rose-400" /> Color
-              </label>
-              <input
-                name="color"
-                value={form.color}
-                onChange={handleChange}
-                className={inputStyle}
-                placeholder="White Pearl"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
-            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-              Pricing
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>
-                <DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)
-              </label>
-              <input
-                name="fobAmount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.fobAmount}
-                onChange={(e) => handleNumberChange("fobAmount", e.target.value)}
-                className={inputStyle}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
-                <DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)
-              </label>
-              <input
-                name="freight"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.freight}
-                onChange={(e) => handleNumberChange("freight", e.target.value)}
-                className={inputStyle}
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
+        {/* Action Buttons */}
+        <div className="flex flex-col md:flex-row justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             onClick={() => navigate("/vehicles/list")}
@@ -230,7 +291,7 @@ const AddVehicle = () => {
             disabled={loading}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><Save size={18} /> Save Vehicle</>}
+            {loading ? "Saving..." : <><Save size={18} /> Save Vehicle(s)</>}
           </button>
         </div>
       </form>
@@ -239,3 +300,4 @@ const AddVehicle = () => {
 };
 
 export default AddVehicle;
+

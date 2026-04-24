@@ -65,6 +65,19 @@ export const vehicleManagementApi = {
     return response.data;
   },
 
+  createVehiclesBulk: async (vehicles: Array<{
+    brandName: string;
+    modelName: string;
+    variant: string;
+    color: string;
+    quantity?: number;
+    fobAmount?: number;
+    freight?: number;
+  }>) => {
+    const response = await api.post("/vehicle-list/bulk", { vehicles });
+    return response.data;
+  },
+
   getVehicleById: async (id: string) => {
     const response = await api.get(`/vehicle-list/${id}`);
     return response.data;

@@ -33,6 +33,20 @@ export const createVehicleListItemService = async (
   return await item.save();
 };
 
+export const createVehicleListItemsService = async (
+  items: CreateVehicleListItemDto[],
+) => {
+  const created = await Promise.all(
+    items.map((data) =>
+      new VehicleListItem({
+        ...data,
+        quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
+      }).save(),
+    ),
+  );
+  return created;
+};
+
 export const getVehicleListItemsService = async (query: any) => {
   const { search, page = 1, limit = 5 } = query;
 

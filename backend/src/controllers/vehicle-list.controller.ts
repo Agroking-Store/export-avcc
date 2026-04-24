@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   createVehicleListItemService,
+  createVehicleListItemsService,
   getVehicleListItemsService,
   getVehicleOrderFormOptionsService,
   getVehicleListItemByIdService,
@@ -59,6 +60,38 @@ export const getVehicleListItemById = async (req: Request, res: Response) => {
     res.json(item);
   } catch (error: any) {
     res.status(404).json({ message: error.message });
+  }
+};
+
+export const createVehicleListItems = async (req: Request, res: Response) => {
+  try {
+    const { vehicles } = req.body;
+
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+      throw new Error("Vehicles array is required");
+    }
+
+    for (const v of vehicles) {
+      if (!v.brandName || !v.modelName || !v.variant || !v.color) {
+        throw new Error("All vehicle fields are required for each entry");
+      }
+    }
+
+    const items = await createVehicleListItemsService(
+      vehicles.map((v: any) => ({
+        brandName: v.brandName.trim(),
+        modelName: v.modelName.trim(),
+        variant: v.variant.trim(),
+        color: v.color.trim(),
+        quantity: v.quantity !== undefined ? Number(v.quantity) : undefined,
+        fobAmount: v.fobAmount !== undefined ? Number(v.fobAmount) : undefined,
+        freight: v.freight !== undefined ? Number(v.freight) : undefined,
+      })),
+    );
+
+    res.status(201).json({ data: items, count: items.length });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
 
