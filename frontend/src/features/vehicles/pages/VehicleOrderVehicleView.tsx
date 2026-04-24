@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Calendar,
   Eye,
   FileText,
+  Fuel,
+  Globe,
   Hash,
   IndianRupee,
+  Package,
   ShieldCheck,
   Truck,
   Upload,
@@ -139,6 +143,31 @@ const VehicleOrderVehicleView = () => {
       icon: Receipt,
       label: "Dealer Invoice",
       value: booking.isDealerInvoiceUploaded ? "Uploaded" : "Not Uploaded",
+    },
+    {
+      icon: Hash,
+      label: "HSN Code",
+      value: booking.hsnCode || "-",
+    },
+    {
+      icon: Fuel,
+      label: "Fuel Type",
+      value: booking.fuelType || "-",
+    },
+    {
+      icon: Globe,
+      label: "Country of Origin",
+      value: booking.countryOfOrigin || "-",
+    },
+    {
+      icon: Calendar,
+      label: "Year of Manufacture",
+      value: booking.yom || "-",
+    },
+    {
+      icon: Package,
+      label: "Engine Capacity",
+      value: booking.engineCapacity || "-",
     },
   ];
 

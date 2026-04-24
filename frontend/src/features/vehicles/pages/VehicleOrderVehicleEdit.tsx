@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Package, Truck } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck } from "lucide-react";
 import { toast } from "react-toastify";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import {
@@ -21,6 +21,11 @@ const VehicleOrderVehicleEdit = () => {
   const [engineNumber, setEngineNumber] = useState("");
   const [chassisNumber, setChassisNumber] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
+  const [engineCapacity, setEngineCapacity] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [countryOfOrigin, setCountryOfOrigin] = useState("");
+  const [yom, setYom] = useState("");
+  const [hsnCode, setHsnCode] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
 
@@ -55,6 +60,11 @@ const VehicleOrderVehicleEdit = () => {
         setEngineNumber(currentBooking?.engineNumber || "");
         setChassisNumber(currentBooking?.chassisNumber || "");
         setDeliveryDate(currentBooking?.deliveryDate ? currentBooking.deliveryDate.split("T")[0] : "");
+        setEngineCapacity(currentBooking?.engineCapacity || "");
+        setFuelType(currentBooking?.fuelType || "");
+        setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
+        setYom(currentBooking?.yom || "");
+        setHsnCode(currentBooking?.hsnCode || "");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle details");
       } finally {
@@ -108,6 +118,11 @@ const VehicleOrderVehicleEdit = () => {
         engineNumber: eng,
         chassisNumber: chassis,
         deliveryDate: deliveryDate || undefined,
+        engineCapacity: engineCapacity || undefined,
+        fuelType: fuelType || undefined,
+        countryOfOrigin: countryOfOrigin || undefined,
+        yom: yom || undefined,
+        hsnCode: hsnCode || undefined,
       });
 
       setBooking(updated);
@@ -214,6 +229,83 @@ const VehicleOrderVehicleEdit = () => {
               maxLength={17}
             />
             <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: MALFK81AVSD035213</p>
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Hash size={14} className="text-indigo-500" />
+              HSN Code
+            </label>
+            <input
+              type="text"
+              value={hsnCode}
+              onChange={(event) => setHsnCode(event.target.value.toUpperCase())}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. 870321"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Fuel size={14} className="text-orange-500" />
+              Fuel Type
+            </label>
+            <select
+              value={fuelType}
+              onChange={(event) => setFuelType(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            >
+              <option value="">Select fuel type...</option>
+              <option value="Petrol">Petrol</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Electric">Electric</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="CNG">CNG</option>
+              <option value="LPG">LPG</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Globe size={14} className="text-blue-500" />
+              Country of Origin
+            </label>
+            <input
+              type="text"
+              value={countryOfOrigin}
+              onChange={(event) => setCountryOfOrigin(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. Japan, India, Germany"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Calendar size={14} className="text-rose-500" />
+              Year of Manufacture (YOM)
+            </label>
+            <input
+              type="text"
+              value={yom}
+              onChange={(event) => setYom(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. 2024"
+              maxLength={4}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Package size={14} className="text-purple-500" />
+              Engine Capacity
+            </label>
+            <input
+              type="text"
+              value={engineCapacity}
+              onChange={(event) => setEngineCapacity(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. 1498 cc"
+            />
           </div>
 
           <div>

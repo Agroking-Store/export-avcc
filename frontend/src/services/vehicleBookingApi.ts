@@ -28,6 +28,11 @@ export interface VehicleBookingItem {
   engineNumber?: string;
   chassisNumber?: string;
   deliveryDate?: string;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  hsnCode?: string;
   lastReminderAt?: string;
   reminderCount?: number;
   documents?: {
@@ -93,7 +98,16 @@ export const vehicleBookingApi = {
 
   updateChassisEngine: async (
     bookingId: string,
-    payload: { chassisNumber?: string; engineNumber?: string; deliveryDate?: string },
+    payload: {
+      chassisNumber?: string;
+      engineNumber?: string;
+      deliveryDate?: string;
+      engineCapacity?: string;
+      fuelType?: string;
+      countryOfOrigin?: string;
+      yom?: string;
+      hsnCode?: string;
+    },
   ) => {
     const response = await api.patch(
       `/vehicle-bookings/${bookingId}/chassis-engine`,

@@ -99,11 +99,16 @@ export const confirmPaymentHandler = async (req: Request, res: Response) => {
 
 export const updateChassisEngineHandler = async (req: Request, res: Response) => {
   try {
-    const { chassisNumber, engineNumber, deliveryDate } = req.body;
+    const { chassisNumber, engineNumber, deliveryDate, engineCapacity, fuelType, countryOfOrigin, yom, hsnCode } = req.body;
     const booking = await updateChassisEngine(req.params.id as string, {
       chassisNumber,
       engineNumber,
       deliveryDate,
+      engineCapacity,
+      fuelType,
+      countryOfOrigin,
+      yom,
+      hsnCode,
     });
     res.json(booking);
   } catch (error: any) {

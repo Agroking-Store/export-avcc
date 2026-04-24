@@ -40,6 +40,11 @@ export interface IVehicleBooking extends Document {
   isCRTMUploaded: boolean;
   isBVUploaded: boolean;
   isDealerInvoiceUploaded: boolean;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  hsnCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -131,6 +136,11 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
     isCRTMUploaded: { type: Boolean, default: false },
     isBVUploaded: { type: Boolean, default: false },
     isDealerInvoiceUploaded: { type: Boolean, default: false },
+    engineCapacity: { type: String, default: "", trim: true },
+    fuelType: { type: String, default: "", trim: true },
+    countryOfOrigin: { type: String, default: "", trim: true },
+    yom: { type: String, default: "", trim: true },
+    hsnCode: { type: String, default: "", trim: true },
   },
   {
     timestamps: true,
