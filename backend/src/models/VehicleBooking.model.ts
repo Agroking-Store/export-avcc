@@ -29,6 +29,15 @@ export interface IVehicleBooking extends Document {
   deliveryDate?: Date;
   lastReminderAt?: Date;
   reminderCount?: number;
+  documents: {
+    form20?: string;
+    form21?: string;
+    form22?: string;
+    tempRegCert?: string;
+    bvCertificate?: string;
+  };
+  isCRTMUploaded: boolean;
+  isBVUploaded: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -109,6 +118,15 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       default: 0,
       min: 0,
     },
+    documents: {
+      form20: { type: String, default: "" },
+      form21: { type: String, default: "" },
+      form22: { type: String, default: "" },
+      tempRegCert: { type: String, default: "" },
+      bvCertificate: { type: String, default: "" },
+    },
+    isCRTMUploaded: { type: Boolean, default: false },
+    isBVUploaded: { type: Boolean, default: false },
   },
   {
     timestamps: true,

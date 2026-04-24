@@ -14,6 +14,8 @@ import {
   assignClientHandler,
   getBookingByIdHandler,
   getDueRemindersHandler,
+  uploadBookingDocumentsHandler,
+  getBookingFileHandler,
 } from "../controllers/vehicle-booking.controller";
 
 // Quotation-specific multer config
@@ -44,6 +46,34 @@ const quotationUpload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
+// Document upload multer config
+const documentStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const dir = path.join(process.cwd(), "uploads/booking-documents");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, `doc-${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
+});
+
+const documentUpload = multer({
+  storage: documentStorage,
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF, JPG, PNG, and WebP files are allowed"));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});
+
 const router = Router();
 
 router.get("/order/:orderId", getBookingsByOrder);
@@ -57,5 +87,18 @@ router.patch("/:id/assign-client", assignClientHandler);
 router.patch("/:id/chassis-engine", updateChassisEngineHandler);
 router.patch("/:id/status", updateStatusHandler);
 router.get("/:id", getBookingByIdHandler);
+
+router.post(
+  "/:id/documents",
+  documentUpload.fields([
+    { name: "form20", maxCount: 1 },
+    { name: "form21", maxCount: 1 },
+    { name: "form22", maxCount: 1 },
+    { name: "tempRegCert", maxCount: 1 },
+    { name: "bvCertificate", maxCount: 1 },
+  ]),
+  uploadBookingDocumentsHandler,
+);
+router.get("/:id/files/:field", getBookingFileHandler);
 
 export default router;

@@ -30,6 +30,15 @@ export interface VehicleBookingItem {
   deliveryDate?: string;
   lastReminderAt?: string;
   reminderCount?: number;
+  documents?: {
+    form20?: string;
+    form21?: string;
+    form22?: string;
+    tempRegCert?: string;
+    bvCertificate?: string;
+  };
+  isCRTMUploaded?: boolean;
+  isBVUploaded?: boolean;
   createdAt: string;
   updatedAt: string;
 }

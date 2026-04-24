@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,6 +8,8 @@ import {
   IndianRupee,
   ShieldCheck,
   Truck,
+  Upload,
+  FileCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "../../../config/apiConfig";
@@ -17,6 +19,8 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import VehicleBookingDocumentModal from "../components/VehicleBookingDocumentModal";
+import VehicleBookingDocumentViewModal from "../components/VehicleBookingDocumentViewModal";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 
@@ -38,33 +42,37 @@ const VehicleOrderVehicleView = () => {
   const [order, setOrder] = useState<any>(null);
   const [booking, setBooking] = useState<VehicleBookingItem | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      if (!id || vehicleIndex === undefined) return;
+  // Modal States
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-      try {
-        setLoading(true);
-        const [orderRes, bookingRes] = await Promise.all([
-          vehicleManagementApi.getVehicleOrderById(id),
-          vehicleBookingApi.getByOrder(id),
-        ]);
+  const loadData = useCallback(async () => {
+    if (!id || vehicleIndex === undefined) return;
 
-        const currentBooking =
-          bookingRes.find(
-            (item) => item.vehicleIndex === Number(vehicleIndex),
-          ) || null;
+    try {
+      setLoading(true);
+      const [orderRes, bookingRes] = await Promise.all([
+        vehicleManagementApi.getVehicleOrderById(id),
+        vehicleBookingApi.getByOrder(id),
+      ]);
 
-        setOrder(orderRes);
-        setBooking(currentBooking);
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load vehicle details");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const currentBooking =
+        bookingRes.find(
+          (item) => item.vehicleIndex === Number(vehicleIndex),
+        ) || null;
 
-    load();
+      setOrder(orderRes);
+      setBooking(currentBooking);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load vehicle details");
+    } finally {
+      setLoading(false);
+    }
   }, [id, vehicleIndex]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const quotationUrl = useMemo(() => {
     if (!booking?.quotationFile) return "";
@@ -113,6 +121,15 @@ const VehicleOrderVehicleView = () => {
       label: "Reminder Count",
       value: String(booking.reminderCount || 0),
     },
+    {
+      icon: FileCheck,
+      label: "Documentation",
+      value: booking.isBVUploaded
+        ? "Fully Verified"
+        : booking.isCRTMUploaded
+          ? "CRTM Uploaded"
+          : "Pending",
+    },
   ];
 
   return (
@@ -131,6 +148,25 @@ const VehicleOrderVehicleView = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {/* DOC MANAGEMENT BUTTON GROUP */}
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+            <button
+              onClick={() => setIsDocModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
+            >
+              <Upload size={14} />
+              UPLOAD
+            </button>
+
+            <button
+              onClick={() => setIsViewModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
+            >
+              <Eye size={14} />
+              VIEW LIBRARY
+            </button>
+          </div>
+
           <button
             onClick={() => navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
@@ -198,6 +234,27 @@ const VehicleOrderVehicleView = () => {
           )}
         </div>
       </div>
+
+      {/* MODALS */}
+      {isDocModalOpen && (
+        <VehicleBookingDocumentModal
+          isOpen={isDocModalOpen}
+          onClose={() => setIsDocModalOpen(false)}
+          vehicle={booking}
+          onSuccess={() => {
+            setIsDocModalOpen(false);
+            loadData();
+          }}
+        />
+      )}
+
+      {isViewModalOpen && (
+        <VehicleBookingDocumentViewModal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          vehicle={booking}
+        />
+      )}
     </div>
   );
 };

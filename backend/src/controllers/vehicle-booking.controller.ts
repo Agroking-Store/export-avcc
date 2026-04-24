@@ -13,6 +13,8 @@ import {
   assignClientToBooking,
   getBookingById,
   getReminderDueBookings,
+  uploadBookingDocuments,
+  getBookingFile,
 } from "../services/vehicle-booking.service";
 
 export const getBookingsByOrder = async (req: Request, res: Response) => {
@@ -157,5 +159,47 @@ export const getDueRemindersHandler = async (req: Request, res: Response) => {
     res.json(due);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const uploadBookingDocumentsHandler = async (req: Request, res: Response) => {
+  try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (!files || Object.keys(files).length === 0) {
+      return res.status(400).json({ success: false, message: "No files uploaded" });
+    }
+
+    const booking = await uploadBookingDocuments(req.params.id as string, files);
+    return res.json({
+      success: true,
+      message: "Booking documents updated",
+      data: booking,
+    });
+  } catch (error: any) {
+    console.error("Booking document upload error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getBookingFileHandler = async (req: Request, res: Response) => {
+  try {
+    const field = Array.isArray(req.params.field)
+      ? req.params.field[0]
+      : req.params.field;
+    const { download } = req.query;
+
+    const filePath = await getBookingFile(req.params.id as string, field);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File missing on server" });
+    }
+
+    if (download === "true") {
+      return res.download(filePath);
+    } else {
+      return res.sendFile(path.resolve(filePath));
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };
