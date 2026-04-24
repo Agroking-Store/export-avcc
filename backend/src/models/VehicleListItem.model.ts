@@ -35,7 +35,8 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
     },
     quantity: {
       type: Number,
-      required: [true, "Quantity is required"],
+      required: false,
+      default: 1,
       min: [0, "Quantity cannot be negative"],
     },
     status: {

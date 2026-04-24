@@ -22,7 +22,8 @@ export const createVehicleListItemService = async (
 ) => {
   const item = new VehicleListItem({
     ...data,
-    quantity: Number(data.quantity),
+    quantity:
+      data.quantity !== undefined ? Number(data.quantity) : 1,
   });
 
   return await item.save();

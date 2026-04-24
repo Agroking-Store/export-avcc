@@ -55,7 +55,7 @@ export const vehicleManagementApi = {
     modelName: string;
     variant: string;
     color: string;
-    quantity: number;
+    quantity?: number;
   }) => {
     const response = await api.post("/vehicle-list", payload);
     return response.data;

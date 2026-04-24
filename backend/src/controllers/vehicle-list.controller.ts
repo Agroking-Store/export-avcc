@@ -20,7 +20,8 @@ export const createVehicleListItem = async (req: Request, res: Response) => {
       modelName,
       variant,
       color,
-      quantity: Number(quantity),
+      quantity:
+        quantity !== undefined ? Number(quantity) : undefined,
     });
 
     res.status(201).json(item);

@@ -20,7 +20,6 @@ const EditVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
-    quantity: "1",
   });
 
   useEffect(() => {
@@ -32,7 +31,6 @@ const EditVehicle = () => {
           modelName: data.modelName || "",
           variant: data.variant || "",
           color: data.color || "",
-          quantity: String(data.quantity || 1),
         });
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle");
@@ -53,7 +51,6 @@ const EditVehicle = () => {
       setLoading(true);
       await vehicleManagementApi.updateVehicle(id as string, {
         ...form,
-        quantity: Number(form.quantity),
       });
 
       navigate("/vehicles/list", {
@@ -112,10 +109,7 @@ const EditVehicle = () => {
               <label className={labelStyle}><Palette size={14} className="text-rose-400" /> Color</label>
               <input name="color" value={form.color} onChange={handleChange} className={inputStyle} />
             </div>
-            <div className="md:col-span-2">
-              <label className={labelStyle}><Hash size={14} className="text-amber-500" /> Quantity</label>
-              <input name="quantity" type="number" min="0" value={form.quantity} onChange={handleChange} className={inputStyle} />
-            </div>
+
           </div>
         </div>
 

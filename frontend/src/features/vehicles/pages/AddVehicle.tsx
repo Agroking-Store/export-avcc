@@ -47,7 +47,6 @@ const AddVehicle = () => {
         modelName: form.modelName.trim(),
         variant: form.variant.trim(),
         color: form.color.trim(),
-        quantity: 1,
       });
 
       navigate("/vehicles/list", {
