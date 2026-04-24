@@ -48,10 +48,32 @@ const AddClient = () => {
 
   const validate = () => {
     if (!form.name.trim()) return "Client name is required";
+  
+    if (form.name.trim().length < 2)
+      return "Client name must be at least 2 characters";
+  
     if (!form.phone.trim()) return "Phone is required";
+  
+    if (!/^[0-9]{10,15}$/.test(form.phone))
+      return "Phone must be 10 to 15 digits";
+  
     if (!form.email.trim()) return "Email is required";
-    if (!form.companyName.trim()) return "Company name is required";
-    if (!form.address.country.trim()) return "Country is required";
+  
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      return "Enter valid email address";
+  
+    if (!form.companyName.trim())
+      return "Company name is required";
+  
+    if (!form.address.country.trim())
+      return "Country is required";
+  
+    if (
+      form.address.pincode &&
+      !/^[0-9]{4,10}$/.test(form.address.pincode)
+    )
+      return "Enter valid pincode";
+  
     return null;
   };
 
