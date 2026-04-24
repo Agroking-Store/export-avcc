@@ -22,7 +22,6 @@ const AddClient = () => {
     name: "",
     phone: "",
     email: "",
-    country: "",
     companyName: "",
     address: {
       houseBuilding: "",
@@ -49,9 +48,32 @@ const AddClient = () => {
 
   const validate = () => {
     if (!form.name.trim()) return "Client name is required";
+  
+    if (form.name.trim().length < 2)
+      return "Client name must be at least 2 characters";
+  
     if (!form.phone.trim()) return "Phone is required";
+  
+    if (!/^[0-9]{10,15}$/.test(form.phone))
+      return "Phone must be 10 to 15 digits";
+  
     if (!form.email.trim()) return "Email is required";
-    if (!form.companyName.trim()) return "Company name is required";
+  
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      return "Enter valid email address";
+  
+    if (!form.companyName.trim())
+      return "Company name is required";
+  
+    if (!form.address.country.trim())
+      return "Country is required";
+  
+    if (
+      form.address.pincode &&
+      !/^[0-9]{4,10}$/.test(form.address.pincode)
+    )
+      return "Enter valid pincode";
+  
     return null;
   };
 
@@ -123,23 +145,30 @@ const AddClient = () => {
 
             <div>
               <label className={labelStyle}>
-                <Globe size={14} className="text-emerald-500" /> Region / Country
-              </label>
-              <input name="country" value={form.country} onChange={handleChange} className={inputStyle} placeholder="India" />
-            </div>
-
-            <div>
-              <label className={labelStyle}>
                 <Mail size={14} className="text-rose-400" /> Professional Email
               </label>
-              <input name="email" value={form.email} onChange={handleChange} className={inputStyle} placeholder="client@company.com" />
+            
+              <input
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="client@company.com"
+              />
             </div>
-
-            <div className="md:col-span-2">
+            
+            <div>
               <label className={labelStyle}>
                 <Building2 size={14} className="text-amber-500" /> Organization / Company Name
               </label>
-              <input name="companyName" value={form.companyName} onChange={handleChange} className={inputStyle} placeholder="Global Logistics Solutions Ltd." />
+            
+              <input
+                name="companyName"
+                value={form.companyName}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="Global Logistics Solutions Ltd."
+              />
             </div>
           </div>
         </div>
@@ -170,7 +199,7 @@ const AddClient = () => {
             </div>
 
             <div>
-              <label className={labelStyle}>State / Province</label>
+              <label className={labelStyle}>State</label>
               <input name="state" value={form.address.state} onChange={handleAddressChange} className={inputStyle} placeholder="Maharashtra" />
             </div>
 
@@ -178,6 +207,20 @@ const AddClient = () => {
               <label className={labelStyle}>Pincode / ZIP</label>
               <input name="pincode" value={form.address.pincode} onChange={handleAddressChange} className={inputStyle} placeholder="400001" />
             </div>
+            <div>
+          <label className={labelStyle}>
+            <Globe size={14} className="text-emerald-500" /> Country
+          </label>
+        
+          <input
+            name="country"
+            value={form.address.country}
+            onChange={handleAddressChange}
+            className={inputStyle}
+            placeholder="India"
+          />
+        </div>
+
           </div>
         </div>
 

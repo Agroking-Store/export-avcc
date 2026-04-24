@@ -11,6 +11,8 @@ import PIDetails from "./PIDetails";
 import PIOrderDetail from "./PIOrderDetail";
 import { Button } from "@/components/ui/button";
 
+import CreateTaxInvoice from "./CreateTaxInvoice";
+
 // Utility function (moved from PIList.tsx)
 const generatePagination = (currentPage: number, totalPages: number) => {
   if (totalPages <= 7) {
@@ -99,6 +101,10 @@ const PIModule = () => {
             />
             <Route path="orders/:orderId" element={<PIOrderDetail />} />
 
+            <Route
+              path="create-tax-invoice/:id"
+              element={<CreateTaxInvoice />}
+            />
             {/* DEFAULT */}
             <Route
               path="*"
