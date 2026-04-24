@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck, ChevronsUpDown, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import {
@@ -9,6 +9,15 @@ import {
 } from "../../../services/vehicleBookingApi";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 const VehicleOrderVehicleEdit = () => {
   const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
@@ -27,7 +36,12 @@ const VehicleOrderVehicleEdit = () => {
   const [yom, setYom] = useState("");
   const [hsnCode, setHsnCode] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [fuelOpen, setFuelOpen] = useState(false);
   const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
+
+  const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "CNG", "LPG"];
+  const inputStyle =
+    "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
 
   const validateChassis = (value: string) => /^[A-Z0-9]{17}$/i.test(value.trim());
   const validateEngine = (value: string) => /^[A-Z0-9]{6,20}$/i.test(value.trim());
@@ -241,7 +255,7 @@ const VehicleOrderVehicleEdit = () => {
               value={hsnCode}
               onChange={(event) => setHsnCode(event.target.value.toUpperCase())}
               className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              placeholder="e.g. 870321"
+              placeholder="e.g. 8703.21.69"
             />
           </div>
 
@@ -250,19 +264,50 @@ const VehicleOrderVehicleEdit = () => {
               <Fuel size={14} className="text-orange-500" />
               Fuel Type
             </label>
-            <select
-              value={fuelType}
-              onChange={(event) => setFuelType(event.target.value)}
-              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-            >
-              <option value="">Select fuel type...</option>
-              <option value="Petrol">Petrol</option>
-              <option value="Diesel">Diesel</option>
-              <option value="Electric">Electric</option>
-              <option value="Hybrid">Hybrid</option>
-              <option value="CNG">CNG</option>
-              <option value="LPG">LPG</option>
-            </select>
+            <Popover open={fuelOpen} onOpenChange={setFuelOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    inputStyle,
+                    "flex items-center justify-between cursor-pointer",
+                  )}
+                >
+                  <span className={fuelType ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
+                    {fuelType || "Select fuel type..."}
+                  </span>
+                  <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search fuel type..." className="h-9" />
+                  <CommandList>
+                    <CommandEmpty>No fuel type found.</CommandEmpty>
+                    <CommandGroup>
+                      {fuelTypes.map((type) => (
+                        <CommandItem
+                          key={type}
+                          value={type}
+                          onSelect={() => {
+                            setFuelType(type);
+                            setFuelOpen(false);
+                          }}
+                        >
+                          {type}
+                          <Check
+                            className={cn(
+                              "ml-auto h-4 w-4",
+                              fuelType === type ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
