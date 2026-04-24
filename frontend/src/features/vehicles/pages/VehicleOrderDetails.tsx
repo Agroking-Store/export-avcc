@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  ChevronsUpDown,
   CircleAlert,
   Eye,
   FilePenLine,
@@ -16,6 +17,20 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { apiConfig } from "../../../config/apiConfig";
 import api from "../../../services/api";
 import { IClient } from "../../clients/clients.types";
@@ -95,6 +110,7 @@ const VehicleOrderDetails = () => {
   const [clients, setClients] = useState<IClient[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
   const [clientSaving, setClientSaving] = useState(false);
+  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
 
   const reminderToastCount = useRef(0);
 
@@ -635,11 +651,15 @@ const VehicleOrderDetails = () => {
                             {renderPrimaryAction(booking)}
                             <button
                               onClick={() => openClientModal(booking)}
-                              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                              title="Allot Client"
+                              className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                booking.assignedClientId
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                              }`}
+                              title={booking.assignedClientId ? "Client Allotted" : "Allot Client"}
                             >
                               <Check size={16} />
-                              Allot Client
+                              {booking.assignedClientId ? "Client Allotted" : "Allot Client"}
                             </button>
                             <button
                               onClick={() =>
@@ -878,18 +898,59 @@ const VehicleOrderDetails = () => {
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
                   Select Client
                 </label>
-                <select
-                  value={selectedClientId}
-                  onChange={(event) => setSelectedClientId(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                >
-                  <option value="">Choose client</option>
-                  {clients.map((client) => (
-                    <option key={client._id} value={client._id}>
-                      {client.name} {client.companyName ? `- ${client.companyName}` : ""}
-                    </option>
-                  ))}
-                </select>
+                <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 cursor-pointer"
+                    >
+                      <span className={selectedClientId ? "text-slate-700" : "text-slate-400"}>
+                        {selectedClientId
+                          ? (() => {
+                              const client = clients.find((c) => c._id === selectedClientId);
+                              return client
+                                ? `${client.name} ${client.companyName ? `- ${client.companyName}` : ""}`
+                                : "Choose client...";
+                            })()
+                          : "Choose client..."}
+                      </span>
+                      <ChevronsUpDown size={16} className="text-slate-400" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search client..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>No client found.</CommandEmpty>
+                        <CommandGroup>
+                          {clients.map((client) => {
+                            const clientLabel = `${client.name} ${client.companyName ? `- ${client.companyName}` : ""}`;
+                            return (
+                              <CommandItem
+                                key={client._id}
+                                value={clientLabel}
+                                onSelect={() => {
+                                  setSelectedClientId(client._id);
+                                  setClientPopoverOpen(false);
+                                }}
+                              >
+                                {clientLabel}
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    selectedClientId === client._id
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {activeBooking.assignedClientSnapshot?.name && (
