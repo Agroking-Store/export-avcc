@@ -1,5 +1,6 @@
 export type VehicleLineItem = {
   vehicle_id: string;
+  booking_id?: string;
   model: string;
   color: string;
   engineNo: string;
@@ -31,7 +32,8 @@ export type BankDetails = {
 };
 
 export type PIForm = {
-  order_id?: string; // Added to link PI to an Order
+  order_id?: string; // legacy old orders
+  vehicleBookingIds?: string[]; // new vehicle booking ids
   piNumber: string;
   client_id: string;
   company_id: string;
@@ -70,7 +72,8 @@ export type PIForm = {
 export interface ProformaInvoiceAPI {
   _id: string;
   piNumber: string;
-  order_id?: string | { _id: string; orderId: string }; // Updated to support populated object
+  order_id?: string | { _id: string; orderId: string };
+  vehicleBookingIds?: string[];// Updated to support populated object
   client_id:
     | string
     | {

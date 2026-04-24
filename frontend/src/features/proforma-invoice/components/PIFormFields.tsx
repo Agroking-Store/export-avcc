@@ -18,7 +18,7 @@ interface PIFormFieldsProps {
   setCompanySearch: React.Dispatch<React.SetStateAction<string>>; // Renamed from setDealerSearch
   setOrderSearch: React.Dispatch<React.SetStateAction<string>>;
   handlePiNumberChange: (value: string) => void; // New prop for piNumber changes
-  handleSelectOrder: (orderId: string) => Promise<void>;
+  handleSelectOrder: (booking: any) => void;
   handleVehicleChange: (
     index: number,
     field: keyof VehicleLineItem,
@@ -88,30 +88,187 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
 
   return (
     <>
+
+    {/* BUYER / CLIENT */}
+      <div>
+        <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className={labelClass}>Buyer (Client) *</label>
+            <SearchableCombobox
+              data={clients}
+              value={form.client_id}
+              onValueChange={handleClientSelect}
+              onSearchChange={setClientSearch}
+              displayField="name"
+              valueField="_id"
+              placeholder="Select a client..."
+              searchPlaceholder="Search clients..."
+              emptyMessage="No clients found."
+              error={!!errors.client_id}
+              renderItem={(item, index) => (
+                <div className="flex items-center justify-between w-full gap-4">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="w-5 text-xs text-gray-400 font-mono">
+                      {index + 1}.
+                    </span>
+                    <span className="font-medium truncate">{item.name}</span>
+                  </div>
+                  <span className="text-xs text-gray-500 whitespace-nowrap text-right">
+                    {item.phone || "-"}
+                  </span>
+                </div>
+              )}
+            />
+            {errors.client_id && (
+              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> {errors.client_id}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className={labelClass}>Company Name</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.companyName || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("companyName", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Contact Name</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.name || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("name", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>House/Building</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.houseBuilding || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange(
+                  "address.houseBuilding",
+                  e.target.value,
+                )
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Street/Locality/Area</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.streetArea || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("address.streetArea", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>City/Town</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.cityTown || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("address.cityTown", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>State</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.state || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("address.state", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Email</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.email || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("email", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Pincode / ZIP</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.pincode || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("address.pincode", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Country</label>{" "}
+            {/* Read-only display */}
+            <input
+              value={displayClient?.address?.country || ""}
+              onChange={(e) =>
+                handleClientSnapshotChange("address.country", e.target.value)
+              }
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
       {/* LINK ORDER */}
       <div>
-        <h3 className={sectionTitleClass}>Fetch Order</h3>
+        <h3 className={sectionTitleClass}>Fetch Booked Vehicle</h3>
         <div className="max-w-md">
           <div>
             <label className={labelClass}>
-              Choose Order (Auto-fills Client & Vehicles)
+              Choose Booked Vehicle (Adds Vehicle Row)
             </label>
             <SearchableCombobox
-              data={ordersWithDisplay}
-              value={selectedOrder?._id || ""}
-              onValueChange={handleSelectOrder}
+                data={ordersWithDisplay}
+                disabled={false}
+                value={selectedOrder?._id || ""}
+                onValueChange={(value) => {
+                  const selected = ordersWithDisplay.find(
+                    (item) => item._id === value
+                  );
+                  if (selected) handleSelectOrder(selected);
+                }}
               onSearchChange={setOrderSearch}
               displayField="displayName"
               valueField="_id"
-              placeholder="Search and select an order..."
+              placeholder={
+  form.client_id
+    ? "Search booked vehicle..."
+    : "Select client first"
+}
               searchPlaceholder="Search by Order No or Client..."
-              emptyMessage="No orders found."
+              emptyMessage={
+  form.client_id
+    ? "No booked vehicles found."
+    : "Please select client first."
+}
               header={
                 <div className="grid grid-cols-[40px_110px_1fr_100px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
                   <div>S.No</div>
                   <div>Order No</div>
                   <div>Client Name</div>
-                  <div className="text-right">Date</div>
+                  <div className="text-right">Chassis</div>
                 </div>
               }
               renderItem={(item) => (
@@ -120,13 +277,13 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     {item.serialNumber}.
                   </span>
                   <span className="font-bold text-blue-600 truncate">
-                    {item.orderNo}
+                    {item.orderId?.orderNumber || "-"}
                   </span>
                   <span className="truncate text-gray-700 font-medium">
-                    {item.clientName}
+                    {item.vehicleId?.modelName || "-"}
                   </span>
                   <span className="text-[11px] text-gray-500 text-right whitespace-nowrap">
-                    {item.dateFormatted}
+                    {item.chassisNumber || "-"}
                   </span>
                 </div>
               )}
@@ -548,149 +705,6 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
       </div>
 
       {divider}
-
-      {/* BUYER / CLIENT */}
-      <div>
-        <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className={labelClass}>Buyer (Client) *</label>
-            <SearchableCombobox
-              data={clients}
-              value={form.client_id}
-              onValueChange={handleClientSelect}
-              onSearchChange={setClientSearch}
-              displayField="name"
-              valueField="_id"
-              placeholder="Select a client..."
-              searchPlaceholder="Search clients..."
-              emptyMessage="No clients found."
-              error={!!errors.client_id}
-              renderItem={(item, index) => (
-                <div className="flex items-center justify-between w-full gap-4">
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="w-5 text-xs text-gray-400 font-mono">
-                      {index + 1}.
-                    </span>
-                    <span className="font-medium truncate">{item.name}</span>
-                  </div>
-                  <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                    {item.phone || "-"}
-                  </span>
-                </div>
-              )}
-            />
-            {errors.client_id && (
-              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {errors.client_id}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className={labelClass}>Company Name</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.companyName || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("companyName", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Contact Name</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.name || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("name", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>House/Building</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.address?.houseBuilding || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange(
-                  "address.houseBuilding",
-                  e.target.value,
-                )
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Street/Locality/Area</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.address?.streetArea || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("address.streetArea", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>City/Town</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.address?.cityTown || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("address.cityTown", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>State</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.address?.state || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("address.state", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Email</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.email || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("email", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Pincode / ZIP</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.address?.pincode || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("address.pincode", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Country</label>{" "}
-            {/* Read-only display */}
-            <input
-              value={displayClient?.address?.country || ""}
-              onChange={(e) =>
-                handleClientSnapshotChange("address.country", e.target.value)
-              }
-              className={inputClass}
-            />
-          </div>
-        </div>
-      </div>
 
       {divider}
 

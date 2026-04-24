@@ -12,7 +12,8 @@ import {
   getPIStatusDistributionService,
   getMonthlyPIValueTrendService,
   getTopClientsByPIValueService,
-  getOrderDetailWithTrackingService, // Import the new service
+  getOrderDetailWithTrackingService,
+  getBookedVehicleOrdersService
 } from "../services/proforma-invoice.service";
 
 import LetterOfCredit from "../models/LetterOfCredit.model";
@@ -278,6 +279,23 @@ export const getLCFile = async (req: Request, res: Response) => {
     res.sendFile(absolutePath);
   } catch (error: any) {
     console.error("getLCFile error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getBookedVehicleOrders = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { clientId } = req.query;
+
+    const data = await getBookedVehicleOrdersService(
+      clientId as string
+    );
+
+    res.json(data);
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
