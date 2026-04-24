@@ -10,6 +10,7 @@ import {
   confirmPayment,
   updateChassisEngine,
   updateBookingStatus,
+  assignClientToBooking,
   getBookingById,
   getReminderDueBookings,
 } from "../services/vehicle-booking.service";
@@ -114,6 +115,21 @@ export const updateStatusHandler = async (req: Request, res: Response) => {
     const booking = await updateBookingStatus(
       req.params.id as string,
       status,
+    );
+    res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const assignClientHandler = async (req: Request, res: Response) => {
+  try {
+    const { clientId } = req.body;
+    if (!clientId) throw new Error("Client is required");
+
+    const booking = await assignClientToBooking(
+      req.params.id as string,
+      clientId,
     );
     res.json(booking);
   } catch (error: any) {

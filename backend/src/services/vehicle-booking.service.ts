@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
+import mongoose from "mongoose";
 import { VehicleBooking, VehicleBookingStatus } from "../models/VehicleBooking.model";
+import { Client } from "../models/Client.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
 
 /**
@@ -195,6 +197,30 @@ export const updateBookingStatus = async (
   if (!booking) throw new Error("Booking not found");
 
   booking.status = status;
+  return await booking.save();
+};
+
+export const assignClientToBooking = async (
+  bookingId: string,
+  clientId: string,
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  if (!clientId || !mongoose.isValidObjectId(clientId)) {
+    throw new Error("Valid client is required");
+  }
+
+  const client = await Client.findById(clientId);
+  if (!client) throw new Error("Client not found");
+
+  booking.assignedClientId = client._id as mongoose.Types.ObjectId;
+  booking.assignedClientSnapshot = {
+    name: client.name,
+    companyName: client.companyName,
+    clientCode: client.clientCode,
+  };
+
   return await booking.save();
 };
 

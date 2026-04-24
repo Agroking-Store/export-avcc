@@ -13,6 +13,12 @@ export interface IVehicleBooking extends Document {
   orderId: mongoose.Types.ObjectId;
   vehicleId: mongoose.Types.ObjectId;
   vehicleIndex: number;
+  assignedClientId?: mongoose.Types.ObjectId;
+  assignedClientSnapshot?: {
+    name: string;
+    companyName?: string;
+    clientCode?: string;
+  };
   status: VehicleBookingStatus;
   quotationFile?: string;
   rejectionReason?: string;
@@ -41,6 +47,16 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
     vehicleIndex: {
       type: Number,
       required: true,
+    },
+    assignedClientId: {
+      type: Schema.Types.ObjectId,
+      ref: "Client",
+      default: null,
+    },
+    assignedClientSnapshot: {
+      name: { type: String, trim: true, default: "" },
+      companyName: { type: String, trim: true, default: "" },
+      clientCode: { type: String, trim: true, default: "" },
     },
     status: {
       type: String,

@@ -14,6 +14,12 @@ export interface VehicleBookingItem {
   orderId: string;
   vehicleId: string;
   vehicleIndex: number;
+  assignedClientId?: string;
+  assignedClientSnapshot?: {
+    name: string;
+    companyName?: string;
+    clientCode?: string;
+  };
   status: VehicleBookingStatus;
   quotationFile?: string;
   rejectionReason?: string;
@@ -87,6 +93,13 @@ export const vehicleBookingApi = {
   updateStatus: async (bookingId: string, status: VehicleBookingStatus) => {
     const response = await api.patch(`/vehicle-bookings/${bookingId}/status`, {
       status,
+    });
+    return response.data as VehicleBookingItem;
+  },
+
+  assignClient: async (bookingId: string, clientId: string) => {
+    const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-client`, {
+      clientId,
     });
     return response.data as VehicleBookingItem;
   },

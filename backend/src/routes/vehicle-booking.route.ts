@@ -11,6 +11,7 @@ import {
   confirmPaymentHandler,
   updateChassisEngineHandler,
   updateStatusHandler,
+  assignClientHandler,
   getBookingByIdHandler,
   getDueRemindersHandler,
 } from "../controllers/vehicle-booking.controller";
@@ -52,6 +53,7 @@ router.post("/:id/quotation", quotationUpload.single("quotation"), uploadQuotati
 router.post("/:id/approve", approveHandler);
 router.post("/:id/reject", rejectHandler);
 router.post("/:id/confirm-payment", confirmPaymentHandler);
+router.patch("/:id/assign-client", assignClientHandler);
 router.patch("/:id/chassis-engine", updateChassisEngineHandler);
 router.patch("/:id/status", updateStatusHandler);
 router.get("/:id", getBookingByIdHandler);
