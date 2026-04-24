@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import {
   ArrowLeft,
   Car,
+  DollarSign,
   Hash,
   Palette,
   Save,
@@ -20,6 +21,8 @@ const EditVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
+    fobAmount: "",
+    freight: "",
   });
 
   useEffect(() => {
@@ -31,6 +34,8 @@ const EditVehicle = () => {
           modelName: data.modelName || "",
           variant: data.variant || "",
           color: data.color || "",
+          fobAmount: data.fobAmount !== undefined ? String(data.fobAmount) : "",
+          freight: data.freight !== undefined ? String(data.freight) : "",
         });
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle");
@@ -44,6 +49,13 @@ const EditVehicle = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleNumberChange = (field: string, value: string) => {
+    const num = parseFloat(value);
+    if (value === "" || num >= 0) {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -51,6 +63,8 @@ const EditVehicle = () => {
       setLoading(true);
       await vehicleManagementApi.updateVehicle(id as string, {
         ...form,
+        fobAmount: form.fobAmount !== "" ? parseFloat(form.fobAmount) : 0,
+        freight: form.freight !== "" ? parseFloat(form.freight) : 0,
       });
 
       navigate("/vehicles/list", {
@@ -109,7 +123,43 @@ const EditVehicle = () => {
               <label className={labelStyle}><Palette size={14} className="text-rose-400" /> Color</label>
               <input name="color" value={form.color} onChange={handleChange} className={inputStyle} />
             </div>
+          </div>
+        </div>
 
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Pricing</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className={labelStyle}><DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)</label>
+              <input
+                name="fobAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.fobAmount}
+                onChange={(e) => handleNumberChange("fobAmount", e.target.value)}
+                className={inputStyle}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className={labelStyle}><DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)</label>
+              <input
+                name="freight"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.freight}
+                onChange={(e) => handleNumberChange("freight", e.target.value)}
+                className={inputStyle}
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
 

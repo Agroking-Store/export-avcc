@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import {
   ArrowLeft,
   Car,
+  DollarSign,
   Hash,
   Palette,
   Save,
@@ -19,10 +20,19 @@ const AddVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
+    fobAmount: "",
+    freight: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleNumberChange = (field: string, value: string) => {
+    const num = parseFloat(value);
+    if (value === "" || num >= 0) {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,6 +48,18 @@ const AddVehicle = () => {
       return;
     }
 
+    const fobAmount = parseFloat(form.fobAmount);
+    const freight = parseFloat(form.freight);
+
+    if (form.fobAmount !== "" && (isNaN(fobAmount) || fobAmount < 0)) {
+      toast.error("FOB Amount cannot be negative");
+      return;
+    }
+    if (form.freight !== "" && (isNaN(freight) || freight < 0)) {
+      toast.error("Freight cannot be negative");
+      return;
+    }
+
 
 
     try {
@@ -47,6 +69,8 @@ const AddVehicle = () => {
         modelName: form.modelName.trim(),
         variant: form.variant.trim(),
         color: form.color.trim(),
+        fobAmount: form.fobAmount !== "" ? parseFloat(form.fobAmount) : 0,
+        freight: form.freight !== "" ? parseFloat(form.freight) : 0,
       });
 
       navigate("/vehicles/list", {
@@ -146,7 +170,49 @@ const AddVehicle = () => {
                 placeholder="White Pearl"
               />
             </div>
+          </div>
+        </div>
 
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+              Pricing
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className={labelStyle}>
+                <DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)
+              </label>
+              <input
+                name="fobAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.fobAmount}
+                onChange={(e) => handleNumberChange("fobAmount", e.target.value)}
+                className={inputStyle}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                <DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)
+              </label>
+              <input
+                name="freight"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.freight}
+                onChange={(e) => handleNumberChange("freight", e.target.value)}
+                className={inputStyle}
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
 

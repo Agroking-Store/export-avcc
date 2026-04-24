@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ClipboardList,
+  DollarSign,
   Hash,
   Palette,
   Package,
@@ -102,6 +103,8 @@ const VehicleItemDetails = () => {
                 <InfoBox label="Model Name" value={vehicle.modelName} icon={Package} />
                 <InfoBox label="Variant" value={vehicle.variant} icon={Hash} />
                 <InfoBox label="Color" value={vehicle.color} icon={Palette} />
+                <InfoBox label="FOB Amount (USD)" value={vehicle.fobAmount ? `$${Number(vehicle.fobAmount).toLocaleString()}` : "$0"} icon={DollarSign} />
+                <InfoBox label="Freight (USD)" value={vehicle.freight ? `$${Number(vehicle.freight).toLocaleString()}` : "$0"} icon={DollarSign} />
               </div>
             </div>
           </div>

@@ -9,7 +9,7 @@ import {
 
 export const createVehicleListItem = async (req: Request, res: Response) => {
   try {
-    const { brandName, modelName, variant, color, quantity } = req.body;
+    const { brandName, modelName, variant, color, quantity, fobAmount, freight } = req.body;
 
     if (!brandName || !modelName || !variant || !color) {
       throw new Error("All vehicle fields are required");
@@ -22,6 +22,8 @@ export const createVehicleListItem = async (req: Request, res: Response) => {
       color,
       quantity:
         quantity !== undefined ? Number(quantity) : undefined,
+      fobAmount: fobAmount !== undefined ? Number(fobAmount) : undefined,
+      freight: freight !== undefined ? Number(freight) : undefined,
     });
 
     res.status(201).json(item);
@@ -66,6 +68,8 @@ export const updateVehicleListItem = async (req: Request, res: Response) => {
       ...req.body,
       quantity:
         req.body.quantity !== undefined ? Number(req.body.quantity) : undefined,
+      fobAmount: req.body.fobAmount !== undefined ? Number(req.body.fobAmount) : undefined,
+      freight: req.body.freight !== undefined ? Number(req.body.freight) : undefined,
     });
     res.json(item);
   } catch (error: any) {

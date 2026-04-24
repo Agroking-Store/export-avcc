@@ -7,6 +7,8 @@ interface CreateVehicleListItemDto {
   variant: string;
   color: string;
   quantity: number;
+  fobAmount?: number;
+  freight?: number;
 }
 
 interface UpdateVehicleListItemDto {
@@ -15,6 +17,8 @@ interface UpdateVehicleListItemDto {
   variant?: string;
   color?: string;
   quantity?: number;
+  fobAmount?: number;
+  freight?: number;
 }
 
 export const createVehicleListItemService = async (
@@ -103,6 +107,8 @@ export const updateVehicleListItemService = async (
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
   if (updateData.quantity !== undefined) item.quantity = Number(updateData.quantity);
+  if (updateData.fobAmount !== undefined) item.fobAmount = Number(updateData.fobAmount);
+  if (updateData.freight !== undefined) item.freight = Number(updateData.freight);
 
   item.status = item.quantity > 0 ? "Available" : "Out of Stock";
 
