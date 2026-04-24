@@ -39,6 +39,12 @@ const VehicleOrderVehicleEdit = () => {
             (item) => item.vehicleIndex === Number(vehicleIndex),
           ) || null;
 
+        if (currentBooking?.status === "payment_done" && !currentBooking.assignedClientId) {
+          toast.error("Client must be allotted before adding engine/chassis details");
+          navigate(`/vehicles/orders/${id}`);
+          return;
+        }
+
         setOrder(orderRes);
         setBooking(currentBooking);
         setEngineNumber(currentBooking?.engineNumber || "");

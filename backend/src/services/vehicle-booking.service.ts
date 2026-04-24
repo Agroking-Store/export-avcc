@@ -167,6 +167,10 @@ export const updateChassisEngine = async (
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
+  if (booking.status === "payment_done" && !booking.assignedClientId) {
+    throw new Error("Client must be allotted before adding engine/chassis details");
+  }
+
   if (data.chassisNumber !== undefined) {
     booking.chassisNumber = data.chassisNumber.trim();
   }
