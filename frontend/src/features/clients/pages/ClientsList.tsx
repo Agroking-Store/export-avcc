@@ -117,7 +117,7 @@ const ClientsList = () => {
                       <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">{client.name}</div>
                       <div className="text-xs text-slate-400 dark:text-gray-500">{client.companyName || "-"}</div>
                     </td>
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{client.country}</td>
+                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{client.address?.country || "-"}</td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{client.phone}</td>
                     <td className="px-8 py-5 text-center text-sm font-semibold text-slate-600 dark:text-gray-300">{client.totalOrders || 0}</td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">

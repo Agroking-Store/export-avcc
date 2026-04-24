@@ -319,7 +319,17 @@ const LCUploadModal = ({ piId, onClose, onSuccess }: LCModalProps) => {
               <button onClick={onClose} className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
                 Cancel
               </button>
-              <Button size="sm" disabled={!selectedFile || processing} onClick={handleVerify} className="gap-2 min-w-[110px]">
+              <Button
+  type="button"
+  size="sm"
+  disabled={!selectedFile || processing}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleVerify();
+  }}
+  className="gap-2 min-w-[110px] cursor-pointer"
+>
                 {processing ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Verifying...</> : <><ShieldCheck className="w-3.5 h-3.5" />Verify LC</>}
               </Button>
             </>
@@ -542,30 +552,67 @@ const PIDetails = () => {
           </div>
 
           <div className="flex items-center gap-2 self-end lg:self-center">
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-              {pi?.status === "lc_received" ? (
-                <>
-                  <Button onClick={handleViewLC} variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-2">
-                    {viewingLC ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />} View LC
-                  </Button>
-                  <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1" />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><MoreVertical className="w-4 h-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="cursor-pointer" onSelect={() => setShowLCModal(true)}>
-                        <RefreshCw className="w-4 h-4 mr-2" /> Replace & Re-verify LC
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              ) : (
-                <Button onClick={() => setShowLCModal(true)} variant="ghost" size="sm" className="h-8 gap-2">
-                  <FileUp className="w-4 h-4" /> Upload LC
-                </Button>
-              )}
-            </div>
+            {/* Tax Invoice */}
+<Button
+  onClick={() => navigate(`/proforma-invoice/create-tax-invoice/${id}`)}
+  variant="outline"
+  size="sm"
+  className="h-9 border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
+>
+  <FileText className="w-4 h-4" />
+  Generate Tax Invoice
+</Button>
+
+{/* LC Actions */}
+<div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
+  {pi?.status === "lc_received" ? (
+    <>
+      <Button
+        onClick={handleViewLC}
+        variant="ghost"
+        size="sm"
+        className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 gap-2"
+      >
+        {viewingLC ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Eye className="w-4 h-4" />
+        )}
+        View LC
+      </Button>
+
+      <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1" />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => setShowLCModal(true)}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Replace & Re-verify LC
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  ) : (
+    <Button
+      onClick={() => setShowLCModal(true)}
+      variant="ghost"
+      size="sm"
+      className="h-8 gap-2"
+    >
+      <FileUp className="w-4 h-4" />
+      Upload LC
+    </Button>
+  )}
+</div>
 
             <div className="flex items-center gap-2 ml-2">
               <Button onClick={() => handlePdfAction("view")} variant="outline" size="sm" className="h-9 border-blue-200 text-blue-600 hover:bg-blue-50 gap-2">

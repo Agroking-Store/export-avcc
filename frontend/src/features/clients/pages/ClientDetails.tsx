@@ -56,11 +56,11 @@ const ClientDetails = () => {
   const orders = data?.orders || [];
 
   const InfoBox = ({ label, value, icon: Icon }: any) => (
-    <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
+    <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-3 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
       <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2 transition-colors group-hover:text-indigo-500">
         {Icon && <Icon size={12} />} {label}
       </p>
-      <p className="text-sm font-semibold text-[#2D3748]">{value || "-"}</p>
+      <p className="text-[13px] font-semibold text-[#2D3748]">{value || "-"}</p>
     </div>
   );
 
@@ -96,29 +96,38 @@ const ClientDetails = () => {
         
         {/* LEFT COLUMN */}
         <div className="lg:col-span-9 space-y-6">
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
-            <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-5 transition-shadow hover:shadow-md">
+            <div className="flex items-center gap-2 mb-4 border-b border-gray-50 pb-3">
               <ClipboardList size={18} className="text-gray-400" />
               <h2 className="text-lg font-bold text-[#1B2559]">Client Information</h2>
             </div>
 
-            <div className="space-y-6">
-              <div className="group bg-[#F8F9FB] rounded-2xl p-6 flex items-center gap-6 border border-[#F1F3F6] transition-all duration-300 hover:shadow-inner">
-                <div className="w-16 h-16 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-2xl font-black border border-indigo-100 transition-transform group-hover:scale-105">
+            <div className="space-y-4">
+              <div className="group bg-[#F8F9FB] rounded-xl p-4 flex items-center gap-4 border border-[#F1F3F6] transition-all duration-300 hover:shadow-inner">
+                <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 text-lg font-black border border-indigo-100 transition-transform group-hover:scale-105">
                   {client?.name?.charAt(0) || "C"}
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-widest mb-0.5">Client Name</p>
-                  <h3 className="text-2xl font-bold text-[#2D3748] group-hover:text-indigo-600 transition-colors">{client?.name}</h3>
-                </div>
+  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-widest mb-0.5">
+    Client Name
+  </p>
+
+  <h3 className="text-lg font-bold text-[#2D3748] group-hover:text-indigo-600 transition-colors">
+    {client?.name}
+  </h3>
+
+  <p className="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-1">
+    <Globe size={12} className="text-emerald-500" />
+    {client?.address?.country || "-"}
+  </p>
+</div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoBox label="Phone Number" value={client?.phone} icon={Phone} />
-                <InfoBox label="Email Address" value={client?.email} icon={Mail} />
-                <InfoBox label="Company Name" value={client?.companyName} icon={Building2} />
-                <InfoBox label="Country" value={client?.country} icon={Globe} />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+  <InfoBox label="Phone Number" value={client?.phone} icon={Phone} />
+  <InfoBox label="Email Address" value={client?.email} icon={Mail} />
+  <InfoBox label="Company Name" value={client?.companyName} icon={Building2} />
+</div>
 
               <InfoBox label="Full Address" value={formatAddress(client?.address)} icon={MapPin} />
             </div>
