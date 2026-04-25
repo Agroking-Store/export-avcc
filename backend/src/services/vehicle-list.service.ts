@@ -7,6 +7,8 @@ interface CreateVehicleListItemDto {
   variant: string;
   color: string;
   quantity: number;
+  fobAmount?: number;
+  freight?: number;
 }
 
 interface UpdateVehicleListItemDto {
@@ -15,6 +17,8 @@ interface UpdateVehicleListItemDto {
   variant?: string;
   color?: string;
   quantity?: number;
+  fobAmount?: number;
+  freight?: number;
 }
 
 export const createVehicleListItemService = async (
@@ -22,10 +26,25 @@ export const createVehicleListItemService = async (
 ) => {
   const item = new VehicleListItem({
     ...data,
-    quantity: Number(data.quantity),
+    quantity:
+      data.quantity !== undefined ? Number(data.quantity) : 1,
   });
 
   return await item.save();
+};
+
+export const createVehicleListItemsService = async (
+  items: CreateVehicleListItemDto[],
+) => {
+  const created = await Promise.all(
+    items.map((data) =>
+      new VehicleListItem({
+        ...data,
+        quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
+      }).save(),
+    ),
+  );
+  return created;
 };
 
 export const getVehicleListItemsService = async (query: any) => {
@@ -102,6 +121,8 @@ export const updateVehicleListItemService = async (
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
   if (updateData.quantity !== undefined) item.quantity = Number(updateData.quantity);
+  if (updateData.fobAmount !== undefined) item.fobAmount = Number(updateData.fobAmount);
+  if (updateData.freight !== undefined) item.freight = Number(updateData.freight);
 
   item.status = item.quantity > 0 ? "Available" : "Out of Stock";
 

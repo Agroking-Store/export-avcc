@@ -162,7 +162,16 @@ export const confirmPayment = async (
  */
 export const updateChassisEngine = async (
   bookingId: string,
-  data: { chassisNumber?: string; engineNumber?: string; deliveryDate?: string },
+  data: {
+    chassisNumber?: string;
+    engineNumber?: string;
+    deliveryDate?: string;
+    engineCapacity?: string;
+    fuelType?: string;
+    countryOfOrigin?: string;
+    yom?: string;
+    hsnCode?: string;
+  },
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
@@ -204,6 +213,21 @@ export const updateChassisEngine = async (
   }
   if (data.deliveryDate !== undefined) {
     booking.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate) : undefined;
+  }
+  if (data.engineCapacity !== undefined) {
+    booking.engineCapacity = data.engineCapacity.trim();
+  }
+  if (data.fuelType !== undefined) {
+    booking.fuelType = data.fuelType.trim();
+  }
+  if (data.countryOfOrigin !== undefined) {
+    booking.countryOfOrigin = data.countryOfOrigin.trim();
+  }
+  if (data.yom !== undefined) {
+    booking.yom = data.yom.trim();
+  }
+  if (data.hsnCode !== undefined) {
+    booking.hsnCode = data.hsnCode.trim();
   }
 
   // Auto-advance status if both are filled and status is payment_done
@@ -263,6 +287,58 @@ export const getBookingById = async (bookingId: string) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
   return booking;
+};
+
+/**
+ * Upload CRTM/BV documents for a booking
+ */
+export const uploadBookingDocuments = async (
+  bookingId: string,
+  files: { [fieldname: string]: Express.Multer.File[] },
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const updateData: any = {};
+  if (files["form20"]) updateData["form20"] = files["form20"][0].path;
+  if (files["form21"]) updateData["form21"] = files["form21"][0].path;
+  if (files["form22"]) updateData["form22"] = files["form22"][0].path;
+  if (files["tempRegCert"])
+    updateData["tempRegCert"] = files["tempRegCert"][0].path;
+  if (files["bvCertificate"])
+    updateData["bvCertificate"] = files["bvCertificate"][0].path;
+  if (files["dealerInvoice"])
+    updateData["dealerInvoice"] = files["dealerInvoice"][0].path;
+
+  const newDocs = { ...booking.documents, ...updateData };
+  const isCRTMComplete = !!(
+    newDocs.form20 &&
+    newDocs.form21 &&
+    newDocs.form22 &&
+    newDocs.tempRegCert
+  );
+  const isBVComplete = !!newDocs.bvCertificate;
+  const isDealerInvoiceComplete = !!newDocs.dealerInvoice;
+
+  booking.documents = newDocs;
+  booking.isCRTMUploaded = isCRTMComplete;
+  booking.isBVUploaded = isBVComplete;
+  booking.isDealerInvoiceUploaded = isDealerInvoiceComplete;
+
+  return await booking.save();
+};
+
+/**
+ * Get a document file path for a booking
+ */
+export const getBookingFile = async (bookingId: string, field: string) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const filePath = (booking.documents as any)[field];
+  if (!filePath) throw new Error("File not found");
+
+  return filePath;
 };
 
 /**

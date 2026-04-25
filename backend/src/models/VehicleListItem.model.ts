@@ -35,8 +35,21 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
     },
     quantity: {
       type: Number,
-      required: [true, "Quantity is required"],
+      required: false,
+      default: 1,
       min: [0, "Quantity cannot be negative"],
+    },
+    fobAmount: {
+      type: Number,
+      required: false,
+      default: 0,
+      min: [0, "FOB Amount cannot be negative"],
+    },
+    freight: {
+      type: Number,
+      required: false,
+      default: 0,
+      min: [0, "Freight cannot be negative"],
     },
     status: {
       type: String,

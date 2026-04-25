@@ -29,6 +29,22 @@ export interface IVehicleBooking extends Document {
   deliveryDate?: Date;
   lastReminderAt?: Date;
   reminderCount?: number;
+  documents: {
+    form20?: string;
+    form21?: string;
+    form22?: string;
+    tempRegCert?: string;
+    bvCertificate?: string;
+    dealerInvoice?: string;
+  };
+  isCRTMUploaded: boolean;
+  isBVUploaded: boolean;
+  isDealerInvoiceUploaded: boolean;
+  engineCapacity?: string;
+  fuelType?: string;
+  countryOfOrigin?: string;
+  yom?: string;
+  hsnCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -109,6 +125,22 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       default: 0,
       min: 0,
     },
+    documents: {
+      form20: { type: String, default: "" },
+      form21: { type: String, default: "" },
+      form22: { type: String, default: "" },
+      tempRegCert: { type: String, default: "" },
+      bvCertificate: { type: String, default: "" },
+      dealerInvoice: { type: String, default: "" },
+    },
+    isCRTMUploaded: { type: Boolean, default: false },
+    isBVUploaded: { type: Boolean, default: false },
+    isDealerInvoiceUploaded: { type: Boolean, default: false },
+    engineCapacity: { type: String, default: "", trim: true },
+    fuelType: { type: String, default: "", trim: true },
+    countryOfOrigin: { type: String, default: "", trim: true },
+    yom: { type: String, default: "", trim: true },
+    hsnCode: { type: String, default: "", trim: true },
   },
   {
     timestamps: true,

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createVehicleListItem,
+  createVehicleListItems,
   getVehicleListItems,
   getVehicleOrderFormOptions,
   getVehicleListItemById,
@@ -10,6 +11,7 @@ import {
 const router = Router();
 
 router.post("/", createVehicleListItem);
+router.post("/bulk", createVehicleListItems);
 router.get("/", getVehicleListItems);
 router.get("/order-options", getVehicleOrderFormOptions);
 router.get("/:id", getVehicleListItemById);

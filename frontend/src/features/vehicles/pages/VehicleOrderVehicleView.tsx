@@ -1,13 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Calendar,
   Eye,
   FileText,
+  Fuel,
+  Globe,
   Hash,
   IndianRupee,
+  Package,
   ShieldCheck,
   Truck,
+  Upload,
+  FileCheck,
+  Receipt,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "../../../config/apiConfig";
@@ -17,6 +24,10 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import VehicleBookingDocumentModal from "../components/VehicleBookingDocumentModal";
+import VehicleBookingDocumentViewModal from "../components/VehicleBookingDocumentViewModal";
+import VehicleDealerInvoiceModal from "../components/VehicleDealerInvoiceModal";
+import VehicleDealerInvoiceViewModal from "../components/VehicleDealerInvoiceViewModal";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 
@@ -38,33 +49,39 @@ const VehicleOrderVehicleView = () => {
   const [order, setOrder] = useState<any>(null);
   const [booking, setBooking] = useState<VehicleBookingItem | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      if (!id || vehicleIndex === undefined) return;
+  // Modal States
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDealerInvoiceModalOpen, setIsDealerInvoiceModalOpen] = useState(false);
+  const [isDealerInvoiceViewOpen, setIsDealerInvoiceViewOpen] = useState(false);
 
-      try {
-        setLoading(true);
-        const [orderRes, bookingRes] = await Promise.all([
-          vehicleManagementApi.getVehicleOrderById(id),
-          vehicleBookingApi.getByOrder(id),
-        ]);
+  const loadData = useCallback(async () => {
+    if (!id || vehicleIndex === undefined) return;
 
-        const currentBooking =
-          bookingRes.find(
-            (item) => item.vehicleIndex === Number(vehicleIndex),
-          ) || null;
+    try {
+      setLoading(true);
+      const [orderRes, bookingRes] = await Promise.all([
+        vehicleManagementApi.getVehicleOrderById(id),
+        vehicleBookingApi.getByOrder(id),
+      ]);
 
-        setOrder(orderRes);
-        setBooking(currentBooking);
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load vehicle details");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const currentBooking =
+        bookingRes.find(
+          (item) => item.vehicleIndex === Number(vehicleIndex),
+        ) || null;
 
-    load();
+      setOrder(orderRes);
+      setBooking(currentBooking);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load vehicle details");
+    } finally {
+      setLoading(false);
+    }
   }, [id, vehicleIndex]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const quotationUrl = useMemo(() => {
     if (!booking?.quotationFile) return "";
@@ -113,10 +130,50 @@ const VehicleOrderVehicleView = () => {
       label: "Reminder Count",
       value: String(booking.reminderCount || 0),
     },
+    {
+      icon: FileCheck,
+      label: "Documentation",
+      value: booking.isBVUploaded
+        ? "Fully Verified"
+        : booking.isCRTMUploaded
+          ? "CRTM Uploaded"
+          : "Pending",
+    },
+    {
+      icon: Receipt,
+      label: "Dealer Invoice",
+      value: booking.isDealerInvoiceUploaded ? "Uploaded" : "Not Uploaded",
+    },
+    {
+      icon: Hash,
+      label: "HSN Code",
+      value: booking.hsnCode || "-",
+    },
+    {
+      icon: Fuel,
+      label: "Fuel Type",
+      value: booking.fuelType || "-",
+    },
+    {
+      icon: Globe,
+      label: "Country of Origin",
+      value: booking.countryOfOrigin || "-",
+    },
+    {
+      icon: Calendar,
+      label: "Year of Manufacture",
+      value: booking.yom || "-",
+    },
+    {
+      icon: Package,
+      label: "Engine Capacity",
+      value: booking.engineCapacity || "-",
+    },
   ];
 
   return (
     <div className="space-y-6">
+      {/* HEADER */}
       <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -131,16 +188,52 @@ const VehicleOrderVehicleView = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {/* CRTM DOC MANAGEMENT BUTTON GROUP */}
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+            <button
+              onClick={() => setIsDocModalOpen(true)}
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
+            >
+              <Upload size={14} />
+              UPLOAD
+            </button>
+            <button
+              onClick={() => setIsViewModalOpen(true)}
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
+            >
+              <Eye size={14} />
+              VIEW LIBRARY
+            </button>
+          </div>
+
+          {/* DEALER INVOICE BUTTON GROUP */}
+          <div className="flex items-center gap-2 bg-purple-50 p-1.5 rounded-2xl border border-purple-200 shadow-sm">
+            <button
+              onClick={() => setIsDealerInvoiceModalOpen(true)}
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
+            >
+              <Upload size={14} />
+              DEALER INVOICE
+            </button>
+            <button
+              onClick={() => setIsDealerInvoiceViewOpen(true)}
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-100 active:scale-95"
+            >
+              <Eye size={14} />
+              VIEW INVOICE
+            </button>
+          </div>
+
           <button
             onClick={() => navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <Truck size={16} />
             Edit
           </button>
           <button
             onClick={() => navigate(`/vehicles/orders/${id}`)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <ArrowLeft size={16} />
             Back to Order
@@ -148,6 +241,7 @@ const VehicleOrderVehicleView = () => {
         </div>
       </div>
 
+      {/* INFO CARDS */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {infoCards.map(({ icon: Icon, label, value }) => (
           <div
@@ -172,6 +266,7 @@ const VehicleOrderVehicleView = () => {
         </div>
       )}
 
+      {/* QUOTATION SECTION */}
       <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900">Quotation</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -187,7 +282,7 @@ const VehicleOrderVehicleView = () => {
               </div>
               <button
                 onClick={() => window.open(quotationUrl, "_blank")}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
               >
                 <Eye size={16} />
                 View quotation
@@ -198,8 +293,50 @@ const VehicleOrderVehicleView = () => {
           )}
         </div>
       </div>
+
+      {/* MODALS */}
+      {isDocModalOpen && booking && (
+        <VehicleBookingDocumentModal
+          isOpen={isDocModalOpen}
+          onClose={() => setIsDocModalOpen(false)}
+          booking={booking}
+          onSuccess={() => {
+            setIsDocModalOpen(false);
+            loadData();
+          }}
+        />
+      )}
+
+      {isViewModalOpen && booking && (
+        <VehicleBookingDocumentViewModal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          booking={booking}
+        />
+      )}
+
+      {isDealerInvoiceModalOpen && booking && (
+        <VehicleDealerInvoiceModal
+          isOpen={isDealerInvoiceModalOpen}
+          onClose={() => setIsDealerInvoiceModalOpen(false)}
+          booking={booking}
+          onSuccess={() => {
+            setIsDealerInvoiceModalOpen(false);
+            loadData();
+          }}
+        />
+      )}
+
+      {isDealerInvoiceViewOpen && booking && (
+        <VehicleDealerInvoiceViewModal
+          isOpen={isDealerInvoiceViewOpen}
+          onClose={() => setIsDealerInvoiceViewOpen(false)}
+          booking={booking}
+        />
+      )}
     </div>
   );
 };
 
 export default VehicleOrderVehicleView;
+

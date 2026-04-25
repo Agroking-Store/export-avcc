@@ -7,6 +7,8 @@ export interface VehicleListItem {
   variant: string;
   color: string;
   quantity: number;
+  fobAmount?: number;
+  freight?: number;
   status: "Available" | "Out of Stock";
   createdAt: string;
 }
@@ -55,9 +57,24 @@ export const vehicleManagementApi = {
     modelName: string;
     variant: string;
     color: string;
-    quantity: number;
+    quantity?: number;
+    fobAmount?: number;
+    freight?: number;
   }) => {
     const response = await api.post("/vehicle-list", payload);
+    return response.data;
+  },
+
+  createVehiclesBulk: async (vehicles: Array<{
+    brandName: string;
+    modelName: string;
+    variant: string;
+    color: string;
+    quantity?: number;
+    fobAmount?: number;
+    freight?: number;
+  }>) => {
+    const response = await api.post("/vehicle-list/bulk", { vehicles });
     return response.data;
   },
 
@@ -74,6 +91,8 @@ export const vehicleManagementApi = {
       variant: string;
       color: string;
       quantity: number;
+      fobAmount: number;
+      freight: number;
     }>,
   ) => {
     const response = await api.put(`/vehicle-list/${id}`, payload);

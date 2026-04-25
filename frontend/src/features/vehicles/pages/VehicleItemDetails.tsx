@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ClipboardList,
+  DollarSign,
   Hash,
   Palette,
   Package,
@@ -102,25 +103,15 @@ const VehicleItemDetails = () => {
                 <InfoBox label="Model Name" value={vehicle.modelName} icon={Package} />
                 <InfoBox label="Variant" value={vehicle.variant} icon={Hash} />
                 <InfoBox label="Color" value={vehicle.color} icon={Palette} />
+                <InfoBox label="FOB Amount (USD)" value={vehicle.fobAmount ? `$${Number(vehicle.fobAmount).toLocaleString()}` : "$0"} icon={DollarSign} />
+                <InfoBox label="Freight (USD)" value={vehicle.freight ? `$${Number(vehicle.freight).toLocaleString()}` : "$0"} icon={DollarSign} />
               </div>
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-6">
-          <div className="bg-[#FEE2E2] rounded-2xl p-5 border border-[#FECACA] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <p className="text-[9px] font-bold text-red-800 uppercase tracking-widest mb-1">Quantity</p>
-            <h3 className="text-3xl font-black text-red-800 leading-none">{vehicle.quantity}</h3>
-          </div>
 
-          <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-            vehicle.status === "Available"
-              ? "bg-[#EBFDF5] border-[#D1FAE5]"
-              : "bg-slate-100 border-slate-200"
-          }`}>
-            <p className="text-[9px] font-bold uppercase tracking-widest mb-2 text-slate-600">Status</p>
-            <h3 className="text-xl font-bold text-slate-900">{vehicle.status}</h3>
-          </div>
         </div>
       </div>
     </div>

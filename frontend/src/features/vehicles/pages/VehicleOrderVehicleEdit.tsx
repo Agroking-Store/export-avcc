@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Package, Truck } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck, ChevronsUpDown, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import {
@@ -9,6 +9,15 @@ import {
 } from "../../../services/vehicleBookingApi";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 const VehicleOrderVehicleEdit = () => {
   const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
@@ -21,8 +30,18 @@ const VehicleOrderVehicleEdit = () => {
   const [engineNumber, setEngineNumber] = useState("");
   const [chassisNumber, setChassisNumber] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
+  const [engineCapacity, setEngineCapacity] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [countryOfOrigin, setCountryOfOrigin] = useState("");
+  const [yom, setYom] = useState("");
+  const [hsnCode, setHsnCode] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [fuelOpen, setFuelOpen] = useState(false);
   const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
+
+  const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "CNG", "LPG"];
+  const inputStyle =
+    "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
 
   const validateChassis = (value: string) => /^[A-Z0-9]{17}$/i.test(value.trim());
   const validateEngine = (value: string) => /^[A-Z0-9]{6,20}$/i.test(value.trim());
@@ -55,6 +74,11 @@ const VehicleOrderVehicleEdit = () => {
         setEngineNumber(currentBooking?.engineNumber || "");
         setChassisNumber(currentBooking?.chassisNumber || "");
         setDeliveryDate(currentBooking?.deliveryDate ? currentBooking.deliveryDate.split("T")[0] : "");
+        setEngineCapacity(currentBooking?.engineCapacity || "");
+        setFuelType(currentBooking?.fuelType || "");
+        setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
+        setYom(currentBooking?.yom || "");
+        setHsnCode(currentBooking?.hsnCode || "");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle details");
       } finally {
@@ -108,6 +132,11 @@ const VehicleOrderVehicleEdit = () => {
         engineNumber: eng,
         chassisNumber: chassis,
         deliveryDate: deliveryDate || undefined,
+        engineCapacity: engineCapacity || undefined,
+        fuelType: fuelType || undefined,
+        countryOfOrigin: countryOfOrigin || undefined,
+        yom: yom || undefined,
+        hsnCode: hsnCode || undefined,
       });
 
       setBooking(updated);
@@ -172,7 +201,7 @@ const VehicleOrderVehicleEdit = () => {
 
         <button
           onClick={() => navigate(`/vehicles/orders/${id}`)}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
           Back to Order
@@ -214,6 +243,114 @@ const VehicleOrderVehicleEdit = () => {
               maxLength={17}
             />
             <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: MALFK81AVSD035213</p>
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Hash size={14} className="text-indigo-500" />
+              HSN Code
+            </label>
+            <input
+              type="text"
+              value={hsnCode}
+              onChange={(event) => setHsnCode(event.target.value.toUpperCase())}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. 8703.21.69"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Fuel size={14} className="text-orange-500" />
+              Fuel Type
+            </label>
+            <Popover open={fuelOpen} onOpenChange={setFuelOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    inputStyle,
+                    "flex items-center justify-between cursor-pointer",
+                  )}
+                >
+                  <span className={fuelType ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
+                    {fuelType || "Select fuel type..."}
+                  </span>
+                  <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search fuel type..." className="h-9" />
+                  <CommandList>
+                    <CommandEmpty>No fuel type found.</CommandEmpty>
+                    <CommandGroup>
+                      {fuelTypes.map((type) => (
+                        <CommandItem
+                          key={type}
+                          value={type}
+                          onSelect={() => {
+                            setFuelType(type);
+                            setFuelOpen(false);
+                          }}
+                        >
+                          {type}
+                          <Check
+                            className={cn(
+                              "ml-auto h-4 w-4",
+                              fuelType === type ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Globe size={14} className="text-blue-500" />
+              Country of Origin
+            </label>
+            <input
+              type="text"
+              value={countryOfOrigin}
+              onChange={(event) => setCountryOfOrigin(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. Japan, India, Germany"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Calendar size={14} className="text-rose-500" />
+              Year of Manufacture (YOM)
+            </label>
+            <input
+              type="text"
+              value={yom}
+              onChange={(event) => setYom(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. 2024"
+              maxLength={4}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Package size={14} className="text-purple-500" />
+              Engine Capacity
+            </label>
+            <input
+              type="text"
+              value={engineCapacity}
+              onChange={(event) => setEngineCapacity(event.target.value)}
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="e.g. 1498 cc"
+            />
           </div>
 
           <div>
@@ -271,7 +408,7 @@ const VehicleOrderVehicleEdit = () => {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <CheckCircle2 size={16} />
             Save Details
@@ -282,7 +419,7 @@ const VehicleOrderVehicleEdit = () => {
               type="button"
               onClick={markDelivered}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Truck size={16} />
               Mark Delivered
