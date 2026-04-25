@@ -1,6 +1,6 @@
 import { Client } from "../models/Client.model";
 import { CreateClientDto, UpdateClientDto } from "../dto/client.dto";
-import { Order } from "../models/Order.model";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 
 export const createClientService = async (data: CreateClientDto) => {
   const existing = await Client.findOne({ phone: data.phone });
@@ -51,16 +51,16 @@ export const getClientsService = async (query: any) => {
     { $match: match },
     {
       $lookup: {
-        from: "orders",
+        from: "vehiclebookings",
         localField: "_id",
-        foreignField: "clientId",
+        foreignField: "assignedClientId",
         as: "orders",
       },
     },
     {
       $addFields: {
-        totalOrders: { $size: "$orders" },
-        lastTransaction: { $max: "$orders.createdAt" },
+        totalVehicleOrders: { $size: "$orders" },
+        lastBooking: { $max: "$orders.createdAt" },
       },
     },
     { $project: { orders: 0 } },
@@ -86,13 +86,21 @@ export const getClientByIdService = async (id: string) => {
     throw new Error("Client not found");
   }
 
-  const orders = await Order.find({ clientId: id }).sort({ createdAt: -1 });
+  const vehicleOrders = await VehicleBooking.find({
+    assignedClientId: id,
+  })
+    .populate("orderId")
+    .populate("vehicleId")
+    .sort({ createdAt: -1 });
 
   return {
     client,
-    orders,
-    totalOrders: orders.length,
-    lastTransaction: orders.length > 0 ? orders[0].createdAt : null,
+    vehicleOrders,
+    totalVehicleOrders: vehicleOrders.length,
+    lastBooking:
+      vehicleOrders.length > 0
+        ? vehicleOrders[0].createdAt
+        : null,
   };
 };
 

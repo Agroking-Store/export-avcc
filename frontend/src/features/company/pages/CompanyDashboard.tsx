@@ -54,9 +54,9 @@ const piRes = await axios.get(
   }
 );
 
-console.log("PI RESPONSE:", piRes.data);
-
-const piRows = piRes.data?.data || [];
+const piRows = Array.isArray(piRes.data?.data)
+  ? piRes.data.data
+  : [];
 
 const companyMap: Record<string, number> = {};
 
@@ -84,6 +84,7 @@ const topCompanies = Object.entries(companyMap)
 setPiStats(topCompanies);
 /* PI FETCH END */
     } catch (error) {
+      console.error(error);
       toast.error("Failed to load company dashboard.");
     } finally {
       setLoading(false);

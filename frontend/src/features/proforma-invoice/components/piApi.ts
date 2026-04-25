@@ -42,6 +42,20 @@ export const piApi = {
     return res.data?.data || res.data;
   },
 
+  getBookedVehicleOrders: async (
+  clientId: string,
+  search: string = ""
+) => {
+  const res = await axios.get(
+    `${apiConfig.baseURL}/proforma-invoices/booked-vehicle-orders`,
+    {
+      params: { clientId, search },
+    }
+  );
+
+  return res.data;
+},
+
   getPIById: async (id: string) => {
     const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`);
     return res.data;

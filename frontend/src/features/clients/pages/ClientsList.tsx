@@ -92,7 +92,7 @@ const ClientsList = () => {
           <table className="w-full text-center">
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
-                {["Client ID", "Name", "Country", "Contact", "Orders", "Last Order", "Actions"].map((head) => (
+                {["Client ID", "Name", "Country", "Contact", "Vehicle Orders", "Last Booking", "Actions"].map((head) => (
                   <th key={head} className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
                     {head}
                   </th>
@@ -119,9 +119,16 @@ const ClientsList = () => {
                     </td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{client.address?.country || "-"}</td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">{client.phone}</td>
-                    <td className="px-8 py-5 text-center text-sm font-semibold text-slate-600 dark:text-gray-300">{client.totalOrders || 0}</td>
+                    <td className="px-8 py-5 text-center">
+                      <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-xl text-xs font-bold">
+                        {client.totalVehicleOrders || 0}
+                      </span>
+                    </td>
+                    
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
-                      {client.lastTransaction ? new Date(client.lastTransaction).toLocaleDateString() : "-"}
+                      {client.lastBooking
+                        ? new Date(client.lastBooking).toLocaleDateString()
+                        : "-"}
                     </td>
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">

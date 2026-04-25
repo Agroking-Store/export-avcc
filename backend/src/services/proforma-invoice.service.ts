@@ -1,10 +1,11 @@
 import ProformaInvoice from "../models/ProformaInvoice.model";
-import { Order } from "../models/Order.model";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 import { Types, PipelineStage } from "mongoose";
 import { Company } from "../models/Company.model"; // Import Company model
 import { IBookingVehicle, IBooking } from "../models/Booking.model"; // Import Booking model interfaces
 import Dealer from "../models/Dealer.model";
 import { Booking } from "../models/Booking.model"; // Import Booking model
+import { VehicleOrder } from "../models/VehicleOrder.model";
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
@@ -150,6 +151,38 @@ export const getSuggestedNextPiNumberService = async (companyId: string) => {
   return await generateNextPiNumber(companyId);
 };
 
+export const getBookedVehicleOrdersService = async (clientId: string) => {
+  if (!clientId) {
+    throw new Error("Client ID required");
+  }
+
+  const usedBookings = await ProformaInvoice.find({
+    vehicleBookingIds: { $exists: true, $ne: [] },
+  }).select("vehicleBookingIds");
+
+  const usedIds = usedBookings.flatMap((pi: any) =>
+    pi.vehicleBookingIds?.map((id: any) => id.toString()) || []
+  );
+
+  const bookings = await VehicleBooking.find({
+    assignedClientId: clientId,
+    status: {
+      $in: [
+        "approved",
+        "payment_done",
+        "chassis_received",
+        "delivered",
+      ],
+    },
+    _id: { $nin: usedIds },
+  })
+    .populate("vehicleId")
+    .populate("orderId")
+    .sort({ createdAt: -1 });
+
+  return bookings;
+};
+
 // Helper to get financial year from a date
 const getFinancialYear = (date: Date): string => {
   const year = date.getFullYear();
@@ -262,7 +295,7 @@ interface VehicleTracking {
 
 // New service to get detailed order tracking with PI and Booking status
 export const getOrderDetailWithTrackingService = async (orderId: string) => {
-  const order = await Order.findById(orderId).populate(
+  const order = await VehicleOrder.findById(orderId).populate(
     "clientId",
     "name clientCode email phone companyName address country"
   );
@@ -294,17 +327,16 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
   }).populate("company_id", "name");
 
   const vehicleTracking: VehicleTracking[] = [];
-  let totalVehiclesInOrder = 0;
-  let totalVehiclesPIed = 0;
-  let globalIndex = 0;
+let totalVehiclesInOrder = 0;
+let totalVehiclesPIed = 0;
+let globalIndex = 0;
 
-  for (const vehicleItem of order.vehicles) {
-    const qty = vehicleItem.quantity || 1;
-    totalVehiclesInOrder += qty;
+const qty = order.quantity || 1;
+totalVehiclesInOrder = qty;
 
-    for (let qIdx = 0; qIdx < qty; qIdx++) {
-      const currentSrNo = String(globalIndex + 1);
-      globalIndex++;
+for (let qIdx = 0; qIdx < qty; qIdx++) {
+  const currentSrNo = String(globalIndex + 1);
+  globalIndex++;
 
       // 1. Find the individual booking for this specific unit using srNo
       let foundBookingVehicle: any = null;
@@ -350,44 +382,25 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       }
 
       vehicleTracking.push({
-        _id: new Types.ObjectId().toString(),
-        make:
-          (vehicleItem as any).make ||
-          vehicleItem.vehicleName ||
-          vehicleItem.name ||
-          "N/A",
-        model: vehicleItem.vehicleName || vehicleItem.name || "N/A",
-        chassisNo: unitChassis,
-        engineNo: unitEngine,
-        color: foundBookingVehicle?.color || vehicleItem.color || "N/A",
-        hsn:
-          foundBookingVehicle?.hsnCode || (vehicleItem as any).hsnCode || "N/A",
-        yom: foundBookingVehicle?.yom
-          ? String(foundBookingVehicle.yom)
-          : (vehicleItem as any).yom || "N/A",
-        fuelType:
-          foundBookingVehicle?.fuelType ||
-          (vehicleItem as any).fuelType ||
-          "N/A",
-        countryOfOrigin:
-          foundBookingVehicle?.countryOfOrigin ||
-          (vehicleItem as any).countryOfOrigin ||
-          "N/A",
-        dealerName: unitDealerName,
-        engineCapacity:
-          foundBookingVehicle?.engineCapacity ||
-          (vehicleItem as any).engineCapacity ||
-          "N/A",
-        fob:
-          foundBookingVehicle?.fobAmount || (vehicleItem as any).fobAmount || 0,
-        freight:
-          foundBookingVehicle?.freight || (vehicleItem as any).freight || 0,
-        quantity: 1, // Individual unit
-        bookingStatus,
-        piStatus,
-        associatedPIs,
-      });
-    }
+  _id: new Types.ObjectId().toString(),
+  make: order.vehicleSnapshot?.brandName || "N/A",
+  model: order.vehicleSnapshot?.modelName || "N/A",
+  chassisNo: unitChassis,
+  engineNo: unitEngine,
+  color: foundBookingVehicle?.color || order.vehicleSnapshot?.color || "N/A",
+  hsn: foundBookingVehicle?.hsnCode || "N/A",
+  yom: foundBookingVehicle?.yom ? String(foundBookingVehicle.yom) : "N/A",
+  fuelType: foundBookingVehicle?.fuelType || "N/A",
+  countryOfOrigin: foundBookingVehicle?.countryOfOrigin || "N/A",
+  dealerName: unitDealerName,
+  engineCapacity: foundBookingVehicle?.engineCapacity || "N/A",
+  fob: foundBookingVehicle?.fobAmount || 0,
+  freight: foundBookingVehicle?.freight || 0,
+  quantity: 1,
+  bookingStatus,
+  piStatus,
+  associatedPIs,
+});
   }
 
   const pendingVehicles = totalVehiclesInOrder - totalVehiclesPIed;
@@ -404,8 +417,8 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
 
   return {
     _id: order._id.toString(),
-    orderId: order.orderId,
-    voucherNo: order.voucherNo,
+    orderId: order.orderNumber,
+voucherNo: "-",
     client: {
       _id: (order.clientId as any)?._id?.toString() || "N/A", // Add client _id
       name: (order.clientId as any)?.name || "N/A",
@@ -416,10 +429,7 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       address: (order.clientId as any)?.address,
       country: (order.clientId as any)?.country,
     },
-    dealer: {
-      // Correctly populate dealer name from associated booking
-      name: summaryDealerDisplay,
-    },
+    dealer: { name: "-" },
     createdAt: order.createdAt.toISOString(),
     totalVehiclesInOrder,
     totalVehiclesPIed,
@@ -534,9 +544,9 @@ export const getDashboardKPIsService = async (timeRange: string) => {
     { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } },
   ]);
   const prevActivePipelineValue =
-    prevActivePipelineValueResult.length > 0 // Corrected: Use prevActivePipelineValueResult
-      ? activePipelineValueResult[0].totalAmount
-      : 0;
+  prevActivePipelineValueResult.length > 0
+    ? prevActivePipelineValueResult[0].totalAmount
+    : 0;
 
   // KPI 2: Pending PI Approvals
   const pendingApprovalsResult = await ProformaInvoice.aggregate([
@@ -551,7 +561,7 @@ export const getDashboardKPIsService = async (timeRange: string) => {
     { $group: { _id: null, count: { $sum: 1 } } },
   ]);
   const prevPendingApprovals =
-    pendingApprovalsResult.length > 0 ? pendingApprovalsResult[0].count : 0;
+    pendingApprovalsResult.length > 0 ? prevPendingApprovalsResult[0].count : 0;
 
   // KPI 3: Expiring PIs (Next 7 Days) - This is a fixed window, not dependent on the timeRange selector for 'createdAt'
   const now = new Date();
@@ -585,7 +595,7 @@ export const getDashboardKPIsService = async (timeRange: string) => {
 
   // KPI 4: Overall Order PI Completion
   // This requires aggregating from the Order model, then looking up PIs
-  const overallOrderPICompletionResult = await Order.aggregate([
+  const overallOrderPICompletionResult = await VehicleOrder.aggregate([
     {
       $match: {
         ...createdAtMatch, // Filter orders by creation date
@@ -601,7 +611,7 @@ export const getDashboardKPIsService = async (timeRange: string) => {
     },
     {
       $addFields: {
-        totalVehiclesInOrder: { $sum: "$vehicles.quantity" },
+        totalVehiclesInOrder: "$quantity",
         totalVehiclesPIed: {
           $sum: {
             $map: {
@@ -640,7 +650,7 @@ export const getDashboardKPIsService = async (timeRange: string) => {
     }
   }
 
-  const prevOverallOrderPICompletionResult = await Order.aggregate([
+  const prevOverallOrderPICompletionResult = await VehicleOrder.aggregate([
     {
       $match: {
         ...prevCreatedAtMatch, // Filter orders by creation date for previous period
@@ -656,7 +666,7 @@ export const getDashboardKPIsService = async (timeRange: string) => {
     },
     {
       $addFields: {
-        totalVehiclesInOrder: { $sum: "$vehicles.quantity" },
+        totalVehiclesInOrder: "$quantity",
         totalVehiclesPIed: {
           $sum: {
             $map: {
@@ -809,10 +819,8 @@ export const getOrdersWithPIStatusService = async (query: any) => {
   if (search) {
     // Search can apply to orderId, voucherNo, client name, dealer name
     match.$or = [
-      { orderId: { $regex: search, $options: "i" } },
-      { voucherNo: { $regex: search, $options: "i" } },
+      { orderNumber: { $regex: search, $options: "i" } },
       { "client.name": { $regex: search, $options: "i" } },
-      { "dealer.name": { $regex: search, $options: "i" } },
     ];
   }
 
@@ -832,15 +840,6 @@ export const getOrdersWithPIStatusService = async (query: any) => {
       },
     },
     { $unwind: { path: "$client", preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: "dealers", // Ensure this matches your actual MongoDB collection name for dealers
-        localField: "dealerId",
-        foreignField: "_id",
-        as: "dealer",
-      },
-    },
-    { $unwind: { path: "$dealer", preserveNullAndEmptyArrays: true } },
     // 2. Lookup ProformaInvoices for each order
     {
       $lookup: {
@@ -853,7 +852,7 @@ export const getOrdersWithPIStatusService = async (query: any) => {
     // 3. Add fields for PI status calculation
     {
       $addFields: {
-        totalVehiclesInOrder: { $sum: "$vehicles.quantity" },
+        totalVehiclesInOrder: "$quantity",
         totalVehiclesPIed: {
           $sum: "$proformaInvoices.vehicleDetails.quantity",
         },
@@ -919,8 +918,8 @@ export const getOrdersWithPIStatusService = async (query: any) => {
   ];
 
   const [orders, totalResult] = await Promise.all([
-    Order.aggregate(dataPipeline),
-    Order.aggregate(countPipeline),
+    VehicleOrder.aggregate(dataPipeline),
+    VehicleOrder.aggregate(countPipeline),
   ]);
   const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
@@ -1117,7 +1116,8 @@ export const getPIsService = async (query: any) => {
 // GET PI BY ID
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
-    .populate("order_id", "orderId") // Order model se orderId field fetch karne ke liye
+    .populate("order_id", "orderNumber")
+    .populate("vehicleBookingIds")// Order model se orderId field fetch karne ke liye
     .populate(
       "client_id", // Populate client_id to get original details if no snapshot
       "name clientCode email phone country address companyName" // Select fields to populate

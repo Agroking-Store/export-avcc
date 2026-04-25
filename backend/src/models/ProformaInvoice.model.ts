@@ -3,7 +3,9 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IProformaInvoice extends Document {
   piNumber: string;
 
-  order_id?: mongoose.Types.ObjectId; // New field to link to an Order
+  order_id?: mongoose.Types.ObjectId; // legacy old order
+  vehicleBookingIds?: mongoose.Types.ObjectId[];
+  
   client_id: mongoose.Types.ObjectId; // Buyer
   company_id?: mongoose.Types.ObjectId; // Exporter details (Company)
 
@@ -100,6 +102,12 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       ref: "Order",
       default: null,
     },
+    vehicleBookingIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "VehicleBooking",
+      },
+    ],
     client_id: {
       type: Schema.Types.ObjectId,
       ref: "Client",
@@ -113,7 +121,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
 
     vehicleDetails: [
       {
-        vehicle_id: { type: Schema.Types.ObjectId, ref: "Vehicle" },
+        vehicle_id: { type: Schema.Types.ObjectId, ref: "VehicleListItem" },
         model: { type: String },
         color: { type: String },
         engineNo: { type: String, trim: true },
@@ -241,7 +249,8 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
 
 // Index
 proformaInvoiceSchema.index({ client_id: 1 }); // Existing index
-proformaInvoiceSchema.index({ order_id: 1 }); // New index for order_id
+proformaInvoiceSchema.index({ order_id: 1 }); 
+proformaInvoiceSchema.index({ vehicleBookingIds: 1 });// New index for order_id
 
 export default mongoose.model<IProformaInvoice>(
   "ProformaInvoice",

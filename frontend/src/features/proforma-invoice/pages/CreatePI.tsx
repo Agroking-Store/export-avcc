@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 const CreatePI = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const location = useLocation();
 
   const [clients, setClients] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]); // Renamed from dealers
@@ -41,9 +40,9 @@ const CreatePI = () => {
   const [previewLoading, setPreviewLoading] = useState(false); // Keep previewLoading
 
   // Fetch Order states
-  const [orders, setOrders] = useState<any[]>([]);
-  const [orderSearch, setOrderSearch] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   // Search states for comboboxes
   const [clientSearch, setClientSearch] = useState("");
@@ -52,7 +51,7 @@ const CreatePI = () => {
   const [form, setForm] = useState<PIForm>({ ...defaultPIForm });
   const debouncedClientSearch = useDebounce(clientSearch, 500);
   const debouncedCompanySearch = useDebounce(companySearch, 500); // Renamed from debouncedDealerSearch
-  const debouncedOrderSearch = useDebounce(orderSearch, 500);
+  const debouncedBookingSearch = useDebounce(bookingSearch, 500);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -77,15 +76,27 @@ const CreatePI = () => {
 
   // Fetch orders for the combobox
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setOrders(await piApi.getOrders(debouncedOrderSearch));
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
+  const fetchBookings = async () => {
+    try {
+      if (!form.client_id) {
+        setBookings([]);
+        return;
       }
-    };
-    fetchOrders();
-  }, [debouncedOrderSearch]);
+
+      const data = await piApi.getBookedVehicleOrders(
+        form.client_id,
+        debouncedBookingSearch
+      );
+
+      setBookings(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch bookings:", err);
+      setBookings([]);
+    }
+  };
+
+  fetchBookings();
+}, [form.client_id, debouncedBookingSearch]);
 
   // Fetch suggested PI number for new PI creation
   useEffect(() => {
@@ -190,6 +201,7 @@ const CreatePI = () => {
           destination: pi.destination || "",
           portOfLoading: pi.portOfLoading || "",
           portOfDischarge: pi.portOfDischarge || "",
+          vehicleBookingIds: pi.vehicleBookingIds || [],
           vehicleDetails:
             pi.vehicleDetails?.length > 0
               ? pi.vehicleDetails.map((v: any) => ({
@@ -222,6 +234,7 @@ const CreatePI = () => {
   };
 
   const handleClientSelect = (clientId: string) => {
+    if (form.client_id === clientId) return;
     const selectedClientData = clients.find((c) => c._id === clientId);
     let clientAddressForSnapshot: AddressDetails = {
       houseBuilding: "",
@@ -250,6 +263,8 @@ const CreatePI = () => {
     setForm((prev) => ({
       ...prev,
       client_id: clientId,
+      vehicleBookingIds: [],
+      vehicleDetails: [],
       clientSnapshot: {
         name: selectedClientData?.name,
         companyName: selectedClientData?.companyName,
@@ -259,6 +274,9 @@ const CreatePI = () => {
         address: clientAddressForSnapshot,
       },
     }));
+    setSelectedBooking(null);
+    setBookings([]);
+    setBookingSearch("");
   };
 
   // Handle direct change to piNumber field
@@ -312,114 +330,48 @@ const CreatePI = () => {
   };
 
   // Fetch Order Logic
-  const handleSelectOrder = async (
-    orderId: string,
-    specificChassis?: string
-  ) => {
-    if (!orderId) return;
-    try {
-      // 1. Fetch detailed tracking data for the order
-      const trackingData = await piApi.getOrderDetailWithTracking(orderId);
-      setSelectedOrder(trackingData); // Store the full tracking data if needed elsewhere
+  const handleSelectBooking = (booking: any) => {
+  setSelectedBooking(booking);
 
-      // 2. Filter for vehicles that are Booked and do not yet have a PI
-      const availableToPI = trackingData.vehicleTracking.filter(
-        (v: any) => v.bookingStatus === "Booked" && v.piStatus === "Pending"
-      );
+  const vehicle = booking.vehicleId || {};
 
-      // 3. Filter for specific chassis if coming from PIOrderDetail row
-      const finalVehiclesToPI = specificChassis
-        ? availableToPI.filter((v: any) => v.chassisNo === specificChassis)
-        : availableToPI;
-
-      if (finalVehiclesToPI.length === 0) {
-        if (specificChassis) {
-          toast.error(
-            "This specific vehicle is either not booked or already has a PI."
-          );
-          return;
-        }
-        toast.warning("No booked vehicles available to PI for this order.");
-        return;
-      }
-
-      // 4. Map units to the PI form structure
-      const mappedVehicles: VehicleLineItem[] = finalVehiclesToPI.map(
-        (v: any) => ({
-          vehicle_id: v._id, // Use the unique ID from vehicleTracking
-          model: v.model,
-          color: v.color,
-          engineNo: v.engineNo,
-          chassisNo: v.chassisNo,
-          quantity: 1, // Each entry is an individual unit
-          hsn: v.hsn,
-          fob: v.fob,
-          freight: v.freight,
-          yom: v.yom,
-          fuelType: v.fuelType,
-          countryOfOrigin: v.countryOfOrigin,
-          engineCapacity: v.engineCapacity,
-          selected: true, // Default to selected for PI creation
-        })
-      );
-
-      // 5. Construct Client Snapshot from tracking data
-      const c = trackingData.client;
-      let clientAddressForSnapshot: AddressDetails = {
-        houseBuilding: "",
-        streetArea: "",
-        cityTown: "",
-        state: "",
-        pincode: "",
-        country: "",
-      };
-
-      if (c.address && typeof c.address === "string") {
-        clientAddressForSnapshot.streetArea = c.address;
-        if (c.country) clientAddressForSnapshot.country = c.country;
-      } else if (c.address && typeof c.address === "object") {
-        clientAddressForSnapshot = c.address;
-      } else if (c.country) {
-        clientAddressForSnapshot.country = c.country;
-      }
-
-      // 6. Update the form including client data
-      setForm((prev) => ({
-        ...prev,
-        order_id: trackingData._id, // Link the PI to the selected order
-        vehicleDetails: mappedVehicles,
-        client_id: c._id,
-        clientSnapshot: {
-          name: c.name,
-          companyName: c.companyName,
-          clientCode: c.clientCode,
-          email: c.email,
-          phone: c.phone,
-          address: clientAddressForSnapshot,
-        },
-      }));
-
-      // 7. Handle company (exporter) selection - separate from order's dealer.
-      // The company_id for the PI (exporter) should be selected independently.
-      // Removing previous logic that tried to map order's dealer to PI's company.
-
-      toast.success("Order details fetched successfully!");
-    } catch (err) {
-      console.error("Failed to load order details:", err);
-      toast.error("Failed to load order details.");
-    }
+  const newVehicle = {
+    booking_id: booking._id,
+    vehicle_id: vehicle._id || "",
+    model: vehicle.modelName || "",
+    color: vehicle.color || "",
+    engineNo: booking.engineNumber || "",
+    chassisNo: booking.chassisNumber || "",
+    quantity: 1,
+    hsn: vehicle.hsn || "",
+    fob: vehicle.fob || 0,
+    freight: vehicle.freight || 0,
+    yom: vehicle.yom || "",
+    fuelType: vehicle.fuelType || "",
+    countryOfOrigin: vehicle.countryOfOrigin || "",
+    engineCapacity: vehicle.engineCapacity || "",
+    selected: true,
   };
 
-  // Auto-populate data if redirected from PIOrderDetail
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const urlOrderId = searchParams.get("orderId");
-    const urlChassisNo = searchParams.get("chassisNo");
+  setForm((prev) => {
+  const alreadyAdded =
+    prev.vehicleBookingIds?.includes(booking._id) ?? false;
 
-    if (urlOrderId && urlChassisNo && !id) {
-      handleSelectOrder(urlOrderId, urlChassisNo);
-    }
-  }, [location.search, id]);
+  if (alreadyAdded) {
+    toast.info("Vehicle already added");
+    return prev;
+  }
+
+  return {
+    ...prev,
+    vehicleBookingIds: [...(prev.vehicleBookingIds || []), booking._id],
+    vehicleDetails: [...prev.vehicleDetails, newVehicle],
+  };
+});
+
+  setSelectedBooking(null);
+toast.success("Vehicle added to invoice");
+};
 
   const toggleRow = (index: number) => {
     setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -455,6 +407,9 @@ const CreatePI = () => {
       clientSnapshot: form.clientSnapshot,
       companySnapshot: form.companySnapshot,
     };
+
+    payload.vehicleBookingIds =
+    payload.vehicleBookingIds?.filter(Boolean) || [];
 
     payload.vehicleDetails = payload.vehicleDetails
       .filter((v: any) => v.selected !== false)
@@ -506,26 +461,14 @@ const CreatePI = () => {
     }
   };
 
-  const ordersWithDisplay = orders.map((o) => {
-    const clientName = o.clientName || o.client?.name || "Unknown Client";
-    const formattedDate = o.date
-      ? new Date(o.date).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : "-";
-
-    return {
-      ...o,
-      clientName,
-      serialNumber: orders.indexOf(o) + 1, // Add serial number
-      orderNo: o.orderId, // Use orderId as orderNo
-      dateFormatted: formattedDate,
-      // Keep displayName for internal filtering if the combobox uses it, or for fallback display
-      displayName: `${o.orderId} - ${clientName} (${formattedDate})`,
-    };
-  });
+  const bookingsWithDisplay = bookings.map((b, index) => ({
+  ...b,
+  serialNumber: index + 1,
+  displayName:
+  `${b.orderId?.orderNumber || "-"} | ` +
+  `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} | ` +
+  `${b.chassisNumber || "No Chassis"}`
+}));
 
   return (
     <div className="bg-white text-gray-900">
@@ -578,13 +521,13 @@ const CreatePI = () => {
             errors={errors}
             clients={clients} // Keep clients
             companies={companies} // Renamed from dealers
-            ordersWithDisplay={ordersWithDisplay}
-            selectedOrder={selectedOrder}
+            ordersWithDisplay={bookingsWithDisplay}
+            selectedOrder={selectedBooking}
             setClientSearch={setClientSearch}
             setCompanySearch={setCompanySearch} // Renamed from setDealerSearch
-            setOrderSearch={setOrderSearch}
+            setOrderSearch={setBookingSearch}
             handlePiNumberChange={handlePiNumberChange} // Pass the new handler
-            handleSelectOrder={handleSelectOrder}
+            handleSelectOrder={handleSelectBooking}
             handleVehicleChange={handleVehicleChange}
             handleClientSelect={handleClientSelect} // Keep handleClientSelect
             handleClientSnapshotChange={handleClientSnapshotChange}
