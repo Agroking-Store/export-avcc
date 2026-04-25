@@ -86,10 +86,11 @@ const VehicleOrdersList = () => {
         <div className="px-8 py-6 flex justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
-Required Vehicles
+              Required Vehicles
             </h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-              Create and track required vehicles from your dedicated vehicle list
+              Create and track required vehicles from your dedicated vehicle
+              list
             </p>
           </div>
 
@@ -101,7 +102,8 @@ Required Vehicles
               onClick={() => navigate("/vehicles/orders/add")}
               className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
             >
-              <Plus size={18} strokeWidth={3} />Add Required Vehicle
+              <Plus size={18} strokeWidth={3} />
+              Add Required Vehicle
             </button>
           </div>
         </div>
@@ -147,12 +149,7 @@ Required Vehicles
           <table className="w-full text-center">
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
-                {[
-                  "Vehicle",
-                  "Quantity",
-                  "Status",
-                  "Actions",
-                ].map((head) => (
+                {["Vehicle", "Quantity", "Status", "Actions"].map((head) => (
                   <th
                     key={head}
                     className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
@@ -166,13 +163,19 @@ Required Vehicles
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-20 text-slate-400 italic">
+                  <td
+                    colSpan={4}
+                    className="text-center py-20 text-slate-400 italic"
+                  >
                     Loading orders...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-20 text-slate-400 italic">
+                  <td
+                    colSpan={4}
+                    className="text-center py-20 text-slate-400 italic"
+                  >
                     No required vehicles found
                   </td>
                 </tr>
@@ -182,7 +185,7 @@ Required Vehicles
                     key={order._id}
                     className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40"
                   >
-                    <td className="px-8 py-5 text-center">
+                    {/* <td className="px-8 py-5 text-center">
                       <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
                         {order.vehicleSnapshot.brandName}{" "}
                         {order.vehicleSnapshot.modelName}
@@ -190,7 +193,19 @@ Required Vehicles
                       <div className="text-xs text-slate-400 dark:text-gray-500">
                         {order.vehicleSnapshot.variant} - {order.vehicleSnapshot.color}
                       </div>
+                    </td> */}
+
+                    <td className="px-8 py-5 text-center">
+                      <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
+                        {order.vehicleSnapshot?.brandName || "Unknown"}{" "}
+                        {order.vehicleSnapshot?.modelName || "Model"}
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-gray-500">
+                        {order.vehicleSnapshot?.variant || "N/A"} -{" "}
+                        {order.vehicleSnapshot?.color || "N/A"}
+                      </div>
                     </td>
+
                     <td className="px-8 py-5 text-center text-sm font-semibold text-slate-600 dark:text-gray-300">
                       {order.quantity}
                     </td>
@@ -204,14 +219,18 @@ Required Vehicles
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">
                         <button
-                          onClick={() => navigate(`/vehicles/orders/${order._id}`)}
+                          onClick={() =>
+                            navigate(`/vehicles/orders/${order._id}`)
+                          }
                           className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="View Order"
                         >
                           <Eye size={18} />
                         </button>
                         <button
-                          onClick={() => navigate(`/vehicles/orders/edit/${order._id}`)}
+                          onClick={() =>
+                            navigate(`/vehicles/orders/edit/${order._id}`)
+                          }
                           className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="Edit Order"
                         >
@@ -228,7 +247,11 @@ Required Vehicles
 
         <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
           <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
-            Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of {totalPages}
+            Page{" "}
+            <span className="text-[#0f172a] dark:text-white">
+              {currentPage}
+            </span>{" "}
+            of {totalPages}
           </span>
 
           <div className="flex gap-6">
