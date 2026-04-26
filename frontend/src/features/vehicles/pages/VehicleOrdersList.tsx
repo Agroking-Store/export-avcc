@@ -10,6 +10,8 @@ import {
   Plus,
   Search,
   Truck,
+  CircleAlert,
+  Calendar,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
@@ -89,6 +91,7 @@ const VehicleOrdersList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const lastToastMessage = useRef<string | null>(null);
+  const lastReminderCount = useRef<number>(0);
 
   const limit = 10;
 
@@ -125,6 +128,22 @@ const VehicleOrdersList = () => {
   useEffect(() => {
     fetchBookings();
   }, [search, statusLabel, currentPage]);
+
+  // Toast reminder for pending engine/chassis numbers
+  useEffect(() => {
+    const pendingCount = bookings.filter(
+      (b) =>
+        b.status === "payment_done" &&
+        (!b.engineNumber || !b.chassisNumber),
+    ).length;
+
+    if (pendingCount > 0 && pendingCount !== lastReminderCount.current) {
+      toast.info(
+        `${pendingCount} vehicle${pendingCount > 1 ? "s" : ""} still need engine/chassis numbers on this page.`,
+      );
+    }
+    lastReminderCount.current = pendingCount;
+  }, [bookings]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -491,9 +510,40 @@ const VehicleOrdersList = () => {
                           </div>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <p className="truncate font-semibold text-slate-900">
-                            {brand} {model}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="truncate font-semibold text-slate-900">
+                              {brand} {model}
+                            </p>
+                            {/* Engine/Chassis pending alert */}
+                            {booking.status === "payment_done" && (!booking.engineNumber || !booking.chassisNumber) && (
+                              <span title="Engine/Chassis number pending" className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                                <CircleAlert size={10} className="mr-0.5" />
+                                Missing#
+                              </span>
+                            )}
+                            {/* Overdue delivery alert */}
+                            {booking.deliveryDate && booking.status !== "delivered" && (() => {
+                              const today = new Date(); today.setHours(0,0,0,0);
+                              const d = new Date(booking.deliveryDate); d.setHours(0,0,0,0);
+                              return today.getTime() > d.getTime();
+                            })() && (
+                              <span title="Delivery overdue" className="inline-flex items-center rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
+                                <CircleAlert size={10} className="mr-0.5" />
+                                Overdue
+                              </span>
+                            )}
+                            {/* Upcoming delivery reminder */}
+                            {booking.deliveryDate && booking.status !== "delivered" && (() => {
+                              const today = new Date(); today.setHours(0,0,0,0);
+                              const d = new Date(booking.deliveryDate); d.setHours(0,0,0,0);
+                              return d.getTime() >= today.getTime();
+                            })() && (
+                              <span title="Upcoming delivery" className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+                                <Calendar size={10} className="mr-0.5" />
+                                {Math.ceil((new Date(booking.deliveryDate).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (1000*60*60*24)) === 0 ? "Today" : `${Math.ceil((new Date(booking.deliveryDate).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (1000*60*60*24))}d`}
+                              </span>
+                            )}
+                          </div>
                           <p className="truncate text-sm text-slate-500">
                             {variant}
                           </p>
