@@ -303,7 +303,7 @@ const AddVehicleOrder = () => {
           onClick={addOrder}
           className="cursor-pointer w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-indigo-200 text-indigo-600 font-bold text-sm uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-300 transition-all"
         >
-          <Plus size={18} /> Add Another Order
+          <Plus size={18} /> Add Another Vehicle
         </button>
 
         {/* Action Buttons */}
