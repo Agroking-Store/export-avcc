@@ -704,7 +704,7 @@ const VehicleOrderDetails = () => {
                 </colgroup>
                 <thead className="bg-slate-50/80">
                   <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <th className="border-b border-slate-200 px-6 py-4 align-middle">Unit</th>
+                    <th className="border-b border-slate-200 px-6 py-4 align-middle">Vehicle ID</th>
                     <th className="border-b border-slate-200 px-6 py-4 align-middle">Vehicle</th>
                     <th className="border-b border-slate-200 px-6 py-4 align-middle">Color</th>
                     <th className="border-b border-slate-200 px-6 py-4 align-middle">Status</th>
@@ -712,10 +712,11 @@ const VehicleOrderDetails = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white">
-                  {units.map(({ booking, vehicleIndex, unitNo, name, variant, color }) => {
+                {units.map(({ booking, vehicleIndex, unitNo, name, variant, color }) => {
                     if (!booking) return null;
 
                     const statusMeta = STATUS_META[booking.status];
+                    const vehicleId = `VEH-${String(unitNo).padStart(3, "0")}`;
 
                     return (
                       <tr
@@ -724,7 +725,7 @@ const VehicleOrderDetails = () => {
                       >
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-700">
-                            {unitNo}
+                            {vehicleId}
                           </div>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">

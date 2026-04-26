@@ -42,6 +42,11 @@ const ClientAllotModal = ({ isOpen, onClose, booking, clients, onSync }: Props) 
 
   if (!isOpen || !booking) return null;
 
+  const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
+  const vehicleName = vehicleSnapshot
+    ? `${vehicleSnapshot.brandName || ""} ${vehicleSnapshot.modelName || ""}`.trim()
+    : "Vehicle";
+
   const handleAssignClient = async () => {
     if (!booking) return;
     if (!selectedClientId) {
@@ -71,7 +76,7 @@ const ClientAllotModal = ({ isOpen, onClose, booking, clients, onSync }: Props) 
         <div className="mb-6 flex items-start justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Unit {booking.vehicleIndex + 1}
+              {vehicleName}
             </p>
             <h3 className="text-xl font-bold text-slate-900">Allot Client</h3>
           </div>

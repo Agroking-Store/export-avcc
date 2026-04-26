@@ -171,13 +171,15 @@ const VehicleOrderVehicleView = () => {
     },
   ];
 
+  const vehicleName = `${order.vehicleSnapshot.brandName || ""} ${order.vehicleSnapshot.modelName || ""}`.trim();
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Unit {booking.vehicleIndex + 1}
+            {vehicleName}
           </p>
           <h1 className="text-2xl font-bold text-slate-900">
             {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
