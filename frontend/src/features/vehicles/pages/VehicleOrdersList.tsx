@@ -4,36 +4,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  CheckCircle2,
-  ChevronsUpDown,
   Eye,
   FilePenLine,
-  FileText,
   Filter,
-  IndianRupee,
   Plus,
   Search,
-  ShieldCheck,
   Truck,
-  Upload,
-  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { cn } from "@/lib/utils";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { apiConfig } from "../../../config/apiConfig";
 import api from "../../../services/api";
 import { IClient } from "../../clients/clients.types";
 import {
@@ -41,11 +19,9 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
-
-const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
-
-const getQuotationUrl = (filePath?: string) =>
-  filePath ? `${API_ORIGIN}${filePath}` : "";
+import QuotationModal from "../components/QuotationModal";
+import PaymentModal from "../components/PaymentModal";
+import ClientAllotModal from "../components/ClientAllotModal";
 
 const STATUS_META: Record<
   VehicleBookingStatus,
@@ -122,18 +98,7 @@ const VehicleOrdersList = () => {
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [activeBooking, setActiveBooking] = useState<VehicleBookingItem | null>(null);
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [quotationSaving, setQuotationSaving] = useState(false);
-
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentSaving, setPaymentSaving] = useState(false);
-
   const [clients, setClients] = useState<IClient[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState("");
-  const [clientSaving, setClientSaving] = useState(false);
-  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const statusValue = statusLabelToRaw[statusLabel] || "All";
 
@@ -204,154 +169,32 @@ const VehicleOrdersList = () => {
 
   const openQuotationModal = (booking: VehicleBookingItem) => {
     setActiveBooking(booking);
-    setSelectedFile(null);
-    setRejectReason(booking.rejectionReason || "");
     setQuotationModalOpen(true);
   };
 
   const openPaymentModal = (booking: VehicleBookingItem) => {
     setActiveBooking(booking);
-    setPaymentAmount(booking.paymentAmount ? String(booking.paymentAmount) : "");
     setPaymentModalOpen(true);
   };
 
   const openClientModal = (booking: VehicleBookingItem) => {
     setActiveBooking(booking);
-    setSelectedClientId(booking.assignedClientId || "");
     setClientModalOpen(true);
   };
 
   const closeQuotationModal = () => {
     setQuotationModalOpen(false);
     setActiveBooking(null);
-    setSelectedFile(null);
-    setRejectReason("");
   };
 
   const closePaymentModal = () => {
     setPaymentModalOpen(false);
     setActiveBooking(null);
-    setPaymentAmount("");
   };
 
   const closeClientModal = () => {
     setClientModalOpen(false);
     setActiveBooking(null);
-    setSelectedClientId("");
-  };
-
-  const handleQuotationUpload = async () => {
-    if (!activeBooking) return;
-    if (!selectedFile) {
-      toast.error("Please choose a quotation file");
-      return;
-    }
-
-    try {
-      setQuotationSaving(true);
-      const updated = await vehicleBookingApi.uploadQuotation(
-        activeBooking._id,
-        selectedFile,
-      );
-      syncBooking(updated);
-      toast.success(
-        activeBooking.quotationFile
-          ? "Quotation replaced successfully"
-          : "Quotation uploaded successfully",
-      );
-      setSelectedFile(null);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to upload quotation");
-    } finally {
-      setQuotationSaving(false);
-    }
-  };
-
-  const handleApprove = async () => {
-    if (!activeBooking) return;
-
-    try {
-      setQuotationSaving(true);
-      const updated = await vehicleBookingApi.approve(activeBooking._id);
-      syncBooking(updated);
-      toast.success("Vehicle approved");
-      closeQuotationModal();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Approval failed");
-    } finally {
-      setQuotationSaving(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!activeBooking) return;
-    if (!rejectReason.trim()) {
-      toast.error("Rejection reason is required");
-      return;
-    }
-
-    try {
-      setQuotationSaving(true);
-      const updated = await vehicleBookingApi.reject(
-        activeBooking._id,
-        rejectReason,
-      );
-      syncBooking(updated);
-      toast.success("Vehicle rejected");
-      closeQuotationModal();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Rejection failed");
-    } finally {
-      setQuotationSaving(false);
-    }
-  };
-
-  const handleConfirmPayment = async () => {
-    if (!activeBooking) return;
-
-    const amount = Number(paymentAmount);
-    if (!amount || amount <= 0) {
-      toast.error("Dealer amount is required");
-      return;
-    }
-
-    try {
-      setPaymentSaving(true);
-      const updated = await vehicleBookingApi.confirmPayment(
-        activeBooking._id,
-        amount,
-      );
-      syncBooking(updated);
-      toast.success("Payment saved and booking confirmed");
-      closePaymentModal();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Payment confirmation failed");
-    } finally {
-      setPaymentSaving(false);
-    }
-  };
-
-  const handleAssignClient = async () => {
-    if (!activeBooking) return;
-    if (!selectedClientId) {
-      toast.error("Please select a client");
-      return;
-    }
-
-    try {
-      setClientSaving(true);
-      const updated = await vehicleBookingApi.assignClient(
-        activeBooking._id,
-        selectedClientId,
-      );
-      syncBooking(updated);
-      toast.success("Client allotted successfully");
-      closeClientModal();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to allot client");
-    } finally {
-      setClientSaving(false);
-    }
   };
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
@@ -389,7 +232,7 @@ const VehicleOrdersList = () => {
             onClick={() => openQuotationModal(booking)}
             className={`${primaryActionClass} bg-slate-900 hover:bg-slate-700`}
           >
-            <Upload size={14} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Upload Quotation
           </button>
         );
@@ -399,7 +242,7 @@ const VehicleOrdersList = () => {
             onClick={() => openQuotationModal(booking)}
             className={`${primaryActionClass} bg-amber-500 hover:bg-amber-600`}
           >
-            <FileText size={14} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
             Review Quotation
           </button>
         );
@@ -409,7 +252,7 @@ const VehicleOrdersList = () => {
             onClick={() => openPaymentModal(booking)}
             className={`${primaryActionClass} bg-emerald-600 hover:bg-emerald-700`}
           >
-            <IndianRupee size={14} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Confirm Booking
           </button>
         );
@@ -755,298 +598,30 @@ const VehicleOrdersList = () => {
         </div>
       </div>
 
-      {/* ── Quotation Modal ── */}
-      {quotationModalOpen && activeBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                  Unit {activeBooking.vehicleIndex + 1}
-                </p>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Quotation Upload & Approval
-                </h3>
-              </div>
-              <button
-                onClick={closeQuotationModal}
-                className="cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      <QuotationModal
+        isOpen={quotationModalOpen}
+        onClose={closeQuotationModal}
+        booking={activeBooking}
+        onSync={syncBooking}
+      />
 
-            <div className="space-y-5">
-              {/* Upload zone */}
-              <div className="rounded-[24px] border border-dashed border-blue-300 bg-blue-50/70 p-6">
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-3 rounded-full bg-white p-3 text-blue-700 shadow-sm">
-                    <Upload size={20} />
-                  </div>
-                  <p className="text-base font-semibold text-slate-900">
-                    Upload quotation file
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    PDF, JPG, PNG, WebP supported. Replacing a file removes the old one automatically.
-                  </p>
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={closePaymentModal}
+        booking={activeBooking}
+        onSync={syncBooking}
+      />
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,image/*"
-                    onChange={(event) =>
-                      setSelectedFile(event.target.files?.[0] || null)
-                    }
-                    className="hidden"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="cursor-pointer mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
-                  >
-                    <Upload size={16} />
-                    Choose File
-                  </button>
-
-                  <p className="mt-3 text-sm font-medium text-slate-700">
-                    {selectedFile?.name ||
-                      (activeBooking.quotationFile
-                        ? "Existing quotation already uploaded"
-                        : "No file selected")}
-                  </p>
-                </div>
-              </div>
-
-              {/* View existing quotation */}
-              {activeBooking.quotationFile && (
-                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                  <FileText size={18} className="text-blue-600" />
-                  <p className="text-sm font-medium text-blue-900">
-                    Existing quotation available for this unit.
-                  </p>
-                  <button
-                    onClick={() =>
-                      window.open(getQuotationUrl(activeBooking.quotationFile), "_blank")
-                    }
-                    className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-                  >
-                    <Eye size={14} />
-                    View File
-                  </button>
-                </div>
-              )}
-
-              {/* Upload / Replace action */}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={handleQuotationUpload}
-                  disabled={quotationSaving}
-                  className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Upload size={16} />
-                  {activeBooking.quotationFile ? "Replace File" : "Upload File"}
-                </button>
-              </div>
-
-              {/* Approval actions – only shown when quotation is uploaded and awaiting approval */}
-              {activeBooking.quotationFile &&
-                activeBooking.status === "quotation_uploaded" && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="mb-4 flex items-center gap-2 text-slate-800">
-                      <ShieldCheck size={18} />
-                      <p className="font-semibold">Approval Actions</p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <textarea
-                        value={rejectReason}
-                        onChange={(event) => setRejectReason(event.target.value)}
-                        rows={3}
-                        placeholder="Enter rejection reason if needed..."
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                      />
-
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          onClick={handleApprove}
-                          disabled={quotationSaving}
-                          className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <CheckCircle2 size={16} />
-                          Approve
-                        </button>
-                        <button
-                          onClick={handleReject}
-                          disabled={quotationSaving}
-                          className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <X size={16} />
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Payment Modal ── */}
-      {paymentModalOpen && activeBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
-          <div className="w-full max-w-xl rounded-[28px] bg-white p-6 shadow-2xl">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                  Unit {activeBooking.vehicleIndex + 1}
-                </p>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Confirm Booking Payment
-                </h3>
-              </div>
-              <button
-                onClick={closePaymentModal}
-                className="cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Amount paid to dealer
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(event) => setPaymentAmount(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                  placeholder="Enter payment amount"
-                />
-              </div>
-
-              <button
-                onClick={handleConfirmPayment}
-                disabled={paymentSaving}
-                className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <IndianRupee size={16} />
-                Confirm Payment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Client Allot Modal ── */}
-      {clientModalOpen && activeBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
-          <div className="w-full max-w-xl rounded-[28px] bg-white p-6 shadow-2xl">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                  Unit {activeBooking.vehicleIndex + 1}
-                </p>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Allot Client
-                </h3>
-              </div>
-              <button
-                onClick={closeClientModal}
-                className="cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Select Client
-                </label>
-                <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 cursor-pointer"
-                    >
-                      <span className={selectedClientId ? "text-slate-700" : "text-slate-400"}>
-                        {selectedClientId
-                          ? (() => {
-                              const client = clients.find((c) => c._id === selectedClientId);
-                              return client
-                                ? `${client.name}${client.companyName ? ` - ${client.companyName}` : ""}`
-                                : "Choose client...";
-                            })()
-                          : "Choose client..."}
-                      </span>
-                      <ChevronsUpDown size={16} className="text-slate-400" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search client..." className="h-9" />
-                      <CommandList>
-                        <CommandEmpty>No client found.</CommandEmpty>
-                        <CommandGroup>
-                          {clients.map((client) => {
-                            const clientLabel = `${client.name}${client.companyName ? ` - ${client.companyName}` : ""}`;
-                            return (
-                              <CommandItem
-                                key={client._id}
-                                value={clientLabel}
-                                onSelect={() => {
-                                  setSelectedClientId(client._id);
-                                  setClientPopoverOpen(false);
-                                }}
-                              >
-                                {clientLabel}
-                                <Check
-                                  className={cn(
-                                    "ml-auto h-4 w-4",
-                                    selectedClientId === client._id
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {activeBooking.assignedClientSnapshot?.name && (
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-                  Current allotment: {activeBooking.assignedClientSnapshot.name}
-                  {activeBooking.assignedClientSnapshot.companyName
-                    ? ` - ${activeBooking.assignedClientSnapshot.companyName}`
-                    : ""}
-                </div>
-              )}
-
-              <button
-                onClick={handleAssignClient}
-                disabled={clientSaving}
-                className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Check size={16} />
-                Allot
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ClientAllotModal
+        isOpen={clientModalOpen}
+        onClose={closeClientModal}
+        booking={activeBooking}
+        clients={clients}
+        onSync={syncBooking}
+      />
     </div>
   );
 };
 
 export default VehicleOrdersList;
+
