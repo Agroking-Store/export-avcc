@@ -443,10 +443,9 @@ const VehicleOrdersList = () => {
             <table className="min-w-full table-fixed border-collapse bg-white text-center">
               <colgroup>
                 <col className="w-[12%]" />
-                <col className="w-[22%]" />
-                <col className="w-[14%]" />
-                <col className="w-[18%]" />
-                <col className="w-[34%]" />
+                <col className="w-[32%]" />
+                <col className="w-[20%]" />
+                <col className="w-[36%]" />
               </colgroup>
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -455,9 +454,6 @@ const VehicleOrdersList = () => {
                   </th>
                   <th className="border-b border-slate-200 px-6 py-4 align-middle">
                     Vehicle
-                  </th>
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle">
-                    Color
                   </th>
                   <th className="border-b border-slate-200 px-6 py-4 align-middle">
                     Status
@@ -471,7 +467,7 @@ const VehicleOrdersList = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -480,7 +476,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       No required vehicles found
@@ -490,7 +486,6 @@ const VehicleOrdersList = () => {
                   bookings.map((booking, idx) => {
                     const orderData = getOrderSnapshot(booking);
                     const vehicleSnapshot = orderData?.vehicleSnapshot;
-                    const color = vehicleSnapshot?.color || "N/A";
                     const brand = vehicleSnapshot?.brandName || "Unknown";
                     const model = vehicleSnapshot?.modelName || "";
                     const variant = vehicleSnapshot?.variant || "";
@@ -509,11 +504,8 @@ const VehicleOrdersList = () => {
                             {vehicleId}
                           </div>
                         </td>
-                        <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <div className="flex items-center gap-2">
-                            <p className="truncate font-semibold text-slate-900">
-                              {brand} {model}
-                            </p>
+                        <td className="border-b border-slate-100 px-6 py-5 align-middle text-left">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
                             {/* Engine/Chassis pending alert */}
                             {booking.status === "payment_done" && (!booking.engineNumber || !booking.chassisNumber) && (
                               <span title="Engine/Chassis number pending" className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
@@ -544,18 +536,12 @@ const VehicleOrdersList = () => {
                               </span>
                             )}
                           </div>
+                          <p className="truncate font-semibold text-slate-900">
+                            {brand} {model}
+                          </p>
                           <p className="truncate text-sm text-slate-500">
                             {variant}
                           </p>
-                        </td>
-                        <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <div className="inline-flex items-center justify-center gap-3 text-sm text-slate-600">
-                            <span
-                              className="h-3.5 w-3.5 rounded-full border border-slate-300"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="truncate">{color}</span>
-                          </div>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           <div className="flex flex-col items-center gap-1.5">
