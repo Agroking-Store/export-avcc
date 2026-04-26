@@ -214,7 +214,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Package size={14} className="text-amber-500" />
-              Engine Number
+              Engine Number <span className="text-red-500 ml-0.5">*</span>
             </label>
             <input
               type="text"
@@ -230,7 +230,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Truck size={14} className="text-emerald-500" />
-              Chassis Number
+              Chassis Number <span className="text-red-500 ml-0.5">*</span>
             </label>
             <input
               type="text"

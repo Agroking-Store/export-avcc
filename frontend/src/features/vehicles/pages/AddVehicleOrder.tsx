@@ -157,7 +157,7 @@ const AddVehicleOrder = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className={labelStyle}>
-                <Car size={14} className="text-emerald-500" /> Vehicle
+                <Car size={14} className="text-emerald-500" /> Vehicle <span className="text-red-500 ml-0.5">*</span>
               </label>
               <Popover open={vehicleOpen} onOpenChange={setVehicleOpen}>
                 <PopoverTrigger asChild>
@@ -219,7 +219,7 @@ const AddVehicleOrder = () => {
 
             <div>
               <label className={labelStyle}>
-                <Save size={14} className="text-rose-400" /> Quantity
+                <Save size={14} className="text-rose-400" /> Quantity <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 name="quantity"
