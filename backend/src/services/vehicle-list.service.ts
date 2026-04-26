@@ -6,6 +6,7 @@ interface CreateVehicleListItemDto {
   modelName: string;
   variant: string;
   color: string;
+  hsnCode: string;
   quantity: number;
   fobAmount?: number;
   freight?: number;
@@ -16,6 +17,7 @@ interface UpdateVehicleListItemDto {
   modelName?: string;
   variant?: string;
   color?: string;
+  hsnCode?: string;
   quantity?: number;
   fobAmount?: number;
   freight?: number;
@@ -120,6 +122,7 @@ export const updateVehicleListItemService = async (
   if (updateData.modelName !== undefined) item.modelName = updateData.modelName;
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
+  if (updateData.hsnCode !== undefined) item.hsnCode = updateData.hsnCode;
   if (updateData.quantity !== undefined) item.quantity = Number(updateData.quantity);
   if (updateData.fobAmount !== undefined) item.fobAmount = Number(updateData.fobAmount);
   if (updateData.freight !== undefined) item.freight = Number(updateData.freight);

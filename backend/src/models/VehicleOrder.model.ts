@@ -16,6 +16,7 @@ export interface IVehicleOrder extends Document {
     modelName: string;
     variant: string;
     color: string;
+    hsnCode: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -62,6 +63,7 @@ const vehicleOrderSchema = new Schema<IVehicleOrder>(
       modelName: { type: String, required: true, trim: true },
       variant: { type: String, required: true, trim: true },
       color: { type: String, required: true, trim: true },
+      hsnCode: { type: String, required: true, trim: true },
     },
   },
   {

@@ -5,6 +5,7 @@ export interface IVehicleListItem extends Document {
   modelName: string;
   variant: string;
   color: string;
+  hsnCode: string;
   quantity: number;
   status: "Available" | "Out of Stock";
   createdAt: Date;
@@ -31,6 +32,11 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
     color: {
       type: String,
       required: [true, "Color is required"],
+      trim: true,
+    },
+    hsnCode: {
+      type: String,
+      required: [true, "HSN Code is required"],
       trim: true,
     },
     quantity: {

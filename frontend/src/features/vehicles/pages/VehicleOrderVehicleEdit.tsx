@@ -74,7 +74,7 @@ const VehicleOrderVehicleEdit = () => {
         setFuelType(currentBooking?.fuelType || "");
         setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
         setYom(currentBooking?.yom || "");
-        setHsnCode(currentBooking?.hsnCode || "");
+        setHsnCode(currentBooking?.hsnCode || orderRes?.vehicleSnapshot?.hsnCode || "");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle details");
       } finally {

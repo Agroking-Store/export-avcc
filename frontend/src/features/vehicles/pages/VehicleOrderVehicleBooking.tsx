@@ -34,6 +34,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { vehicleManagementApi } from "../vehicleManagementApi";
 import { cn } from "@/lib/utils";
 
 const VehicleOrderVehicleBooking = () => {
@@ -76,7 +77,23 @@ const VehicleOrderVehicleBooking = () => {
       .getAll()
       .then((res) => setDealers(res.data || []))
       .catch(() => toast.error("Failed to load dealers"));
-  }, []);
+
+    if (orderId) {
+      vehicleManagementApi
+        .getVehicleOrderById(orderId)
+        .then((order) => {
+          if (order?.vehicleSnapshot?.hsnCode) {
+            setVehicle((prev) => ({
+              ...prev,
+              hsnCode: order.vehicleSnapshot.hsnCode,
+            }));
+          }
+        })
+        .catch(() => {
+          // non-critical: HSN can be entered manually
+        });
+    }
+  }, [orderId]);
 
   const handleInputChange = useCallback(
     (field: string, value: any) => {
