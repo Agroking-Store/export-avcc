@@ -254,6 +254,31 @@ export const updateBookingStatus = async (
   return await booking.save();
 };
 
+export const assignDealerToBooking = async (
+  bookingId: string,
+  dealerId: string,
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  if (!dealerId || !mongoose.isValidObjectId(dealerId)) {
+    throw new Error("Valid dealer is required");
+  }
+
+  const Dealer = mongoose.model("Dealer");
+  const dealer = await Dealer.findById(dealerId);
+  if (!dealer) throw new Error("Dealer not found");
+
+  booking.assignedDealerId = dealer._id as mongoose.Types.ObjectId;
+  booking.assignedDealerSnapshot = {
+    name: dealer.get("name") || "",
+    contact: dealer.get("contact") || "",
+    gstNumber: dealer.get("gstNumber") || "",
+  };
+
+  return await booking.save();
+};
+
 export const assignClientToBooking = async (
   bookingId: string,
   clientId: string,

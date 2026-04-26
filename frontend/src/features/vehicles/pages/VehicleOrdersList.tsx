@@ -12,6 +12,7 @@ import {
   Truck,
   CircleAlert,
   Calendar,
+  Store,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
@@ -21,9 +22,11 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import { dealerApi } from "../../../services/dealerApi";
 import QuotationModal from "../components/QuotationModal";
 import PaymentModal from "../components/PaymentModal";
 import ClientAllotModal from "../components/ClientAllotModal";
+import DealerAllotModal from "../components/DealerAllotModal";
 
 const STATUS_META: Record<
   VehicleBookingStatus,
@@ -102,6 +105,8 @@ const VehicleOrdersList = () => {
   const [activeBooking, setActiveBooking] = useState<VehicleBookingItem | null>(null);
 
   const [clients, setClients] = useState<IClient[]>([]);
+  const [dealers, setDealers] = useState<any[]>([]);
+  const [dealerModalOpen, setDealerModalOpen] = useState(false);
 
   const statusValue = statusLabelToRaw[statusLabel] || "All";
 
@@ -179,6 +184,19 @@ const VehicleOrdersList = () => {
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    const fetchDealers = async () => {
+      try {
+        const response = await dealerApi.getAll();
+        const dealerList = response.data || response || [];
+        setDealers(Array.isArray(dealerList) ? dealerList : []);
+      } catch {
+        toast.error("Failed to load dealers");
+      }
+    };
+    fetchDealers();
+  }, []);
+
   const syncBooking = (updated: VehicleBookingItem) => {
     setBookings((current) =>
       current.map((item) => {
@@ -229,6 +247,16 @@ const VehicleOrdersList = () => {
     setActiveBooking(null);
   };
 
+  const openDealerModal = (booking: VehicleBookingItem) => {
+    setActiveBooking(booking);
+    setDealerModalOpen(true);
+  };
+
+  const closeDealerModal = () => {
+    setDealerModalOpen(false);
+    setActiveBooking(null);
+  };
+
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
     try {
       const updated = await vehicleBookingApi.updateStatus(booking._id, "delivered");
@@ -261,8 +289,9 @@ const VehicleOrdersList = () => {
       case "rejected":
         return (
           <button
-            onClick={() => openQuotationModal(booking)}
-            className={`${primaryActionClass} bg-slate-900 hover:bg-slate-700`}
+            onClick={() => booking.assignedDealerId ? openQuotationModal(booking) : toast.error("Please allot a dealer first")}
+            className={`${primaryActionClass} ${booking.assignedDealerId ? 'bg-slate-900 hover:bg-slate-700' : 'bg-slate-400 opacity-60 cursor-not-allowed'}`}
+            title={booking.assignedDealerId ? "Upload Quotation" : "Allot dealer to upload quotation"}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Upload Quotation
@@ -271,8 +300,9 @@ const VehicleOrdersList = () => {
       case "quotation_uploaded":
         return (
           <button
-            onClick={() => openQuotationModal(booking)}
-            className={`${primaryActionClass} bg-amber-500 hover:bg-amber-600`}
+            onClick={() => booking.assignedDealerId ? openQuotationModal(booking) : toast.error("Please allot a dealer first")}
+            className={`${primaryActionClass} ${booking.assignedDealerId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-slate-400 opacity-60 cursor-not-allowed'}`}
+            title={booking.assignedDealerId ? "Review Quotation" : "Allot dealer to review quotation"}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
             Review Quotation
@@ -442,10 +472,10 @@ const VehicleOrdersList = () => {
           <div className="overflow-x-auto rounded-2xl border border-slate-200">
             <table className="min-w-full table-fixed border-collapse bg-white text-center">
               <colgroup>
-                <col className="w-[12%]" />
-                <col className="w-[32%]" />
-                <col className="w-[20%]" />
-                <col className="w-[36%]" />
+                <col className="w-[10%]" />
+                <col className="w-[30%]" />
+                <col className="w-[14%]" />
+                <col className="w-[46%]" />
               </colgroup>
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -559,7 +589,32 @@ const VehicleOrdersList = () => {
                           </div>
                         </td>
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <div className="inline-flex items-center justify-center gap-3">
+                          <div className="inline-flex items-center justify-center gap-3 whitespace-nowrap">
+                            <div className="flex flex-col items-center gap-1">
+                              {booking.assignedDealerId && (
+                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                  Dealer
+                                </span>
+                              )}
+                              <button
+                                onClick={() => openDealerModal(booking)}
+                                className={`cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                  booking.assignedDealerId
+                                    ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                }`}
+                                title={
+                                  booking.assignedDealerId
+                                    ? "Dealer Allotted"
+                                    : "Allot Dealer"
+                                }
+                              >
+                                <Store size={16} />
+                                {booking.assignedDealerId
+                                  ? booking.assignedDealerSnapshot?.name
+                                  : "Allot Dealer"}
+                              </button>
+                            </div>
                             {renderPrimaryAction(booking)}
                             <div className="flex flex-col items-center gap-1">
                               {booking.assignedClientId && (
@@ -666,6 +721,14 @@ const VehicleOrdersList = () => {
         onClose={closeClientModal}
         booking={activeBooking}
         clients={clients}
+        onSync={syncBooking}
+      />
+
+      <DealerAllotModal
+        isOpen={dealerModalOpen}
+        onClose={closeDealerModal}
+        booking={activeBooking}
+        dealers={dealers}
         onSync={syncBooking}
       />
     </div>

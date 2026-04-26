@@ -20,6 +20,12 @@ export interface VehicleBookingItem {
     companyName?: string;
     clientCode?: string;
   };
+  assignedDealerId?: string;
+  assignedDealerSnapshot?: {
+    name: string;
+    contact?: string;
+    gstNumber?: string;
+  };
   status: VehicleBookingStatus;
   quotationFile?: string;
   rejectionReason?: string;
@@ -136,6 +142,13 @@ export const vehicleBookingApi = {
   assignClient: async (bookingId: string, clientId: string) => {
     const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-client`, {
       clientId,
+    });
+    return response.data as VehicleBookingItem;
+  },
+
+  assignDealer: async (bookingId: string, dealerId: string) => {
+    const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-dealer`, {
+      dealerId,
     });
     return response.data as VehicleBookingItem;
   },
