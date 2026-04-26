@@ -111,6 +111,7 @@ const VehicleOrdersList = () => {
   const [statusLabel, setStatusLabel] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const lastToastMessage = useRef<string | null>(null);
 
   const limit = 10;
@@ -148,6 +149,7 @@ const VehicleOrdersList = () => {
 
       setBookings(res.data || []);
       setTotalPages(res.totalPages || 1);
+      setTotal(res.total || 0);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
     } finally {
@@ -161,6 +163,10 @@ const VehicleOrdersList = () => {
 
   useEffect(() => {
     setCurrentPage(1);
+  }, [search, statusLabel]);
+
+  useEffect(() => {
+    setTotal(0);
   }, [search, statusLabel]);
 
   useEffect(() => {
@@ -614,7 +620,7 @@ const VehicleOrdersList = () => {
                     const model = vehicleSnapshot?.modelName || "";
                     const variant = vehicleSnapshot?.variant || "";
                     const statusMeta = STATUS_META[booking.status];
-                    const globalIndex = (currentPage - 1) * limit + idx + 1;
+                    const globalIndex = total - ((currentPage - 1) * limit + idx);
                     const vehicleId = `VEH-${String(globalIndex).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
