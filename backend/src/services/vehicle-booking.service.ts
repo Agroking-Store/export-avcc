@@ -342,8 +342,70 @@ export const getBookingFile = async (bookingId: string, field: string) => {
 };
 
 /**
- * Find records that still need chassis/engine numbers and are due for reminders
+ * Get all vehicle bookings across all orders with filters & pagination
  */
+export const getAllVehicleBookingsService = async (query: any) => {
+  const { search, status, page = 1, limit = 10 } = query;
+
+  const match: any = {};
+
+  if (status && status !== "All") {
+    match.status = status;
+  }
+
+  if (search) {
+    match.$or = [
+      { "orderId.vehicleSnapshot.brandName": { $regex: search, $options: "i" } },
+      { "orderId.vehicleSnapshot.modelName": { $regex: search, $options: "i" } },
+      { "orderId.vehicleSnapshot.variant": { $regex: search, $options: "i" } },
+      { "orderId.orderNumber": { $regex: search, $options: "i" } },
+      { engineNumber: { $regex: search, $options: "i" } },
+      { chassisNumber: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const pipeline: any[] = [
+    {
+      $lookup: {
+        from: "vehicleorders",
+        localField: "orderId",
+        foreignField: "_id",
+        as: "order",
+      },
+    },
+    { $unwind: "$order" },
+    {
+      $addFields: {
+        orderId: "$order",
+      },
+    },
+  ];
+
+  if (Object.keys(match).length > 0) {
+    pipeline.push({ $match: match });
+  }
+
+  const countPipeline = [...pipeline, { $count: "total" }];
+  const countResult = await VehicleBooking.aggregate(countPipeline);
+  const total = countResult[0]?.total || 0;
+
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: Number(limit) },
+  );
+
+  const data = await VehicleBooking.aggregate(pipeline);
+
+  return {
+    data,
+    total,
+    page: Number(page),
+    totalPages: Math.ceil(total / Number(limit)),
+  };
+};
 export const getReminderDueBookings = async (
   orderId: string,
   intervalHours: number,

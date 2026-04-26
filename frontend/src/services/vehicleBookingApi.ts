@@ -51,6 +51,16 @@ export interface VehicleBookingItem {
 }
 
 export const vehicleBookingApi = {
+  getAllBookings: async (params?: {
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: VehicleBookingItem[]; total: number; page: number; totalPages: number }> => {
+    const response = await api.get("/vehicle-bookings", { params });
+    return response.data;
+  },
+
   getByOrder: async (orderId: string): Promise<VehicleBookingItem[]> => {
     const response = await api.get(`/vehicle-bookings/order/${orderId}`);
     return response.data;

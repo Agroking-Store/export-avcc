@@ -16,6 +16,7 @@ import {
   getDueRemindersHandler,
   uploadBookingDocumentsHandler,
   getBookingFileHandler,
+  getAllBookingsHandler,
 } from "../controllers/vehicle-booking.controller";
 
 // Quotation-specific multer config
@@ -86,6 +87,7 @@ router.post("/:id/confirm-payment", confirmPaymentHandler);
 router.patch("/:id/assign-client", assignClientHandler);
 router.patch("/:id/chassis-engine", updateChassisEngineHandler);
 router.patch("/:id/status", updateStatusHandler);
+router.get("/", getAllBookingsHandler);
 router.get("/:id", getBookingByIdHandler);
 
 router.post(

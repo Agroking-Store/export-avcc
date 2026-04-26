@@ -64,7 +64,7 @@ const VehicleOrderVehicleEdit = () => {
 
         if (currentBooking?.status === "payment_done" && !currentBooking.assignedClientId) {
           toast.error("Client must be allotted before adding engine/chassis details");
-          navigate(`/vehicles/orders/${id}`);
+          navigate(`/vehicles/orders`);
           return;
         }
 
@@ -145,7 +145,7 @@ const VehicleOrderVehicleEdit = () => {
           ? "Engine and chassis numbers saved. Vehicle is now in transit."
           : "Vehicle details updated",
       );
-      navigate(`/vehicles/orders/${id}`);
+      navigate(`/vehicles/orders`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update vehicle");
     } finally {
@@ -160,7 +160,7 @@ const VehicleOrderVehicleEdit = () => {
       setSaving(true);
       await vehicleBookingApi.updateStatus(booking._id, "delivered");
       toast.success("Vehicle marked as delivered");
-      navigate(`/vehicles/orders/${id}`);
+      navigate(`/vehicles/orders`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update status");
     } finally {
@@ -200,11 +200,11 @@ const VehicleOrderVehicleEdit = () => {
         </div>
 
         <button
-          onClick={() => navigate(`/vehicles/orders/${id}`)}
+          onClick={() => navigate(`/vehicles/orders`)}
           className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
-          Back to Order
+          Back to Orders
         </button>
       </div>
 

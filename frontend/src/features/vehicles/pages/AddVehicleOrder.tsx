@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { vehicleBookingApi } from "../../../services/vehicleBookingApi";
 
 const AddVehicleOrder = () => {
   const navigate = useNavigate();
@@ -38,7 +39,6 @@ const AddVehicleOrder = () => {
     quantity: "",
   });
 
-  // New states for combobox
   const [vehicleOpen, setVehicleOpen] = useState(false);
 
   useEffect(() => {
@@ -62,10 +62,7 @@ const AddVehicleOrder = () => {
     [vehicles, form.vehicleId],
   );
 
-  const handleInputChange = useCallback((
-    field: string, 
-    value: any
-  ) => {
+  const handleInputChange = useCallback((field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
@@ -90,10 +87,21 @@ const AddVehicleOrder = () => {
 
     try {
       setLoading(true);
-      await vehicleManagementApi.createVehicleOrder({
+
+      // Step 1: Create the vehicle order
+      const order = await vehicleManagementApi.createVehicleOrder({
         vehicleId: form.vehicleId,
         quantity,
       });
+
+      // Step 2: Initialize bookings for this order immediately so they
+      // appear in VehicleOrdersList (which fetches VehicleBooking records).
+      // getByOrder triggers the lazy-creation of all booking slots server-side.
+      try {
+        await vehicleBookingApi.getByOrder(order._id);
+      } catch {
+        // Non-critical — bookings will still be created on first list load
+      }
 
       navigate("/vehicles/orders", {
         state: { success: "Required vehicle added successfully" },
@@ -113,7 +121,7 @@ const AddVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const selectedVehicleName = selectedVehicle 
+  const selectedVehicleName = selectedVehicle
     ? `${selectedVehicle.brandName} ${selectedVehicle.modelName} - ${selectedVehicle.variant} (${selectedVehicle.color})`
     : "";
 
@@ -163,7 +171,9 @@ const AddVehicleOrder = () => {
                   >
                     <span
                       className={
-                        selectedVehicleName ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"
+                        selectedVehicleName
+                          ? "text-[#4A5568] dark:text-gray-200"
+                          : "text-[#A0AEC0]"
                       }
                     >
                       {selectedVehicleName || "Choose vehicle..."}
@@ -171,7 +181,10 @@ const AddVehicleOrder = () => {
                     <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                >
                   <Command>
                     <CommandInput placeholder="Search vehicle..." className="h-9" />
                     <CommandList>
@@ -217,7 +230,6 @@ const AddVehicleOrder = () => {
                 className={`${inputStyle} w-32`}
                 placeholder="1"
               />
-
             </div>
           </div>
         </div>

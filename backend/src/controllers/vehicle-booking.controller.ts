@@ -15,7 +15,17 @@ import {
   getReminderDueBookings,
   uploadBookingDocuments,
   getBookingFile,
+  getAllVehicleBookingsService,
 } from "../services/vehicle-booking.service";
+
+export const getAllBookingsHandler = async (req: Request, res: Response) => {
+  try {
+    const result = await getAllVehicleBookingsService(req.query);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 export const getBookingsByOrder = async (req: Request, res: Response) => {
   try {

@@ -232,11 +232,11 @@ const VehicleOrderVehicleView = () => {
             Edit
           </button>
           <button
-            onClick={() => navigate(`/vehicles/orders/${id}`)}
+          onClick={() => navigate(`/vehicles/orders`)}
             className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <ArrowLeft size={16} />
-            Back to Order
+            Back to Orders
           </button>
         </div>
       </div>
