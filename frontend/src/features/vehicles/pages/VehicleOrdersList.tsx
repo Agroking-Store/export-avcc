@@ -162,9 +162,22 @@ const VehicleOrdersList = () => {
 
   const syncBooking = (updated: VehicleBookingItem) => {
     setBookings((current) =>
-      current.map((item) => (item._id === updated._id ? updated : item)),
+      current.map((item) => {
+        if (item._id === updated._id) {
+          // Preserve the populated orderId (with vehicleSnapshot) from the
+          // existing list item, since update API responses return a plain
+          // orderId string instead of the populated object.
+          return { ...updated, orderId: item.orderId };
+        }
+        return item;
+      }),
     );
-    setActiveBooking(updated);
+    setActiveBooking((current) => {
+      if (current && current._id === updated._id) {
+        return { ...updated, orderId: current.orderId };
+      }
+      return current;
+    });
   };
 
   const openQuotationModal = (booking: VehicleBookingItem) => {
