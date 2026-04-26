@@ -126,11 +126,6 @@ const VehicleOrderVehicleView = () => {
       value: booking.chassisNumber || "-",
     },
     {
-      icon: FileText,
-      label: "Reminder Count",
-      value: String(booking.reminderCount || 0),
-    },
-    {
       icon: FileCheck,
       label: "Documentation",
       value: booking.isBVUploaded
