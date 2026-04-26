@@ -7,6 +7,9 @@ import {
   Save,
   ChevronsUpDown,
   Check,
+  Plus,
+  Trash2,
+  X,
 } from "lucide-react";
 import {
   VehicleListItem,
@@ -26,20 +29,25 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
 import { vehicleBookingApi } from "../../../services/vehicleBookingApi";
+
+interface OrderEntry {
+  vehicleId: string;
+  quantity: string;
+}
+
+const emptyOrder = (): OrderEntry => ({
+  vehicleId: "",
+  quantity: "",
+});
 
 const AddVehicleOrder = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
-  const [form, setForm] = useState({
-    vehicleId: "",
-    quantity: "",
-  });
-
-  const [vehicleOpen, setVehicleOpen] = useState(false);
+  const [orders, setOrders] = useState<OrderEntry[]>([emptyOrder()]);
+  const [vehicleOpenMap, setVehicleOpenMap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -57,58 +65,76 @@ const AddVehicleOrder = () => {
     loadOptions();
   }, []);
 
-  const selectedVehicle = useMemo(
-    () => vehicles.find((item) => item._id === form.vehicleId),
-    [vehicles, form.vehicleId],
-  );
-
-  const handleInputChange = useCallback((field: string, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = useCallback((index: number, field: keyof OrderEntry, value: any) => {
+    setOrders((prev) =>
+      prev.map((o, i) => (i === index ? { ...o, [field]: value } : o))
+    );
   }, []);
 
-  const handleVehicleSelect = (vehicleId: string) => {
-    handleInputChange("vehicleId", vehicleId);
-    setVehicleOpen(false);
+  const handleVehicleSelect = (index: number, vehicleId: string) => {
+    handleInputChange(index, "vehicleId", vehicleId);
+    setVehicleOpenMap((prev) => ({ ...prev, [index]: false }));
+  };
+
+  const addOrder = () => {
+    setOrders((prev) => [...prev, emptyOrder()]);
+  };
+
+  const removeOrder = (index: number) => {
+    if (orders.length <= 1) {
+      toast.error("At least one order entry is required");
+      return;
+    }
+    setOrders((prev) => prev.filter((_, i) => i !== index));
+    setVehicleOpenMap((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
+  const validate = (): boolean => {
+    for (let i = 0; i < orders.length; i++) {
+      const o = orders[i];
+      if (!o.vehicleId) {
+        toast.error(`Vehicle is required for entry ${i + 1}`);
+        return false;
+      }
+      const quantity = Number(o.quantity);
+      if (quantity < 1) {
+        toast.error(`Quantity must be at least 1 for entry ${i + 1}`);
+        return false;
+      }
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!form.vehicleId) {
-      toast.error("Vehicle is required");
-      return;
-    }
-
-    const quantity = Number(form.quantity);
-    if (quantity < 1) {
-      toast.error("Quantity must be at least 1");
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setLoading(true);
 
-      // Step 1: Create the vehicle order
-      const order = await vehicleManagementApi.createVehicleOrder({
-        vehicleId: form.vehicleId,
-        quantity,
-      });
+      for (const o of orders) {
+        const order = await vehicleManagementApi.createVehicleOrder({
+          vehicleId: o.vehicleId,
+          quantity: Number(o.quantity),
+        });
 
-      // Step 2: Initialize bookings for this order immediately so they
-      // appear in VehicleOrdersList (which fetches VehicleBooking records).
-      // getByOrder triggers the lazy-creation of all booking slots server-side.
-      try {
-        await vehicleBookingApi.getByOrder(order._id);
-      } catch {
-        // Non-critical — bookings will still be created on first list load
+        try {
+          await vehicleBookingApi.getByOrder(order._id);
+        } catch {
+          // Non-critical
+        }
       }
 
       navigate("/vehicles/orders", {
-        state: { success: "Required vehicle added successfully" },
+        state: { success: `${orders.length} required vehicle(s) added successfully` },
       });
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to add required vehicle",
+        error.response?.data?.message || "Failed to add required vehicles",
       );
     } finally {
       setLoading(false);
@@ -121,9 +147,12 @@ const AddVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const selectedVehicleName = selectedVehicle
-    ? `${selectedVehicle.brandName} ${selectedVehicle.modelName} - ${selectedVehicle.variant} (${selectedVehicle.color})`
-    : "";
+  const getVehicleName = (vehicleId: string) => {
+    const v = vehicles.find((item) => item._id === vehicleId);
+    return v
+      ? `${v.brandName} ${v.modelName} - ${v.variant} (${v.color})`
+      : "";
+  };
 
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
@@ -133,7 +162,7 @@ const AddVehicleOrder = () => {
             Add Required Vehicle
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Select a vehicle from the vehicle list
+            Select one or more vehicles from the vehicle list
           </p>
         </div>
 
@@ -145,96 +174,140 @@ const AddVehicleOrder = () => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10">
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
-            <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-              Order Details
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>
-                <Car size={14} className="text-emerald-500" /> Vehicle <span className="text-red-500 ml-0.5">*</span>
-              </label>
-              <Popover open={vehicleOpen} onOpenChange={setVehicleOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      inputStyle,
-                      "flex items-center justify-between cursor-pointer",
-                    )}
-                    disabled={optionsLoading}
-                  >
-                    <span
-                      className={
-                        selectedVehicleName
-                          ? "text-[#4A5568] dark:text-gray-200"
-                          : "text-[#A0AEC0]"
-                      }
-                    >
-                      {selectedVehicleName || "Choose vehicle..."}
-                    </span>
-                    <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-[--radix-popover-trigger-width] p-0"
-                  align="start"
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {orders.map((order, index) => (
+          <div
+            key={index}
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 md:p-8 space-y-6"
+          >
+            {/* Card Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                  {index + 1}
+                </div>
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  Order Entry {index + 1}
+                </h2>
+              </div>
+              {orders.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeOrder(index)}
+                  className="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-all"
                 >
-                  <Command>
-                    <CommandInput placeholder="Search vehicle..." className="h-9" />
-                    <CommandList>
-                      <CommandEmpty>No vehicle found.</CommandEmpty>
-                      <CommandGroup>
-                        {vehicles.map((vehicle) => {
-                          const vehicleLabel = `${vehicle.brandName} ${vehicle.modelName} - ${vehicle.variant} (${vehicle.color})`;
-                          return (
-                            <CommandItem
-                              key={vehicle._id}
-                              value={vehicleLabel}
-                              onSelect={() => handleVehicleSelect(vehicle._id)}
-                            >
-                              {vehicleLabel}
-                              <Check
-                                className={cn(
-                                  "ml-auto h-4 w-4",
-                                  form.vehicleId === vehicle._id
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                  <Trash2 size={14} /> Remove
+                </button>
+              )}
             </div>
 
-            <div>
-              <label className={labelStyle}>
-                <Save size={14} className="text-rose-400" /> Quantity <span className="text-red-500 ml-0.5">*</span>
-              </label>
-              <input
-                name="quantity"
-                type="number"
-                min="1"
-                value={form.quantity}
-                onChange={(e) => handleInputChange("quantity", e.target.value)}
-                className={`${inputStyle} w-32`}
-                placeholder="1"
-              />
+            {/* Order Details */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+                <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  Order Details
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>
+                    <Car size={14} className="text-emerald-500" /> Vehicle <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <Popover
+                    open={vehicleOpenMap[index] || false}
+                    onOpenChange={(open) =>
+                      setVehicleOpenMap((prev) => ({ ...prev, [index]: open }))
+                    }
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          inputStyle,
+                          "flex items-center justify-between cursor-pointer",
+                        )}
+                        disabled={optionsLoading}
+                      >
+                        <span
+                          className={
+                            order.vehicleId
+                              ? "text-[#4A5568] dark:text-gray-200"
+                              : "text-[#A0AEC0]"
+                          }
+                        >
+                          {getVehicleName(order.vehicleId) || "Choose vehicle..."}
+                        </span>
+                        <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[--radix-popover-trigger-width] p-0"
+                      align="start"
+                    >
+                      <Command>
+                        <CommandInput placeholder="Search vehicle..." className="h-9" />
+                        <CommandList>
+                          <CommandEmpty>No vehicle found.</CommandEmpty>
+                          <CommandGroup>
+                            {vehicles.map((vehicle) => {
+                              const vehicleLabel = `${vehicle.brandName} ${vehicle.modelName} - ${vehicle.variant} (${vehicle.color})`;
+                              return (
+                                <CommandItem
+                                  key={vehicle._id}
+                                  value={vehicleLabel}
+                                  onSelect={() => handleVehicleSelect(index, vehicle._id)}
+                                >
+                                  {vehicleLabel}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto h-4 w-4",
+                                      order.vehicleId === vehicle._id
+                                        ? "opacity-100"
+                                        : "opacity-0",
+                                    )}
+                                  />
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Save size={14} className="text-rose-400" /> Quantity <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <input
+                    name={`quantity-${index}`}
+                    type="number"
+                    min="1"
+                    value={order.quantity}
+                    onChange={(e) => handleInputChange(index, "quantity", e.target.value)}
+                    className={`${inputStyle} w-32`}
+                    placeholder="1"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ))}
 
-        <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
+        {/* Add Another Order Button */}
+        <button
+          type="button"
+          onClick={addOrder}
+          className="cursor-pointer w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-indigo-200 text-indigo-600 font-bold text-sm uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-300 transition-all"
+        >
+          <Plus size={18} /> Add Another Order
+        </button>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col md:flex-row justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             onClick={() => navigate("/vehicles/orders")}
@@ -248,7 +321,7 @@ const AddVehicleOrder = () => {
             disabled={loading || optionsLoading}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><Save size={18} /> Add Vehicle</>}
+            {loading ? "Saving..." : <><Save size={18} /> Save Order(s)</>}
           </button>
         </div>
       </form>
@@ -257,3 +330,4 @@ const AddVehicleOrder = () => {
 };
 
 export default AddVehicleOrder;
+
