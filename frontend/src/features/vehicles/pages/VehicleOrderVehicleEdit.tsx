@@ -154,6 +154,10 @@ const VehicleOrderVehicleEdit = () => {
 
   const markDelivered = async () => {
     if (!booking) return;
+    if (!booking.assignedClientId) {
+      toast.error("Please allot a client before marking this vehicle as delivered.");
+      return;
+    }
 
     try {
       setSaving(true);

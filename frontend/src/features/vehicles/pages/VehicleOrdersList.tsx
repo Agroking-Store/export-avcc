@@ -258,6 +258,10 @@ const VehicleOrdersList = () => {
   };
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
+    if (!booking.assignedClientId) {
+      toast.error("Please allot a client before marking this vehicle as delivered.");
+      return;
+    }
     try {
       const updated = await vehicleBookingApi.updateStatus(booking._id, "delivered");
       syncBooking(updated);
