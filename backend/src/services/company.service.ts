@@ -1,6 +1,6 @@
 import { Company } from "../models/Company.model";
 import { CreateCompanyDto, UpdateCompanyDto } from "../dto/company.dto";
-
+import ProformaInvoice from "../models/ProformaInvoice.model";
 // Helper to generate unique companyId (e.g., CO-001, CO-002)
 const generateCompanyId = async (): Promise<string> => {
   const latest = await Company.findOne()
@@ -99,4 +99,21 @@ export const updateCompanyService = async (
   }
 
   return updated;
+};
+
+export const getCompanyProformaInvoiceService = async (id: string) => {
+  const invoices = await ProformaInvoice.find(
+  { company_id: id },
+  {
+    _id: 1,
+    totalAmount: 1,
+    buyersRef: 1
+  }
+);
+
+  if (!invoices) {
+    throw new Error("Company invoices not found");
+  }
+
+  return invoices;
 };
