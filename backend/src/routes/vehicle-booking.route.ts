@@ -94,7 +94,7 @@ router.post("/:id/approve", authenticate, authorize(ROLES.ADMIN), approveHandler
 router.post("/:id/reject", authenticate, authorize(ROLES.ADMIN), rejectHandler);
 router.post("/:id/confirm-payment", authenticate, authorize(ROLES.ADMIN), confirmPaymentHandler);
 router.patch("/:id/assign-client", authenticate, authorize(ROLES.ADMIN), assignClientHandler);
-router.patch("/:id/status", authenticate, authorize(ROLES.ADMIN), updateStatusHandler);
+router.patch("/:id/status", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), updateStatusHandler);
 router.post(
   "/:id/documents",
   authenticate,

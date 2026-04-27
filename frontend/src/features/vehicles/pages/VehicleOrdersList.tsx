@@ -335,7 +335,6 @@ const VehicleOrdersList = () => {
           </button>
         );
       case "chassis_received":
-        if (isSourcingTeam) return null;
         return (
           <button
             onClick={() => handleMarkDelivered(booking)}
