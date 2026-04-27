@@ -204,9 +204,6 @@ const VehicleOrdersList = () => {
     setBookings((current) =>
       current.map((item) => {
         if (item._id === updated._id) {
-          // Preserve the populated orderId (with vehicleSnapshot) from the
-          // existing list item, since update API responses return a plain
-          // orderId string instead of the populated object.
           return { ...updated, orderId: item.orderId };
         }
         return item;
@@ -479,28 +476,32 @@ const VehicleOrdersList = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto px-8 pb-8">
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="min-w-full table-fixed border-collapse bg-white text-center">
+        <div className="px-8 pb-8">
+          <div className="rounded-2xl border border-slate-200 overflow-hidden">
+            <table className="min-w-full border-collapse bg-white text-center">
               <colgroup>
-                <col className="w-[10%]" />
-                <col className="w-[30%]" />
-                <col className="w-[14%]" />
-                <col className="w-[46%]" />
+                {/* Vehicle ID */}
+                <col style={{ width: "9%" }} />
+                {/* Vehicle */}
+                <col style={{ width: "22%" }} />
+                {/* Status */}
+                <col style={{ width: "17%" }} />
+                {/* Action — rest of space */}
+                <col style={{ width: "52%" }} />
               </colgroup>
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle">
+                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
                   </th>
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle">
+                  <th className="border-b border-slate-200 px-5 py-4 align-middle text-left">
                     Vehicle
                   </th>
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle">
+                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
                     Status
                   </th>
                   <th className="border-b border-slate-200 px-6 py-4 align-middle">
-                    Action
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -540,21 +541,22 @@ const VehicleOrdersList = () => {
                         key={booking._id}
                         className="align-middle transition-colors duration-200 hover:bg-blue-50/30"
                       >
-                        <td className="border-b border-slate-100 px-6 py-5 align-middle">
+                        {/* Vehicle ID */}
+                        <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
                             {vehicleId}
                           </div>
                         </td>
-                        <td className="border-b border-slate-100 px-6 py-5 align-middle text-left">
+
+                        {/* Vehicle Info */}
+                        <td className="border-b border-slate-100 px-5 py-5 align-middle text-left">
                           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                            {/* Engine/Chassis pending alert */}
                             {booking.status === "payment_done" && (!booking.engineNumber || !booking.chassisNumber) && (
                               <span title="Engine/Chassis number pending" className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
                                 <CircleAlert size={10} className="mr-0.5" />
                                 Missing#
                               </span>
                             )}
-                            {/* Overdue delivery alert */}
                             {booking.deliveryDate && booking.status !== "delivered" && (() => {
                               const today = new Date(); today.setHours(0,0,0,0);
                               const d = new Date(booking.deliveryDate); d.setHours(0,0,0,0);
@@ -565,7 +567,6 @@ const VehicleOrdersList = () => {
                                 Overdue
                               </span>
                             )}
-                            {/* Upcoming delivery reminder */}
                             {booking.deliveryDate && booking.status !== "delivered" && (() => {
                               const today = new Date(); today.setHours(0,0,0,0);
                               const d = new Date(booking.deliveryDate); d.setHours(0,0,0,0);
@@ -584,7 +585,9 @@ const VehicleOrdersList = () => {
                             {variant}
                           </p>
                         </td>
-                        <td className="border-b border-slate-100 px-6 py-5 align-middle">
+
+                        {/* Status */}
+                        <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <div className="flex flex-col items-center gap-1.5">
                             <span
                               className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badge}`}
@@ -599,86 +602,100 @@ const VehicleOrdersList = () => {
                             )}
                           </div>
                         </td>
+
+                        {/* Actions — evenly spaced with dividers */}
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <div className="inline-flex items-center justify-center gap-3 whitespace-nowrap">
-                            <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center justify-center gap-2">
+
+                            {/* Dealer */}
+                            <div className="flex flex-col items-center gap-1 min-w-[130px]">
                               {booking.assignedDealerId && (
-                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
                                   Dealer
                                 </span>
                               )}
                               <button
                                 onClick={() => openDealerModal(booking)}
-                                className={`cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                className={`cursor-pointer inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
                                   booking.assignedDealerId
                                     ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
                                     : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                                 }`}
-                                title={
-                                  booking.assignedDealerId
-                                    ? "Dealer Allotted"
-                                    : "Allot Dealer"
-                                }
+                                title={booking.assignedDealerId ? "Dealer Allotted" : "Allot Dealer"}
                               >
-                                <Store size={16} />
-                                {booking.assignedDealerId
-                                  ? booking.assignedDealerSnapshot?.name
-                                  : "Allot Dealer"}
+                                <Store size={14} className="shrink-0" />
+                                <span className="truncate max-w-[90px]">
+                                  {booking.assignedDealerId ? booking.assignedDealerSnapshot?.name : "Allot Dealer"}
+                                </span>
                               </button>
                             </div>
-                            {renderPrimaryAction(booking)}
-                              <div className="flex flex-col items-center gap-1">
-                                {booking.assignedClientId && (
-                                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                                    Allotted to
-                                  </span>
-                                )}
-                                <button
-                                  onClick={() => !isSourcingTeam && openClientModal(booking)}
-                                  disabled={isSourcingTeam}
-                                  className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
-                                    isSourcingTeam
-                                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-                                      : booking.assignedClientId
-                                        ? "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                        : "cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                  }`}
-                                  title={
-                                    isSourcingTeam
-                                      ? "Only Admin can allot client"
-                                      : booking.assignedClientId
-                                        ? "Client Allotted"
-                                        : "Allot Client"
-                                  }
-                                >
-                                  <Check size={16} />
-                                  {booking.assignedClientId
-                                    ? booking.assignedClientSnapshot?.name
-                                    : "Allot Client"}
-                                </button>
-                              </div>
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
-                                )
-                              }
-                              className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:scale-110 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm active:scale-95"
-                              title="View Vehicle"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
-                                )
-                              }
-                              className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
-                              title="Edit Vehicle"
-                            >
-                              <FilePenLine size={18} />
-                            </button>
+
+                            {/* Divider */}
+                            <div className="h-8 w-px bg-slate-200 shrink-0" />
+
+                            {/* Primary Action */}
+                            <div className="shrink-0">
+                              {renderPrimaryAction(booking)}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-8 w-px bg-slate-200 shrink-0" />
+
+                            {/* Client */}
+                            <div className="flex flex-col items-center gap-1 min-w-[130px]">
+                              {booking.assignedClientId && (
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                                  Allotted to
+                                </span>
+                              )}
+                              <button
+                                onClick={() => !isSourcingTeam && openClientModal(booking)}
+                                disabled={isSourcingTeam}
+                                className={`inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
+                                  isSourcingTeam
+                                    ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
+                                    : booking.assignedClientId
+                                      ? "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                      : "cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                }`}
+                                title={
+                                  isSourcingTeam
+                                    ? "Only Admin can allot client"
+                                    : booking.assignedClientId ? "Client Allotted" : "Allot Client"
+                                }
+                              >
+                                <Check size={14} className="shrink-0" />
+                                <span className="truncate max-w-[90px]">
+                                  {booking.assignedClientId ? booking.assignedClientSnapshot?.name : "Allot Client"}
+                                </span>
+                              </button>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-8 w-px bg-slate-200 shrink-0" />
+
+                            {/* Icon actions */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                onClick={() =>
+                                  navigate(`/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`)
+                                }
+                                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:scale-110 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm active:scale-95"
+                                title="View Vehicle"
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  navigate(`/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`)
+                                }
+                                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
+                                title="Edit Vehicle"
+                              >
+                                <FilePenLine size={16} />
+                              </button>
+                            </div>
+
                           </div>
                         </td>
                       </tr>
@@ -752,4 +769,3 @@ const VehicleOrdersList = () => {
 };
 
 export default VehicleOrdersList;
-
