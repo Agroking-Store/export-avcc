@@ -623,7 +623,6 @@ const VehicleOrdersList = () => {
                               </button>
                             </div>
                             {renderPrimaryAction(booking)}
-                            {!isSourcingTeam && (
                               <div className="flex flex-col items-center gap-1">
                                 {booking.assignedClientId && (
                                   <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
@@ -631,16 +630,21 @@ const VehicleOrdersList = () => {
                                   </span>
                                 )}
                                 <button
-                                  onClick={() => openClientModal(booking)}
-                                  className={`cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
-                                    booking.assignedClientId
-                                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                      : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                  onClick={() => !isSourcingTeam && openClientModal(booking)}
+                                  disabled={isSourcingTeam}
+                                  className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                    isSourcingTeam
+                                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
+                                      : booking.assignedClientId
+                                        ? "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                        : "cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                                   }`}
                                   title={
-                                    booking.assignedClientId
-                                      ? "Client Allotted"
-                                      : "Allot Client"
+                                    isSourcingTeam
+                                      ? "Only Admin can allot client"
+                                      : booking.assignedClientId
+                                        ? "Client Allotted"
+                                        : "Allot Client"
                                   }
                                 >
                                   <Check size={16} />
@@ -649,7 +653,6 @@ const VehicleOrdersList = () => {
                                     : "Allot Client"}
                                 </button>
                               </div>
-                            )}
                             <button
                               onClick={() =>
                                 navigate(
