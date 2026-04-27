@@ -301,7 +301,7 @@ const AddVehicleOrder = () => {
             disabled={loading || optionsLoading}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><Save size={18} /> Save Order(s)</>}
+            {loading ? "Saving..." : <><Save size={18} /> Save Vehicle(s)</>}
           </button>
         </div>
       </form>

@@ -9,6 +9,7 @@ import {
   Palette,
   Save,
   X,
+  Tag,
 } from "lucide-react";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import { useAuth } from "../../../hooks/useAuth";
@@ -23,6 +24,7 @@ const EditVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
+    hsnCode: "",
     fobAmount: "",
     freight: "",
   });
@@ -37,6 +39,7 @@ const EditVehicle = () => {
           modelName: data.modelName || "",
           variant: data.variant || "",
           color: data.color || "",
+          hsnCode: data.hsnCode || "",
           fobAmount: data.fobAmount !== undefined ? String(data.fobAmount) : "",
           freight: data.freight !== undefined ? String(data.freight) : "",
         });
@@ -115,20 +118,24 @@ const EditVehicle = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className={labelStyle}><Car size={14} className="text-indigo-500" /> Brand Name</label>
-              <input name="brandName" value={form.brandName} onChange={handleChange} className={inputStyle} />
+              <label className={labelStyle}><Car size={14} className="text-indigo-500" /> Brand Name <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="brandName" value={form.brandName} onChange={handleChange} className={inputStyle} placeholder="Toyota" />
             </div>
             <div>
-              <label className={labelStyle}><Car size={14} className="text-blue-400" /> Model Name</label>
-              <input name="modelName" value={form.modelName} onChange={handleChange} className={inputStyle} />
+              <label className={labelStyle}><Car size={14} className="text-blue-400" /> Model Name <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="modelName" value={form.modelName} onChange={handleChange} className={inputStyle} placeholder="Land Cruiser" />
             </div>
             <div>
-              <label className={labelStyle}><Hash size={14} className="text-emerald-500" /> Variant</label>
-              <input name="variant" value={form.variant} onChange={handleChange} className={inputStyle} />
+              <label className={labelStyle}><Hash size={14} className="text-emerald-500" /> Variant <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="variant" value={form.variant} onChange={handleChange} className={inputStyle} placeholder="ZX Diesel" />
             </div>
             <div>
-              <label className={labelStyle}><Palette size={14} className="text-rose-400" /> Color</label>
-              <input name="color" value={form.color} onChange={handleChange} className={inputStyle} />
+              <label className={labelStyle}><Palette size={14} className="text-rose-400" /> Color <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="color" value={form.color} onChange={handleChange} className={inputStyle} placeholder="White Pearl" />
+            </div>
+            <div>
+              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="hsnCode" value={form.hsnCode} onChange={handleChange} className={inputStyle} placeholder="8703.23.01" />
             </div>
           </div>
         </div>
