@@ -2,6 +2,9 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { authenticate } from "../middleware/auth.middleware";
+import { authorize } from "../middleware/role.middleware";
+import { ROLES } from "../config/constants";
 import {
   getBookingsByOrder,
   initBooking,
@@ -78,22 +81,24 @@ const documentUpload = multer({
 
 const router = Router();
 
-router.get("/order/:orderId", getBookingsByOrder);
-router.get("/order/:orderId/chassis-reminders", getDueRemindersHandler);
-router.post("/init", initBooking);
-router.post("/:id/quotation", quotationUpload.single("quotation"), uploadQuotationHandler);
-router.post("/:id/approve", approveHandler);
-router.post("/:id/reject", rejectHandler);
-router.post("/:id/confirm-payment", confirmPaymentHandler);
-router.patch("/:id/assign-client", assignClientHandler);
-router.patch("/:id/assign-dealer", assignDealerHandler);
-router.patch("/:id/chassis-engine", updateChassisEngineHandler);
-router.patch("/:id/status", updateStatusHandler);
-router.get("/", getAllBookingsHandler);
-router.get("/:id", getBookingByIdHandler);
+// Public read routes (any authenticated user)
+router.get("/order/:orderId", authenticate, getBookingsByOrder);
+router.get("/order/:orderId/chassis-reminders", authenticate, getDueRemindersHandler);
+router.get("/", authenticate, getAllBookingsHandler);
+router.get("/:id", authenticate, getBookingByIdHandler);
+router.get("/:id/files/:field", authenticate, getBookingFileHandler);
 
+// Admin-only: init booking, payment, approve/reject, client allotment, status update, document upload
+router.post("/init", authenticate, authorize(ROLES.ADMIN), initBooking);
+router.post("/:id/approve", authenticate, authorize(ROLES.ADMIN), approveHandler);
+router.post("/:id/reject", authenticate, authorize(ROLES.ADMIN), rejectHandler);
+router.post("/:id/confirm-payment", authenticate, authorize(ROLES.ADMIN), confirmPaymentHandler);
+router.patch("/:id/assign-client", authenticate, authorize(ROLES.ADMIN), assignClientHandler);
+router.patch("/:id/status", authenticate, authorize(ROLES.ADMIN), updateStatusHandler);
 router.post(
   "/:id/documents",
+  authenticate,
+  authorize(ROLES.ADMIN),
   documentUpload.fields([
     { name: "form20", maxCount: 1 },
     { name: "form21", maxCount: 1 },
@@ -104,6 +109,10 @@ router.post(
   ]),
   uploadBookingDocumentsHandler,
 );
-router.get("/:id/files/:field", getBookingFileHandler);
+
+// Admin + Sourcing Team: dealer assignment, quotation upload, chassis-engine update
+router.patch("/:id/assign-dealer", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), assignDealerHandler);
+router.post("/:id/quotation", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), quotationUpload.single("quotation"), uploadQuotationHandler);
+router.patch("/:id/chassis-engine", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), updateChassisEngineHandler);
 
 export default router;

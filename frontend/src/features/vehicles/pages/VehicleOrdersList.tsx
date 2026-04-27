@@ -82,9 +82,12 @@ const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
   Delivered: "delivered",
 };
 
+import { useAuth } from "../../../hooks/useAuth";
+
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSourcingTeam } = useAuth();
 
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -309,6 +312,7 @@ const VehicleOrdersList = () => {
           </button>
         );
       case "approved":
+        if (isSourcingTeam) return null;
         return (
           <button
             onClick={() => openPaymentModal(booking)}
@@ -331,6 +335,7 @@ const VehicleOrdersList = () => {
           </button>
         );
       case "chassis_received":
+        if (isSourcingTeam) return null;
         return (
           <button
             onClick={() => handleMarkDelivered(booking)}
@@ -400,13 +405,15 @@ const VehicleOrdersList = () => {
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
               {bookings.length} Vehicles
             </span>
-            <button
-              onClick={() => navigate("/vehicles/orders/add")}
-              className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
-            >
-              <Plus size={18} strokeWidth={3} />
-              Add Required Vehicle
-            </button>
+            {!isSourcingTeam && (
+              <button
+                onClick={() => navigate("/vehicles/orders/add")}
+                className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+              >
+                <Plus size={18} strokeWidth={3} />
+                Add Required Vehicle
+              </button>
+            )}
           </div>
         </div>
 
@@ -616,31 +623,33 @@ const VehicleOrdersList = () => {
                               </button>
                             </div>
                             {renderPrimaryAction(booking)}
-                            <div className="flex flex-col items-center gap-1">
-                              {booking.assignedClientId && (
-                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                                  Allotted to
-                                </span>
-                              )}
-                              <button
-                                onClick={() => openClientModal(booking)}
-                                className={`cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
-                                  booking.assignedClientId
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                }`}
-                                title={
-                                  booking.assignedClientId
-                                    ? "Client Allotted"
-                                    : "Allot Client"
-                                }
-                              >
-                                <Check size={16} />
-                                {booking.assignedClientId
-                                  ? booking.assignedClientSnapshot?.name
-                                  : "Allot Client"}
-                              </button>
-                            </div>
+                            {!isSourcingTeam && (
+                              <div className="flex flex-col items-center gap-1">
+                                {booking.assignedClientId && (
+                                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                    Allotted to
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => openClientModal(booking)}
+                                  className={`cursor-pointer inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-semibold transition ${
+                                    booking.assignedClientId
+                                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                      : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                  }`}
+                                  title={
+                                    booking.assignedClientId
+                                      ? "Client Allotted"
+                                      : "Allot Client"
+                                  }
+                                >
+                                  <Check size={16} />
+                                  {booking.assignedClientId
+                                    ? booking.assignedClientSnapshot?.name
+                                    : "Allot Client"}
+                                </button>
+                              </div>
+                            )}
                             <button
                               onClick={() =>
                                 navigate(
@@ -652,17 +661,19 @@ const VehicleOrdersList = () => {
                             >
                               <Eye size={18} />
                             </button>
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
-                                )
-                              }
-                              className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
-                              title="Edit Vehicle"
-                            >
-                              <FilePenLine size={18} />
-                            </button>
+                            {!isSourcingTeam && (
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+                                  )
+                                }
+                                className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
+                                title="Edit Vehicle"
+                              >
+                                <FilePenLine size={18} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -19,9 +19,12 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "../../../hooks/useAuth";
+
 const VehicleOrderVehicleEdit = () => {
   const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
   const navigate = useNavigate();
+  const { isSourcingTeam } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -176,6 +179,14 @@ const VehicleOrderVehicleEdit = () => {
     return (
       <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
         Vehicle booking details not found.
+      </div>
+    );
+  }
+
+  if (isSourcingTeam && booking.status !== "payment_done") {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        You are not authorized to edit this vehicle at its current status.
       </div>
     );
   }

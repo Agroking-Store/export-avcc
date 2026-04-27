@@ -11,10 +11,12 @@ import {
   X,
 } from "lucide-react";
 import { vehicleManagementApi } from "../vehicleManagementApi";
+import { useAuth } from "../../../hooks/useAuth";
 
 const EditVehicle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isSourcingTeam } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     brandName: "",
@@ -26,9 +28,10 @@ const EditVehicle = () => {
   });
 
   useEffect(() => {
+    if (isSourcingTeam || !id) return;
     const loadVehicle = async () => {
       try {
-        const data = await vehicleManagementApi.getVehicleById(id as string);
+        const data = await vehicleManagementApi.getVehicleById(id);
         setForm({
           brandName: data.brandName || "",
           modelName: data.modelName || "",
@@ -41,9 +44,8 @@ const EditVehicle = () => {
         toast.error(error.response?.data?.message || "Failed to load vehicle");
       }
     };
-
-    if (id) loadVehicle();
-  }, [id]);
+    loadVehicle();
+  }, [id, isSourcingTeam]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -58,7 +60,6 @@ const EditVehicle = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       setLoading(true);
       await vehicleManagementApi.updateVehicle(id as string, {
@@ -66,7 +67,6 @@ const EditVehicle = () => {
         fobAmount: form.fobAmount !== "" ? parseFloat(form.fobAmount) : 0,
         freight: form.freight !== "" ? parseFloat(form.freight) : 0,
       });
-
       navigate("/vehicles/list", {
         state: { success: "Vehicle updated successfully" },
       });
@@ -83,6 +83,14 @@ const EditVehicle = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
+  if (isSourcingTeam) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        You are not authorized to edit vehicles.
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
       <div className="flex justify-between items-center mb-10">
@@ -90,7 +98,6 @@ const EditVehicle = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit Vehicle</h1>
           <p className="text-sm text-gray-500 mt-1">Update vehicle inventory data</p>
         </div>
-
         <button
           onClick={() => navigate("/vehicles/list")}
           className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
@@ -146,7 +153,6 @@ const EditVehicle = () => {
                 placeholder="0.00"
               />
             </div>
-
             <div>
               <label className={labelStyle}><DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)</label>
               <input
@@ -171,7 +177,6 @@ const EditVehicle = () => {
           >
             <X size={16} /> Discard Changes
           </button>
-
           <button
             type="submit"
             disabled={loading}
