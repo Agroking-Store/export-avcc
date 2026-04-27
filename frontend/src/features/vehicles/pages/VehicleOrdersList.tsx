@@ -312,11 +312,16 @@ const VehicleOrdersList = () => {
           </button>
         );
       case "approved":
-        if (isSourcingTeam) return null;
         return (
           <button
-            onClick={() => openPaymentModal(booking)}
-            className={`${primaryActionClass} bg-emerald-600 hover:bg-emerald-700`}
+            onClick={() => !isSourcingTeam && openPaymentModal(booking)}
+            disabled={isSourcingTeam}
+            className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold transition whitespace-nowrap shrink-0 ${
+              isSourcingTeam
+                ? "bg-slate-400 text-white cursor-not-allowed opacity-60"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            }`}
+            title={isSourcingTeam ? "Only Admin can confirm booking" : "Confirm Booking"}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Confirm Booking
