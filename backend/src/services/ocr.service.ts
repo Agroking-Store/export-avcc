@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import Tesseract from "tesseract.js";
+import Tesseract from "tesseract.js"
 
 const run = (cmd: string): string => {
   try {

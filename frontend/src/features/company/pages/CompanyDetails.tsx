@@ -3,20 +3,27 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import { toast } from "react-toastify";
-import { 
-  ArrowLeft, Edit, Building2, Mail, Phone, MapPin, 
-  Globe, Landmark, CreditCard, Activity, Calendar, 
-  ClipboardList, CheckCircle2, XCircle
+import {
+  ArrowLeft, Edit, Building2, Mail, Phone, MapPin,
+  Globe, Landmark, CreditCard, Activity, Calendar,
+  ClipboardList, CheckCircle2, XCircle,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Company } from "../components/company.types";
 
+interface CompanyProfomaInvoice {
+  _id: string;
+  totalAmount: number;
+  buyersRef: string
+}
 const CompanyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyInvoices, setCompanyInvoices] = useState<CompanyProfomaInvoice[]>([]);
 
   useEffect(() => {
     const fetchCompanyDetails = async () => {
@@ -37,6 +44,29 @@ const CompanyDetails: React.FC = () => {
     };
     if (id) fetchCompanyDetails();
   }, [id, navigate]);
+  useEffect(() => {
+    const fetchCompanyInvoices = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get<CompanyProfomaInvoice[]>(`${apiConfig.baseURL}/companies/proformainvoice/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("accessToken")}`,
+          },
+        });
+        setCompanyInvoices(res.data)
+      } catch (err: any) {
+        toast.error("Failed to load company details.");
+        navigate("/companies/list");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchCompanyInvoices();
+  }, [id, navigate]);
+
+  useEffect(() => {
+    console.log("companyInvoices updated:", companyInvoices);
+  }, [companyInvoices]);
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return "-";
@@ -64,8 +94,9 @@ const CompanyDetails: React.FC = () => {
   if (!company) return null;
 
   return (
+
     <div className="w-full animate-in fade-in duration-500">
-      
+
       {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-6">
         <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
@@ -91,10 +122,10 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* LEFT COLUMN: Main Details */}
         <div className="lg:col-span-9 space-y-6">
-          
+
           {/* PROFILE CARD */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
@@ -138,7 +169,7 @@ const CompanyDetails: React.FC = () => {
                 <Landmark size={18} className="text-emerald-500" />
                 <h2 className="text-lg font-bold text-[#1B2559]">Banking Information</h2>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
                   <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">Bank Name</p>
@@ -155,11 +186,53 @@ const CompanyDetails: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* BANKING CARD */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-5 transition-shadow hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6 border-b border-gray-50 pb-4">
+                <Info size={18} className="text-cyan-600" />
+                <h2 className="text-lg font-bold text-[#1B2559]">Performa Invoice Details</h2>
+              </div>
+            <div className="overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
+              <table className="min-w-full text-sm text-left">
+
+                <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Proforma Invoice Id</th>
+                    <th className="px-4 py-3">Buyers Reference</th>
+                    <th className="px-4 py-3">Grand Total</th>
+
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y">
+                  {companyInvoices.map((v, i) => (
+                    <tr key={i}>
+
+                      <td className="px-4 py-3">
+                        {v._id}
+                      </td>
+
+                      <td className="px-4 py-3 font-medium">
+                        {v.buyersRef}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {v.totalAmount}
+                      </td>
+
+                    </tr>
+                  ))}
+                </tbody>
+
+              </table>
+            </div>
+          </div>
         </div>
 
         {/* RIGHT COLUMN: Sidebar Cards */}
         <div className="lg:col-span-3 space-y-5 lg:sticky lg:top-6">
-          
+
           {/* STATUS CARD */}
           <div className={`rounded-2xl p-5 border shadow-sm transition-all hover:shadow-lg ${company.isActive ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
             <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5 ${company.isActive ? 'text-green-700' : 'text-red-700'}`}>
