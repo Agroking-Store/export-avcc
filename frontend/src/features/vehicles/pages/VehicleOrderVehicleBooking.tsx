@@ -34,6 +34,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { vehicleManagementApi } from "../vehicleManagementApi";
 import { cn } from "@/lib/utils";
 
 const VehicleOrderVehicleBooking = () => {
@@ -76,7 +77,23 @@ const VehicleOrderVehicleBooking = () => {
       .getAll()
       .then((res) => setDealers(res.data || []))
       .catch(() => toast.error("Failed to load dealers"));
-  }, []);
+
+    if (orderId) {
+      vehicleManagementApi
+        .getVehicleOrderById(orderId)
+        .then((order) => {
+          if (order?.vehicleSnapshot?.hsnCode) {
+            setVehicle((prev) => ({
+              ...prev,
+              hsnCode: order.vehicleSnapshot.hsnCode,
+            }));
+          }
+        })
+        .catch(() => {
+          // non-critical: HSN can be entered manually
+        });
+    }
+  }, [orderId]);
 
   const handleInputChange = useCallback(
     (field: string, value: any) => {
@@ -199,7 +216,7 @@ const VehicleOrderVehicleBooking = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className={labelStyle}>
-                <Users size={14} className="text-indigo-500" /> Authorized Dealer
+                <Users size={14} className="text-indigo-500" /> Authorized Dealer <span className="text-red-500 ml-0.5">*</span>
               </label>
               <Popover open={dealerOpen} onOpenChange={setDealerOpen}>
                 <PopoverTrigger asChild>
@@ -304,7 +321,7 @@ const VehicleOrderVehicleBooking = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
               <label className={labelStyle}>
-                <Car size={14} className="text-indigo-500" /> Vehicle Model / variant Name
+                <Car size={14} className="text-indigo-500" /> Vehicle Model / variant Name <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -318,7 +335,7 @@ const VehicleOrderVehicleBooking = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> HSN Code
+                <Hash size={14} className="text-emerald-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -334,7 +351,7 @@ const VehicleOrderVehicleBooking = () => {
             <div>
               <label className={labelStyle}>
                 <div className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{ backgroundColor: vehicle.exteriorColour.toLowerCase() || 'transparent' }}></div>
-                Exterior Colour
+                Exterior Colour <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -347,7 +364,7 @@ const VehicleOrderVehicleBooking = () => {
             </div>
 
             <div>
-              <label className={labelStyle}>Chassis Number</label>
+              <label className={labelStyle}>Chassis Number <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 type="text"
                 value={vehicle.chassisNo}
@@ -361,7 +378,7 @@ const VehicleOrderVehicleBooking = () => {
             </div>
 
             <div>
-              <label className={labelStyle}>Engine Number</label>
+              <label className={labelStyle}>Engine Number <span className="text-red-500 ml-0.5">*</span></label>
               <input
                 type="text"
                 value={vehicle.engineNo}
@@ -468,7 +485,7 @@ const VehicleOrderVehicleBooking = () => {
 
           <div>
             <label className={labelStyle}>
-              <span className="text-amber-500 font-bold text-lg">$</span> Booking Amount
+              <span className="text-amber-500 font-bold text-lg">$</span> Booking Amount <span className="text-red-500 ml-0.5">*</span>
             </label>
             <input
               type="number"

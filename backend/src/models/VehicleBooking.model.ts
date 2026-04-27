@@ -75,6 +75,16 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       companyName: { type: String, trim: true, default: "" },
       clientCode: { type: String, trim: true, default: "" },
     },
+    assignedDealerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Dealer",
+      default: null,
+    },
+    assignedDealerSnapshot: {
+      name: { type: String, trim: true, default: "" },
+      contact: { type: String, trim: true, default: "" },
+      gstNumber: { type: String, trim: true, default: "" },
+    },
     status: {
       type: String,
       enum: [

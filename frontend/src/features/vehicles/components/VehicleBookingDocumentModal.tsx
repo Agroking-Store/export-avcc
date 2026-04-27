@@ -109,7 +109,7 @@ const VehicleBookingDocumentModal = ({
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
             <h2 className="text-xl font-black text-slate-800">
-              Unit Documentation
+              Vehicle Documentation
             </h2>
             <p className="text-xs text-slate-500 font-medium">
               Manage registration and inspection docs

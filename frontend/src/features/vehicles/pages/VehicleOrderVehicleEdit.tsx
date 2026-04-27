@@ -62,11 +62,7 @@ const VehicleOrderVehicleEdit = () => {
             (item) => item.vehicleIndex === Number(vehicleIndex),
           ) || null;
 
-        if (currentBooking?.status === "payment_done" && !currentBooking.assignedClientId) {
-          toast.error("Client must be allotted before adding engine/chassis details");
-          navigate(`/vehicles/orders/${id}`);
-          return;
-        }
+        // Client can be allotted at any moment; no restriction on engine/chassis entry
 
         setOrder(orderRes);
         setBooking(currentBooking);
@@ -78,7 +74,7 @@ const VehicleOrderVehicleEdit = () => {
         setFuelType(currentBooking?.fuelType || "");
         setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
         setYom(currentBooking?.yom || "");
-        setHsnCode(currentBooking?.hsnCode || "");
+        setHsnCode(currentBooking?.hsnCode || orderRes?.vehicleSnapshot?.hsnCode || "");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle details");
       } finally {
@@ -118,11 +114,11 @@ const VehicleOrderVehicleEdit = () => {
     );
 
     if (duplicateEngine) {
-      toast.error(`Engine number already used by Unit ${duplicateEngine.vehicleIndex + 1}`);
+      toast.error(`Engine number already used by another vehicle`);
       return;
     }
     if (duplicateChassis) {
-      toast.error(`Chassis number already used by Unit ${duplicateChassis.vehicleIndex + 1}`);
+      toast.error(`Chassis number already used by another vehicle`);
       return;
     }
 
@@ -145,7 +141,7 @@ const VehicleOrderVehicleEdit = () => {
           ? "Engine and chassis numbers saved. Vehicle is now in transit."
           : "Vehicle details updated",
       );
-      navigate(`/vehicles/orders/${id}`);
+      navigate(`/vehicles/orders`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update vehicle");
     } finally {
@@ -160,7 +156,7 @@ const VehicleOrderVehicleEdit = () => {
       setSaving(true);
       await vehicleBookingApi.updateStatus(booking._id, "delivered");
       toast.success("Vehicle marked as delivered");
-      navigate(`/vehicles/orders/${id}`);
+      navigate(`/vehicles/orders`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update status");
     } finally {
@@ -184,12 +180,14 @@ const VehicleOrderVehicleEdit = () => {
     );
   }
 
+  const vehicleName = `${order.vehicleSnapshot.brandName || ""} ${order.vehicleSnapshot.modelName || ""}`.trim();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Unit {booking.vehicleIndex + 1}
+            {vehicleName}
           </p>
           <h1 className="text-2xl font-bold text-slate-900">
             {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
@@ -200,11 +198,11 @@ const VehicleOrderVehicleEdit = () => {
         </div>
 
         <button
-          onClick={() => navigate(`/vehicles/orders/${id}`)}
+          onClick={() => navigate(`/vehicles/orders`)}
           className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
-          Back to Order
+          Back to Orders
         </button>
       </div>
 
@@ -216,7 +214,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Package size={14} className="text-amber-500" />
-              Engine Number
+              Engine Number <span className="text-red-500 ml-0.5">*</span>
             </label>
             <input
               type="text"
@@ -232,7 +230,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Truck size={14} className="text-emerald-500" />
-              Chassis Number
+              Chassis Number <span className="text-red-500 ml-0.5">*</span>
             </label>
             <input
               type="text"

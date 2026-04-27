@@ -23,7 +23,6 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
     { label: "Form 22", key: "form22" },
     { label: "Temporary Registration", key: "tempRegCert" },
     { label: "BV Certificate", key: "bvCertificate" },
-    { label: "Dealer Invoice", key: "dealerInvoice" },
   ];
 
   const getFileUrl = (field: string, download = false) => {

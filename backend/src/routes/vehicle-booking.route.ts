@@ -12,10 +12,12 @@ import {
   updateChassisEngineHandler,
   updateStatusHandler,
   assignClientHandler,
+  assignDealerHandler,
   getBookingByIdHandler,
   getDueRemindersHandler,
   uploadBookingDocumentsHandler,
   getBookingFileHandler,
+  getAllBookingsHandler,
 } from "../controllers/vehicle-booking.controller";
 
 // Quotation-specific multer config
@@ -84,8 +86,10 @@ router.post("/:id/approve", approveHandler);
 router.post("/:id/reject", rejectHandler);
 router.post("/:id/confirm-payment", confirmPaymentHandler);
 router.patch("/:id/assign-client", assignClientHandler);
+router.patch("/:id/assign-dealer", assignDealerHandler);
 router.patch("/:id/chassis-engine", updateChassisEngineHandler);
 router.patch("/:id/status", updateStatusHandler);
+router.get("/", getAllBookingsHandler);
 router.get("/:id", getBookingByIdHandler);
 
 router.post(

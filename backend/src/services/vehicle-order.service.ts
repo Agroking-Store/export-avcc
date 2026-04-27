@@ -62,6 +62,7 @@ export const createVehicleOrderService = async (data: CreateVehicleOrderDto) => 
       modelName: vehicle.modelName,
       variant: vehicle.variant,
       color: vehicle.color,
+      hsnCode: vehicle.hsnCode,
     },
   };
 
@@ -176,6 +177,7 @@ export const updateVehicleOrderService = async (
     modelName: vehicle.modelName,
     variant: vehicle.variant,
     color: vehicle.color,
+    hsnCode: vehicle.hsnCode,
   };
 
   return await order.save();

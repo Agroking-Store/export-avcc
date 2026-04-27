@@ -19,6 +19,7 @@ interface VehicleForm {
   modelName: string;
   variant: string;
   color: string;
+  hsnCode: string;
   fobAmount: string;
   freight: string;
 }
@@ -28,6 +29,7 @@ const emptyVehicle = (): VehicleForm => ({
   modelName: "",
   variant: "",
   color: "",
+  hsnCode: "",
   fobAmount: "",
   freight: "",
 });
@@ -65,7 +67,7 @@ const AddVehicle = () => {
   const validate = (): boolean => {
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i];
-      if (!v.brandName.trim() || !v.modelName.trim() || !v.variant.trim() || !v.color.trim()) {
+      if (!v.brandName.trim() || !v.modelName.trim() || !v.variant.trim() || !v.color.trim() || !v.hsnCode.trim()) {
         toast.error(`All vehicle fields are required for entry ${i + 1}`);
         return false;
       }
@@ -94,6 +96,7 @@ const AddVehicle = () => {
         modelName: v.modelName.trim(),
         variant: v.variant.trim(),
         color: v.color.trim(),
+        hsnCode: v.hsnCode.trim(),
         fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
         freight: v.freight !== "" ? parseFloat(v.freight) : 0,
       }));
@@ -175,7 +178,7 @@ const AddVehicle = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>
-                    <Car size={14} className="text-indigo-500" /> Brand Name
+                    <Car size={14} className="text-indigo-500" /> Brand Name <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     value={vehicle.brandName}
@@ -187,7 +190,7 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Car size={14} className="text-blue-400" /> Model Name
+                    <Car size={14} className="text-blue-400" /> Model Name <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     value={vehicle.modelName}
@@ -199,7 +202,7 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-emerald-500" /> Variant
+                    <Hash size={14} className="text-emerald-500" /> Variant <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     value={vehicle.variant}
@@ -211,13 +214,25 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Palette size={14} className="text-rose-400" /> Color
+                    <Palette size={14} className="text-rose-400" /> Color <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     value={vehicle.color}
                     onChange={(e) => handleChange(index, "color", e.target.value)}
                     className={inputStyle}
                     placeholder="White Pearl"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Hash size={14} className="text-amber-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <input
+                    value={vehicle.hsnCode}
+                    onChange={(e) => handleChange(index, "hsnCode", e.target.value)}
+                    className={inputStyle}
+                    placeholder="8703.23.01"
                   />
                 </div>
               </div>

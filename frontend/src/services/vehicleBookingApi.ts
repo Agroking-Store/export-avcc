@@ -20,6 +20,12 @@ export interface VehicleBookingItem {
     companyName?: string;
     clientCode?: string;
   };
+  assignedDealerId?: string;
+  assignedDealerSnapshot?: {
+    name: string;
+    contact?: string;
+    gstNumber?: string;
+  };
   status: VehicleBookingStatus;
   quotationFile?: string;
   rejectionReason?: string;
@@ -51,6 +57,16 @@ export interface VehicleBookingItem {
 }
 
 export const vehicleBookingApi = {
+  getAllBookings: async (params?: {
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: VehicleBookingItem[]; total: number; page: number; totalPages: number }> => {
+    const response = await api.get("/vehicle-bookings", { params });
+    return response.data;
+  },
+
   getByOrder: async (orderId: string): Promise<VehicleBookingItem[]> => {
     const response = await api.get(`/vehicle-bookings/order/${orderId}`);
     return response.data;
@@ -126,6 +142,13 @@ export const vehicleBookingApi = {
   assignClient: async (bookingId: string, clientId: string) => {
     const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-client`, {
       clientId,
+    });
+    return response.data as VehicleBookingItem;
+  },
+
+  assignDealer: async (bookingId: string, dealerId: string) => {
+    const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-dealer`, {
+      dealerId,
     });
     return response.data as VehicleBookingItem;
   },

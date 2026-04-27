@@ -11,11 +11,22 @@ import {
   updateChassisEngine,
   updateBookingStatus,
   assignClientToBooking,
+  assignDealerToBooking,
   getBookingById,
   getReminderDueBookings,
   uploadBookingDocuments,
   getBookingFile,
+  getAllVehicleBookingsService,
 } from "../services/vehicle-booking.service";
+
+export const getAllBookingsHandler = async (req: Request, res: Response) => {
+  try {
+    const result = await getAllVehicleBookingsService(req.query);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 export const getBookingsByOrder = async (req: Request, res: Response) => {
   try {
@@ -123,6 +134,21 @@ export const updateStatusHandler = async (req: Request, res: Response) => {
     const booking = await updateBookingStatus(
       req.params.id as string,
       status,
+    );
+    res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const assignDealerHandler = async (req: Request, res: Response) => {
+  try {
+    const { dealerId } = req.body;
+    if (!dealerId) throw new Error("Dealer is required");
+
+    const booking = await assignDealerToBooking(
+      req.params.id as string,
+      dealerId,
     );
     res.json(booking);
   } catch (error: any) {

@@ -10,9 +10,9 @@ import {
 
 export const createVehicleListItem = async (req: Request, res: Response) => {
   try {
-    const { brandName, modelName, variant, color, quantity, fobAmount, freight } = req.body;
+    const { brandName, modelName, variant, color, hsnCode, quantity, fobAmount, freight } = req.body;
 
-    if (!brandName || !modelName || !variant || !color) {
+    if (!brandName || !modelName || !variant || !color || !hsnCode) {
       throw new Error("All vehicle fields are required");
     }
 
@@ -21,6 +21,7 @@ export const createVehicleListItem = async (req: Request, res: Response) => {
       modelName,
       variant,
       color,
+      hsnCode,
       quantity:
         quantity !== undefined ? Number(quantity) : undefined,
       fobAmount: fobAmount !== undefined ? Number(fobAmount) : undefined,
@@ -72,7 +73,7 @@ export const createVehicleListItems = async (req: Request, res: Response) => {
     }
 
     for (const v of vehicles) {
-      if (!v.brandName || !v.modelName || !v.variant || !v.color) {
+      if (!v.brandName || !v.modelName || !v.variant || !v.color || !v.hsnCode) {
         throw new Error("All vehicle fields are required for each entry");
       }
     }
@@ -83,6 +84,7 @@ export const createVehicleListItems = async (req: Request, res: Response) => {
         modelName: v.modelName.trim(),
         variant: v.variant.trim(),
         color: v.color.trim(),
+        hsnCode: v.hsnCode.trim(),
         quantity: v.quantity !== undefined ? Number(v.quantity) : undefined,
         fobAmount: v.fobAmount !== undefined ? Number(v.fobAmount) : undefined,
         freight: v.freight !== undefined ? Number(v.freight) : undefined,

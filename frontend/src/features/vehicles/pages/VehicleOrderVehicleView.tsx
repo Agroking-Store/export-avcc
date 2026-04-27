@@ -126,11 +126,6 @@ const VehicleOrderVehicleView = () => {
       value: booking.chassisNumber || "-",
     },
     {
-      icon: FileText,
-      label: "Reminder Count",
-      value: String(booking.reminderCount || 0),
-    },
-    {
       icon: FileCheck,
       label: "Documentation",
       value: booking.isBVUploaded
@@ -171,13 +166,15 @@ const VehicleOrderVehicleView = () => {
     },
   ];
 
+  const vehicleName = `${order.vehicleSnapshot.brandName || ""} ${order.vehicleSnapshot.modelName || ""}`.trim();
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Unit {booking.vehicleIndex + 1}
+            {vehicleName}
           </p>
           <h1 className="text-2xl font-bold text-slate-900">
             {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
@@ -232,11 +229,11 @@ const VehicleOrderVehicleView = () => {
             Edit
           </button>
           <button
-            onClick={() => navigate(`/vehicles/orders/${id}`)}
+          onClick={() => navigate(`/vehicles/orders`)}
             className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <ArrowLeft size={16} />
-            Back to Order
+            Back to Orders
           </button>
         </div>
       </div>
