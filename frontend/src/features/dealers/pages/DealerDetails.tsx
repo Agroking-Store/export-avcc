@@ -77,10 +77,11 @@ const DealerDetails = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN */}
-        <div className="lg:col-span-9 space-y-6">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 transition-shadow hover:shadow-md">
+      {/* FULL WIDTH CONTENT */}
+      <div className="w-full">
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 md:p-10 transition-shadow hover:shadow-md">
+
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 dark:border-gray-800 pb-4">
               <ClipboardList size={18} className="text-gray-400" />
               <h2 className="text-lg font-bold text-[#1B2559] dark:text-white">
@@ -103,57 +104,15 @@ const DealerDetails = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoBox
-                  label="Phone Number"
-                  value={dealer.contact}
-                  icon={Phone}
-                />
-                <InfoBox
-                  label="Email Address"
-                  value={dealer.email}
-                  icon={Mail}
-                />
-                <InfoBox
-                  label="GST Number"
-                  value={dealer.gstNumber}
-                  icon={Hash}
-                />
+              {/* UPDATED GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <InfoBox label="Phone Number" value={dealer.contact} icon={Phone} />
+                <InfoBox label="Email Address" value={dealer.email} icon={Mail} />
+                <InfoBox label="GST Number" value={dealer.gstNumber} icon={Hash} />
                 <InfoBox label="Address" value={dealer.address} icon={MapPin} />
               </div>
             </div>
           </div>
-        </div>
-
-        {/* SIDEBAR CARDS */}
-        <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-6">
-          <div className="bg-[#EBFDF5] dark:bg-emerald-900/20 rounded-2xl p-5 border border-[#D1FAE5] dark:border-emerald-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#D1FAE5] dark:hover:bg-emerald-900/30">
-            <p className="text-[9px] font-bold uppercase tracking-widest mb-2 text-emerald-600">
-              Status
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] animate-pulse"></div>
-              <h3 className="text-xl font-bold text-emerald-900 dark:text-emerald-400">
-                Active
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-[#EBF8FF] dark:bg-blue-900/20 rounded-2xl p-5 border border-[#BEE3F8] dark:border-blue-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#BEE3F8]/30 group">
-            <p className="text-[9px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 transition-colors group-hover:text-blue-900">
-              <Building2 size={12} /> Dealer Type
-            </p>
-            <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300 group-hover:scale-105 transition-transform origin-left">
-              Authorized Partner
-            </h3>
-          </div>
-
-          <button
-            onClick={() => navigate(`/dealers/edit/${dealer._id}`)}
-            className="cursor-pointer w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all active:scale-95"
-          >
-            Edit Dealer
-          </button>
         </div>
       </div>
     </div>
