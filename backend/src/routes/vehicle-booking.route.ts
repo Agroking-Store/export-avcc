@@ -98,7 +98,7 @@ router.patch("/:id/status", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING)
 router.post(
   "/:id/documents",
   authenticate,
-  authorize(ROLES.ADMIN),
+  authorize(ROLES.ADMIN, ROLES.SOURCING),
   documentUpload.fields([
     { name: "form20", maxCount: 1 },
     { name: "form21", maxCount: 1 },
