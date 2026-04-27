@@ -54,6 +54,27 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+const getAuthToken = () => {
+  let token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken");
+
+  if (!token && localStorage.getItem("user")) {
+    try {
+      const userObj = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
+      token = userObj.token || userObj.accessToken;
+    } catch {}
+  }
+
+  if (token?.startsWith('"') && token?.endsWith('"')) {
+    token = token.slice(1, -1);
+  }
+
+  return token;
+};
+
 interface OrderPITablePageProps {
   generatePagination: (
     currentPage: number,
@@ -122,14 +143,17 @@ const OrderPITablePage: React.FC<OrderPITablePageProps> = ({
       const res = await axios.get(
         `${apiConfig.baseURL}/proforma-invoices/orders-with-pi-status`,
         {
-          params: {
-            search: orderGlobalFilter,
-            page: pagination.pageIndex + 1,
-            limit: pagination.pageSize,
-            sortBy: sortParam,
-            sortOrder: sortOrder,
-          },
-        }
+  params: {
+    search: orderGlobalFilter,
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    sortBy: sortParam,
+    sortOrder: sortOrder,
+  },
+  headers: getAuthToken()
+    ? { Authorization: `Bearer ${getAuthToken()}` }
+    : {},
+}
       );
       setOrderData(res.data.data);
       setOrderPageCount(res.data.totalPages || 1);
@@ -212,7 +236,7 @@ const OrderPITablePage: React.FC<OrderPITablePageProps> = ({
         ),
         id: "orderId",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.orderId}</span>
+          <span className="font-medium">{row.original.orderId || row.original.orderNumber || "-"}</span>
         ),
       },
       {
@@ -227,7 +251,7 @@ const OrderPITablePage: React.FC<OrderPITablePageProps> = ({
         ),
         id: "voucherNo",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.voucherNo}</span>
+          <span className="font-medium">{row.original.voucherNo || row.original.voucherNumber || "-"}</span>
         ),
       },
       {
@@ -243,7 +267,7 @@ const OrderPITablePage: React.FC<OrderPITablePageProps> = ({
         ),
         cell: ({ row }) => (
           <div>
-            <div className="font-medium">{row.original.client?.name}</div>
+            <div className="font-medium">{row.original.client?.name || row.original.clientName || "N/A"}</div>
             <div className="text-xs text-gray-500">
               {row.original.client?.clientCode}
             </div>
@@ -263,7 +287,7 @@ const OrderPITablePage: React.FC<OrderPITablePageProps> = ({
         ),
         cell: ({ row }) => (
           <div className="text-center font-medium">
-            {row.original.dealer?.name}
+            {row.original.dealer?.name || row.original.dealerName || "-"}
           </div>
         ),
       },

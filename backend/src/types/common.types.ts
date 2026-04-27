@@ -8,7 +8,7 @@ import {
 
 // export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 
-export type UserRole = "admin" | "manager" | "employee";
+export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 
 export type VehicleStatus =
   (typeof VEHICLE_STATUS)[keyof typeof VEHICLE_STATUS];

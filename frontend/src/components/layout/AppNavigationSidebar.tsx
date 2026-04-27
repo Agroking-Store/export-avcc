@@ -24,35 +24,52 @@ const AppNavigationSidebar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      icon: <LayoutDashboard size={20} />,
-      path: "/dashboard",
-    },
-    { name: "Vehicles", icon: <Car size={20} />, path: "/vehicles" },
-    { name: "Clients", icon: <Users size={20} />, path: "/clients" },
-    {
-      name: "Proforma Invoices",
-      icon: <FileText size={20} />,
-      path: "/proforma-invoice",
-    },
-    // {
-    //   name: "Letter of Credit",
-    //   icon: <FileCheck size={20} />,
-    //   path: "/letter-of-credit",
-    // },
-    { name: "Dealers", icon: <Truck size={20} />, path: "/dealers/dashboard" },
-    { name: "Companies", icon: <Users size={20} />, path: "/companies" },
-  ];
+  const role = user?.role?.toLowerCase();
 
-  if (user?.role === "admin") {
-    menuItems.push({
-      name: "User Management",
-      icon: <ShieldCheck size={20} />,
-      path: "/user-management",
-    });
-  }
+const defaultMenuItems = [
+  {
+    name: "Dashboard",
+    icon: <LayoutDashboard size={20} />,
+    path: "/dashboard",
+  },
+  { name: "Vehicles", icon: <Car size={20} />, path: "/vehicles" },
+  { name: "Clients", icon: <Users size={20} />, path: "/clients" },
+  {
+    name: "Proforma Invoices",
+    icon: <FileText size={20} />,
+    path: "/proforma-invoice",
+  },
+  {
+    name: "Dealers",
+    icon: <Truck size={20} />,
+    path: "/dealers/dashboard",
+  },
+  { name: "Companies", icon: <Users size={20} />, path: "/companies" },
+];
+
+const menuItems =
+  role === "accountant"
+    ? [
+        {
+          name: "Dashboard",
+          icon: <LayoutDashboard size={20} />,
+          path: "/dashboard",
+        },
+        {
+          name: "Proforma Invoices",
+          icon: <FileText size={20} />,
+          path: "/proforma-invoice",
+        },
+      ]
+    : [...defaultMenuItems];
+
+if (role === "admin") {
+  menuItems.push({
+    name: "User Management",
+    icon: <ShieldCheck size={20} />,
+    path: "/user-management",
+  });
+}
 
   return (
     <>

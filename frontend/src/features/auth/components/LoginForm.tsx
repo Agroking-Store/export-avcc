@@ -25,9 +25,17 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+  
     try {
-      await dispatch(login(formData)).unwrap();
-      navigate("/dashboard");
+      const response = await dispatch(login(formData)).unwrap();
+  
+      const role = response?.user?.role?.toLowerCase();
+  
+      if (role === "accountant") {
+        navigate("/proforma-invoice/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch {
       setError("Invalid email or password");
     } finally {

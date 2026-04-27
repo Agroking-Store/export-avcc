@@ -125,16 +125,31 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       const sortOrder =
         sorting.length > 0 ? (sorting[0].desc ? "desc" : "asc") : undefined;
 
-      const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
-        params: {
-          search: globalFilter,
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-          sortBy: sortParam,
-          sortOrder: sortOrder,
-          status: statusFilter,
-        },
-      });
+      let token =
+  localStorage.getItem("token") || localStorage.getItem("accessToken");
+
+if (!token && localStorage.getItem("user")) {
+  try {
+    const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+    token = userObj.token || userObj.accessToken;
+  } catch (e) {}
+}
+
+if (token && token.startsWith('"') && token.endsWith('"')) {
+  token = token.slice(1, -1);
+}
+
+const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
+  params: {
+    search: globalFilter,
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    sortBy: sortParam,
+    sortOrder: sortOrder,
+    status: statusFilter,
+  },
+  headers: token ? { Authorization: `Bearer ${token}` } : {},
+});
 
       setPiData(res.data.data);
       setPiPageCount(res.data.totalPages || 1);

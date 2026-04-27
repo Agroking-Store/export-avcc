@@ -8,8 +8,12 @@ export const useAuth = () => {
     token,
     loading,
     isAuthenticated: !!token,
+
+    // Role Checks
     isAdmin: user?.role === "admin",
-    isManager: user?.role === "manager",
-    isEmployee: user?.role === "employee",
+    isAccountant: user?.role === "accountant",
+    isSourcing: user?.role === "sourcing_team",
+    isClient: user?.role === "client",
+    isDealer: user?.role === "dealer",
   };
 };
