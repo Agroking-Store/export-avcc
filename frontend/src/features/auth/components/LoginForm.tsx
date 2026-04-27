@@ -26,8 +26,9 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await dispatch(login(formData)).unwrap();
-      navigate("/dashboard");
+      const result = await dispatch(login(formData)).unwrap();
+      const redirectPath = result?.user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+      navigate(redirectPath);
     } catch {
       setError("Invalid email or password");
     } finally {

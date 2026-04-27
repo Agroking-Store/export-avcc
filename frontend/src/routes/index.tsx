@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import PublicRoute from "./PublicRoute";
 import PrivateRoute from "./PrivateRoute";
 import MainLayout from "../components/layout/MainLayout";
+import { useAuth } from "../hooks/useAuth";
 
 // Auth pages
 import Login from "../features/auth/pages/Login";
@@ -32,6 +33,12 @@ import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
 // Admin
 import UserManagementModule from "../features/admin/pages/UserManagementModule";
 
+const DefaultRedirect: React.FC = () => {
+  const { user } = useAuth();
+  const redirectPath = user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+  return <Navigate to={redirectPath} replace />;
+};
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -44,7 +51,7 @@ const AppRoutes: React.FC = () => {
       {/* Private routes */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<DefaultRedirect />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
 

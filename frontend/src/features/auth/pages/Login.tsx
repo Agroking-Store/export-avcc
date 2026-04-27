@@ -5,10 +5,11 @@ import LoginForm from "../components/LoginForm";
 import { Car } from "lucide-react";
 
 const Login: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    const redirectPath = user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+    return <Navigate to={redirectPath} replace />;
   }
 
   return (

@@ -3,9 +3,14 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 const PublicRoute: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  return !isAuthenticated ? <Outlet /> : <Navigate to="/dashboard" replace />;
+  if (!isAuthenticated) {
+    return <Outlet />;
+  }
+
+  const redirectPath = user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+  return <Navigate to={redirectPath} replace />;
 };
 
 export default PublicRoute;

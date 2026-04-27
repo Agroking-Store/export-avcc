@@ -661,19 +661,17 @@ const VehicleOrdersList = () => {
                             >
                               <Eye size={18} />
                             </button>
-                            {!isSourcingTeam && (
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
-                                  )
-                                }
-                                className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
-                                title="Edit Vehicle"
-                              >
-                                <FilePenLine size={18} />
-                              </button>
-                            )}
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+                                )
+                              }
+                              className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
+                              title="Edit Vehicle"
+                            >
+                              <FilePenLine size={18} />
+                            </button>
                           </div>
                         </td>
                       </tr>
