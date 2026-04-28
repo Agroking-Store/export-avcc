@@ -11,6 +11,7 @@ import {
   Hash,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { apiConfig } from "@/config/apiConfig";
 
 const InfoBox = ({ label, value, icon: Icon }: any) => (
   <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
@@ -25,8 +26,9 @@ const DealerDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [dealer, setDealer] = useState<any>(null);
-
+  const [dealerVehicles, setDealerVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
 
   useEffect(() => {
     axios
@@ -38,6 +40,32 @@ const DealerDetails = () => {
       .catch((error: any) => {
         toast.error(error.response?.data?.message || "Failed to load dealer");
         setLoading(false);
+      });
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    setVehiclesLoading(true);
+
+    axios
+      .get(`http://localhost:5000/api/v1/dealers/${id}/getVehicles`)
+      .then((res) => {
+        const vehicles = res.data.data;
+
+        if (!vehicles.length) {
+          toast.info("No vehicles found");
+        }
+
+        setDealerVehicles(vehicles);
+      })
+      .catch((error: any) => {
+        toast.error(
+          error.response?.data?.message || "Failed to load vehicles"
+        );
+      })
+      .finally(() => {
+        setVehiclesLoading(false);
       });
   }, [id]);
 
@@ -113,6 +141,68 @@ const DealerDetails = () => {
               </div>
             </div>
           </div>
+        </div>
+        <div className=" mt-5 overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
+          <table className="min-w-full text-sm text-left">
+
+            {/* HEADER */}
+            <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
+              <tr>
+                <th className="px-4 py-3">#</th>
+
+                <th className="px-4 py-3">Engine / Chassis</th>
+
+                <th className="px-4 py-3">Vehicle Name</th>
+
+                <th className="px-4 py-3">variant</th>
+
+                <th className="px-4 py-3">Status</th>
+
+                <th className="px-4 py-3">Delivery Date</th>
+              </tr>
+            </thead>
+            {/* BODY */}
+            <tbody className="divide-y">
+              {dealerVehicles.map((v: any, index: number) => (
+                <tr key={v._id} className="hover:bg-gray-50 transition">
+
+                  {/* Serial Number */}
+                  <td className="px-4 py-3 font-medium text-gray-700">
+                    {index + 1}
+                  </td>
+
+                  {/* Engine / Chassis */}
+                  <td className="px-4 py-3 text-xs font-mono">
+                    {v.engineNumber || "-"} / {v.chassisNumber || "-"}
+                  </td>
+
+                  {/* Brand_Model */}
+                  <td className="px-4 py-3">
+                    {v.brandName|| "-"}_{v.modelName|| "-"}
+                  </td>
+
+                  {/* Variant */}
+                  <td className="px-4 py-3">
+                    {v.variant|| "-"}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-4 py-3 capitalize">
+                    {v.status || "-"}
+                  </td>
+
+                  {/* Date */}
+                  <td className="px-4 py-3 text-gray-600">
+                    {v.deliveryDate
+                      ? new Date(v.deliveryDate).toLocaleDateString()
+                      : new Date(v.createdAt).toLocaleDateString()}
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+
+          </table>
         </div>
       </div>
     </div>

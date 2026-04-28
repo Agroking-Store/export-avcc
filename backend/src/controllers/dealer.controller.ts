@@ -4,6 +4,7 @@ import {
   validateCreateDealer,
   validateUpdateDealer,
 } from "../validations/dealer.validation";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 
 const generateDealerId = async (): Promise<string> => {
   const latest = await Dealer.findOne({ dealerId: { $exists: true } })
@@ -96,5 +97,55 @@ export const deleteDealer = async (req: Request, res: Response) => {
       .json({ success: true, message: "Dealer deleted successfully" });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//Get vehicles of dealers
+export const getDealerVehicles = async (
+  req: Request<{ id: string }>,
+  res: Response
+) => {
+  try {
+    const dealerId = req.params.id;
+
+    const dealerVehicles = await VehicleBooking.find({
+      assignedDealerId: dealerId,
+    }).populate<{ vehicleId: { brandName: string; modelName: string; variant:string } }>({
+      path: "vehicleId",
+      select: "brandName modelName variant",
+    })
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean();
+
+    if (!dealerVehicles.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No vehicles found for this dealer",
+      });
+    }
+
+    // OPTIONAL: light formatting (only what UI needs)
+    const result = dealerVehicles.map((v) => ({
+      _id: v._id,
+      vehicleIndex: v.vehicleIndex,
+      engineNumber: v.engineNumber || "-",
+      chassisNumber: v.chassisNumber || "-",
+      brandName: v.vehicleId?.brandName || "-",
+      modelName: v.vehicleId?.modelName  || "-",
+      variant: v.vehicleId?.variant ,
+      status: v.status,
+      deliveryDate: v.deliveryDate || v.createdAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

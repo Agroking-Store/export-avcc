@@ -1,4 +1,6 @@
+import { Vehicle } from "../models/Vehicle.model";
 import Dealer from "../models/Dealer.model";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 
 const generateDealerId = async (): Promise<string> => {
   const latest = await Dealer.findOne()
@@ -55,3 +57,4 @@ export const deleteDealerService = async (id: string) => {
   const dealer = await Dealer.findByIdAndDelete(id);
   if (!dealer) throw new Error("Dealer not found");
 };
+
