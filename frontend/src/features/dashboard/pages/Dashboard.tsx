@@ -187,6 +187,7 @@ const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardCollections>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [partialError, setPartialError] = useState<string | null>(null);
+  const [momentumMonths, setMomentumMonths] = useState<3 | 6>(6);
 
   useEffect(() => {
     let mounted = true;
@@ -272,9 +273,9 @@ const Dashboard: React.FC = () => {
   }, [data.proformaInvoices]);
 
   const trendData = useMemo(() => {
-    const months = Array.from({ length: 6 }, (_, i) => {
+    const months = Array.from({ length: momentumMonths }, (_, i) => {
       const d = new Date();
-      d.setMonth(d.getMonth() - (5 - i));
+      d.setMonth(d.getMonth() - (momentumMonths - 1 - i));
       return { key: `${d.getFullYear()}-${d.getMonth()}`, label: MONTH_FMT.format(d), orders: 0, invoices: 0, deliveries: 0 };
     });
     const map = new Map(months.map((m) => [m.key, m]));
@@ -299,7 +300,7 @@ const Dashboard: React.FC = () => {
       if (bucket) bucket.deliveries++;
     });
     return months;
-  }, [data]);
+  }, [data, momentumMonths]);
 
   const recentOrders = useMemo(() =>
     [...data.orders].sort((a, b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime()).slice(0, 5),
@@ -550,12 +551,22 @@ const Dashboard: React.FC = () => {
             <div className="flex items-start justify-between mb-6">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.18em]">Activity Trend</p>
-                <h2 className="mt-1 text-[17px] font-bold text-slate-950">6-Month Operating Momentum</h2>
+                <h2 className="mt-1 text-[17px] font-bold text-slate-950">{momentumMonths}-Month Operating Momentum</h2>
               </div>
-              <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-500">
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#1e293b] inline-block" />Orders</span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#3b82f6] inline-block" />Invoices</span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#10b981] inline-block" />Delivered</span>
+              <div className="flex items-center gap-3">
+                <select
+                  value={momentumMonths}
+                  onChange={(e) => setMomentumMonths(Number(e.target.value) as 3 | 6)}
+                  className="text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-blue-400"
+                >
+                  <option value={3}>3 Months</option>
+                  <option value={6}>6 Months</option>
+                </select>
+                <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#1e293b] inline-block" />Orders</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#3b82f6] inline-block" />Invoices</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#10b981] inline-block" />Delivered</span>
+                </div>
               </div>
             </div>
             <div className="h-[230px]">
@@ -644,30 +655,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* ── RECENT ACTIVITY ─────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-
-          {/* Recent Orders */}
-          <RecentCard
-            title="Recent Export Orders"
-            sub="Latest commercial intake"
-            actionLabel="View all"
-            onAction={() => navigate("/orders/list")}
-          >
-            {recentOrders.length === 0 ? (
-              <EmptyState text="No export orders yet" />
-            ) : recentOrders.map((o) => (
-              <div key={o._id} className="flex items-center justify-between gap-3 py-3 border-b border-slate-50 last:border-0 group hover:bg-slate-50 -mx-2 px-2 rounded-lg transition-colors">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-slate-900 truncate">{o.orderId}</p>
-                  <p className="text-[11px] text-slate-400 truncate mt-0.5">{o.clientName || o.companyName || "—"}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[11px] font-semibold text-slate-700">{sumUnits(o)} units</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{fmtDate(o.createdAt || o.date)}</p>
-                </div>
-              </div>
-            ))}
-          </RecentCard>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
           {/* Recent PIs */}
           <RecentCard
