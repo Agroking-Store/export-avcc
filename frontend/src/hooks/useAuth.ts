@@ -9,6 +9,7 @@ export const useAuth = () => {
     loading,
     isAuthenticated: !!token,
     isAdmin: user?.role === "admin",
+    isSourcingTeam: user?.role === "sourcing_team",
     isManager: user?.role === "manager",
     isEmployee: user?.role === "employee",
   };

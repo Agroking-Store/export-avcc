@@ -19,11 +19,14 @@ interface Props {
   onSync: (updated: VehicleBookingItem) => void;
 }
 
+import { useAuth } from "../../../hooks/useAuth";
+
 const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [quotationSaving, setQuotationSaving] = useState(false);
+  const { isSourcingTeam } = useAuth();
 
   useEffect(() => {
     if (booking) {
@@ -200,7 +203,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
           {/* Approval actions – only shown when quotation is uploaded and awaiting approval */}
           {booking.quotationFile &&
-            booking.status === "quotation_uploaded" && (
+            booking.status === "quotation_uploaded" && !isSourcingTeam && (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="mb-4 flex items-center gap-2 text-slate-800">
                   <ShieldCheck size={18} />

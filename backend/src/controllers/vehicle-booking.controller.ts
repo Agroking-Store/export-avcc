@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Request, Response } from "express";
+import { ROLES } from "../config/constants";
 import {
   getBookingsByOrderId,
   getOrCreateBooking,
@@ -111,7 +112,18 @@ export const confirmPaymentHandler = async (req: Request, res: Response) => {
 export const updateChassisEngineHandler = async (req: Request, res: Response) => {
   try {
     const { chassisNumber, engineNumber, deliveryDate, engineCapacity, fuelType, countryOfOrigin, yom, hsnCode } = req.body;
-    const booking = await updateChassisEngine(req.params.id as string, {
+    const userRole = (req as any).user?.role;
+    const bookingId = req.params.id as string;
+
+    // If sourcing_team, enforce payment_done status restriction
+    if (userRole === ROLES.SOURCING) {
+      const booking = await getBookingById(bookingId);
+      if (booking.status !== "payment_done") {
+        return res.status(403).json({ message: "Sourcing team can only update engine/chassis after payment is completed" });
+      }
+    }
+
+    const booking = await updateChassisEngine(bookingId, {
       chassisNumber,
       engineNumber,
       deliveryDate,

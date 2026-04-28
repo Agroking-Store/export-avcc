@@ -1,363 +1,395 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { vehicleApi, VehicleStats } from '../../../services/vehicleApi';
-import { bookingApi } from '../../../services/bookingApi';
-import axios from 'axios';
-import { apiConfig } from '../../../config/apiConfig';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 import {
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  AreaChart,
-  Area,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell
-} from "recharts";
-import { 
-  Car, 
-  CheckCircle2, 
-  Clock, 
-  TrendingUp, 
-  ArrowUpRight, 
-  Package, 
-  Truck, 
-  ShieldCheck,
+  vehicleBookingApi,
+  VehicleBookingItem,
+  VehicleBookingStatus,
+} from "../../../services/vehicleBookingApi";
+import { toast } from "react-toastify";
+import {
   LayoutDashboard,
-  Search,
-  Plus
-} from 'lucide-react';
+  Car,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Truck,
+  FileText,
+  DollarSign,
+  Wrench,
+  Store,
+  User,
+  ArrowUpRight,
+  Package,
+  TrendingUp,
+  Ban,
+} from "lucide-react";
 
-interface Order {
-  _id: string;
-  orderId: string;
-  status: string;
-  vehicles: Array<{
-    name: string;
-    quantity: number;
-    color: string;
-    status?: string;
-  }>;
-  createdAt: string;
-}
+const STATUS_META: Record<
+  VehicleBookingStatus,
+  { label: string; badge: string; icon: React.ReactNode; section: "pending" | "inprogress" | "completed" }
+> = {
+  pending: {
+    label: "Quotation Pending",
+    badge: "bg-slate-100 text-slate-700 border-slate-200",
+    icon: <Clock size={14} />,
+    section: "pending",
+  },
+  quotation_uploaded: {
+    label: "Awaiting Approval",
+    badge: "bg-amber-100 text-amber-700 border-amber-200",
+    icon: <FileText size={14} />,
+    section: "pending",
+  },
+  approved: {
+    label: "Approved",
+    badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    icon: <CheckCircle2 size={14} />,
+    section: "inprogress",
+  },
+  rejected: {
+    label: "Rejected",
+    badge: "bg-rose-100 text-rose-700 border-rose-200",
+    icon: <Ban size={14} />,
+    section: "pending",
+  },
+  payment_done: {
+    label: "Awaiting Numbers",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+    icon: <DollarSign size={14} />,
+    section: "inprogress",
+  },
+  chassis_received: {
+    label: "In Transit",
+    badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    icon: <Truck size={14} />,
+    section: "inprogress",
+  },
+  delivered: {
+    label: "Delivered",
+    badge: "bg-green-100 text-green-700 border-green-200",
+    icon: <Package size={14} />,
+    section: "completed",
+  },
+};
 
 const Vehicles: React.FC = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<VehicleStats | null>(null);
+  const { isAdmin } = useAuth();
+
+  const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const [statsRes, ordersRes, bookingsRes] = await Promise.all([
-          vehicleApi.getStats().catch(() => ({ success: false, data: null })),
-          axios.get(`${apiConfig.baseURL}/orders?limit=1000`).catch(() => ({ data: { data: [] } })),
-          bookingApi.getAll().catch(() => ({ data: { data: [] } }))
-        ]);
-
-        if (statsRes.success) setStats(statsRes.data!);
-        
-        const orderList = ordersRes.data?.data || ordersRes.data?.orders || ordersRes.data || [];
-        setOrders(Array.isArray(orderList) ? orderList : []);
-
-        const bookingList = bookingsRes.data?.data || bookingsRes.data?.bookings || bookingsRes.data || [];
-        setBookings(Array.isArray(bookingList) ? bookingList : []);
-
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        const res = await vehicleBookingApi.getAllBookings({
+          limit: 1000,
+          page: 1,
+        });
+        setBookings(res.data || []);
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to fetch dashboard data");
       } finally {
         setLoading(false);
       }
     };
-    loadData();
+    fetchData();
   }, []);
 
-  // 🔄 CALCULATION ENGINE: Counting EVERY vehicle across orders and lifecycle
-  const vehicleMetrics = useMemo(() => {
-    const counts = {
-      available: 0,
-      booked: 0,
-      piCreated: 0,
-      lcReceived: 0,
-      invoiceCreated: 0,
-      confirmed: 0,
-      total: 0
+  const metrics = useMemo(() => {
+    const total = bookings.length;
+    const pending = bookings.filter((b) =>
+      ["pending", "quotation_uploaded", "rejected"].includes(b.status)
+    ).length;
+    const inProgress = bookings.filter((b) =>
+      ["approved", "payment_done", "chassis_received"].includes(b.status)
+    ).length;
+    const completed = bookings.filter((b) => b.status === "delivered").length;
+
+    const pendingQuotations = bookings.filter((b) => b.status === "pending").length;
+    const awaitingApproval = bookings.filter((b) => b.status === "quotation_uploaded").length;
+    const awaitingNumbers = bookings.filter(
+      (b) => b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber)
+    ).length;
+    const missingClient = bookings.filter((b) => !b.assignedClientId).length;
+
+    return {
+      total,
+      pending,
+      inProgress,
+      completed,
+      pendingQuotations,
+      awaitingApproval,
+      awaitingNumbers,
+      missingClient,
     };
+  }, [bookings]);
 
-    // 1. Count from Bookings (Active Lifecycle)
-    // We count vehicles in the bookings and their specific statuses
-    bookings.forEach(booking => {
-      booking.vehicles?.forEach((v: any) => {
-        const s = v.status || booking.status;
-        if (s === "Booked") counts.booked++;
-        else if (s === "PI Created") counts.piCreated++;
-        else if (s === "LC Received") counts.lcReceived++;
-        else if (s === "Invoice Created") counts.invoiceCreated++;
-      });
+  const pendingBookings = useMemo(
+    () => bookings.filter((b) => STATUS_META[b.status].section === "pending"),
+    [bookings]
+  );
+
+  const inProgressBookings = useMemo(
+    () => bookings.filter((b) => STATUS_META[b.status].section === "inprogress"),
+    [bookings]
+  );
+
+  const completedBookings = useMemo(
+    () => bookings.filter((b) => STATUS_META[b.status].section === "completed"),
+    [bookings]
+  );
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<VehicleBookingStatus, number> = {
+      pending: 0,
+      quotation_uploaded: 0,
+      approved: 0,
+      rejected: 0,
+      payment_done: 0,
+      chassis_received: 0,
+      delivered: 0,
+    };
+    bookings.forEach((b) => {
+      counts[b.status]++;
     });
-
-    // 2. Count from Orders (Total Intent & New Units)
-    orders.forEach(order => {
-      const orderVehiclesCount = order.vehicles?.reduce((sum, v) => sum + (v.quantity || 0), 0) || 0;
-      
-      // If order is "Confirmed", we add to pipeline count
-      if (order.status === "Confirmed") {
-        counts.confirmed += orderVehiclesCount;
-      }
-
-      // "Available" units are typically those in Orders that haven't been "Booked" yet.
-      // However, a simple way is (Total in Orders) - (Total in Bookings)
-      // Or just sum up quantities in Orders as Total.
-      counts.total += orderVehiclesCount;
-    });
-
-    // Available = Total Intent - Committed (Sum of all active booking stages)
-    const committedTotal = counts.booked + counts.piCreated + counts.lcReceived + counts.invoiceCreated;
-    counts.available = Math.max(0, counts.total - committedTotal);
-
     return counts;
-  }, [orders, bookings]);
+  }, [bookings]);
 
-  const statusDistribution = [
-    { name: 'Available', value: vehicleMetrics.available, color: '#10b981' },
-    { name: 'Booked', value: vehicleMetrics.booked, color: '#3b82f6' },
-    { name: 'PI Ongoing', value: vehicleMetrics.piCreated, color: '#8b5cf6' },
-    { name: 'In Finance', value: vehicleMetrics.lcReceived, color: '#6366f1' },
-    { name: 'Shipped', value: vehicleMetrics.invoiceCreated, color: '#14b8a6' }
-  ];
-
-  const ordersChartData = useMemo(() => {
-    const months = [];
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push(d.toLocaleString("default", { month: "short" }));
-    }
-
-    const counts: Record<string, number> = Object.fromEntries(months.map(m => [m, 0]));
-    
-    orders.forEach((o) => {
-      const date = new Date(o.createdAt);
-      const month = date.toLocaleString("default", { month: "short" });
-      if (counts[month] !== undefined) {
-        counts[month]++;
-      }
-    });
-
-    return months.map(m => ({ month: m, orders: counts[m] }));
-  }, [orders]);
-
-  const topVehicles = useMemo(() => {
-    const vehicleStats: Record<string, number> = {};
-    orders.forEach((o) => {
-      o.vehicles?.forEach((v) => {
-        if (v?.name) {
-          vehicleStats[v.name] = (vehicleStats[v.name] || 0) + (v.quantity ?? 0);
-        }
-      });
-    });
-    return Object.entries(vehicleStats)
-      .map(([model, qty]) => ({ model, qty }))
-      .sort((a, b) => b.qty - a.qty)
-      .slice(0, 5);
-  }, [orders]);
+  const getVehicleName = (booking: VehicleBookingItem) => {
+    const oid = (booking as any).orderId;
+    const snap = typeof oid === "object" && oid !== null ? oid.vehicleSnapshot : null;
+    return snap ? `${snap.brandName || ""} ${snap.modelName || ""}`.trim() || "Unknown Vehicle" : "Unknown Vehicle";
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-gray-950 p-8 flex flex-col items-center justify-center">
-         <div className="w-12 h-12 border-4 border-[#5243EF] border-t-transparent rounded-full animate-spin mb-4" />
-         <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Hydrating Dashboard...</span>
+      <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950 p-8 flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Dashboard...</span>
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-8 min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-all duration-500 animate-in fade-in">
-      
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-500/10 rounded-xl">
-              <LayoutDashboard size={20} className="text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Vehicles Overview</h1>
-          </div>
-          <p className="text-[15px] text-slate-500 font-medium dark:text-gray-400">Tracking every vehicle across the export lifecycle.</p>
-        </div>
-
+    <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950 p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="px-5 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm text-sm font-bold text-slate-600 dark:text-gray-300">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <div className="p-2.5 bg-blue-600 rounded-xl shadow-md">
+            <LayoutDashboard size={22} className="text-white" />
           </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Vehicle Dashboard</h1>
+            <p className="text-sm text-slate-500 dark:text-gray-400">
+              {isAdmin ? "Full system overview" : "Your workflow overview"}
+            </p>
+          </div>
+        </div>
+        <div className="text-sm font-semibold text-slate-500 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-800">
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
         </div>
       </div>
 
-      {/* KPI GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard 
-          label="Total Vehicles" 
-          value={vehicleMetrics.total} 
-          icon={<Car size={20} />} 
-          color="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400" 
-        />
-        <KpiCard 
-          label="Available" 
-          value={vehicleMetrics.available} 
-          icon={<CheckCircle2 size={20} />} 
-          color="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" 
-        />
-        <KpiCard 
-          label="Booked" 
-          value={vehicleMetrics.booked} 
-          icon={<Clock size={20} />} 
-          color="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400" 
-        />
-        <KpiCard 
-          label="Confirmed Pipeline" 
-          value={vehicleMetrics.confirmed} 
-          icon={<TrendingUp size={20} />} 
-          color="bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400" 
-        />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCard label="Total Vehicles" value={metrics.total} icon={<Car size={20} />} color="bg-blue-50 text-blue-600" border="border-blue-200" />
+        <SummaryCard label="Pending" value={metrics.pending} icon={<Clock size={20} />} color="bg-amber-50 text-amber-600" border="border-amber-200" />
+        <SummaryCard label="In Progress" value={metrics.inProgress} icon={<TrendingUp size={20} />} color="bg-indigo-50 text-indigo-600" border="border-indigo-200" />
+        <SummaryCard label="Delivered" value={metrics.completed} icon={<CheckCircle2 size={20} />} color="bg-emerald-50 text-emerald-600" border="border-emerald-200" />
       </div>
 
-      {/* QUICK ACTIONS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ActionTile 
-          title="Vehicle List" 
-          desc="Manage dedicated vehicle inventory" 
-          icon={<Car size={22} />} 
-          onClick={() => navigate('/vehicles/list')} 
-        />
-        <ActionTile 
-          title="Required Vehicles"
-          desc="Add required vehicles from the vehicle list"
-          icon={<Search size={22} />} 
-          onClick={() => navigate('/vehicles/orders')} 
-        />
+      {/* Actionable Items */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <ActionCard label="Pending Quotations" value={metrics.pendingQuotations} icon={<FileText size={18} />} color="text-slate-600" onClick={() => navigate("/vehicles/orders")} />
+        <ActionCard label="Awaiting Approval" value={metrics.awaitingApproval} icon={<AlertCircle size={18} />} color="text-amber-600" onClick={() => navigate("/vehicles/orders")} />
+        <ActionCard label="Missing Engine/Chassis" value={metrics.awaitingNumbers} icon={<Wrench size={18} />} color="text-blue-600" onClick={() => navigate("/vehicles/orders")} />
+        {isAdmin && (
+          <ActionCard label="Missing Client Allotment" value={metrics.missingClient} icon={<User size={18} />} color="text-rose-600" onClick={() => navigate("/vehicles/orders")} />
+        )}
       </div>
 
-      {/* VISUALS SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-gray-800 transition-all hover:shadow-md">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-black text-slate-800 dark:text-white underline decoration-blue-500/30 underline-offset-8">Sales Trend</h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100 dark:border-gray-800 px-3 py-1 rounded-full">Last 6 Months</span>
-          </div>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={ordersChartData}>
-                <defs>
-                  <linearGradient id="colorOrd" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#1e293b", border: "none", borderRadius: "16px", color: "#f1f5f9", padding: "12px" }}
-                />
-                <Area type="monotone" dataKey="orders" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorOrd)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Status Distribution Bar */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-slate-200 dark:border-gray-800 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Status Distribution</h3>
+        <div className="flex items-center gap-1 h-4 rounded-full overflow-hidden bg-slate-100 dark:bg-gray-800">
+          {metrics.total > 0 && (
+            <>
+              <StatusBarSegment count={statusCounts.pending} total={metrics.total} color="bg-slate-400" />
+              <StatusBarSegment count={statusCounts.quotation_uploaded} total={metrics.total} color="bg-amber-400" />
+              <StatusBarSegment count={statusCounts.approved} total={metrics.total} color="bg-emerald-400" />
+              <StatusBarSegment count={statusCounts.rejected} total={metrics.total} color="bg-rose-400" />
+              <StatusBarSegment count={statusCounts.payment_done} total={metrics.total} color="bg-blue-400" />
+              <StatusBarSegment count={statusCounts.chassis_received} total={metrics.total} color="bg-indigo-400" />
+              <StatusBarSegment count={statusCounts.delivered} total={metrics.total} color="bg-green-400" />
+            </>
+          )}
         </div>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-gray-800 transition-all hover:shadow-md">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white mb-8">Vehicle Distribution</h3>
-          <div className="flex items-center justify-center -mt-6">
-            <ResponsiveContainer width="100%" height={240}>
-              <RechartsPieChart>
-                <Pie
-                  data={statusDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={95}
-                  paddingAngle={5}
-                  dataKey="value"
-                  strokeWidth={0}
-                >
-                  {statusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#1e293b", border: "none", borderRadius: "16px", color: "#f1f5f9" }}
-                />
-              </RechartsPieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-3">
-            {statusDistribution.map((item, index) => (
-              <div key={index} className="flex items-center justify-between group">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-xs font-bold text-slate-500 dark:text-gray-400 group-hover:text-slate-800 dark:group-hover:text-white transition-colors capitalize">{item.name}</span>
-                </div>
-                <span className="text-xs font-black text-slate-900 dark:text-white">{item.value}</span>
-              </div>
-            ))}
-          </div>
+        <div className="mt-4 flex flex-wrap gap-4">
+          <LegendDot color="bg-slate-400" label="Quotation Pending" value={statusCounts.pending} />
+          <LegendDot color="bg-amber-400" label="Awaiting Approval" value={statusCounts.quotation_uploaded} />
+          <LegendDot color="bg-emerald-400" label="Approved" value={statusCounts.approved} />
+          <LegendDot color="bg-rose-400" label="Rejected" value={statusCounts.rejected} />
+          <LegendDot color="bg-blue-400" label="Awaiting Numbers" value={statusCounts.payment_done} />
+          <LegendDot color="bg-indigo-400" label="In Transit" value={statusCounts.chassis_received} />
+          <LegendDot color="bg-green-400" label="Delivered" value={statusCounts.delivered} />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 border border-slate-50 dark:border-gray-800 shadow-sm">
-           <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-slate-800 dark:text-white">Most Popular Models</h3>
-              <Plus size={20} className="text-slate-300 cursor-pointer hover:text-blue-500" />
-           </div>
-           <div className="space-y-4">
-              {topVehicles.length === 0 ? (
-                <div className="py-10 text-center text-slate-400 text-sm italic">No data yet</div>
-              ) : topVehicles.map((v, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-[#F8F9FB] dark:bg-gray-800/50 border border-slate-50 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-900 group transition-all">
-                  <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center text-blue-600 font-bold border border-slate-100 dark:border-gray-800">
-                        {v.model.charAt(0)}
-                     </div>
-                     <span className="font-bold text-slate-700 dark:text-gray-200">{v.model}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                     <span className="text-xs font-black text-blue-600 dark:text-blue-400">{v.qty} Vehicles</span>
-                     <ArrowUpRight size={16} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-                  </div>
-                </div>
-              ))}
-           </div>
-        </div>
+      {/* Status Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <StatusSection title="Pending" count={pendingBookings.length} icon={<Clock size={18} className="text-amber-600" />} borderColor="border-amber-200" bgColor="bg-amber-50/50">
+          {pendingBookings.length === 0 ? (
+            <EmptyState message="No pending vehicles" />
+          ) : (
+            pendingBookings.slice(0, 8).map((booking) => (
+              <BookingRow key={booking._id} booking={booking} vehicleName={getVehicleName(booking)} onClick={() => navigate("/vehicles/orders")} />
+            ))
+          )}
+          {pendingBookings.length > 8 && (
+            <button onClick={() => navigate("/vehicles/orders")} className="w-full mt-3 text-xs font-semibold text-amber-600 hover:text-amber-700 text-center py-2">
+              View all {pendingBookings.length} pending
+            </button>
+          )}
+        </StatusSection>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-           <PipelineCard label="Order Vouchers" val={orders.length} icon={<Package size={22} />} border="border-l-blue-600" bg="bg-blue-50/50" text="text-blue-600" />
-           <PipelineCard label="Confirmed Vehicle Pipeline" val={vehicleMetrics.confirmed} icon={<ShieldCheck size={22} />} border="border-l-emerald-500" bg="bg-emerald-50/50" text="text-emerald-600" />
-           <PipelineCard label="In Transit" val={0} icon={<Truck size={22} />} border="border-l-indigo-400" bg="bg-indigo-50/50" text="text-indigo-600" />
-           <PipelineCard label="Completed Deliveries" val={0} icon={<CheckCircle2 size={22} />} border="border-l-purple-400" bg="bg-purple-50/50" text="text-purple-600" />
-        </div>
+        <StatusSection title="In Progress" count={inProgressBookings.length} icon={<TrendingUp size={18} className="text-indigo-600" />} borderColor="border-indigo-200" bgColor="bg-indigo-50/50">
+          {inProgressBookings.length === 0 ? (
+            <EmptyState message="No vehicles in progress" />
+          ) : (
+            inProgressBookings.slice(0, 8).map((booking) => (
+              <BookingRow key={booking._id} booking={booking} vehicleName={getVehicleName(booking)} onClick={() => navigate("/vehicles/orders")} />
+            ))
+          )}
+          {inProgressBookings.length > 8 && (
+            <button onClick={() => navigate("/vehicles/orders")} className="w-full mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-700 text-center py-2">
+              View all {inProgressBookings.length} in progress
+            </button>
+          )}
+        </StatusSection>
+
+        <StatusSection title="Completed" count={completedBookings.length} icon={<CheckCircle2 size={18} className="text-emerald-600" />} borderColor="border-emerald-200" bgColor="bg-emerald-50/50">
+          {completedBookings.length === 0 ? (
+            <EmptyState message="No delivered vehicles" />
+          ) : (
+            completedBookings.slice(0, 8).map((booking) => (
+              <BookingRow key={booking._id} booking={booking} vehicleName={getVehicleName(booking)} onClick={() => navigate("/vehicles/orders")} />
+            ))
+          )}
+          {completedBookings.length > 8 && (
+            <button onClick={() => navigate("/vehicles/orders")} className="w-full mt-3 text-xs font-semibold text-emerald-600 hover:text-emerald-700 text-center py-2">
+              View all {completedBookings.length} delivered
+            </button>
+          )}
+        </StatusSection>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <QuickActionTile title="Required Vehicles" desc="View and manage all vehicle bookings" icon={<ClipboardListIcon />} onClick={() => navigate("/vehicles/orders")} />
+        <QuickActionTile title="Vehicle List" desc="Browse available vehicle inventory" icon={<Car size={22} />} onClick={() => navigate("/vehicles/list")} />
+        {isAdmin && (
+          <QuickActionTile title="Add Vehicle Order" desc="Create a new required vehicle order" icon={<PlusIcon />} onClick={() => navigate("/vehicles/orders/add")} />
+        )}
       </div>
     </div>
   );
 };
 
-const KpiCard = ({ label, value, icon, color }: any) => (
-  <div className="rounded-2xl border border-slate-100 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-md transition-all">
-    <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-4 shadow-sm`}>
-      {icon}
-    </div>
-    <p className="text-[12px] font-bold text-slate-400 uppercase tracking-tight mb-1">{label}</p>
-    <h3 className="text-2xl font-black text-slate-800 dark:text-white mt-1 tracking-tight">{value}</h3>
+/* ---------------- Sub-components ---------------- */
+
+const SummaryCard = ({ label, value, icon, color, border }: { label: string; value: number; icon: React.ReactNode; color: string; border: string }) => (
+  <div className={`rounded-2xl border ${border} bg-white dark:bg-gray-900 p-5 shadow-sm hover:shadow-md transition-all`}>
+    <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-3`}>{icon}</div>
+    <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">{label}</p>
+    <h3 className="text-2xl font-black text-slate-800 dark:text-white mt-1">{value}</h3>
   </div>
 );
 
-const ActionTile = ({ title, desc, icon, onClick }: any) => (
-  <button onClick={onClick} className="cursor-pointer group relative overflow-hidden rounded-2xl border border-slate-100 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all text-left">
+const ActionCard = ({ label, value, icon, color, onClick }: { label: string; value: number; icon: React.ReactNode; color: string; onClick: () => void }) => (
+  <button onClick={onClick} className="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-4 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left w-full cursor-pointer">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className={color}>{icon}</span>
+        <span className="text-sm font-semibold text-slate-600 dark:text-gray-300">{label}</span>
+      </div>
+      <span className="text-lg font-black text-slate-800 dark:text-white">{value}</span>
+    </div>
+  </button>
+);
+
+const StatusBarSegment = ({ count, total, color }: { count: number; total: number; color: string }) => {
+  if (count === 0) return null;
+  const pct = (count / total) * 100;
+  return <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />;
+};
+
+const LegendDot = ({ color, label, value }: { color: string; label: string; value: number }) => (
+  <div className="flex items-center gap-1.5 text-xs">
+    <span className={`w-2.5 h-2.5 rounded-full ${color}`} />
+    <span className="text-slate-500 font-medium">{label}</span>
+    <span className="text-slate-800 font-bold">{value}</span>
+  </div>
+);
+
+const StatusSection = ({ title, count, icon, borderColor, bgColor, children }: { title: string; count: number; icon: React.ReactNode; borderColor: string; bgColor: string; children: React.ReactNode }) => (
+  <div className={`rounded-2xl border ${borderColor} bg-white dark:bg-gray-900 shadow-sm overflow-hidden`}>
+    <div className={`px-5 py-4 ${bgColor} border-b ${borderColor} flex items-center justify-between`}>
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="font-bold text-slate-800 dark:text-white">{title}</h3>
+      </div>
+      <span className="text-xs font-bold text-slate-500 bg-white dark:bg-gray-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-gray-700">
+        {count}
+      </span>
+    </div>
+    <div className="p-3 space-y-2 max-h-[420px] overflow-y-auto">
+      {children}
+    </div>
+  </div>
+);
+
+const BookingRow = ({ booking, vehicleName, onClick }: { booking: VehicleBookingItem; vehicleName: string; onClick: () => void }) => {
+  const meta = STATUS_META[booking.status];
+  return (
+    <button onClick={onClick} className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-slate-100 dark:border-gray-800 hover:border-blue-200 transition-all group cursor-pointer">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-sm font-bold text-slate-800 dark:text-gray-200 truncate pr-2">{vehicleName}</span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.badge} flex items-center gap-1 shrink-0`}>
+          {meta.icon}
+          {meta.label}
+        </span>
+      </div>
+      <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+        {booking.assignedDealerSnapshot?.name && (
+          <span className="flex items-center gap-1">
+            <Store size={10} />
+            {booking.assignedDealerSnapshot.name}
+          </span>
+        )}
+        {booking.assignedClientSnapshot?.name && (
+          <span className="flex items-center gap-1">
+            <User size={10} />
+            {booking.assignedClientSnapshot.name}
+          </span>
+        )}
+        {!booking.assignedDealerId && <span className="text-amber-500 font-semibold">No dealer</span>}
+        {booking.status === "payment_done" && (!booking.engineNumber || !booking.chassisNumber) && (
+          <span className="text-blue-500 font-semibold">Missing #</span>
+        )}
+      </div>
+    </button>
+  );
+};
+
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="py-8 text-center text-slate-400 text-sm italic">{message}</div>
+);
+
+const QuickActionTile = ({ title, desc, icon, onClick }: { title: string; desc: string; icon: React.ReactNode; onClick: () => void }) => (
+  <button onClick={onClick} className="group cursor-pointer relative overflow-hidden rounded-2xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all text-left">
     <div className="flex items-center justify-between relative z-10">
       <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
         {icon}
@@ -371,16 +403,23 @@ const ActionTile = ({ title, desc, icon, onClick }: any) => (
   </button>
 );
 
-const PipelineCard = ({ label, val, icon, border, bg, text }: any) => (
-  <div className={`flex items-center justify-between p-6 bg-white dark:bg-gray-900 rounded-2xl border border-slate-100 border-l-4 ${border} shadow-sm transition-all hover:shadow-md`}>
-     <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-        <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-none">{val}</h3>
-     </div>
-     <div className={`h-12 w-12 ${bg} rounded-xl flex items-center justify-center ${text} shadow-sm`}>
-        {icon}
-     </div>
-  </div>
+const ClipboardListIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <path d="M12 11h4" />
+    <path d="M12 16h4" />
+    <path d="M8 11h.01" />
+    <path d="M8 16h.01" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
 );
 
 export default Vehicles;
+

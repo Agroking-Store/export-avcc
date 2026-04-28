@@ -250,6 +250,10 @@ export const updateBookingStatus = async (
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
+  if (status === "delivered" && !booking.assignedClientId) {
+    throw new Error("Please allot a client before marking this vehicle as delivered.");
+  }
+
   booking.status = status;
   return await booking.save();
 };

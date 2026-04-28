@@ -34,9 +34,20 @@ const emptyVehicle = (): VehicleForm => ({
   freight: "",
 });
 
+import { useAuth } from "../../../hooks/useAuth";
+
 const AddVehicle = () => {
   const navigate = useNavigate();
+  const { isSourcingTeam } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  if (isSourcingTeam) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        You are not authorized to add vehicles.
+      </div>
+    );
+  }
   const [vehicles, setVehicles] = useState<VehicleForm[]>([emptyVehicle()]);
 
   const handleChange = (index: number, field: keyof VehicleForm, value: string) => {
