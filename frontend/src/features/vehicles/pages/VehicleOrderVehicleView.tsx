@@ -41,9 +41,12 @@ const STATUS_LABELS: Record<VehicleBookingStatus, string> = {
   delivered: "Delivered",
 };
 
+import { useAuth } from "../../../hooks/useAuth";
+
 const VehicleOrderVehicleView = () => {
   const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
   const navigate = useNavigate();
+  const { isSourcingTeam } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
@@ -221,13 +224,15 @@ const VehicleOrderVehicleView = () => {
             </button>
           </div>
 
-          <button
-            onClick={() => navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)}
-            className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-          >
-            <Truck size={16} />
-            Edit
-          </button>
+          {!isSourcingTeam && (
+            <button
+              onClick={() => navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)}
+              className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              <Truck size={16} />
+              Edit
+            </button>
+          )}
           <button
           onClick={() => navigate(`/vehicles/orders`)}
             className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"

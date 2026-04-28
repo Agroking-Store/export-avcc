@@ -22,7 +22,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 const AppNavigationSidebar: React.FC = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isSourcingTeam } = useAuth();
 
   const menuItems = [
     {
@@ -46,8 +46,13 @@ const AppNavigationSidebar: React.FC = () => {
     { name: "Companies", icon: <Users size={20} />, path: "/companies" },
   ];
 
+  // Sourcing Team only sees Vehicles module
+  const visibleMenuItems = isSourcingTeam
+    ? menuItems.filter((item) => item.name === "Vehicles")
+    : menuItems;
+
   if (user?.role === "admin") {
-    menuItems.push({
+    visibleMenuItems.push({
       name: "User Management",
       icon: <ShieldCheck size={20} />,
       path: "/user-management",
@@ -79,7 +84,7 @@ const AppNavigationSidebar: React.FC = () => {
           <SidebarMenu className="flex flex-col gap-2">
             {" "}
             {/* gap-2 for vertical spacing between menu items */}
-            {menuItems.map((item) => {
+            {visibleMenuItems.map((item) => {
               const isActive =
                 item.name === "Vehicles"
                   ? location.pathname.startsWith("/vehicles")
