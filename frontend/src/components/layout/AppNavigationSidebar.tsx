@@ -22,9 +22,10 @@ import { useAuth } from "../../hooks/useAuth";
 
 const AppNavigationSidebar: React.FC = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isSourcingTeam } = useAuth();
 
   const role = user?.role?.toLowerCase();
+
 
 const defaultMenuItems = [
   {
@@ -32,8 +33,16 @@ const defaultMenuItems = [
     icon: <LayoutDashboard size={20} />,
     path: "/dashboard",
   },
-  { name: "Vehicles", icon: <Car size={20} />, path: "/vehicles" },
-  { name: "Clients", icon: <Users size={20} />, path: "/clients" },
+  {
+    name: "Vehicles",
+    icon: <Car size={20} />,
+    path: "/vehicles",
+  },
+  {
+    name: "Clients",
+    icon: <Users size={20} />,
+    path: "/clients",
+  },
   {
     name: "Proforma Invoices",
     icon: <FileText size={20} />,
@@ -44,10 +53,14 @@ const defaultMenuItems = [
     icon: <Truck size={20} />,
     path: "/dealers/dashboard",
   },
-  { name: "Companies", icon: <Users size={20} />, path: "/companies" },
+  {
+    name: "Companies",
+    icon: <Users size={20} />,
+    path: "/companies",
+  },
 ];
 
-const menuItems =
+let menuItems =
   role === "accountant"
     ? [
         {
@@ -70,6 +83,15 @@ if (role === "admin") {
     path: "/user-management",
   });
 }
+
+const visibleMenuItems =
+  isSourcingTeam
+    ? menuItems.filter(
+        (item) =>
+          item.name === "Dashboard" ||
+          item.name === "Vehicles"
+      )
+    : menuItems;
 
   return (
     <>
@@ -96,7 +118,7 @@ if (role === "admin") {
           <SidebarMenu className="flex flex-col gap-2">
             {" "}
             {/* gap-2 for vertical spacing between menu items */}
-            {menuItems.map((item) => {
+            {visibleMenuItems.map((item) => {
               const isActive =
                 item.name === "Vehicles"
                   ? location.pathname.startsWith("/vehicles")

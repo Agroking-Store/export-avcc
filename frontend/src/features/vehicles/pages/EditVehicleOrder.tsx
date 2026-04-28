@@ -7,6 +7,7 @@ import {
   Save,
   ChevronsUpDown,
   Check,
+  X,
 } from "lucide-react";
 import {
   VehicleListItem,
@@ -26,11 +27,12 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { useAuth } from "../../../hooks/useAuth";
 
 const EditVehicleOrder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isSourcingTeam } = useAuth();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
@@ -39,19 +41,17 @@ const EditVehicleOrder = () => {
     quantity: "",
     status: "Pending" as "Pending" | "Confirmed" | "Completed",
   });
-
-  // New states for combobox
   const [vehicleOpen, setVehicleOpen] = useState(false);
 
   useEffect(() => {
+    if (isSourcingTeam || !id) return;
     const loadData = async () => {
       try {
         setOptionsLoading(true);
         const [options, order] = await Promise.all([
           vehicleManagementApi.getOrderOptions(),
-          vehicleManagementApi.getVehicleOrderById(id as string),
+          vehicleManagementApi.getVehicleOrderById(id),
         ]);
-
         setVehicles(options.vehicles || []);
         setForm({
           vehicleId: order.vehicleId,
@@ -64,19 +64,15 @@ const EditVehicleOrder = () => {
         setOptionsLoading(false);
       }
     };
-
-    if (id) loadData();
-  }, [id]);
+    loadData();
+  }, [id, isSourcingTeam]);
 
   const selectedVehicle = useMemo(
     () => vehicles.find((item) => item._id === form.vehicleId),
     [vehicles, form.vehicleId],
   );
 
-  const handleInputChange = useCallback((
-    field: string, 
-    value: any
-  ) => {
+  const handleInputChange = useCallback((field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
@@ -87,7 +83,6 @@ const EditVehicleOrder = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       setLoading(true);
       await vehicleManagementApi.updateVehicleOrder(id as string, {
@@ -95,7 +90,6 @@ const EditVehicleOrder = () => {
         quantity: Number(form.quantity),
         status: form.status,
       });
-
       navigate("/vehicles/orders", {
         state: { success: "Required vehicle updated successfully" },
       });
@@ -112,18 +106,25 @@ const EditVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const selectedVehicleName = selectedVehicle 
+  const selectedVehicleName = selectedVehicle
     ? `${selectedVehicle.brandName} ${selectedVehicle.modelName} - ${selectedVehicle.variant} (${selectedVehicle.color})`
     : "";
+
+  if (isSourcingTeam) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        You are not authorized to edit orders.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
       <div className="flex justify-between items-center mb-10">
         <div>
-Edit Required Vehicle
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit Required Vehicle</h1>
           <p className="text-sm text-gray-500 mt-1">Update vehicle, quantity and status</p>
         </div>
-
         <button
           onClick={() => navigate("/vehicles/orders")}
           className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
@@ -146,17 +147,10 @@ Edit Required Vehicle
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className={cn(
-                      inputStyle,
-                      "flex items-center justify-between cursor-pointer",
-                    )}
+                    className={cn(inputStyle, "flex items-center justify-between cursor-pointer")}
                     disabled={optionsLoading}
                   >
-                    <span
-                      className={
-                        selectedVehicleName ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"
-                      }
-                    >
+                    <span className={selectedVehicleName ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
                       {selectedVehicleName || "Choose vehicle..."}
                     </span>
                     <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
@@ -180,9 +174,7 @@ Edit Required Vehicle
                               <Check
                                 className={cn(
                                   "ml-auto h-4 w-4",
-                                  form.vehicleId === vehicle._id
-                                    ? "opacity-100"
-                                    : "opacity-0",
+                                  form.vehicleId === vehicle._id ? "opacity-100" : "opacity-0",
                                 )}
                               />
                             </CommandItem>
@@ -197,21 +189,25 @@ Edit Required Vehicle
 
             <div>
               <label className={labelStyle}><Save size={14} className="text-rose-400" /> Quantity</label>
-              <input 
-                name="quantity" 
-                type="number" 
-                min="1" 
-                value={form.quantity} 
+              <input
+                name="quantity"
+                type="number"
+                min="1"
+                value={form.quantity}
                 onChange={(e) => handleInputChange("quantity", e.target.value)}
-                className={inputStyle} 
+                className={inputStyle}
                 placeholder="0"
               />
-
             </div>
 
             <div className="md:col-span-2">
               <label className={labelStyle}><Save size={14} className="text-amber-500" /> Status</label>
-              <select name="status" value={form.status} onChange={(e) => handleInputChange("status", e.target.value)} className={`${inputStyle} cursor-pointer`}>
+              <select
+                name="status"
+                value={form.status}
+                onChange={(e) => handleInputChange("status", e.target.value)}
+                className={`${inputStyle} cursor-pointer`}
+              >
                 <option value="Pending">Pending</option>
                 <option value="Confirmed">Confirmed</option>
                 <option value="Completed">Completed</option>
@@ -228,7 +224,6 @@ Edit Required Vehicle
           >
             <X size={16} /> Discard Changes
           </button>
-
           <button
             type="submit"
             disabled={loading || optionsLoading}

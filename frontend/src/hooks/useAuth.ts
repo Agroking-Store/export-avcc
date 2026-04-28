@@ -15,5 +15,8 @@ export const useAuth = () => {
     isSourcing: user?.role === "sourcing_team",
     isClient: user?.role === "client",
     isDealer: user?.role === "dealer",
+    isSourcingTeam: user?.role === "sourcing_team",
+    isManager: user?.role === "manager",
+    isEmployee: user?.role === "employee",
   };
 };

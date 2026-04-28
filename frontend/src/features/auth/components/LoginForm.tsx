@@ -27,12 +27,14 @@ const LoginForm: React.FC = () => {
     setLoading(true);
   
     try {
-      const response = await dispatch(login(formData)).unwrap();
-  
-      const role = response?.user?.role?.toLowerCase();
-  
+      const result = await dispatch(login(formData)).unwrap();
+
+      const role = result?.user?.role?.toLowerCase();
+      
       if (role === "accountant") {
         navigate("/proforma-invoice/dashboard");
+      } else if (role === "sourcing_team") {
+        navigate("/vehicles/dashboard");
       } else {
         navigate("/dashboard");
       }

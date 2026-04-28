@@ -30,8 +30,9 @@ const RegisterForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await dispatch(register(formData)).unwrap();
-      navigate("/dashboard");
+      const result = await dispatch(register(formData)).unwrap();
+      const redirectPath = result?.user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+      navigate(redirectPath);
     } catch (error) {
       console.error("Registration failed:", error);
     } finally {

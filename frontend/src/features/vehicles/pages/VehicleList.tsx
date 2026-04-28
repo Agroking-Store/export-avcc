@@ -14,9 +14,12 @@ import {
   vehicleManagementApi,
 } from "../vehicleManagementApi";
 
+import { useAuth } from "../../../hooks/useAuth";
+
 const VehicleList = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSourcingTeam } = useAuth();
 
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -81,13 +84,15 @@ const VehicleList = () => {
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
               {vehicles.length} Vehicles
             </span>
-            <button
-              onClick={() => navigate("/vehicles/add")}
-              className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
-            >
-              <Plus size={18} strokeWidth={3} />
-              Add Vehicle
-            </button>
+            {!isSourcingTeam && (
+              <button
+                onClick={() => navigate("/vehicles/add")}
+                className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+              >
+                <Plus size={18} strokeWidth={3} />
+                Add Vehicle
+              </button>
+            )}
           </div>
         </div>
 
@@ -174,13 +179,15 @@ const VehicleList = () => {
                         >
                           <Eye size={18} />
                         </button>
-                        <button
-                          onClick={() => navigate(`/vehicles/edit/${vehicle._id}`)}
-                          className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                          title="Edit Vehicle"
-                        >
-                          <FilePenLine size={18} />
-                        </button>
+                        {!isSourcingTeam && (
+                          <button
+                            onClick={() => navigate(`/vehicles/edit/${vehicle._id}`)}
+                            className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
+                            title="Edit Vehicle"
+                          >
+                            <FilePenLine size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

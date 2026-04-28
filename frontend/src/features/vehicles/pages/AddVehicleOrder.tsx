@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { vehicleBookingApi } from "../../../services/vehicleBookingApi";
+import { useAuth } from "../../../hooks/useAuth";
 
 interface OrderEntry {
   vehicleId: string;
@@ -43,6 +44,7 @@ const emptyOrder = (): OrderEntry => ({
 
 const AddVehicleOrder = () => {
   const navigate = useNavigate();
+  const { isSourcingTeam } = useAuth();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
@@ -50,6 +52,7 @@ const AddVehicleOrder = () => {
   const [vehicleOpenMap, setVehicleOpenMap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
+    if (isSourcingTeam) return;
     const loadOptions = async () => {
       try {
         setOptionsLoading(true);
@@ -61,9 +64,8 @@ const AddVehicleOrder = () => {
         setOptionsLoading(false);
       }
     };
-
     loadOptions();
-  }, []);
+  }, [isSourcingTeam]);
 
   const handleInputChange = useCallback((index: number, field: keyof OrderEntry, value: any) => {
     setOrders((prev) =>
@@ -112,33 +114,32 @@ const AddVehicleOrder = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
     try {
       setLoading(true);
-
       for (const o of orders) {
         const order = await vehicleManagementApi.createVehicleOrder({
           vehicleId: o.vehicleId,
           quantity: Number(o.quantity),
         });
-
         try {
           await vehicleBookingApi.getByOrder(order._id);
         } catch {
           // Non-critical
         }
       }
-
       navigate("/vehicles/orders", {
         state: { success: `${orders.length} required vehicle(s) added successfully` },
       });
     } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || "Failed to add required vehicles",
-      );
+      toast.error(error.response?.data?.message || "Failed to add required vehicles");
     } finally {
       setLoading(false);
     }
+  };
+
+  const getVehicleName = (vehicleId: string) => {
+    const v = vehicles.find((item) => item._id === vehicleId);
+    return v ? `${v.brandName} ${v.modelName} - ${v.variant} (${v.color})` : "";
   };
 
   const inputStyle =
@@ -147,25 +148,21 @@ const AddVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const getVehicleName = (vehicleId: string) => {
-    const v = vehicles.find((item) => item._id === vehicleId);
-    return v
-      ? `${v.brandName} ${v.modelName} - ${v.variant} (${v.color})`
-      : "";
-  };
+  if (isSourcingTeam) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        You are not authorized to add required vehicles.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
       <div className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            Add Required Vehicle
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Select one or more vehicles from the vehicle list
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Add Required Vehicle</h1>
+          <p className="text-sm text-gray-500 mt-1">Select one or more vehicles from the vehicle list</p>
         </div>
-
         <button
           onClick={() => navigate("/vehicles/orders")}
           className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
@@ -205,9 +202,7 @@ const AddVehicleOrder = () => {
             <div className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
                 <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-                  Order Details
-                </h2>
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Order Details</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -224,28 +219,16 @@ const AddVehicleOrder = () => {
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className={cn(
-                          inputStyle,
-                          "flex items-center justify-between cursor-pointer",
-                        )}
+                        className={cn(inputStyle, "flex items-center justify-between cursor-pointer")}
                         disabled={optionsLoading}
                       >
-                        <span
-                          className={
-                            order.vehicleId
-                              ? "text-[#4A5568] dark:text-gray-200"
-                              : "text-[#A0AEC0]"
-                          }
-                        >
+                        <span className={order.vehicleId ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
                           {getVehicleName(order.vehicleId) || "Choose vehicle..."}
                         </span>
                         <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      className="w-[--radix-popover-trigger-width] p-0"
-                      align="start"
-                    >
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                       <Command>
                         <CommandInput placeholder="Search vehicle..." className="h-9" />
                         <CommandList>
@@ -263,9 +246,7 @@ const AddVehicleOrder = () => {
                                   <Check
                                     className={cn(
                                       "ml-auto h-4 w-4",
-                                      order.vehicleId === vehicle._id
-                                        ? "opacity-100"
-                                        : "opacity-0",
+                                      order.vehicleId === vehicle._id ? "opacity-100" : "opacity-0",
                                     )}
                                   />
                                 </CommandItem>
@@ -315,13 +296,12 @@ const AddVehicleOrder = () => {
           >
             <X size={16} /> Discard
           </button>
-
           <button
             type="submit"
             disabled={loading || optionsLoading}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><Save size={18} /> Save Order(s)</>}
+            {loading ? "Saving..." : <><Save size={18} /> Save Vehicle(s)</>}
           </button>
         </div>
       </form>
@@ -330,4 +310,3 @@ const AddVehicleOrder = () => {
 };
 
 export default AddVehicleOrder;
-
