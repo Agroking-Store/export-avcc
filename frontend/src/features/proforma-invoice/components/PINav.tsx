@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, ShoppingCart } from "lucide-react";
+import { LayoutDashboard, FileText } from "lucide-react";
 
 const PINav = () => {
   const location = useLocation();
@@ -15,11 +15,11 @@ const PINav = () => {
       icon: <FileText size={16} />,
       path: "/proforma-invoice/list",
     },
-    {
-      name: "Order Perspective",
-      icon: <ShoppingCart size={16} />,
-      path: "/proforma-invoice/orders-list",
-    },
+    // {
+    //   name: "Order Perspective",
+    //   icon: <ShoppingCart size={16} />,
+    //   path: "/proforma-invoice/orders-list",
+    // },
   ];
 
   const getIsActive = (itemPath: string) => {
