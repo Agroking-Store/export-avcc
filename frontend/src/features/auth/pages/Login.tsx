@@ -23,6 +23,7 @@ const Login: React.FC = () => {
         </div>
 
         {/* Right Side - Teal Panel */}
+        {/*
         <div className="md:w-2/5 bg-[#38b2ac] text-white p-12 flex flex-col justify-center items-center text-center relative overflow-hidden order-1 md:order-2">
           <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-white opacity-10 rounded-full"></div>
           <div className="absolute bottom-[-80px] left-[-20px] w-64 h-64 bg-white opacity-10 rounded-full"></div>
@@ -47,6 +48,7 @@ const Login: React.FC = () => {
             </Link>
           </div>
         </div>
+        */}
       </div>
     </div>
   );
