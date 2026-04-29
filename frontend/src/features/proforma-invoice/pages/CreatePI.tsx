@@ -331,27 +331,36 @@ const CreatePI = () => {
 
   // Fetch Order Logic
   const handleSelectBooking = (booking: any) => {
+    console.log("BOOKING DATA =", booking);
   setSelectedBooking(booking);
 
   const vehicle = booking.vehicleId || {};
 
-  const newVehicle = {
-    booking_id: booking._id,
-    vehicle_id: vehicle._id || "",
-    model: vehicle.modelName || "",
-    color: vehicle.color || "",
-    engineNo: booking.engineNumber || "",
-    chassisNo: booking.chassisNumber || "",
-    quantity: 1,
-    hsn: vehicle.hsn || "",
-    fob: vehicle.fob || 0,
-    freight: vehicle.freight || 0,
-    yom: vehicle.yom || "",
-    fuelType: vehicle.fuelType || "",
-    countryOfOrigin: vehicle.countryOfOrigin || "",
-    engineCapacity: vehicle.engineCapacity || "",
-    selected: true,
-  };
+const newVehicle = {
+  booking_id: booking._id,
+  vehicle_id: vehicle._id || "",
+
+  model: `${vehicle.brandName || ""} ${vehicle.modelName || ""} ${vehicle.variant || ""}`.trim(),
+
+  color: vehicle.color || "",
+
+  engineNo: booking.engineNumber || "",
+  chassisNo: booking.chassisNumber || "",
+
+  quantity: 1,
+
+  hsn: booking.hsnCode || "",
+
+  fob: vehicle.fobAmount || 0,
+  freight: booking.paymentAmount || vehicle.freight || 0,
+
+  yom: booking.yom || "",
+  fuelType: booking.fuelType || "",
+  countryOfOrigin: booking.countryOfOrigin || "",
+  engineCapacity: booking.engineCapacity || "",
+
+  selected: true,
+};
 
   setForm((prev) => {
   const alreadyAdded =
