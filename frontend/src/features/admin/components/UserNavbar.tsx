@@ -6,7 +6,8 @@ const UserNavbar = () => {
   const location = useLocation();
 
   const navItems = [
-    { name: "All Users", path: "/user-management/list", icon: ShieldCheck },
+    { name: "Dashboard", path: "/user-management/list", icon: ShieldCheck },
+    { name: "Users", path: "/user-management/users", icon: List },
   ];
 
   return (

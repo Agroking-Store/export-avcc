@@ -1,7 +1,10 @@
-import { ShieldCheck } from "lucide-react";
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import UserNavbar from "../components/UserNavbar";
 import UserManagementList from "./UserManagementList";
+import Users from "./Users";
+import { ShieldCheck } from "lucide-react";
+import AddUser from "./AddUser";
 
 const UserManagementModule = () => {
   return (
@@ -32,6 +35,8 @@ const UserManagementModule = () => {
           <Routes>
             <Route index element={<Navigate to="list" replace />} />
             <Route path="list" element={<UserManagementList />} />
+            <Route path="users" element={<Users />} />
+            <Route path="users/add" element={<AddUser />} />
           </Routes>
         </div>
       </div>
