@@ -3,20 +3,28 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import { toast } from "react-toastify";
-import { 
-  ArrowLeft, Edit, Building2, Mail, Phone, MapPin, 
-  Globe, Landmark, CreditCard, Activity, Calendar, 
-  ClipboardList, CheckCircle2, XCircle
+import {
+  ArrowLeft, Edit, Building2, Mail, Phone, MapPin,
+  Globe, Landmark, CreditCard, Activity, Calendar,
+  ClipboardList, CheckCircle2, XCircle,
+  Info,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Company } from "../components/company.types";
 
+interface CompanyProfomaInvoice {
+  _id: string;
+  totalAmount: number;
+  buyersRef: string
+}
 const CompanyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
+  const [piPdfLoading, setPiPdfLoading] = useState<string | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyInvoices, setCompanyInvoices] = useState<CompanyProfomaInvoice[]>([]);
 
   useEffect(() => {
     const fetchCompanyDetails = async () => {
@@ -37,7 +45,69 @@ const CompanyDetails: React.FC = () => {
     };
     if (id) fetchCompanyDetails();
   }, [id, navigate]);
+  useEffect(() => {
+    const fetchCompanyInvoices = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get<CompanyProfomaInvoice[]>(`${apiConfig.baseURL}/companies/proformainvoice/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("accessToken")}`,
+          },
+        });
+        setCompanyInvoices(res.data)
+      } catch (err: any) {
+        toast.error("Failed to load company details.");
+        navigate("/companies/list");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchCompanyInvoices();
+  }, [id, navigate]);
 
+  useEffect(() => {
+    console.log("companyInvoices updated:", companyInvoices);
+  }, [companyInvoices]);
+  const handlePiPdfAction = async (
+    id: string,
+    action: "view"
+  ) => {
+    try {
+      setPiPdfLoading(id);
+      let token =
+        localStorage.getItem("token") || localStorage.getItem("accessToken");
+      if (!token && localStorage.getItem("user")) {
+        try {
+          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+          token = userObj.token || userObj.accessToken;
+        } catch (e) { }
+      }
+      if (token && token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1);
+      }
+
+      const res = await axios.get(
+        `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
+        {
+          responseType: "blob",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      const url = window.URL.createObjectURL(
+        new Blob([res.data], { type: "application/pdf" })
+      );
+
+      if (action === "view") {
+        window.open(url, "_blank");
+      } 
+    } catch (error) {
+      console.error("PDF Action Error", error);
+      toast.error("Failed to process PDF");
+    } finally {
+      setPiPdfLoading(null);
+    }
+  };
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -64,8 +134,9 @@ const CompanyDetails: React.FC = () => {
   if (!company) return null;
 
   return (
+
     <div className="w-full animate-in fade-in duration-500">
-      
+
       {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-6">
         <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
@@ -91,10 +162,10 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         {/* LEFT COLUMN: Main Details */}
-        <div className="lg:col-span-9 space-y-6">
-          
+        <div className="lg:col-span-12 space-y-6">
+
           {/* PROFILE CARD */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
@@ -121,11 +192,19 @@ const CompanyDetails: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InfoBox label="Email Address" value={company.email} icon={Mail} />
                 <InfoBox label="Phone Number" value={company.phone} icon={Phone} />
+
                 <InfoBox label="GST Number" value={company.gstNumber} icon={CreditCard} />
                 <InfoBox label="Region" value={company.address?.country} icon={Globe} />
+
+
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <InfoBox
+                  label="Registered On"
+                  value={formatDate(company.createdAt)}
+                  icon={Calendar}
+                />
                 <InfoBox label="Registered Office Address" value={`${company.address?.houseBuilding}, ${company.address?.streetArea}, ${company.address?.cityTown}, ${company.address?.state} - ${company.address?.pincode}`} icon={MapPin} />
               </div>
             </div>
@@ -138,7 +217,7 @@ const CompanyDetails: React.FC = () => {
                 <Landmark size={18} className="text-emerald-500" />
                 <h2 className="text-lg font-bold text-[#1B2559]">Banking Information</h2>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
                   <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">Bank Name</p>
@@ -155,34 +234,78 @@ const CompanyDetails: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
 
-        {/* RIGHT COLUMN: Sidebar Cards */}
-        <div className="lg:col-span-3 space-y-5 lg:sticky lg:top-6">
-          
-          {/* STATUS CARD */}
-          <div className={`rounded-2xl p-5 border shadow-sm transition-all hover:shadow-lg ${company.isActive ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-            <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5 ${company.isActive ? 'text-green-700' : 'text-red-700'}`}>
-              <Activity size={12} /> Status
-            </p>
-            <div className="flex items-center gap-2">
-              {company.isActive ? <CheckCircle2 size={24} className="text-green-600" /> : <XCircle size={24} className="text-red-600" />}
-              <h3 className={`text-xl font-black ${company.isActive ? 'text-green-900' : 'text-red-900'}`}>
-                {company.isActive ? 'ACTIVE' : 'INACTIVE'}
-              </h3>
+          {/* BANKING CARD */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-5 transition-shadow hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6 border-b border-gray-50 pb-4">
+              <Info size={18} className="text-cyan-600" />
+              <h2 className="text-lg font-bold text-[#1B2559]">
+                Performa Invoice Details
+              </h2>
+            </div>
+
+            <div className="overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
+              <table className="min-w-full text-sm text-left">
+
+                {/* HEADER */}
+                <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Proforma Invoice Id</th>
+                    <th className="px-4 py-3">Buyers Reference</th>
+                    <th className="px-4 py-3">Grand Total</th>
+                    <th className="px-4 py-3 text-center">Action</th> {/* NEW */}
+                  </tr>
+                </thead>
+
+                {/* BODY */}
+                <tbody className="divide-y">
+                  {companyInvoices.map((v, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition">
+
+                      <td className="px-4 py-3">{v._id}</td>
+
+                      <td className="px-4 py-3 font-medium">
+                        {v.buyersRef}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {v.totalAmount}
+                      </td>
+
+                      {/* ACTION COLUMN */}
+                      <td className="px-4 py-3 text-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-10 w-10 p-0 cursor-pointer"
+                          onClick={() =>
+                            handlePiPdfAction(
+                              v._id,
+                            
+                              "view"
+                            )
+                          }
+                          disabled={piPdfLoading === v._id}
+                        >
+                          <Eye
+                            className={`h-5 w-5 ${piPdfLoading === v._id
+                                ? "text-gray-400 animate-pulse"
+                                : "text-slate-600"
+                              } cursor-pointer`}
+                          />
+                        </Button>
+                      </td>
+
+                    </tr>
+                  ))}
+                </tbody>
+
+              </table>
             </div>
           </div>
-
-          {/* DATE CARD */}
-          <div className="bg-[#F0F5FF] rounded-2xl p-5 border border-[#D6E4FF] shadow-sm group transition-all hover:-translate-y-1 hover:shadow-lg">
-            <p className="text-[9px] font-bold text-blue-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-              <Calendar size={12} /> Registered On
-            </p>
-            <h3 className="text-lg font-bold text-blue-900">
-              {formatDate(company.createdAt)}
-            </h3>
-          </div>
         </div>
+
+
 
       </div>
     </div>

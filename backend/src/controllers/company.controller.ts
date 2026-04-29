@@ -3,6 +3,7 @@ import {
   createCompanyService,
   getCompaniesService,
   getCompanyByIdService,
+  getCompanyProformaInvoiceService,
   updateCompanyService,
 } from "../services/company.service";
 import {
@@ -52,5 +53,14 @@ export const updateCompany = async (req: Request, res: Response) => {
     } else {
       res.status(400).json({ message: error.message });
     }
+  }
+};
+
+export const getCompanyProformaInvoice = async (req: Request, res: Response) => {
+  try {
+    const companyInvoices = await getCompanyProformaInvoiceService(req.params.id as string);
+    res.status(200).json(companyInvoices);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
   }
 };

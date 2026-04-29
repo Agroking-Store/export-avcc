@@ -11,6 +11,7 @@ import {
   Hash,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { apiConfig } from "@/config/apiConfig";
 
 const InfoBox = ({ label, value, icon: Icon }: any) => (
   <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:shadow-md hover:-translate-y-1">
@@ -25,8 +26,9 @@ const DealerDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [dealer, setDealer] = useState<any>(null);
-
+  const [dealerVehicles, setDealerVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
 
   useEffect(() => {
     axios
@@ -38,6 +40,32 @@ const DealerDetails = () => {
       .catch((error: any) => {
         toast.error(error.response?.data?.message || "Failed to load dealer");
         setLoading(false);
+      });
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    setVehiclesLoading(true);
+
+    axios
+      .get(`http://localhost:5000/api/v1/dealers/${id}/getVehicles`)
+      .then((res) => {
+        const vehicles = res.data.data;
+
+        if (!vehicles.length) {
+          toast.info("No vehicles found");
+        }
+
+        setDealerVehicles(vehicles);
+      })
+      .catch((error: any) => {
+        toast.error(
+          error.response?.data?.message || "Failed to load vehicles"
+        );
+      })
+      .finally(() => {
+        setVehiclesLoading(false);
       });
   }, [id]);
 
@@ -77,10 +105,11 @@ const DealerDetails = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN */}
-        <div className="lg:col-span-9 space-y-6">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 transition-shadow hover:shadow-md">
+      {/* FULL WIDTH CONTENT */}
+      <div className="w-full">
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 md:p-10 transition-shadow hover:shadow-md">
+
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 dark:border-gray-800 pb-4">
               <ClipboardList size={18} className="text-gray-400" />
               <h2 className="text-lg font-bold text-[#1B2559] dark:text-white">
@@ -103,57 +132,77 @@ const DealerDetails = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoBox
-                  label="Phone Number"
-                  value={dealer.contact}
-                  icon={Phone}
-                />
-                <InfoBox
-                  label="Email Address"
-                  value={dealer.email}
-                  icon={Mail}
-                />
-                <InfoBox
-                  label="GST Number"
-                  value={dealer.gstNumber}
-                  icon={Hash}
-                />
+              {/* UPDATED GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <InfoBox label="Phone Number" value={dealer.contact} icon={Phone} />
+                <InfoBox label="Email Address" value={dealer.email} icon={Mail} />
+                <InfoBox label="GST Number" value={dealer.gstNumber} icon={Hash} />
                 <InfoBox label="Address" value={dealer.address} icon={MapPin} />
               </div>
             </div>
           </div>
         </div>
+        <div className=" mt-5 overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
+          <table className="min-w-full text-sm text-left">
 
-        {/* SIDEBAR CARDS */}
-        <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-6">
-          <div className="bg-[#EBFDF5] dark:bg-emerald-900/20 rounded-2xl p-5 border border-[#D1FAE5] dark:border-emerald-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#D1FAE5] dark:hover:bg-emerald-900/30">
-            <p className="text-[9px] font-bold uppercase tracking-widest mb-2 text-emerald-600">
-              Status
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] animate-pulse"></div>
-              <h3 className="text-xl font-bold text-emerald-900 dark:text-emerald-400">
-                Active
-              </h3>
-            </div>
-          </div>
+            {/* HEADER */}
+            <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
+              <tr>
+                <th className="px-4 py-3">#</th>
 
-          <div className="bg-[#EBF8FF] dark:bg-blue-900/20 rounded-2xl p-5 border border-[#BEE3F8] dark:border-blue-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#BEE3F8]/30 group">
-            <p className="text-[9px] font-bold text-blue-800 dark:text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 transition-colors group-hover:text-blue-900">
-              <Building2 size={12} /> Dealer Type
-            </p>
-            <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300 group-hover:scale-105 transition-transform origin-left">
-              Authorized Partner
-            </h3>
-          </div>
+                <th className="px-4 py-3">Engine / Chassis</th>
 
-          <button
-            onClick={() => navigate(`/dealers/edit/${dealer._id}`)}
-            className="cursor-pointer w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all active:scale-95"
-          >
-            Edit Dealer
-          </button>
+                <th className="px-4 py-3">Vehicle Name</th>
+
+                <th className="px-4 py-3">variant</th>
+
+                <th className="px-4 py-3">Status</th>
+
+                <th className="px-4 py-3">Delivery Date</th>
+              </tr>
+            </thead>
+            {/* BODY */}
+            <tbody className="divide-y">
+              {dealerVehicles.map((v: any, index: number) => (
+                <tr key={v._id} className="hover:bg-gray-50 transition">
+
+                  {/* Serial Number */}
+                  <td className="px-4 py-3 font-medium text-gray-700">
+                    {index + 1}
+                  </td>
+
+                  {/* Engine / Chassis */}
+                  <td className="px-4 py-3 text-xs font-mono">
+                    {v.engineNumber || "-"} / {v.chassisNumber || "-"}
+                  </td>
+
+                  {/* Brand_Model */}
+                  <td className="px-4 py-3">
+                    {v.brandName|| "-"}_{v.modelName|| "-"}
+                  </td>
+
+                  {/* Variant */}
+                  <td className="px-4 py-3">
+                    {v.variant|| "-"}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-4 py-3 capitalize">
+                    {v.status || "-"}
+                  </td>
+
+                  {/* Date */}
+                  <td className="px-4 py-3 text-gray-600">
+                    {v.deliveryDate
+                      ? new Date(v.deliveryDate).toLocaleDateString()
+                      : new Date(v.createdAt).toLocaleDateString()}
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+
+          </table>
         </div>
       </div>
     </div>
