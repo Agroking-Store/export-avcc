@@ -167,43 +167,40 @@ const prepareTaxData = (
     pi.clientSnapshot ||
     pi.client_id;
 
-  const items =
-    (pi.vehicleDetails || []).map(
-      (
-        v: any,
-        index: number
-      ) => {
-        const rate =
-          Number(v.fob || 0) +
-          Number(
-            v.freight || 0
-          );
+  const items = (pi.vehicleDetails || []).map(
+  (v: any, index: number) => {
+    const rate =
+      Number(v.fob || 0) +
+      Number(v.freight || 0);
 
-        const qty = Number(
-          v.quantity || 0
-        );
+    const qty = Number(v.quantity || 0);
 
-        return {
+    return {
           sr: index + 1,
-          model:
-            v.model || "",
-          qty,
-          rate:
-            rate.toFixed(2),
-          amount: (
-            qty * rate
-          ).toFixed(2),
-          chassisNo:
-            v.chassisNo ||
-            "",
-          engineNo:
-            v.engineNo ||
-            "",
-          color:
-            v.color || "",
-          hsn:
-            v.hsn ||
-            "87032291",
+    
+          model: v.model || "",
+          make: v.make || "",
+    
+          chassisNo: v.chassisNo || "",
+          engineNo: v.engineNo || "",
+    
+          year: v.year || v.yom || "",
+          registrationDate: v.registrationDate || "",
+    
+          vehicleType: v.vehicleType || "",
+          countryOrigin: v.countryOfOrigin || "INDIA",
+    
+          inspectionNo: v.inspectionNo || "",
+          inspectionDate: v.inspectionDate || "",
+    
+          color: v.color || "",
+          hsn: v.hsn || "87032291",
+    
+          fob: Number(v.fob || 0).toFixed(2),
+          freight: Number(v.freight || 0).toFixed(2),
+    
+          per: "No",
+          amount: (qty * rate).toFixed(2),
         };
       }
     );

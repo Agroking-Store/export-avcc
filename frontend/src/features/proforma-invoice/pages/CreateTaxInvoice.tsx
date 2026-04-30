@@ -2,28 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-
-import {
-  FileText,
-  Save,
-  Eye,
-  ArrowLeft,
-  Ship,
-  Landmark,
-  BadgeDollarSign,
-  ClipboardList,
-  Calculator,
-  Hash,
-  Calendar,
-  Truck,
-  Scale,
-  MessageSquare,
-} from "lucide-react";
-
+import { Save, Eye, ArrowLeft } from "lucide-react";
 import { apiConfig } from "@/config/apiConfig";
 
 /* =====================================================
-   REUSABLE FIELD
+   FIELD
 ===================================================== */
 
 type FieldProps = {
@@ -55,45 +38,13 @@ const Field = ({
         value={value ?? ""}
         onChange={onChange}
         disabled={disabled}
-        className={`h-11 w-full rounded-2xl border px-4 text-sm outline-none transition-all
+        className={`h-11 w-full rounded-2xl border px-4 text-sm outline-none
         ${
           disabled
             ? "bg-slate-100 border-slate-200 text-slate-500"
-            : "bg-white border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            : "bg-white border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
         }`}
       />
-    </div>
-  );
-};
-
-/* =====================================================
-   SECTION WRAPPER
-===================================================== */
-
-const SectionCard = ({
-  title,
-  icon: Icon,
-  iconColor,
-  children,
-}: {
-  title: string;
-  icon: any;
-  iconColor: string;
-  children: React.ReactNode;
-}) => {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center gap-3">
-        <div
-          className={`h-10 w-10 rounded-2xl flex items-center justify-center ${iconColor}`}
-        >
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-
-        <h2 className="text-lg font-black text-slate-800">{title}</h2>
-      </div>
-
-      <div className="p-6">{children}</div>
     </div>
   );
 };
@@ -109,6 +60,7 @@ const CreateTaxInvoice = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState("");
+
   const [vehicles, setVehicles] = useState<any[]>([]);
 
   const [form, setForm] = useState({
@@ -118,42 +70,28 @@ const CreateTaxInvoice = () => {
     piNo: "",
     piDate: "",
 
+    lcNo: "",
+    lcDate: "",
+
     buyerOrderDate: "",
     otherReference: "",
 
-    preCarriage: "",
-    placeReceipt: "",
-    vesselFlight: "",
-    shipmentMode: "BY SEA",
+    paymentTerms: "",
+    dispatchedThrough: "",
+    destination: "",
 
     portOfLoading: "",
     portOfDischarge: "",
-    placeDelivery: "",
     countryDestination: "",
 
-    countryOrigin: "INDIA",
-    totalCartons: "1",
-    termsOfDelivery: "",
-
-    stateOfOrigin: "Maharashtra",
-    districtOfOrigin: "Pune",
-
-    drawbackShipment: "YES",
-    rodtepSchemeCode: "",
-    endUseCode: "",
-    igstPaymentStatus: "YES",
-    shipmentExportUnderIgst: "YES",
-    adCode: "",
+    exportInspectionNo: "",
+    exportInspectionDate: "",
 
     bankName: "",
     accountNo: "",
     ifsc: "",
     swiftCode: "",
 
-    netWeight: "",
-    grossWeight: "",
-
-    gstPercent: 0,
     remarks: "",
   });
 
@@ -187,34 +125,34 @@ const CreateTaxInvoice = () => {
 
         setForm((prev) => ({
           ...prev,
-          taxInvoiceNo: "TI-" + Date.now().toString().slice(-6),
+
+          taxInvoiceNo: "CI-" + Date.now().toString().slice(-6),
 
           piNo: pi.piNumber || "",
           piDate: pi.createdAt?.slice(0, 10) || "",
 
+          paymentTerms: pi.termsOfDelivery || "",
+          destination: pi.destination || "",
+
           portOfLoading: pi.portOfLoading || "",
           portOfDischarge: pi.portOfDischarge || "",
-          placeDelivery: pi.destination || "",
 
           countryDestination:
             pi.clientSnapshot?.address?.country ||
             pi.clientSnapshot?.country ||
             "",
 
-          termsOfDelivery: pi.termsOfDelivery || "",
-
           bankName:
             pi.companySnapshot?.bankDetails?.bankName || "",
+
           accountNo:
             pi.companySnapshot?.bankDetails?.accountNo || "",
+
           ifsc:
             pi.companySnapshot?.bankDetails?.branchIfsc || "",
+
           swiftCode:
             pi.companySnapshot?.bankDetails?.swiftCode || "",
-
-          totalCartons: String(
-            pi.vehicleDetails?.length || 1
-          ),
         }));
       } catch {
         toast.error("Failed to load PI details");
@@ -227,10 +165,10 @@ const CreateTaxInvoice = () => {
   }, [piId]);
 
   /* =====================================================
-     TOTALS
+     TOTAL
   ===================================================== */
 
-  const subtotal = useMemo(() => {
+  const grandTotal = useMemo(() => {
     return vehicles.reduce(
       (sum, v) =>
         sum +
@@ -239,14 +177,6 @@ const CreateTaxInvoice = () => {
       0
     );
   }, [vehicles]);
-
-  const gstAmount = useMemo(() => {
-    return subtotal * (Number(form.gstPercent) / 100);
-  }, [subtotal, form.gstPercent]);
-
-  const grandTotal = useMemo(() => {
-    return subtotal + gstAmount;
-  }, [subtotal, gstAmount]);
 
   /* =====================================================
      SAVE
@@ -261,17 +191,17 @@ const CreateTaxInvoice = () => {
         {
           piId,
           ...form,
-          subtotal,
-          gstAmount,
+          subtotal: grandTotal,
+          gstAmount: 0,
           grandTotal,
         }
       );
 
       setSavedId(res.data.data._id);
 
-      toast.success("Tax Invoice Saved");
+      toast.success("Commercial Invoice Saved");
     } catch {
-      toast.error("Failed to save Tax Invoice");
+      toast.error("Failed to save invoice");
     } finally {
       setSaving(false);
     }
@@ -295,183 +225,144 @@ const CreateTaxInvoice = () => {
   }
 
   return (
-  <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
+    <div className="w-full bg-white rounded-[2rem] shadow-sm border border-gray-100 px-6 py-8 md:px-10 md:py-10">
 
-    {/* HEADER */}
-    <div className="flex justify-between items-center mb-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Generate Export Invoice
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Create tax invoice from PI {form.piNo}
-        </p>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-10">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Generate Commercial Invoice
+          </h1>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Create invoice from PI {form.piNo}
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
       </div>
 
-      <button
-        onClick={() => navigate(-1)}
-        className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
-      >
-        <ArrowLeft size={18} /> Back
-      </button>
-    </div>
+      <form className="space-y-10">
 
-    <form className="space-y-10">
-
-      {/* BASIC DETAILS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Basic Information
+        {/* BASIC */}
+        <div>
+          <h2 className="text-base font-bold mb-5 text-gray-700">
+            Basic Details
           </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Field label="Invoice No" name="taxInvoiceNo" value={form.taxInvoiceNo} onChange={handleChange} />
+            <Field label="Invoice Date" name="invoiceDate" value={form.invoiceDate} onChange={handleChange} type="date" />
+            <Field label="PI No" value={form.piNo} disabled />
+            <Field label="PI Date" value={form.piDate} disabled />
+            <Field label="LC No" name="lcNo" value={form.lcNo} onChange={handleChange} />
+            <Field label="LC Date" name="lcDate" value={form.lcDate} onChange={handleChange} type="date" />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Field label="Tax Invoice No" name="taxInvoiceNo" value={form.taxInvoiceNo} onChange={handleChange} />
-          <Field label="Invoice Date" name="invoiceDate" value={form.invoiceDate} onChange={handleChange} type="date" />
-          <Field label="PI Number" value={form.piNo} disabled />
-          <Field label="PI Date" value={form.piDate} disabled />
-          <Field label="Buyer Order & Date" name="buyerOrderDate" value={form.buyerOrderDate} onChange={handleChange} />
-          <Field label="Other Reference" name="otherReference" value={form.otherReference} onChange={handleChange} />
-        </div>
-      </div>
-
-      {/* SHIPPING */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-cyan-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Shipping Details
+        {/* SHIPPING */}
+        <div>
+          <h2 className="text-base font-bold mb-5 text-gray-700">
+            Shipment Details
           </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Field label="Payment Terms" name="paymentTerms" value={form.paymentTerms} onChange={handleChange} />
+            <Field label="Dispatched Through" name="dispatchedThrough" value={form.dispatchedThrough} onChange={handleChange} />
+            <Field label="Destination" name="destination" value={form.destination} onChange={handleChange} />
+
+            <Field label="Port Of Loading" name="portOfLoading" value={form.portOfLoading} onChange={handleChange} />
+            <Field label="Port Of Discharge" name="portOfDischarge" value={form.portOfDischarge} onChange={handleChange} />
+            <Field label="Country Destination" name="countryDestination" value={form.countryDestination} onChange={handleChange} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Field label="Pre Carriage" name="preCarriage" value={form.preCarriage} onChange={handleChange} />
-          <Field label="Place Receipt" name="placeReceipt" value={form.placeReceipt} onChange={handleChange} />
-          <Field label="Vessel / Flight" name="vesselFlight" value={form.vesselFlight} onChange={handleChange} />
-          <Field label="Shipment Mode" name="shipmentMode" value={form.shipmentMode} onChange={handleChange} />
+        {/* CERTIFICATE */}
+        <div>
+          <h2 className="text-base font-bold mb-5 text-gray-700">
+            Certification
+          </h2>
 
-          <Field label="Port Loading" name="portOfLoading" value={form.portOfLoading} onChange={handleChange} />
-          <Field label="Port Discharge" name="portOfDischarge" value={form.portOfDischarge} onChange={handleChange} />
-          <Field label="Place Delivery" name="placeDelivery" value={form.placeDelivery} onChange={handleChange} />
-          <Field label="Destination Country" name="countryDestination" value={form.countryDestination} onChange={handleChange} />
-
-          <Field label="Country Origin" name="countryOrigin" value={form.countryOrigin} onChange={handleChange} />
-          <Field label="Total Cartons" name="totalCartons" value={form.totalCartons} onChange={handleChange} />
-          <Field label="State Of Origin" name="stateOfOrigin" value={form.stateOfOrigin} onChange={handleChange} />
-          <Field label="District Of Origin" name="districtOfOrigin" value={form.districtOfOrigin} onChange={handleChange} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Field label="Export Inspection No" name="exportInspectionNo" value={form.exportInspectionNo} onChange={handleChange} />
+            <Field label="Inspection Date" name="exportInspectionDate" value={form.exportInspectionDate} onChange={handleChange} type="date" />
+          </div>
         </div>
 
-        <Field label="Terms Of Delivery" name="termsOfDelivery" value={form.termsOfDelivery} onChange={handleChange} />
-      </div>
-
-      {/* BANK DETAILS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
+        {/* BANK */}
+        <div>
+          <h2 className="text-base font-bold mb-5 text-gray-700">
             Bank Details
           </h2>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Field label="Bank Name" name="bankName" value={form.bankName} onChange={handleChange} />
-          <Field label="Account No" name="accountNo" value={form.accountNo} onChange={handleChange} />
-          <Field label="IFSC" name="ifsc" value={form.ifsc} onChange={handleChange} />
-          <Field label="SWIFT" name="swiftCode" value={form.swiftCode} onChange={handleChange} />
-        </div>
-      </div>
-
-      {/* WEIGHT DETAILS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-purple-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Weight Details
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Field label="Net Weight" name="netWeight" value={form.netWeight} onChange={handleChange} />
-          <Field label="Gross Weight" name="grossWeight" value={form.grossWeight} onChange={handleChange} />
-        </div>
-      </div>
-
-      {/* TOTALS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Totals
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Field label="GST %" name="gstPercent" value={form.gstPercent} onChange={handleChange} />
-
-          <div className="bg-[#F8F9FB] rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase">Subtotal</p>
-            <p className="font-bold text-lg">${subtotal.toFixed(2)}</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Field label="Bank Name" name="bankName" value={form.bankName} onChange={handleChange} />
+            <Field label="Account No" name="accountNo" value={form.accountNo} onChange={handleChange} />
+            <Field label="IFSC" name="ifsc" value={form.ifsc} onChange={handleChange} />
+            <Field label="SWIFT" name="swiftCode" value={form.swiftCode} onChange={handleChange} />
           </div>
+        </div>
 
-          <div className="bg-[#F8F9FB] rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase">Tax</p>
-            <p className="font-bold text-lg">${gstAmount.toFixed(2)}</p>
-          </div>
+        {/* TOTAL */}
+        <div>
+          <h2 className="text-base font-bold mb-5 text-gray-700">
+            Total Amount
+          </h2>
 
-          <div className="bg-indigo-600 text-white rounded-xl p-4">
+          <div className="rounded-2xl bg-indigo-600 text-white p-6 w-fit min-w-[240px]">
             <p className="text-xs uppercase opacity-70">Grand Total</p>
-            <p className="font-bold text-xl">${grandTotal.toFixed(2)}</p>
+            <p className="text-3xl font-black">
+              ${grandTotal.toFixed(2)}
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* REMARKS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-orange-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
+        {/* REMARKS */}
+        <div>
+          <h2 className="text-base font-bold mb-5 text-gray-700">
             Remarks
           </h2>
+
+          <Field
+            label="Remarks"
+            name="remarks"
+            value={form.remarks}
+            onChange={handleChange}
+          />
         </div>
 
-        <Field label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} />
-      </div>
+        {/* FOOTER */}
+        <div className="flex justify-end gap-4 pt-8 border-t border-gray-100">
 
-      {/* FOOTER */}
-      <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={handlePreview}
+            disabled={!savedId}
+            className="px-8 py-3 rounded-xl border border-gray-200 font-semibold disabled:opacity-40"
+          >
+            <Eye size={16} className="inline mr-2" />
+            Preview
+          </button>
 
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-all"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          onClick={handlePreview}
-          disabled={!savedId}
-          className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-xs uppercase tracking-widest disabled:opacity-40"
-        >
-          <Eye size={16} /> Preview
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all disabled:opacity-70"
-        >
-          <Save size={16} />
-          {saving ? "Saving..." : "Save Invoice"}
-        </button>
-      </div>
-    </form>
-  </div>
-);
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-10 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+          >
+            <Save size={16} className="inline mr-2" />
+            {saving ? "Saving..." : "Save Invoice"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 };
 
 export default CreateTaxInvoice;
