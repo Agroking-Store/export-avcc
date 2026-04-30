@@ -246,30 +246,75 @@
             <tbody>
                 <!-- ITEMS DATA -->
                 {{#each items}}
-                <tr>
-                    <td class="text-center">{{slNo}}</td>
-                    <td>
-                        <div class="bold">{{description}}</div>
-                        {{#if specs.color}}<div class="spec-line">EXTERIOR COLOUR: {{specs.color}}</div>{{/if}}
-                        {{#if specs.chassisNo}}<div class="spec-line">CHASSIS NO: {{specs.chassisNo}}</div>{{/if}}
-                        {{#if specs.engineNo}}<div class="spec-line">ENGINE NO: {{specs.engineNo}}</div>{{/if}}
-                        {{#if specs.engineCapacity}}<div class="spec-line">ENGINE CAPACITY: {{specs.engineCapacity}}
-                        </div>{{/if}}
-                        {{#if specs.fuelType}}<div class="spec-line">FUEL TYPE: {{specs.fuelType}}</div>{{/if}}
-                        {{#if specs.countryOfOrigin}}<div class="spec-line">COUNTRY OF ORIGIN :
-                            {{specs.countryOfOrigin}}</div>{{/if}}
-                        {{#if specs.hsn}}<div class="spec-line">HSN CODE: {{specs.hsn}}</div>{{/if}}
-                        {{#if specs.yom}}<div class="spec-line">YOM: {{specs.yom}}</div>{{/if}}
-                        {{#if specs.fob}}<div class="spec-line">FOB: USD {{specs.fob}}</div>{{/if}}
-                        {{#if specs.freight}}<div class="spec-line">FREIGHT: USD {{specs.freight}}</div>{{/if}}
-                    </td>
-                    <td class="text-center">{{specs.hsn}}</td>
-                    <td class="text-center bold">{{qty}} {{per}}</td>
-                    <td class="text-right">{{rate}}</td>
-                    <td class="text-center">{{per}}</td>
-                    <td class="text-right bold">{{amount}}</td>
-                </tr>
-                {{/each}}
+
+    <!-- MAIN ITEM ROW -->
+    <tr>
+        <td class="text-center">{{slNo}}</td>
+    
+        <td class="bold">
+            {{description}}
+        </td>
+    
+        <td class="text-center">{{specs.hsn}}</td>
+    
+        <td class="text-center bold">{{qty}} {{per}}</td>
+    
+        <td class="text-right">{{rate}}</td>
+    
+        <td class="text-center">{{per}}</td>
+    
+        <td class="text-right bold">{{amount}}</td>
+        </tr>
+        
+        <!-- SPECS ROW -->
+        <tr>
+            <td style="border-top:none;"></td>
+        
+            <td style="border-top:none;">
+                {{#if specs.color}}<div class="spec-line">EXTERIOR COLOUR: {{specs.color}}</div>{{/if}}
+        
+        {{#if specs.chassisNo}}<div class="spec-line">CHASSIS NO: {{specs.chassisNo}}</div>{{/if}}
+        
+        
+        {{#if specs.engineCapacity}}
+        <div class="spec-line">ENGINE CAPACITY: {{specs.engineCapacity}}</div>
+        {{else if specs.cc}}
+        <div class="spec-line">ENGINE CAPACITY: {{specs.cc}}</div>
+        {{/if}}
+        
+        {{#if specs.fuelType}}
+        <div class="spec-line">FUEL TYPE: {{specs.fuelType}}</div>
+        {{else if specs.fuel}}
+        <div class="spec-line">FUEL TYPE: {{specs.fuel}}</div>
+        {{/if}}
+        
+        {{#if specs.countryOfOrigin}}
+        <div class="spec-line">COUNTRY OF ORIGIN: {{specs.countryOfOrigin}}</div>
+        {{else if specs.origin}}
+        <div class="spec-line">COUNTRY OF ORIGIN: {{specs.origin}}</div>
+        {{/if}}
+        
+        {{#if specs.hsn}}<div class="spec-line">HS CODE: {{specs.hsn}}</div>{{/if}}
+        
+        {{#if specs.yom}}
+        <div class="spec-line">YOM: {{specs.yom}}</div>
+        {{else if specs.year}}
+        <div class="spec-line">YOM: {{specs.year}}</div>
+        {{/if}}
+        
+        {{#if specs.fob}}<div class="spec-line">FOB: USD {{specs.fob}}</div>{{/if}}
+        
+        {{#if specs.freight}}<div class="spec-line">FREIGHT: USD {{specs.freight}}</div>{{/if}}
+            </td>
+        
+            <td style="border-top:none;"></td>
+            <td style="border-top:none;"></td>
+            <td style="border-top:none;"></td>
+            <td style="border-top:none;"></td>
+            <td style="border-top:none;"></td>
+        </tr>
+        
+        {{/each}}
 
                 <!-- TOTALS & FOOTER -->
                 <tr>
@@ -319,22 +364,28 @@
 
                             <!-- LEFT EMPTY AREA (creates vertical divider) -->
                             <div
-                                style="display: table-cell; width: 0%; border-right: 1px solid #333; height: 51px; margin-left: -20px;">
+                              style="
+                              display: table-cell;
+                              width: 0%;
+                              border-right: 1px solid #333;
+                              height: 60px;
+                              padding: 0;
+                              ">
                             </div>
 
                             <!-- RIGHT SIDE CONTENT -->
                             <div style="
-            display: table-cell;
-            width: 35%;
-            vertical-align: bottom;
-            padding-right: 2px;
-        ">
+                                display: table-cell;
+                                width: 35%;
+                                vertical-align: bottom;
+                                padding-right: 2px;
+                            ">
                                 <div class="bold" style="margin-bottom: 9px; padding-left:4px;">
                                     for {{exporter.name}}
                                 </div>
 
                                 <!-- HORIZONTAL LINE -->
-                                <div style="border-top: 1px solid #333; margin: 7px -7px 8px -1px;"></div>
+                                <div style="border-top:1px solid #333; margin:7px -6px 8px 0;"></div>
 
                                 <div style="text-align: right; font-size: 12px;">
                                     Authorised Signatory
@@ -347,9 +398,23 @@
             </tbody>
         </table>
 
-        <div class="text-center" style="font-size: 10px; margin-top: 8px;">
-            This is a Computer Generated Document
-        </div>
+        <table style="width:100%; border-collapse:collapse; margin-top:0;">
+        <tr>
+        <td
+        class="text-center"
+        style="
+        border-left:1px solid #000;
+        border-right:1px solid #000;
+        border-bottom:1px solid #000;
+        border-top:none;
+        font-size:10px;
+        padding:4px 0;
+        "
+        >
+        This is a Computer Generated Document
+        </td>
+        </tr>
+        </table>
     </div>
 </body>
 
