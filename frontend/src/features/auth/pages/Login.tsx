@@ -8,7 +8,8 @@ const Login: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
 
   if (isAuthenticated) {
-    const redirectPath = user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+    const role = user?.role?.toLowerCase() || "";
+    const redirectPath = role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
     return <Navigate to={redirectPath} replace />;
   }
 

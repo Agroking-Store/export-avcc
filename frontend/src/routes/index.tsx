@@ -25,7 +25,8 @@ import UserManagementModule from "../features/admin/pages/UserManagementModule";
 import { useAppSelector } from "../app/hooks";
 const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
-  const redirectPath = user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+  const role = user?.role?.toLowerCase() || "";
+  const redirectPath = role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
   return <Navigate to={redirectPath} replace />;
 };
 
@@ -35,7 +36,9 @@ const AppRoutes: React.FC = () => {
 
   const isAdmin = role === "admin";
   const isAccountant = role === "accountant";
+  const isSourcingTeam = role === "sourcing_team";
 
+  const canAccessVehicles = isAdmin || isSourcingTeam;
   const canAccessPI = isAdmin || isAccountant;
 
   return (
@@ -53,11 +56,11 @@ const AppRoutes: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
 
-          {/* Admin Only Routes */}
+{/* Admin + Sourcing Team Routes */}
           <Route
             path="/vehicles/*"
             element={
-              isAdmin ? <VehiclesModule /> : <Navigate to="/dashboard" replace />
+              canAccessVehicles ? <VehiclesModule /> : <Navigate to="/dashboard" replace />
             }
           />
 

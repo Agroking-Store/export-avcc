@@ -88,7 +88,6 @@ const visibleMenuItems =
   isSourcingTeam
     ? menuItems.filter(
         (item) =>
-          item.name === "Dashboard" ||
           item.name === "Vehicles"
       )
     : menuItems;
