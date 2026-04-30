@@ -352,7 +352,7 @@ const newVehicle = {
   hsn: booking.hsnCode || "",
 
   fob: vehicle.fobAmount || 0,
-  freight: booking.paymentAmount || vehicle.freight || 0,
+  freight: vehicle.freight || 0,
 
   yom: booking.yom || "",
   fuelType: booking.fuelType || "",
