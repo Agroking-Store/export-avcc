@@ -7,7 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 
 // Auth pages
 import Login from "../features/auth/pages/Login";
-import Register from "../features/auth/pages/Register";
+//import Register from "../features/auth/pages/Register";
 import Profile from "../features/auth/pages/Profile";
 
 // Dashboard
@@ -45,7 +45,7 @@ const AppRoutes: React.FC = () => {
       {/* Public routes */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* <Route path="/register" element={<Register />} /> */}
       </Route>
 
       {/* Private routes */}

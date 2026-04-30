@@ -1,23 +1,43 @@
-import { Plus, Eye, Pencil, Settings, Mail, Phone, User } from "lucide-react";
+import { Plus, Eye, Pencil, Settings, Mail, Phone, User, Clock } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import axios from "axios";
+import { apiConfig } from "@/config/apiConfig";
+import { RegisterData } from "@/types/auth.types";
+import { Lock } from "lucide-react";
+
+interface UserInterface {
+    name: string;
+    email: string;
+    lastLogin: string;
+    phone: string;
+}
 
 const Users = () => {
-    const [users] = useState([
-        {
-            name: "Virat",
-            email: "virat@gmail.com",
-            phone: "9876543210",
-        },
-        {
-            name: "Rohit",
-            email: "rohit@gmail.com",
-            phone: "9123456780",
-        },
-    ]);
+    const [users, setUsers] = useState<UserInterface[]>([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+
+                const res = await axios.get(`${apiConfig.baseURL}/users`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                setUsers(res.data.data);
+            } catch (error) {
+                console.error("Failed to fetch users", error);
+            }
+        };
+
+        fetchUsers();
+    }, []);
 
     const navigate = useNavigate();
-
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -51,7 +71,6 @@ const Users = () => {
                     </div>
                 </div>
 
-
                 {/* Table */}
                 <div className="overflow-x-auto mt-5">
                     <table className="w-full text-sm">
@@ -80,8 +99,8 @@ const Users = () => {
 
                                 <th className="px-6 py-3 text-right text-gray-500">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Settings size={14} className="text-gray-500" />
-                                        Actions
+                                        <Clock size={14} className="text-gray-500" />
+                                        Last Login
                                     </div>
                                 </th>
                             </tr>
@@ -108,18 +127,11 @@ const Users = () => {
                                         {user.phone}
                                     </td>
 
-                                    {/* Actions */}
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                                                <Eye size={16} className="text-gray-600" />
-                                            </button>
-
-                                            <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                                                <Pencil size={16} className="text-blue-600" />
-                                            </button>
-                                        </div>
+                                    {/* Last Login */}
+                                    <td className="px-6 py-4 text-gray-600 font-medium text-right">
+                                        {user.lastLogin}
                                     </td>
+
                                 </tr>
                             ))}
                         </tbody>

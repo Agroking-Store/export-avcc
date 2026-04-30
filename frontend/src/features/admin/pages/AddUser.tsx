@@ -1,26 +1,33 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { User, Mail, Phone, Lock } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { register } from "@/features/auth/authSlice";
+import { authApi } from "@/services/authApi";
+
 
 const AddUser = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<any>();
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     phone: "",
+    role: "", // ✅ added
   });
 
   const [errors, setErrors] = useState<any>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
 
-    // remove error when user types
     setErrors({
       ...errors,
       [e.target.name]: "",
@@ -46,16 +53,27 @@ const AddUser = () => {
       newErrors.password = "Password must be at least 6 characters";
     }
 
+    if (!formData.role) {
+      newErrors.role = "Role is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validate()) return;
+const handleSubmit = async () => {
+  if (!validate()) return;
 
-    console.log("User Data:", formData);
+  try {
+    const res = await authApi.register(formData);
+
+    console.log("User created:", res);
+
     navigate("/user-management/users");
-  };
+  } catch (error) {
+    console.error("Registration failed:", error);
+  }
+};
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -96,7 +114,9 @@ const AddUser = () => {
             className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
               ${errors.name ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
           />
-          {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+          {errors.name && (
+            <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+          )}
         </div>
 
         {/* Phone */}
@@ -113,7 +133,9 @@ const AddUser = () => {
             className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
               ${errors.phone ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
           />
-          {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+          {errors.phone && (
+            <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+          )}
         </div>
 
         {/* Email */}
@@ -130,7 +152,9 @@ const AddUser = () => {
             className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
               ${errors.email ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
           />
-          {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+          {errors.email && (
+            <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+          )}
         </div>
 
         {/* Password */}
@@ -147,8 +171,37 @@ const AddUser = () => {
             className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
               ${errors.password ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
           />
-          {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+          {errors.password && (
+            <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+          )}
         </div>
+
+        {/* Role (NEW - minimal addition) */}
+        <div>
+          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
+            Role *
+          </label>
+
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
+              ${errors.role ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
+          >
+            <option value="">Select role</option>
+            <option value="admin">Admin</option>
+            <option value="dealer">Dealer</option>
+            <option value="client">Client</option>
+            <option value="accountant">Accountant</option>
+            <option value="sourcing_team">Sourcing Team</option>
+          </select>
+
+          {errors.role && (
+            <p className="text-xs text-red-500 mt-1">{errors.role}</p>
+          )}
+        </div>
+
       </div>
 
       {/* Buttons */}
@@ -167,6 +220,7 @@ const AddUser = () => {
           ＋ Confirm & Save
         </button>
       </div>
+
     </div>
   );
 };
