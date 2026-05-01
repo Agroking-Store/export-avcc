@@ -7,7 +7,7 @@ interface CreateVehicleListItemDto {
   variant: string;
   color: string;
   hsnCode: string;
-  quantity: number;
+  quantity?: number;
   fobAmount?: number;
   freight?: number;
 }
