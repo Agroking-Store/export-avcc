@@ -43,7 +43,7 @@ interface VehicleForm {
 }
 
 const CHASSIS_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
-
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 const STATUS_ORDER: { [key: string]: number } = {
   "To be Sourced": 0,
   "Booked": 1,
@@ -113,7 +113,7 @@ const DealerVehicleEdit = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/v1/orders/${orderId}`);
+        const res = await axios.get(`${API_URL}/api/v1/orders/${orderId}`);
         const order = res.data.order || res.data;
         const vehicles = order.vehicles?.filter(Boolean) || [];
         const v = vehicles[vIdx];

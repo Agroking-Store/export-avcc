@@ -24,6 +24,7 @@ interface VehicleData {
 }
 
 const DealerVehicleView = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const params = useParams();
   const orderId = params.id;
   const vehicleIndex = params.vehicleIndex;
@@ -51,7 +52,7 @@ const DealerVehicleView = () => {
           navigate("/dealers/orders");
           return;
         }
-        const res = await axios.get(`http://localhost:5000/api/v1/orders/${orderId}`);
+        const res = await axios.get(`${API_URL}/api/v1/orders/${orderId}`);
         const order = res.data.order || res.data;
         setOrderId2(order.orderId);
 

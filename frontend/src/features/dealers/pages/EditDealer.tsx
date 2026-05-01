@@ -8,13 +8,14 @@ import {
 import { toast } from "react-toastify";
 
 const EditDealer = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const { id } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", contact: "", email: "", address: "", gstNumber: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/v1/dealers/${id}`)
+    axios.get(`${API_URL}/api/v1/dealers/${id}`)
       .then(res => setForm(res.data.data))
       .catch((error: any) => toast.error(error.response?.data?.message || "Failed to load dealer"));
   }, [id]);
@@ -26,7 +27,7 @@ const EditDealer = () => {
     }
     try {
       setLoading(true);
-      await axios.put(`http://localhost:5000/api/v1/dealers/${id}`, form);
+      await axios.put(`${API_URL}/api/v1/dealers/${id}`, form);
       toast.success("Dealer updated successfully!");
       navigate("/dealers/list");
     } catch (error: any) {

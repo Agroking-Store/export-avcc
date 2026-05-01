@@ -5,6 +5,7 @@ import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight } fro
 import { toast } from "react-toastify";
 
 const DealersList = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [dealers, setDealers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ const DealersList = () => {
   const fetchDealers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/v1/dealers", {
+      const res = await axios.get(`${API_URL}/api/v1/dealers`, {
         params: { search, page: currentPage, limit },
       });
       setDealers(res.data.data);

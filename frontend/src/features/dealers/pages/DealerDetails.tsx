@@ -23,6 +23,7 @@ const InfoBox = ({ label, value, icon: Icon }: any) => (
 );
 
 const DealerDetails = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const { id } = useParams();
   const navigate = useNavigate();
   const [dealer, setDealer] = useState<any>(null);
@@ -32,7 +33,7 @@ const DealerDetails = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/v1/dealers/${id}`)
+      .get(`${API_URL}/api/v1/dealers/${id}`)
       .then((res) => {
         setDealer(res.data.data);
         setLoading(false);
@@ -49,7 +50,7 @@ const DealerDetails = () => {
     setVehiclesLoading(true);
 
     axios
-      .get(`http://localhost:5000/api/v1/dealers/${id}/getVehicles`)
+      .get(`${API_URL}/api/v1/dealers/${id}/getVehicles`)
       .then((res) => {
         const vehicles = res.data.data;
 
@@ -178,12 +179,12 @@ const DealerDetails = () => {
 
                   {/* Brand_Model */}
                   <td className="px-4 py-3">
-                    {v.brandName|| "-"}_{v.modelName|| "-"}
+                    {v.brandName || "-"}_{v.modelName || "-"}
                   </td>
 
                   {/* Variant */}
                   <td className="px-4 py-3">
-                    {v.variant|| "-"}
+                    {v.variant || "-"}
                   </td>
 
                   {/* Status */}
