@@ -21,7 +21,7 @@ interface Order {
 
 const DealerOrdersList = () => {
   const navigate = useNavigate();
-
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -34,7 +34,7 @@ const DealerOrdersList = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/v1/orders", {
+      const res = await axios.get(`${API_URL}/api/v1/orders`, {
         params: {
           search,
           status: statusFilter === "All" ? undefined : statusFilter,
@@ -177,9 +177,8 @@ const DealerOrdersList = () => {
               {["Order ID", "Client", "Vehicles", "Status", "Date", "Actions"].map((head, idx) => (
                 <th
                   key={head}
-                  className={`px-8 py-4 text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider ${
-                    idx === 5 ? "text-right" : "text-center"
-                  }`}
+                  className={`px-8 py-4 text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider ${idx === 5 ? "text-right" : "text-center"
+                    }`}
                 >
                   {head}
                 </th>
@@ -239,28 +238,28 @@ const DealerOrdersList = () => {
                     </div>
                   </td>
                   <td className="px-8 py-5 text-center">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(
-                          order.status
-                        )}`}
-                      >
-                        {order.status || "To be Sourced"}
-                      </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(
+                        order.status
+                      )}`}
+                    >
+                      {order.status || "To be Sourced"}
+                    </span>
                   </td>
                   <td className="px-8 py-5 text-center text-sm font-medium text-slate-500 dark:text-gray-400">
                     {order.date
                       ? new Date(order.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
                       : order.createdAt
-                      ? new Date(order.createdAt).toLocaleDateString("en-US", {
+                        ? new Date(order.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         })
-                      : "-"}
+                        : "-"}
                   </td>
                   <td className="px-8 py-5 text-right">
                     <button

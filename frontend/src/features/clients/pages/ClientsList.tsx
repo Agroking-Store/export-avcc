@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 const ClientsList = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -20,7 +20,7 @@ const ClientsList = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/v1/clients", {
+      const res = await axios.get(`${API_URL}/api/v1/clients`, {
         params: { search, page: currentPage, limit },
       });
       setClients(res.data.data);
@@ -47,14 +47,14 @@ const ClientsList = () => {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
-        
+
         {/* TOP SECTION: TITLE & ADD BUTTON */}
         <div className="px-8 py-6 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">Clients</h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Manage all your export clients</p>
           </div>
-          
+
           <button
             onClick={() => navigate("/clients/add")}
             className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
@@ -124,7 +124,7 @@ const ClientsList = () => {
                         {client.totalVehicleOrders || 0}
                       </span>
                     </td>
-                    
+
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
                       {client.lastBooking
                         ? new Date(client.lastBooking).toLocaleDateString()

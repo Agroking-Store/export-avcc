@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { 
-  ArrowLeft, Eye, FilePenLine, Car, Calendar, 
-  Hash, ClipboardList, TrendingUp, Package, 
+import {
+  ArrowLeft, Eye, FilePenLine, Car, Calendar,
+  Hash, ClipboardList, TrendingUp, Package,
   Clock, PlusCircle, Zap, X
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { bookingApi } from "../../../services/bookingApi";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ─── Status Update Popup ────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
     >
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-2xl w-80 p-6 animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Header */}
         <div className="flex justify-between items-start mb-5">
           <div>
@@ -93,11 +94,10 @@ const StatusPopup: React.FC<StatusPopupProps> = ({ vehicle, currentStatus, onClo
             <button
               key={s}
               onClick={() => setSelected(s)}
-              className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all ${
-                selected === s
+              className={`w-full text-left px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wide transition-all ${selected === s
                   ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-300"
                   : "bg-gray-50 border-gray-100 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+                }`}
             >
               {s}
             </button>
@@ -178,7 +178,7 @@ const DealerOrderDetails = () => {
   const fetchOrder = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/v1/orders/${id}`);
+      const res = await axios.get(`${API_URL}/api/v1/orders/${id}`);
       const data = res.data.order || res.data;
       setOrder(data);
       setStatus(data.status || "Draft");
@@ -329,7 +329,7 @@ const DealerOrderDetails = () => {
       )}
 
       <div className="animate-in fade-in duration-500 transition-colors">
-        
+
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
           <div className="bg-[#1e293b] px-6 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
@@ -348,10 +348,10 @@ const DealerOrderDetails = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* LEFT COLUMN */}
           <div className="lg:col-span-9 space-y-8">
-            
+
             <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-shadow hover:shadow-md">
               <div className="p-8 pb-4 flex justify-between items-center bg-gray-50/30 dark:bg-gray-800/30">
                 <div className="flex items-center gap-3">
@@ -437,7 +437,7 @@ const DealerOrderDetails = () => {
                               </td>
                               <td className="px-6 py-5 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                  
+
                                   {/* View */}
                                   <button
                                     onClick={() => {

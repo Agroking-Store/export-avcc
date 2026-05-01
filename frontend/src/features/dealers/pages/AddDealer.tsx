@@ -1,13 +1,14 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { 
+import {
   User, Phone, Mail, MapPin, Hash,
-  ArrowLeft, X, PlusCircle 
+  ArrowLeft, X, PlusCircle
 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const AddDealer = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", contact: "", email: "", address: "", gstNumber: "" });
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ const AddDealer = () => {
     }
     try {
       setLoading(true);
-      await axios.post("http://localhost:5000/api/v1/dealers", form);
+      await axios.post(`${API_URL}/api/v1/dealers`, form);
       toast.success("Dealer added successfully!");
       navigate("/dealers/list");
     } catch (error: any) {

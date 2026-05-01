@@ -5,6 +5,8 @@ import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight, Zap 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface Order {
   _id: string;
   orderId: string;
@@ -38,7 +40,7 @@ const OrdersList = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/v1/orders", {
+      const res = await axios.get(`${API_URL}/api/v1/orders`, {
         params: {
           search,
           status: statusFilter === "All" ? undefined : statusFilter,
@@ -91,7 +93,7 @@ const OrdersList = () => {
   
     try {
       await axios.patch(
-        `http://localhost:5000/api/v1/orders/${selectedOrder._id}/status`,
+        `${API_URL}/api/v1/orders/${selectedOrder._id}/status`,
         { status: newStatus }
       );
   
