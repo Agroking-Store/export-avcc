@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck, ChevronsUpDown, Check } from "lucide-react";
+import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck } from "lucide-react";
+import CreatableSelect from "react-select/creatable";
 import { toast } from "react-toastify";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import {
@@ -9,15 +10,6 @@ import {
 } from "../../../services/vehicleBookingApi";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
 
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -39,10 +31,17 @@ const VehicleOrderVehicleEdit = () => {
   const [yom, setYom] = useState("");
   const [hsnCode, setHsnCode] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [fuelOpen, setFuelOpen] = useState(false);
+  const [fuelInputValue, setFuelInputValue] = useState("");
   const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
 
-  const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "CNG", "LPG"];
+  const FUEL_TYPE_OPTIONS = [
+    { value: "Petrol", label: "Petrol" },
+    { value: "Diesel", label: "Diesel" },
+    { value: "Electric", label: "Electric" },
+    { value: "Hybrid", label: "Hybrid" },
+    { value: "CNG", label: "CNG" },
+    { value: "LPG", label: "LPG" },
+  ];
   const inputStyle =
     "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
 
@@ -277,50 +276,63 @@ const VehicleOrderVehicleEdit = () => {
               <Fuel size={14} className="text-orange-500" />
               Fuel Type
             </label>
-            <Popover open={fuelOpen} onOpenChange={setFuelOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    inputStyle,
-                    "flex items-center justify-between cursor-pointer",
-                  )}
-                >
-                  <span className={fuelType ? "text-[#4A5568] dark:text-gray-200" : "text-[#A0AEC0]"}>
-                    {fuelType || "Select fuel type..."}
-                  </span>
-                  <ChevronsUpDown size={16} className="text-[#A0AEC0]" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search fuel type..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>No fuel type found.</CommandEmpty>
-                    <CommandGroup>
-                      {fuelTypes.map((type) => (
-                        <CommandItem
-                          key={type}
-                          value={type}
-                          onSelect={() => {
-                            setFuelType(type);
-                            setFuelOpen(false);
-                          }}
-                        >
-                          {type}
-                          <Check
-                            className={cn(
-                              "ml-auto h-4 w-4",
-                              fuelType === type ? "opacity-100" : "opacity-0",
-                            )}
-                          />
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <CreatableSelect
+              isClearable
+              options={FUEL_TYPE_OPTIONS}
+              value={fuelType ? { value: fuelType, label: fuelType } : null}
+              inputValue={fuelInputValue}
+              onInputChange={(val) => {
+                setFuelInputValue(val);
+                // Live-update fuelType as user types so it's always committed
+                if (val) setFuelType(val);
+              }}
+              onChange={(option) => {
+                setFuelType(option?.value ?? "");
+                setFuelInputValue("");
+              }}
+              onKeyDown={(e) => {
+                // Commit typed value on Enter or Tab even without selecting from dropdown
+                if ((e.key === "Enter" || e.key === "Tab") && fuelInputValue.trim()) {
+                  setFuelType(fuelInputValue.trim());
+                  setFuelInputValue("");
+                  e.preventDefault();
+                }
+              }}
+              onBlur={() => {
+                // Commit whatever is typed when field loses focus
+                if (fuelInputValue.trim()) {
+                  setFuelType(fuelInputValue.trim());
+                  setFuelInputValue("");
+                }
+              }}
+              placeholder="Select or type..."
+              formatCreateLabel={(input) => `Use "${input}"`}
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  background: "#F8F9FB",
+                  border: `1px solid ${state.isFocused ? "#6366f1" : "#F1F3F6"}`,
+                  borderRadius: "0.75rem",
+                  padding: "2px 4px",
+                  fontSize: "0.875rem",
+                  color: "#4A5568",
+                  boxShadow: state.isFocused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+                  minHeight: "46px",
+                  "&:hover": { borderColor: "#6366f1" },
+                }),
+                placeholder: (base) => ({ ...base, color: "#A0AEC0" }),
+                singleValue: (base) => ({ ...base, color: "#4A5568" }),
+                option: (base, state) => ({
+                  ...base,
+                  fontSize: "0.875rem",
+                  background: state.isSelected ? "#6366f1" : state.isFocused ? "#EEF2FF" : "white",
+                  color: state.isSelected ? "white" : "#4A5568",
+                  cursor: "pointer",
+                }),
+                menu: (base) => ({ ...base, borderRadius: "0.75rem", overflow: "hidden", zIndex: 50 }),
+                indicatorSeparator: () => ({ display: "none" }),
+              }}
+            />
           </div>
 
           <div>
@@ -395,7 +407,10 @@ const VehicleOrderVehicleEdit = () => {
                     selected={deliveryDate ? new Date(deliveryDate) : undefined}
                     onSelect={(date) => {
                       if (date) {
-                        setDeliveryDate(date.toISOString().split("T")[0]);
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, "0");
+                        const dd = String(date.getDate()).padStart(2, "0");
+                        setDeliveryDate(`${yyyy}-${mm}-${dd}`);
                       } else {
                         setDeliveryDate("");
                       }
