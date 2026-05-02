@@ -22,12 +22,16 @@ const DealersDashboard: React.FC = () => {
   useEffect(() => {
     // setLoading(true);
     axios
-      .get(`${API_URL}/api/v1/dealers?limit=5&page=1`)
+      .get(`${API_URL}/dealers?limit=5&page=1`)
       .then((res) => {
         setTotalDealers(res.data.total || res.data.data.length);
         setRecentDealers(res.data.data);
       })
-      .catch((error: any) => toast.error(error.response?.data?.message || "Failed to load dashboard"))
+      .catch((error: any) =>
+        toast.error(
+          error.response?.data?.message || "Failed to load dashboard",
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
