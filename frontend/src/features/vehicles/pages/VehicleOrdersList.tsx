@@ -92,7 +92,22 @@ const VehicleOrdersList = () => {
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [statusLabel, setStatusLabel] = useState("All");
+  // rawToStatusLabel maps VehicleBookingStatus → dropdown label
+  const rawToStatusLabel: Record<string, string> = {
+    pending:           "Quotation Pending",
+    quotation_uploaded:"Awaiting Approval",
+    approved:          "Approved",
+    payment_done:      "Awaiting Chassis/Engine No.",
+    chassis_received:  "In Transit",
+    delivered:         "Delivered",
+    missingClient:     "All",   // no dedicated label — show all, handled on dashboard side
+  };
+  const incomingFilter = (location.state as any)?.statusFilter;
+  const [statusLabel, setStatusLabel] = useState<string>(
+    incomingFilter && rawToStatusLabel[incomingFilter]
+      ? rawToStatusLabel[incomingFilter]
+      : "All"
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);

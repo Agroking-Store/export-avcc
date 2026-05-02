@@ -33,7 +33,7 @@ const DealerDetails = () => {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/api/v1/dealers/${id}`)
+      .get(`${API_URL}/dealers/${id}`)
       .then((res) => {
         setDealer(res.data.data);
         setLoading(false);
@@ -50,7 +50,7 @@ const DealerDetails = () => {
     setVehiclesLoading(true);
 
     axios
-      .get(`${API_URL}/api/v1/dealers/${id}/getVehicles`)
+      .get(`${API_URL}/dealers/${id}/getVehicles`)
       .then((res) => {
         const vehicles = res.data.data;
 
@@ -61,9 +61,7 @@ const DealerDetails = () => {
         setDealerVehicles(vehicles);
       })
       .catch((error: any) => {
-        toast.error(
-          error.response?.data?.message || "Failed to load vehicles"
-        );
+        toast.error(error.response?.data?.message || "Failed to load vehicles");
       })
       .finally(() => {
         setVehiclesLoading(false);
@@ -110,7 +108,6 @@ const DealerDetails = () => {
       <div className="w-full">
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 md:p-10 transition-shadow hover:shadow-md">
-
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 dark:border-gray-800 pb-4">
               <ClipboardList size={18} className="text-gray-400" />
               <h2 className="text-lg font-bold text-[#1B2559] dark:text-white">
@@ -135,9 +132,21 @@ const DealerDetails = () => {
 
               {/* UPDATED GRID */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <InfoBox label="Phone Number" value={dealer.contact} icon={Phone} />
-                <InfoBox label="Email Address" value={dealer.email} icon={Mail} />
-                <InfoBox label="GST Number" value={dealer.gstNumber} icon={Hash} />
+                <InfoBox
+                  label="Phone Number"
+                  value={dealer.contact}
+                  icon={Phone}
+                />
+                <InfoBox
+                  label="Email Address"
+                  value={dealer.email}
+                  icon={Mail}
+                />
+                <InfoBox
+                  label="GST Number"
+                  value={dealer.gstNumber}
+                  icon={Hash}
+                />
                 <InfoBox label="Address" value={dealer.address} icon={MapPin} />
               </div>
             </div>
@@ -145,7 +154,6 @@ const DealerDetails = () => {
         </div>
         <div className=" mt-5 overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
           <table className="min-w-full text-sm text-left">
-
             {/* HEADER */}
             <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
               <tr>
@@ -166,7 +174,6 @@ const DealerDetails = () => {
             <tbody className="divide-y">
               {dealerVehicles.map((v: any, index: number) => (
                 <tr key={v._id} className="hover:bg-gray-50 transition">
-
                   {/* Serial Number */}
                   <td className="px-4 py-3 font-medium text-gray-700">
                     {index + 1}
@@ -183,14 +190,10 @@ const DealerDetails = () => {
                   </td>
 
                   {/* Variant */}
-                  <td className="px-4 py-3">
-                    {v.variant || "-"}
-                  </td>
+                  <td className="px-4 py-3">{v.variant || "-"}</td>
 
                   {/* Status */}
-                  <td className="px-4 py-3 capitalize">
-                    {v.status || "-"}
-                  </td>
+                  <td className="px-4 py-3 capitalize">{v.status || "-"}</td>
 
                   {/* Date */}
                   <td className="px-4 py-3 text-gray-600">
@@ -198,11 +201,9 @@ const DealerDetails = () => {
                       ? new Date(v.deliveryDate).toLocaleDateString()
                       : new Date(v.createdAt).toLocaleDateString()}
                   </td>
-
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
       </div>

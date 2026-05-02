@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/command";
 import { vehicleManagementApi } from "../vehicleManagementApi";
 import { cn } from "@/lib/utils";
+import CreatableSelect from "react-select/creatable";
 
 const VehicleOrderVehicleBooking = () => {
   const { id: orderId } = useParams() as { id: string };
@@ -48,6 +49,16 @@ const VehicleOrderVehicleBooking = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [dealerOpen, setDealerOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [fuelInputValue, setFuelInputValue] = useState("");
+
+  const FUEL_TYPE_OPTIONS = [
+    { value: "Petrol", label: "Petrol" },
+    { value: "Diesel", label: "Diesel" },
+    { value: "Electric", label: "Electric" },
+    { value: "Hybrid", label: "Hybrid" },
+    { value: "CNG", label: "CNG" },
+    { value: "LPG", label: "LPG" },
+  ];
 
   const srNoParam = searchParams.get("srNo") || "";
   const vehicleName = searchParams.get("name") || "";
@@ -143,7 +154,7 @@ const VehicleOrderVehicleBooking = () => {
       setSubmitLoading(true);
       await bookingApi.create({
         dealerId: selectedDealer,
-        date: bookingDate.toISOString().split("T")[0],
+        date: format(bookingDate, "yyyy-MM-dd"),
         bookingAmount,
         orderId,
         vehicles: [
@@ -405,12 +416,59 @@ const VehicleOrderVehicleBooking = () => {
               <label className={labelStyle}>
                 <Fuel size={14} className="text-blue-400" /> Fuel Type
               </label>
-              <input
-                type="text"
-                value={vehicle.fuelType}
-                onChange={(e) => handleInputChange("fuelType", e.target.value)}
-                className={inputStyle("")}
-                placeholder="Petrol / Diesel"
+              <CreatableSelect
+                isClearable
+                options={FUEL_TYPE_OPTIONS}
+                value={vehicle.fuelType ? { value: vehicle.fuelType, label: vehicle.fuelType } : null}
+                inputValue={fuelInputValue}
+                onInputChange={(val) => {
+                  setFuelInputValue(val);
+                  if (val) handleInputChange("fuelType", val);
+                }}
+                onChange={(option) => {
+                  handleInputChange("fuelType", option?.value ?? "");
+                  setFuelInputValue("");
+                }}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === "Tab") && fuelInputValue.trim()) {
+                    handleInputChange("fuelType", fuelInputValue.trim());
+                    setFuelInputValue("");
+                    e.preventDefault();
+                  }
+                }}
+                onBlur={() => {
+                  if (fuelInputValue.trim()) {
+                    handleInputChange("fuelType", fuelInputValue.trim());
+                    setFuelInputValue("");
+                  }
+                }}
+                placeholder="Select or type..."
+                formatCreateLabel={(input) => `Use "${input}"`}
+                styles={{
+                  control: (base, state) => ({
+                    ...base,
+                    background: "#F8F9FB",
+                    border: `1px solid ${state.isFocused ? "#6366f1" : "#F1F3F6"}`,
+                    borderRadius: "0.75rem",
+                    padding: "2px 4px",
+                    fontSize: "0.875rem",
+                    color: "#4A5568",
+                    boxShadow: state.isFocused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+                    minHeight: "46px",
+                    "&:hover": { borderColor: "#6366f1" },
+                  }),
+                  placeholder: (base) => ({ ...base, color: "#A0AEC0" }),
+                  singleValue: (base) => ({ ...base, color: "#4A5568" }),
+                  option: (base, state) => ({
+                    ...base,
+                    fontSize: "0.875rem",
+                    background: state.isSelected ? "#6366f1" : state.isFocused ? "#EEF2FF" : "white",
+                    color: state.isSelected ? "white" : "#4A5568",
+                    cursor: "pointer",
+                  }),
+                  menu: (base) => ({ ...base, borderRadius: "0.75rem", overflow: "hidden", zIndex: 50 }),
+                  indicatorSeparator: () => ({ display: "none" }),
+                }}
               />
             </div>
             <div>
