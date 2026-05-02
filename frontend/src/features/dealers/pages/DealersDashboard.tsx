@@ -13,6 +13,7 @@ import {
 import { toast } from "react-toastify";
 
 const DealersDashboard: React.FC = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [totalDealers, setTotalDealers] = useState(0);
   const [recentDealers, setRecentDealers] = useState<any[]>([]);
@@ -21,12 +22,16 @@ const DealersDashboard: React.FC = () => {
   useEffect(() => {
     // setLoading(true);
     axios
-      .get("http://localhost:5000/api/v1/dealers?limit=5&page=1")
+      .get(`${API_URL}/dealers?limit=5&page=1`)
       .then((res) => {
         setTotalDealers(res.data.total || res.data.data.length);
         setRecentDealers(res.data.data);
       })
-      .catch((error: any) => toast.error(error.response?.data?.message || "Failed to load dashboard"))
+      .catch((error: any) =>
+        toast.error(
+          error.response?.data?.message || "Failed to load dashboard",
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 

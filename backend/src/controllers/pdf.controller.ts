@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { generateProformaInvoicePDF } from "../services/pdf.service";
 import { getPIByIdService } from "../services/proforma-invoice.service";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 
 const formatDate = (dateString: string | Date) => {
   const d = new Date(dateString);
@@ -134,6 +135,27 @@ export const getProformaInvoiceData = async (req: Request, res: Response) => {
     }
 
     const pi = await getPIByIdService(id as string);
+
+    if (pi?.vehicleBookingIds?.length) {
+  const bookings = await VehicleBooking.find({
+    _id: { $in: pi.vehicleBookingIds }
+  });
+
+  pi.vehicleDetails = pi.vehicleDetails.map((v: any, i: number) => {
+    const b: any = bookings[i];
+
+    return {
+      ...v,
+      yom: v.yom || b?.yom || "",
+      fuelType: v.fuelType || b?.fuelType || "",
+      countryOfOrigin: v.countryOfOrigin || b?.countryOfOrigin || "",
+      engineCapacity: v.engineCapacity || b?.engineCapacity || "",
+      hsn: v.hsn || b?.hsnCode || "",
+      engineNo: v.engineNo || b?.engineNumber || "",
+      chassisNo: v.chassisNo || b?.chassisNumber || "",
+    };
+  });
+}
 
     if (!pi) {
       return res.status(404).json({ success: false, message: "PI not found" });

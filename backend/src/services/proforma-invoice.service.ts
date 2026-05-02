@@ -224,44 +224,27 @@ const getCompanyShortCode = (
 
 // CREATE PI
 export const createPIService = async (data: any) => {
-  const totalAmount = data.vehicleDetails.reduce(
+  const totalAmount = (data.vehicleDetails || []).reduce(
     (sum: number, v: any) =>
-      sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+      sum + ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
     0
   );
-  const amountInWords = numberToWords(totalAmount);
 
-  let finalPiNumber = data.piNumber; // Use provided piNumber if available
+  data.totalAmount = totalAmount;
+  data.amountInWords = numberToWords(totalAmount);
+
+  let finalPiNumber = data.piNumber;
 
   if (!finalPiNumber || finalPiNumber.trim() === "") {
-    // If piNumber is not provided or empty, generate it
     finalPiNumber = await generateNextPiNumber(data.company_id);
-  } else {
-    // If a piNumber is provided, check for uniqueness if it's not an update operation
-    // This check is important to prevent duplicate PI numbers if the user manually enters one.
-    const existingPi = await ProformaInvoice.findOne({
-      piNumber: finalPiNumber,
-    });
-    if (existingPi && existingPi._id.toString() !== data._id?.toString()) {
-      // Allow update of same PI with same number
-      throw new Error(
-        `Proforma Invoice with number ${finalPiNumber} already exists.`
-      );
-    }
   }
 
   const pi = new ProformaInvoice({
     ...data,
-    piNumber: finalPiNumber, // Use the final PI number
-    totalAmount,
-    amountInWords,
+    piNumber: finalPiNumber,
   });
 
-  const savedPI = await pi.save();
-
-  // Booking status update removed — "PI Created" status no longer exists in the system
-
-  return savedPI;
+  return await pi.save();
 };
 
 // Helper types for the service function's return value, mirroring frontend's VehicleTracking and AssociatedPI

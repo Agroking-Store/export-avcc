@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, FilePenLine, Search, Filter, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Eye,
+  FilePenLine,
+  Search,
+  Filter,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 const DealersList = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const [dealers, setDealers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +25,7 @@ const DealersList = () => {
   const fetchDealers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/v1/dealers", {
+      const res = await axios.get(`${API_URL}/dealers`, {
         params: { search, page: currentPage, limit },
       });
       setDealers(res.data.data);
@@ -37,8 +46,12 @@ const DealersList = () => {
       {/* TOP SECTION: TITLE & ADD BUTTON */}
       <div className="px-8 py-6 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">Dealers</h2>
-          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Manage all your dealers</p>
+          <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
+            Dealers
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+            Manage all your dealers
+          </p>
         </div>
 
         <button
@@ -62,7 +75,10 @@ const DealersList = () => {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search dealer..."
@@ -78,21 +94,26 @@ const DealersList = () => {
         <table className="w-full text-center">
           <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
             <tr>
-              {["Dealer ID", "Name", "Contact", "Email", "Actions"].map((head) => (
-                <th
-                  key={head}
-                  className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
-                >
-                  {head}
-                </th>
-              ))}
+              {["Dealer ID", "Name", "Contact", "Email", "Actions"].map(
+                (head) => (
+                  <th
+                    key={head}
+                    className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
+                  >
+                    {head}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
 
           <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
             {dealers.length === 0 && !loading ? (
               <tr>
-                <td colSpan={5} className="text-center py-20 text-slate-400 italic">
+                <td
+                  colSpan={5}
+                  className="text-center py-20 text-slate-400 italic"
+                >
                   No dealers found
                 </td>
               </tr>
@@ -146,8 +167,9 @@ const DealersList = () => {
       {/* PAGINATION SECTION */}
       <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
         <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
-          Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of{" "}
-          {totalPages}
+          Page{" "}
+          <span className="text-[#0f172a] dark:text-white">{currentPage}</span>{" "}
+          of {totalPages}
         </span>
 
         <div className="flex gap-6">
