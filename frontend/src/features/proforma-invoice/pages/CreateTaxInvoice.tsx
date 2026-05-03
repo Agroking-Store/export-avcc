@@ -252,6 +252,7 @@ const CreateTaxInvoice = () => {
      SAVE
   ===================================================== */
 
+  // LEGACY: handleGenerateTaxInvoiceSubmit — disconnected 2026-05-03
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -295,183 +296,33 @@ const CreateTaxInvoice = () => {
   }
 
   return (
-  <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
-
-    {/* HEADER */}
-    <div className="flex justify-between items-center mb-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Generate Export Invoice
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Create tax invoice from PI {form.piNo}
-        </p>
-      </div>
-
-      <button
-        onClick={() => navigate(-1)}
-        className="cursor-pointer flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
-      >
-        <ArrowLeft size={18} /> Back
-      </button>
-    </div>
-
-    <form className="space-y-10">
-
-      {/* BASIC DETAILS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Basic Information
-          </h2>
+    <div className="w-full rounded-[2rem] border border-amber-200 bg-amber-50 px-6 py-8 text-amber-900 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Legacy Tax Invoice Page</h1>
+          <p className="mt-2 text-sm text-amber-800">
+            This legacy form has been disconnected from PI Details. The new vehicle-wise invoice flow now starts from the Invoice Type modal on the PI details page.
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Field label="Tax Invoice No" name="taxInvoiceNo" value={form.taxInvoiceNo} onChange={handleChange} />
-          <Field label="Invoice Date" name="invoiceDate" value={form.invoiceDate} onChange={handleChange} type="date" />
-          <Field label="PI Number" value={form.piNo} disabled />
-          <Field label="PI Date" value={form.piDate} disabled />
-          <Field label="Buyer Order & Date" name="buyerOrderDate" value={form.buyerOrderDate} onChange={handleChange} />
-          <Field label="Other Reference" name="otherReference" value={form.otherReference} onChange={handleChange} />
-        </div>
-      </div>
-
-      {/* SHIPPING */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-cyan-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Shipping Details
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Field label="Pre Carriage" name="preCarriage" value={form.preCarriage} onChange={handleChange} />
-          <Field label="Place Receipt" name="placeReceipt" value={form.placeReceipt} onChange={handleChange} />
-          <Field label="Vessel / Flight" name="vesselFlight" value={form.vesselFlight} onChange={handleChange} />
-          <Field label="Shipment Mode" name="shipmentMode" value={form.shipmentMode} onChange={handleChange} />
-
-          <Field label="Port Loading" name="portOfLoading" value={form.portOfLoading} onChange={handleChange} />
-          <Field label="Port Discharge" name="portOfDischarge" value={form.portOfDischarge} onChange={handleChange} />
-          <Field label="Place Delivery" name="placeDelivery" value={form.placeDelivery} onChange={handleChange} />
-          <Field label="Destination Country" name="countryDestination" value={form.countryDestination} onChange={handleChange} />
-
-          <Field label="Country Origin" name="countryOrigin" value={form.countryOrigin} onChange={handleChange} />
-          <Field label="Total Cartons" name="totalCartons" value={form.totalCartons} onChange={handleChange} />
-          <Field label="State Of Origin" name="stateOfOrigin" value={form.stateOfOrigin} onChange={handleChange} />
-          <Field label="District Of Origin" name="districtOfOrigin" value={form.districtOfOrigin} onChange={handleChange} />
-        </div>
-
-        <Field label="Terms Of Delivery" name="termsOfDelivery" value={form.termsOfDelivery} onChange={handleChange} />
-      </div>
-
-      {/* BANK DETAILS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-blue-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Bank Details
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Field label="Bank Name" name="bankName" value={form.bankName} onChange={handleChange} />
-          <Field label="Account No" name="accountNo" value={form.accountNo} onChange={handleChange} />
-          <Field label="IFSC" name="ifsc" value={form.ifsc} onChange={handleChange} />
-          <Field label="SWIFT" name="swiftCode" value={form.swiftCode} onChange={handleChange} />
-        </div>
-      </div>
-
-      {/* WEIGHT DETAILS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-purple-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Weight Details
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Field label="Net Weight" name="netWeight" value={form.netWeight} onChange={handleChange} />
-          <Field label="Gross Weight" name="grossWeight" value={form.grossWeight} onChange={handleChange} />
-        </div>
-      </div>
-
-      {/* TOTALS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Totals
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Field label="GST %" name="gstPercent" value={form.gstPercent} onChange={handleChange} />
-
-          <div className="bg-[#F8F9FB] rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase">Subtotal</p>
-            <p className="font-bold text-lg">${subtotal.toFixed(2)}</p>
-          </div>
-
-          <div className="bg-[#F8F9FB] rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase">Tax</p>
-            <p className="font-bold text-lg">${gstAmount.toFixed(2)}</p>
-          </div>
-
-          <div className="bg-indigo-600 text-white rounded-xl p-4">
-            <p className="text-xs uppercase opacity-70">Grand Total</p>
-            <p className="font-bold text-xl">${grandTotal.toFixed(2)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* REMARKS */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-          <div className="h-5 w-1 bg-orange-500 rounded-full"></div>
-          <h2 className="text-base font-bold text-gray-700">
-            Remarks
-          </h2>
-        </div>
-
-        <Field label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} />
-      </div>
-
-      {/* FOOTER */}
-      <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
 
         <button
-          type="button"
           onClick={() => navigate(-1)}
-          className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 transition-all"
+          className="cursor-pointer rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
         >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          onClick={handlePreview}
-          disabled={!savedId}
-          className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-xs uppercase tracking-widest disabled:opacity-40"
-        >
-          <Eye size={16} /> Preview
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all disabled:opacity-70"
-        >
-          <Save size={16} />
-          {saving ? "Saving..." : "Save Invoice"}
+          <ArrowLeft size={16} className="mr-2 inline" />
+          Back
         </button>
       </div>
-    </form>
-  </div>
-);
+
+      {/* LEGACY_GENERATE_TAX_INVOICE_START
+      <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
+        <form className="space-y-10">
+          [Legacy Generate Tax Invoice JSX preserved here and intentionally disconnected]
+        </form>
+      </div>
+      LEGACY_GENERATE_TAX_INVOICE_END */}
+    </div>
+  );
 };
 
 export default CreateTaxInvoice;

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>USD Invoice</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #000; margin: 0; }
+    * { box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td, th { border: 0.5px solid #000; padding: 2px 3px; vertical-align: top; }
+    .title { font-size: 10px; font-weight: 700; text-align: center; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+    .bold { font-weight: 700; }
+    .tiny { font-size: 8px; }
+    .min { font-size: 7.3px; }
+    .desc div { margin-bottom: 2px; }
+    .nowrap { white-space: nowrap; }
+    .no-break { break-inside: avoid; page-break-inside: avoid; }
+    .bank-grid td { height: 18px; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <td colspan="8" class="title">INVOICE <span style="float:right;">Page - I</span></td>
+    </tr>
+    <tr>
+      <td colspan="4" rowspan="4">
+        <div>Exporter</div>
+        <div class="bold">{{exporter.companyName}}</div>
+        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
+        <div>{{exporter.stateCode}}</div>
+        <div class="bold">GST NO- {{exporter.gstin}}</div>
+      </td>
+      <td colspan="4" class="bold">Invoice No &amp; Dt. <span style="float:right;">{{invoiceNumber}} Dt. {{invoiceDate}}</span></td>
+    </tr>
+    <tr>
+      <td colspan="2">Buyers Order &amp; Dt</td>
+      <td colspan="2">{{buyerOrderDate}}</td>
+    </tr>
+    <tr>
+      <td colspan="2">Other Reference</td>
+      <td colspan="2">PI NO - {{piNumber}} Dt {{piDate}}</td>
+    </tr>
+    <tr>
+      <td colspan="2"></td>
+      <td colspan="2">L.C NO - {{lcNumber}} DT {{lcDate}}</td>
+    </tr>
+
+    <tr>
+      <td colspan="4" rowspan="6">
+        <div>Consignee</div>
+        <div class="bold">{{buyerName}}</div>
+        <div>{{buyerAddress}}</div>
+        <div>{{buyerCountry}}</div>
+      </td>
+      <td colspan="4" class="bold">DRAWBACK SHIPMENT</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="bold">RODTEP SCHEME CODE <span style="float:right;">{{scheme.rodtepSchemeCode}}</span></td>
+    </tr>
+    <tr>
+      <td colspan="4" class="bold">END USE CODE- <span style="float:right;">{{scheme.endUseCode}}</span></td>
+    </tr>
+    <tr>
+      <td colspan="4" class="bold">IGST PAYMENT STATUS- YES</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="bold">SHIPMENT EXPORT UNDER IGST PAID</td>
+    </tr>
+    <tr>
+      <td colspan="2" class="bold">IEC NO- {{exporter.iecNo}}</td>
+      <td colspan="2" class="bold">AD CODE - {{exporter.adCode}}</td>
+    </tr>
+
+    <tr>
+      <td>Pre -<br />Carriage</td>
+      <td>{{preCarriage}}</td>
+      <td>Place of Rcpt by Pre Carrier</td>
+      <td>{{placeOfReceipt}}</td>
+      <td>Country of Origin</td>
+      <td>INDIA</td>
+      <td>Country of Destination</td>
+      <td>{{buyerCountry}}</td>
+    </tr>
+    <tr>
+      <td>Vessel / Flight</td>
+      <td>{{vesselFlight}}</td>
+      <td>Port of Loading</td>
+      <td>{{portOfLoading}}</td>
+      <td colspan="2">Terms of Delivery and Payment</td>
+      <td colspan="2">{{scheme.termsOfDelivery}}</td>
+    </tr>
+    <tr>
+      <td>Port of Discharge</td>
+      <td colspan="3">{{portOfDischarge}}</td>
+      <td colspan="2">State of Origin of Goods - {{stateOfOrigin}}</td>
+      <td colspan="2">District of Origin of Goods - {{districtOfOrigin}}</td>
+    </tr>
+    <tr>
+      <td>Place of Delivery</td>
+      <td colspan="3">{{placeOfDelivery}}</td>
+      <td colspan="4">{{scheme.termsOfPayment}}</td>
+    </tr>
+
+    <tr>
+      <td class="center">Marks &amp; Nos<br />Container No</td>
+      <td class="center">No &amp; Kind<br />of Pkgs</td>
+      <td class="center">Description of Goods</td>
+      <td class="center">Quantity<br />In Nos</td>
+      <td class="center">Rate<br />DDU<br />BY SEA</td>
+      <td class="center">Amount<br />In USD</td>
+      <td colspan="2" class="center">RMKS<br />(IF ANY)</td>
+    </tr>
+
+    <tr class="no-break">
+      <td rowspan="6" class="bold">{{containerNo}}<br /><br />{{placeOfDelivery}}</td>
+      <td rowspan="6" class="center">Sr no<br /><br />1</td>
+      <td rowspan="6" class="desc">
+        {{#each descriptionLines}}<div>{{this}}</div>{{/each}}
+      </td>
+      <td rowspan="6" class="center"><br /><br />{{totalQty}}<br /><br /><br />Pcs</td>
+      <td rowspan="6" class="right"><br /><br />${{values.totalUSD}}</td>
+      <td rowspan="6" class="right"><br /><br />${{values.totalUSD}}</td>
+      <td colspan="2" rowspan="6" class="center"></td>
+    </tr>
+    <tr></tr>
+    <tr></tr>
+    <tr></tr>
+    <tr></tr>
+    <tr></tr>
+
+    <tr>
+      <td colspan="2" class="center">Total No of Cartons</td>
+      <td colspan="2" class="center">Amount Chargeable (In Words)</td>
+      <td colspan="2" class="center">Total</td>
+      <td colspan="2" class="right bold">${{values.totalUSD}}</td>
+    </tr>
+    <tr>
+      <td colspan="2" class="center bold">Nos</td>
+      <td colspan="4" class="bold">{{amountWordsUSD}}</td>
+      <td colspan="2"></td>
+    </tr>
+    <tr>
+      <td colspan="2" class="center">Total Net.Wt.</td>
+      <td colspan="4" rowspan="6">
+        <div class="bold">Declaration</div>
+        <div class="min">DBK001- "{{staticText.DBK001}}"</div>
+        <div class="min" style="margin-top:4px;">DBK003- "{{staticText.DBK003}}"</div>
+        <div class="min" style="margin-top:4px;">{{staticText.DECLARATION}}</div>
+        <div class="min" style="margin-top:4px;">{{staticText.MEIS}}</div>
+        <div class="min" style="margin-top:4px;">STATEMENT ON ORIGIN</div>
+        <div class="min" style="margin-top:4px;">{{staticText.GSP_ORIGIN}}</div>
+      </td>
+      <td colspan="2" class="center">Sign &amp; Date</td>
+    </tr>
+    <tr>
+      <td colspan="2" class="center bold">K.G.</td>
+      <td colspan="2" rowspan="5"></td>
+    </tr>
+    <tr>
+      <td colspan="2" class="center">Total Gross.Wt.</td>
+    </tr>
+    <tr>
+      <td colspan="2" class="center bold">K.G.</td>
+    </tr>
+    <tr>
+      <td colspan="2" rowspan="2"></td>
+    </tr>
+    <tr></tr>
+
+    <tr class="bank-grid">
+      <td colspan="4"></td>
+      <td colspan="2" class="bold">BANK DETAILS</td>
+      <td colspan="2" class="bold">NAME - {{exporter.bankName}}</td>
+    </tr>
+    <tr class="bank-grid">
+      <td colspan="4"></td>
+      <td colspan="2"></td>
+      <td colspan="2" class="bold">ACCOUNT NO - {{exporter.accountNo}}</td>
+    </tr>
+    <tr class="bank-grid">
+      <td colspan="4"></td>
+      <td colspan="2"></td>
+      <td colspan="2" class="bold">IFSC Code - {{exporter.ifsc}}</td>
+    </tr>
+    <tr class="bank-grid">
+      <td colspan="4"></td>
+      <td colspan="2"></td>
+      <td colspan="2" class="bold">SWIFT code : {{exporter.swift}}</td>
+    </tr>
+  </table>
+</body>
+</html>

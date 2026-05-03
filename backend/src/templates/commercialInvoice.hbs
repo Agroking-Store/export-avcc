@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Commercial Invoice</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #000; margin: 0; }
+    * { box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td, th { border: 0.5px solid #000; padding: 2px 3px; vertical-align: top; }
+    .title { font-size: 11px; font-weight: 700; text-align: center; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: 700; }
+    .min { font-size: 7.8px; }
+    .desc div { margin-bottom: 3px; }
+    .strong-italic { font-style: italic; font-weight: 700; }
+    .no-break { break-inside: avoid; page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <td colspan="10" class="title">COMMERCIAL INVOICE</td>
+    </tr>
+    <tr>
+      <td colspan="4" rowspan="4">
+        <div class="bold">{{exporter.companyName}}</div>
+        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
+        <div>GSTIN/UIN: {{exporter.gstin}}</div>
+        <div>State Name : Maharashtra, Code : 27</div>
+      </td>
+      <td colspan="3">INVOICE NO</td>
+      <td colspan="3">Dated</td>
+    </tr>
+    <tr>
+      <td colspan="3" class="bold">{{invoiceNumber}}</td>
+      <td colspan="3" class="bold">{{invoiceDate}}</td>
+    </tr>
+    <tr>
+      <td colspan="3">Mode/Terms of Payment</td>
+      <td colspan="3">L.C NO : {{lcNumber}} DT {{lcDate}}</td>
+    </tr>
+    <tr>
+      <td colspan="3" class="bold">TO THE ORDER OF {{scheme.termsOfPayment}}</td>
+      <td colspan="3"></td>
+    </tr>
+
+    <tr>
+      <td colspan="4">
+        <div>Consignee (Ship to)</div>
+        <div class="bold">TO THE ORDER {{scheme.termsOfPayment}}</div>
+        <div>{{portOfDischarge}}</div>
+        <div>{{buyerCountry}}</div>
+      </td>
+      <td colspan="3">Dispatched through</td>
+      <td colspan="3">Destination</td>
+    </tr>
+    <tr>
+      <td colspan="4" rowspan="3">
+        <div>Buyer (Bill to)</div>
+        <div class="bold">{{buyerName}}</div>
+        <div>{{buyerAddress}}</div>
+        <div>{{buyerCountry}}</div>
+      </td>
+      <td colspan="3">Country:</td>
+      <td colspan="3">{{buyerCountry}}</td>
+    </tr>
+    <tr>
+      <td colspan="6">Terms of Delivery</td>
+    </tr>
+    <tr>
+      <td colspan="6">
+        <div>1) Delivery Term: {{scheme.termsOfDelivery}}</div>
+        <div>2) Port of Loading: {{portOfLoading}}, India</div>
+        <div>3) Port of Discharge: {{portOfDischarge}}, {{buyerCountry}}</div>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="width:6%;">Sl No.</td>
+      <td colspan="4" class="center">Description of Goods</td>
+      <td style="width:12%;" class="center">HSN/SAC</td>
+      <td style="width:10%;" class="center">FOB</td>
+      <td style="width:10%;" class="center">FREIGHT</td>
+      <td style="width:6%;" class="center">Per</td>
+      <td style="width:12%;" class="center">Amount</td>
+    </tr>
+
+    <tr class="no-break">
+      <td rowspan="5" class="center">1</td>
+      <td colspan="4" rowspan="5" class="desc">
+        <div class="bold">01 UNIT OF USED {{vehicle.make}} {{vehicle.model}} {{vehicle.variant}}</div>
+        <div>CHASSIS NO: {{vehicle.chassisNo}}</div>
+        <div>ENGINE NO : {{vehicle.engineNo}}</div>
+        <div>YEAR OF MANUFACTURE: {{vehicle.yearOfManufacture}}</div>
+        <div>MONTH/YEAR OF FIRST REGISTRATION: {{vehicle.monthYearFirstReg}}</div>
+        <div>MAKE: {{vehicle.make}}</div>
+        <div>MODEL: {{vehicle.model}} {{vehicle.variant}}</div>
+        <div>TYPE OF VEHICLE: {{scheme.typeOfVehicle}}</div>
+        <div>COUNTRY OF ORIGIN : INDIA</div>
+        <div>EXPORT INSPECTION CERTIFICATE NO: {{vehicle.exportInspCertNo}}</div>
+        <div>EXPORT INSPECTION CERTIFICATE DATE: {{vehicle.exportInspCertDate}}</div>
+        <div style="margin-top:10px;" class="strong-italic">
+          WE HEREBY CERTIFY THAT THIS SHIPMENT CONFIRMS TO PROFORMA INVOICE NO. {{piNumber}} DT {{piDate}}
+        </div>
+        <div style="margin-top:12px;" class="strong-italic">{{staticText.ACCESSORIES}}</div>
+        <div style="margin-top:12px;" class="strong-italic">{{staticText.AGE_CERT}}</div>
+      </td>
+      <td rowspan="5" class="center">{{vehicle.hsnCode}}</td>
+      <td rowspan="5" class="right">{{values.fobUSD}}</td>
+      <td rowspan="5" class="right">{{values.freightUSD}}</td>
+      <td rowspan="5" class="center">No</td>
+      <td rowspan="5" class="right bold">{{values.totalUSD}}</td>
+    </tr>
+    <tr></tr>
+    <tr></tr>
+    <tr></tr>
+    <tr></tr>
+
+    <tr>
+      <td colspan="7" class="right">Total</td>
+      <td class="right bold">${{values.totalUSD}}</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="min">Amount Chargeable (in words)</td>
+      <td colspan="4" class="right min">E. &amp; O.E</td>
+      <td colspan="2"></td>
+    </tr>
+    <tr>
+      <td colspan="4" class="bold">{{amountWordsUSD}}</td>
+      <td colspan="4" class="bold">for ANANYATA TRADELINK LLP</td>
+      <td colspan="2"></td>
+    </tr>
+    <tr>
+      <td colspan="4"></td>
+      <td colspan="4"></td>
+      <td colspan="2" class="right">Authorised Signatory</td>
+    </tr>
+    <tr>
+      <td colspan="10" class="center min">This is a Computer Generated Document</td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -32,6 +32,8 @@ import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
 
 // Admin
 import UserManagementModule from "../features/admin/pages/UserManagementModule";
+import VehicleSelectionPage from "../features/proforma-invoice/pages/VehicleSelectionPage";
+import InvoiceFormPage from "../features/proforma-invoice/pages/InvoiceFormPage";
 
 const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
@@ -69,6 +71,14 @@ const AppRoutes: React.FC = () => {
 
           {/* Proforma Invoice */}
           <Route path="/proforma-invoice/*" element={<PIModule />} />
+          <Route
+            path="/invoices/generate/:piId/:type"
+            element={<VehicleSelectionPage />}
+          />
+          <Route
+            path="/invoices/generate/:piId/:type/:vehicleId"
+            element={<InvoiceFormPage />}
+          />
 
           {/* Companies */}
           <Route path="/companies/*" element={<CompanyModule />} />

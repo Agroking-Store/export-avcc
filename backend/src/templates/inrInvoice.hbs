@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>INR Tax Invoice</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #000; margin: 0; }
+    * { box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td, th { border: 0.5px solid #000; padding: 2px 3px; vertical-align: top; }
+    .title { font-size: 11px; font-weight: 700; text-align: center; }
+    .bold { font-weight: 700; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .min { font-size: 7.8px; }
+    .desc div { margin-bottom: 2px; }
+    .no-break { break-inside: avoid; page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <div class="title" style="margin-bottom:6px;">TAX INVOICE</div>
+
+  <table>
+    <tr>
+      <td colspan="4">
+        <div class="bold">{{exporter.companyName}}</div>
+        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
+        <div><span class="bold">GSTIN:</span> {{exporter.gstin}}</div>
+        <div><span class="bold">IEC:</span> {{exporter.iecNo}}</div>
+        <div><span class="bold">AD Code:</span> {{exporter.adCode}}</div>
+        <div><span class="bold">PAN:</span> {{exporter.pan}}</div>
+      </td>
+      <td colspan="3">
+        <div><span class="bold">Tax Invoice No:</span> {{invoiceNumber}}</div>
+        <div><span class="bold">Date:</span> {{invoiceDate}}</div>
+        <div><span class="bold">PI No:</span> {{piNumber}}</div>
+        <div><span class="bold">LC No:</span> {{lcNumber}}</div>
+        <div style="margin-top:8px;"><span class="bold">Custom Exchange Rate:</span> US DOLLAR 1 = {{values.customExchangeRate}}</div>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="4">
+        <div class="bold">CONSIGNEE</div>
+        <div class="bold">{{buyerName}}</div>
+        <div>{{buyerAddress}}</div>
+      </td>
+      <td colspan="3">
+        <div class="bold">EXPORT UNDER DRAWBACK SCHEME</div>
+        <div class="bold">RODTEP Scheme CODE - {{scheme.rodtepSchemeCode}}</div>
+        <div class="bold">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</div>
+        <div class="bold">IGST PAID</div>
+        <div style="margin-top:8px;"><span class="bold">Place of Supply -</span> {{scheme.placeOfSupply}}</div>
+      </td>
+    </tr>
+    <tr>
+      <td><span class="bold">Pre-Carriage</span><br />{{preCarriage}}</td>
+      <td><span class="bold">Place of Receipt</span><br />{{placeOfReceipt}}</td>
+      <td><span class="bold">Country of Origin</span><br />INDIA</td>
+      <td><span class="bold">Country of Destination</span><br />{{buyerCountry}}</td>
+      <td><span class="bold">Vessel / Flight</span><br />{{vesselFlight}}</td>
+      <td><span class="bold">Port of Loading</span><br />{{portOfLoading}}</td>
+      <td><span class="bold">Terms of Delivery &amp; Payment</span><br />{{scheme.termsOfDelivery}} / {{scheme.termsOfPayment}}</td>
+    </tr>
+    <tr>
+      <td colspan="2"><span class="bold">Port of Discharge</span><br />{{portOfDischarge}}</td>
+      <td colspan="2"><span class="bold">Place of Delivery</span><br />{{placeOfDelivery}}</td>
+      <td colspan="3"><span class="bold">State / District of Origin</span><br />{{stateOfOrigin}} / {{districtOfOrigin}}</td>
+    </tr>
+  </table>
+
+  <table style="margin-top:8px;">
+    <tr>
+      <td class="center bold" style="width:17%;">Marks &amp; Nos /<br />Container No</td>
+      <td class="center bold" style="width:8%;">SR NO</td>
+      <td class="center bold">Description of Goods</td>
+      <td class="center bold" style="width:10%;">IGST Rate %</td>
+      <td class="center bold" style="width:10%;">Qty (Pcs)</td>
+      <td class="center bold" style="width:13%;">Rate (Rs.)</td>
+      <td class="center bold" style="width:13%;">Amount (Rs.)</td>
+      <td class="center bold" style="width:14%;">IGST Amount (Rs.)</td>
+    </tr>
+    <tr class="no-break">
+      <td>{{containerNo}}</td>
+      <td class="center">1</td>
+      <td class="desc">
+        {{#each descriptionLines}}<div>{{this}}</div>{{/each}}
+      </td>
+      <td class="center">{{vehicle.igstRate}}</td>
+      <td class="center">{{totalQty}}</td>
+      <td class="right">{{values.exShowroomINR}}</td>
+      <td class="right">{{values.totalINR}}</td>
+      <td class="right">{{values.igstAmountINR}}</td>
+    </tr>
+    <tr>
+      <td colspan="6" class="bold">Total Amount INR</td>
+      <td class="right bold">{{values.totalINR}}</td>
+      <td class="right bold">{{values.igstAmountINR}}</td>
+    </tr>
+    <tr>
+      <td colspan="8"><span class="bold">Amount in Words:</span> {{amountWordsINR}}</td>
+    </tr>
+    <tr>
+      <td colspan="8" class="min">{{staticText.GSP_ORIGIN}}</td>
+    </tr>
+  </table>
+
+  <div style="margin-top:8px; text-align:right;" class="bold">For ANANYATA TRADELINK LLP</div>
+  <div style="margin-top:18px; text-align:right;" class="bold">Authorised Signatory</div>
+</body>
+</html>

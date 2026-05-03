@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Packing List</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #000; margin: 0; }
+    * { box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td, th { border: 0.5px solid #000; padding: 2px 3px; vertical-align: top; }
+    .title { font-size: 11px; font-weight: 700; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+    .bold { font-weight: 700; }
+    .min { font-size: 7.8px; }
+    .desc div { margin-bottom: 2px; }
+    .no-break { break-inside: avoid; page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+    <div class="title">PACKING LIST PAGE - I</div>
+    <div class="right bold">
+      <div>Invoice No: {{invoiceNumber}}</div>
+      <div>Date: {{invoiceDate}}</div>
+    </div>
+  </div>
+
+  <table>
+    <tr>
+      <td colspan="4">
+        <div class="bold">EXPORTER</div>
+        <div class="bold" style="font-size:11px;">{{exporter.companyName}}</div>
+        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
+      </td>
+      <td colspan="3">
+        <div><span class="bold">PI No:</span> {{piNumber}}</div>
+        <div><span class="bold">PI Date:</span> {{piDate}}</div>
+        <div><span class="bold">LC No:</span> {{lcNumber}}</div>
+        <div><span class="bold">LC Date:</span> {{lcDate}}</div>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="4">
+        <div class="bold">CONSIGNEE</div>
+        <div class="bold">{{buyerName}}</div>
+        <div>{{buyerAddress}}</div>
+        <div>{{buyerCountry}}</div>
+      </td>
+      <td colspan="3">
+        <div><span class="bold">Place of Receipt -</span> {{placeOfReceipt}}</div>
+        <div><span class="bold">Port of Loading -</span> {{portOfLoading}}</div>
+        <div><span class="bold">Port of Discharge -</span> {{portOfDischarge}}</div>
+        <div><span class="bold">Place of Delivery -</span> {{placeOfDelivery}}</div>
+      </td>
+    </tr>
+  </table>
+
+  <table style="margin-top:8px;">
+    <tr>
+      <td class="center bold" style="width:17%;">Marks &amp; Nos /<br />Container No</td>
+      <td class="center bold" style="width:8%;">Sr No</td>
+      <td class="bold">Description of Goods</td>
+      <td class="center bold" style="width:12%;">Qty (Pcs)</td>
+      <td class="center bold" style="width:13%;">Net Wt (KG)</td>
+      <td class="center bold" style="width:13%;">Gross Wt (KG)</td>
+      <td class="center bold" style="width:16%;">Dimensions<br />L×W×H (cm)</td>
+    </tr>
+    <tr class="no-break">
+      <td>{{containerNo}}</td>
+      <td class="center">1</td>
+      <td class="desc">
+        {{#each descriptionLines}}<div>{{this}}</div>{{/each}}
+      </td>
+      <td class="center">{{totalQty}}</td>
+      <td class="center">{{vehicle.netWeightKg}}</td>
+      <td class="center">{{vehicle.grossWeightKg}}</td>
+      <td class="center">{{vehicle.dimensionsCm}}</td>
+    </tr>
+    <tr>
+      <td colspan="3" class="bold">Totals</td>
+      <td class="center bold">{{totalQty}}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td colspan="7" class="min"><span class="bold">DBK001:</span> {{staticText.DBK001}}</td>
+    </tr>
+    <tr>
+      <td colspan="7" class="min">{{staticText.MEIS}}</td>
+    </tr>
+    <tr>
+      <td colspan="7" class="min">{{staticText.GSP_ORIGIN}}</td>
+    </tr>
+  </table>
+</body>
+</html>

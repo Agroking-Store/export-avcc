@@ -9,6 +9,7 @@ import vehicleBookingRoutes from "./vehicle-booking.route";
 import proformaInvoiceRoutes from "./proforma-invoice.route";
 import bookingRoutes from "./booking.route";
 import taxInvoiceRoutes from "./taxInvoice.routes";
+import invoiceRoutes from "./invoice.route";
 import userRoutes from "./user.route";
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use("/bookings", bookingRoutes);
 router.use("/proforma-invoices", proformaInvoiceRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/tax-invoices", taxInvoiceRoutes);
+router.use("/", invoiceRoutes);
 router.use("/users", userRoutes);
 
 export default router;

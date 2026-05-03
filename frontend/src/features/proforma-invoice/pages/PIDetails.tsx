@@ -7,7 +7,7 @@ import {
   Download, Eye, ChevronLeft, CheckCircle2, Clock, XCircle,
   FileText, Edit, Loader2, FileUp, MoreVertical, FileDown, RefreshCw,
   Upload, ShieldCheck, ShieldAlert, X, FileBadge, AlertTriangle, Car,
-  AlertOctagon,
+  AlertOctagon, Package2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -15,6 +15,9 @@ import {
 import { ProformaInvoiceAPI } from "../components/pi.types";
 import { Button } from "@/components/ui/button";
 import { piApi } from "../components/piApi";
+import InvoiceTypeModal from "../components/InvoiceTypeModal";
+import { invoiceApi } from "../components/invoiceApi";
+import type { PIInvoiceContext } from "../components/invoice.types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -389,15 +392,21 @@ const PIDetails = () => {
   const navigate = useNavigate();
 
   const [data, setData] = useState<ProformaInvoiceAPI | null>(null);
+  const [invoiceContext, setInvoiceContext] = useState<PIInvoiceContext | null>(null);
   const [loading, setLoading] = useState(false);
   const [viewingLC, setViewingLC] = useState(false);
   const [showLCModal, setShowLCModal] = useState(false);
+  const [showInvoiceTypeModal, setShowInvoiceTypeModal] = useState(false);
 
   const fetchPI = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`);
-      setData(res.data);
+      const [piRes, invoiceRes] = await Promise.all([
+        axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`),
+        invoiceApi.getPIContext(id || ""),
+      ]);
+      setData(piRes.data);
+      setInvoiceContext(invoiceRes);
     } catch { toast.error("Failed to load PI details"); }
     finally { setLoading(false); }
   };
@@ -498,6 +507,37 @@ const PIDetails = () => {
 
   const pi = data;
 
+  const handleInvoiceView = (
+    invoiceId: string,
+    type: "invoice" | "packing",
+  ) => {
+    window.open(
+      type === "packing"
+        ? invoiceApi.getPackingListViewUrl(invoiceId)
+        : invoiceApi.getInvoiceViewUrl(invoiceId),
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const handleInvoiceDownload = async (
+    invoiceId: string,
+    type: "invoice" | "packing",
+    fileName: string,
+  ) => {
+    try {
+      await invoiceApi.downloadFile(
+        type === "packing"
+          ? invoiceApi.getPackingListViewUrl(invoiceId)
+          : invoiceApi.getInvoiceViewUrl(invoiceId),
+        fileName,
+      );
+      toast.success("Invoice downloaded");
+    } catch {
+      toast.error("Failed to download invoice");
+    }
+  };
+
   const formatDate = (d?: string) =>
     d ? new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "Not specified";
 
@@ -522,6 +562,19 @@ const PIDetails = () => {
       {addr.country && <p className="text-sm text-zinc-600 dark:text-zinc-400">{addr.country}</p>}
     </>);
   };
+
+  // NEW: opens InvoiceTypeModal — legacy form commented below
+  const generateTaxInvoiceButton = (
+    <Button
+      onClick={() => setShowInvoiceTypeModal(true)}
+      variant="outline"
+      size="sm"
+      className="h-9 border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
+    >
+      <FileText className="w-4 h-4" />
+      Generate Tax Invoice
+    </Button>
+  );
 
   return (
     <div className="bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
@@ -554,16 +607,7 @@ const PIDetails = () => {
           </div>
 
           <div className="flex items-center gap-2 self-end lg:self-center">
-            {/* Tax Invoice */}
-<Button
-  onClick={() => navigate(`/proforma-invoice/create-tax-invoice/${id}`)}
-  variant="outline"
-  size="sm"
-  className="h-9 border-blue-200 text-blue-600 hover:bg-blue-50 gap-2"
->
-  <FileText className="w-4 h-4" />
-  Generate Tax Invoice
-</Button>
+            {generateTaxInvoiceButton}
 
 {/* LC Actions */}
 <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -682,48 +726,131 @@ const PIDetails = () => {
 
             {/* Vehicle Table */}
             <div className="p-8 sm:p-10">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Vehicle Invoice Tracker</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    View or download INR, USD, Commercial, and Packing List PDFs per vehicle from this PI.
+                  </p>
+                </div>
+              </div>
               <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[1150px] text-sm">
                   <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
                     <tr>
-                      <th className="px-6 py-4 text-left">Description / Model</th>
-                      <th className="px-6 py-4 text-center">Qty</th>
-                      <th className="px-6 py-4 text-right">Rate</th>
-                      <th className="px-6 py-4 text-right">Amount</th>
+                      <th className="px-6 py-4 text-left">VIN</th>
+                      <th className="px-6 py-4 text-left">Model</th>
+                      <th className="px-6 py-4 text-left">Variant</th>
+                      <th className="px-6 py-4 text-right">Value</th>
+                      <th className="px-6 py-4 text-left">INR Invoice</th>
+                      <th className="px-6 py-4 text-left">USD Invoice</th>
+                      <th className="px-6 py-4 text-left">Commercial Invoice</th>
+                      <th className="px-6 py-4 text-left">Packing List</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    {pi.vehicleDetails?.map((v: any, i: number) => {
-                      const rate = (Number(v.fob) || 0) + (Number(v.freight) || 0);
-                      const amount = v.quantity * rate;
-                      return (
-                        <tr key={i} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors">
-                          <td className="px-6 py-4">
-                            <p className="font-medium text-zinc-900 dark:text-zinc-100">{v.model}</p>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[11px] text-zinc-500 font-mono">
-                              {v.chassisNo && <span>VIN: {v.chassisNo}</span>}
-                              {v.engineNo && <span>Eng: {v.engineNo}</span>}
-                              {v.color && <span>Clr: {v.color}</span>}
-                              {v.engineCapacity && <span>Cap: {v.engineCapacity}</span>}
-                              {v.fuelType && <span>Fuel: {v.fuelType}</span>}
+                    {(invoiceContext?.vehicles || []).map((vehicle) => (
+                      <tr
+                        key={vehicle.vehicleId}
+                        className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-mono text-xs text-zinc-700 dark:text-zinc-300">
+                          {vehicle.chassisNo || "—"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-zinc-900 dark:text-zinc-100">{vehicle.model || "—"}</p>
+                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-zinc-500 font-mono">
+                            {vehicle.make && <span>Make: {vehicle.make}</span>}
+                            {vehicle.engineNo && <span>Eng: {vehicle.engineNo}</span>}
+                            {vehicle.fuelType && <span>Fuel: {vehicle.fuelType}</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-700 dark:text-zinc-300">
+                          {vehicle.variant || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-right font-medium font-mono text-zinc-900 dark:text-zinc-100">
+                          USD {vehicle.totalUSD.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                        {(["INR", "USD", "COMMERCIAL"] as const).map((typeKey) => {
+                          const invoice = vehicle.invoices[typeKey];
+                          return (
+                            <td key={typeKey} className="px-6 py-4">
+                              {invoice ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-700">
+                                    {invoice.invoiceNumber}
+                                  </span>
+                                  <Button
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={() => handleInvoiceView(invoice._id, "invoice")}
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={() =>
+                                      handleInvoiceDownload(
+                                        invoice._id,
+                                        "invoice",
+                                        `${invoice.invoiceNumber}.pdf`,
+                                      )
+                                    }
+                                  >
+                                    <Download className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-zinc-400">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="px-6 py-4">
+                          {vehicle.invoices.PACKING_LIST ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-blue-700">
+                                Auto
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => handleInvoiceView(vehicle.invoices.PACKING_LIST!._id, "packing")}
+                              >
+                                <Package2 className="h-3 w-3" />
+                                View
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() =>
+                                  handleInvoiceDownload(
+                                    vehicle.invoices.PACKING_LIST!._id,
+                                    "packing",
+                                    `${vehicle.invoices.PACKING_LIST!.invoiceNumber}-packing.pdf`,
+                                  )
+                                }
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-center text-zinc-700 dark:text-zinc-300">{v.quantity}</td>
-                          <td className="px-6 py-4 text-right font-mono text-zinc-700 dark:text-zinc-300">${rate.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td className="px-6 py-4 text-right font-medium font-mono text-zinc-900 dark:text-zinc-100">${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                      );
-                    })}
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                   <tfoot className="bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800">
                     <tr>
-                      <td colSpan={2} className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
+                      <td colSpan={4} className="px-6 py-4 text-left text-sm font-medium text-zinc-500">
                         <span className="text-[11px] font-semibold uppercase tracking-widest">Amount in Words</span>
                         <p className="normal-case text-zinc-700 dark:text-zinc-300 mt-1">{pi.amountInWords}</p>
                       </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-zinc-500">Grand Total</td>
-                      <td className="px-6 py-4 text-right text-lg font-semibold font-mono text-zinc-900 dark:text-white">
-                        ${pi.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <td colSpan={4} className="px-6 py-4 text-right text-lg font-semibold font-mono text-zinc-900 dark:text-white">
+                        USD {pi.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   </tfoot>
@@ -745,6 +872,12 @@ const PIDetails = () => {
           </div>
         )}
       </div>
+
+      <InvoiceTypeModal
+        open={showInvoiceTypeModal}
+        onOpenChange={setShowInvoiceTypeModal}
+        context={invoiceContext}
+      />
 
       {showLCModal && id && (
         <LCUploadModal
