@@ -7,8 +7,8 @@ export interface IVehicleListItem extends Document {
   color: string;
   hsnCode: string;
   quantity: number;
-  fobAmount?: number;
-  freight?: number;
+  fobAmount: number;
+  freight: number;
   status: "Available" | "Out of Stock";
   createdAt: Date;
   updatedAt: Date;
@@ -76,7 +76,11 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
   },
 );
 
-vehicleListItemSchema.pre("save", function () {
+// vehicleListItemSchema.pre("save", function () {
+//   this.status = this.quantity > 0 ? "Available" : "Out of Stock";
+// });
+
+vehicleListItemSchema.pre("save", function (this: IVehicleListItem) {
   this.status = this.quantity > 0 ? "Available" : "Out of Stock";
 });
 

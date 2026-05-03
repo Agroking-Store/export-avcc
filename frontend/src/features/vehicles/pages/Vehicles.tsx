@@ -203,11 +203,11 @@ const Vehicles: React.FC = () => {
 
       {/* Actionable Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <ActionCard label="Pending Quotations" value={metrics.pendingQuotations} icon={<FileText size={18} />} color="text-slate-600" onClick={() => navigate("/vehicles/orders")} />
-        <ActionCard label="Awaiting Approval" value={metrics.awaitingApproval} icon={<AlertCircle size={18} />} color="text-amber-600" onClick={() => navigate("/vehicles/orders")} />
-        <ActionCard label="Missing Engine/Chassis" value={metrics.awaitingNumbers} icon={<Wrench size={18} />} color="text-blue-600" onClick={() => navigate("/vehicles/orders")} />
+        <ActionCard label="Pending Quotations"    value={metrics.pendingQuotations} icon={<FileText size={18} />}    color="text-slate-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "pending"            } })} />
+        <ActionCard label="Awaiting Approval"      value={metrics.awaitingApproval}  icon={<AlertCircle size={18} />} color="text-amber-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "quotation_uploaded" } })} />
+        <ActionCard label="Missing Engine/Chassis" value={metrics.awaitingNumbers}   icon={<Wrench size={18} />}      color="text-blue-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "payment_done"        } })} />
         {isAdmin && (
-          <ActionCard label="Missing Client Allotment" value={metrics.missingClient} icon={<User size={18} />} color="text-rose-600" onClick={() => navigate("/vehicles/orders")} />
+          <ActionCard label="Missing Client Allotment" value={metrics.missingClient} icon={<User size={18} />}        color="text-rose-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "missingClient"       } })} />
         )}
       </div>
 
@@ -422,4 +422,3 @@ const PlusIcon = () => (
 );
 
 export default Vehicles;
-
