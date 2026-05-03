@@ -13,8 +13,11 @@ export interface IInvoice extends Document {
   containerNo?: string;
   manualFields: Record<string, any>;
   computedFields: Record<string, any>;
-  filePath: string;
-  packingListPath?: string;
+invoicePdf: {
+      type: Buffer,
+      required: true
+    };
+    packingListPdf?: Buffer;
   generatedAt: Date;
   active: boolean;
   dataSnapshot: Record<string, any>;

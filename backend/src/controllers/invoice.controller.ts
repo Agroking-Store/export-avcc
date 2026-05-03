@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import fs from "fs";
-import path from "path";
 import mongoose from "mongoose";
 import ProformaInvoice from "../models/ProformaInvoice.model";
 import Invoice, { InvoiceDocumentType } from "../models/Invoice.model";
@@ -43,7 +42,7 @@ const STATIC_TEXT = {
     "WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.",
 };
 
-const STORAGE_ROOT = path.resolve(process.cwd(), "storage", "invoices");
+
 
 const isValidObjectId = (value: string) => mongoose.Types.ObjectId.isValid(value);
 
@@ -314,11 +313,10 @@ const buildPIInvoiceContext = async (piId: string) => {
 
       acc[invoice.vehicleId][invoice.type] = invoice;
 
-      if (invoice.packingListPath) {
+      if (invoice.packingListPdf) {
         acc[invoice.vehicleId].PACKING_LIST = {
           ...invoice,
           type: "PACKING_LIST",
-          filePath: invoice.packingListPath,
         };
       }
 
@@ -542,13 +540,7 @@ const applyVehicleOverrides = (
   return merged;
 };
 
-const ensureDir = async (dirPath: string) => {
-  await fs.promises.mkdir(dirPath, { recursive: true });
-};
 
-const writeFileBuffer = async (targetPath: string, file: Buffer) => {
-  await fs.promises.writeFile(targetPath, file);
-};
 
 export const getPIInvoiceContext = async (req: Request, res: Response) => {
   try {
@@ -601,9 +593,8 @@ export const getInvoicesByPI = async (req: Request, res: Response) => {
         vehicleId: invoice.vehicleId,
         type: invoice.type,
         invoiceNumber: invoice.invoiceNumber,
-        filePath: invoice.filePath,
         generatedAt: invoice.generatedAt,
-        packingListPath: invoice.packingListPath || "",
+        hasPackingList: !!invoice.packingListPdf,
       })),
     );
   } catch (error: any) {
@@ -698,56 +689,37 @@ export const generateInvoice = async (req: Request, res: Response) => {
       manualFields,
     });
 
-    const folderPath = path.join(STORAGE_ROOT, piId, type);
-    await ensureDir(folderPath);
-
     const sanitizedInvoiceNumber = sanitizeFileName(manualFields.invoiceNumber);
-    const invoicePath = path.join(folderPath, `${sanitizedInvoiceNumber}.pdf`);
-    const packingListPath = path.join(
-      folderPath,
-      `${sanitizedInvoiceNumber}-packing.pdf`,
-    );
 
-    const pdfTasks: Promise<any>[] = [];
+    let invoicePdfBuffer: Buffer;
+    let packingListPdfBuffer: Buffer | undefined;
 
     if (type === "INR") {
-      pdfTasks.push(
-        renderInvoicePDF({
-          templateName: "inrInvoice",
-          data: templateData,
-          invoiceNumber: manualFields.invoiceNumber,
-        }).then((buffer) => writeFileBuffer(invoicePath, buffer)),
-      );
+      invoicePdfBuffer = await renderInvoicePDF({
+        templateName: "inrInvoice",
+        data: templateData,
+        invoiceNumber: manualFields.invoiceNumber,
+      });
+    } else if (type === "USD") {
+      invoicePdfBuffer = await renderInvoicePDF({
+        templateName: "usdInvoice",
+        data: templateData,
+        invoiceNumber: manualFields.invoiceNumber,
+      });
+      packingListPdfBuffer = await renderInvoicePDF({
+        templateName: "packingList",
+        data: templateData,
+        invoiceNumber: manualFields.invoiceNumber,
+      });
+    } else if (type === "COMMERCIAL") {
+      invoicePdfBuffer = await renderInvoicePDF({
+        templateName: "commercialInvoice",
+        data: templateData,
+        invoiceNumber: manualFields.invoiceNumber,
+      });
+    } else {
+      throw new Error("Invalid invoice type");
     }
-
-    if (type === "USD") {
-      pdfTasks.push(
-        renderInvoicePDF({
-          templateName: "usdInvoice",
-          data: templateData,
-          invoiceNumber: manualFields.invoiceNumber,
-        }).then((buffer) => writeFileBuffer(invoicePath, buffer)),
-      );
-      pdfTasks.push(
-        renderInvoicePDF({
-          templateName: "packingList",
-          data: templateData,
-          invoiceNumber: manualFields.invoiceNumber,
-        }).then((buffer) => writeFileBuffer(packingListPath, buffer)),
-      );
-    }
-
-    if (type === "COMMERCIAL") {
-      pdfTasks.push(
-        renderInvoicePDF({
-          templateName: "commercialInvoice",
-          data: templateData,
-          invoiceNumber: manualFields.invoiceNumber,
-        }).then((buffer) => writeFileBuffer(invoicePath, buffer)),
-      );
-    }
-
-    await Promise.all(pdfTasks);
 
     const payload = {
       piId,
@@ -760,8 +732,8 @@ export const generateInvoice = async (req: Request, res: Response) => {
       containerNo: manualFields.containerNo || "",
       manualFields,
       computedFields,
-      filePath: invoicePath,
-      packingListPath: type === "USD" ? packingListPath : "",
+      invoicePdf: invoicePdfBuffer,
+      packingListPdf: packingListPdfBuffer,
       generatedAt: new Date(),
       active: true,
       dataSnapshot: {
@@ -798,31 +770,11 @@ export const generateInvoice = async (req: Request, res: Response) => {
   }
 };
 
-const streamFile = async (
-  res: Response,
-  targetPath: string,
-  downloadName: string,
-) => {
-  if (!targetPath || !fs.existsSync(targetPath)) {
-    return jsonError(res, 404, {
-      error: "FILE_NOT_FOUND",
-      message: "Generated file not found on disk",
-    });
-  }
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
-  res.setHeader(
-    "Content-Disposition",
-    `inline; filename="${sanitizeFileName(downloadName)}.pdf"`,
-  );
-
-  return res.sendFile(path.resolve(targetPath));
-};
 
 export const downloadInvoice = async (req: Request, res: Response) => {
   try {
-    const invoice = await Invoice.findById(req.params.invoiceId);
+    const invoice = await Invoice.findById(req.params.invoiceId).lean();
 
     if (!invoice) {
       return jsonError(res, 404, {
@@ -831,7 +783,21 @@ export const downloadInvoice = async (req: Request, res: Response) => {
       });
     }
 
-    return streamFile(res, invoice.filePath, invoice.invoiceNumber);
+    if (!invoice.invoicePdf || invoice.invoicePdf.length === 0) {
+      return jsonError(res, 404, {
+        error: "PDF_NOT_FOUND",
+        message: "Invoice PDF not found",
+      });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${sanitizeFileName(invoice.invoiceNumber)}.pdf"`,
+    );
+
+    return res.send(invoice.invoicePdf);
   } catch (error: any) {
     return jsonError(res, 500, {
       error: "DOWNLOAD_FAILED",
@@ -843,7 +809,7 @@ export const downloadInvoice = async (req: Request, res: Response) => {
 
 export const downloadPackingList = async (req: Request, res: Response) => {
   try {
-    const invoice = await Invoice.findById(req.params.invoiceId);
+    const invoice = await Invoice.findById(req.params.invoiceId).lean();
 
     if (!invoice) {
       return jsonError(res, 404, {
@@ -852,18 +818,21 @@ export const downloadPackingList = async (req: Request, res: Response) => {
       });
     }
 
-    if (!invoice.packingListPath) {
+    if (!invoice.packingListPdf || invoice.packingListPdf.length === 0) {
       return jsonError(res, 404, {
         error: "PACKING_LIST_NOT_FOUND",
         message: "Packing list is not available for this invoice",
       });
     }
 
-    return streamFile(
-      res,
-      invoice.packingListPath,
-      `${invoice.invoiceNumber}-packing`,
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${sanitizeFileName(invoice.invoiceNumber)}-packing.pdf"`,
     );
+
+    return res.send(invoice.packingListPdf);
   } catch (error: any) {
     return jsonError(res, 500, {
       error: "DOWNLOAD_FAILED",
