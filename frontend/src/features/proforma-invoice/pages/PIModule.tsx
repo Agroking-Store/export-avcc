@@ -46,7 +46,7 @@ const PIModule = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 dark:bg-gray-900">
+    <div className="w-full bg-slate-50 dark:bg-gray-900">
       <div className="px-6 py-5">
         {/* HEADER */}
         <div className="flex items-center justify-between gap-4 mb-5">

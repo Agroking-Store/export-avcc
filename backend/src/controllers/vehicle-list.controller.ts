@@ -22,8 +22,7 @@ export const createVehicleListItem = async (req: Request, res: Response) => {
       variant,
       color,
       hsnCode,
-      quantity:
-        quantity !== undefined ? Number(quantity) : undefined,
+      quantity: quantity !== undefined ? Number(quantity) : 1,
       fobAmount: fobAmount !== undefined ? Number(fobAmount) : undefined,
       freight: freight !== undefined ? Number(freight) : undefined,
     });
@@ -85,7 +84,7 @@ export const createVehicleListItems = async (req: Request, res: Response) => {
         variant: v.variant.trim(),
         color: v.color.trim(),
         hsnCode: v.hsnCode.trim(),
-        quantity: v.quantity !== undefined ? Number(v.quantity) : undefined,
+        quantity: v.quantity !== undefined ? Number(v.quantity) : 1,
         fobAmount: v.fobAmount !== undefined ? Number(v.fobAmount) : undefined,
         freight: v.freight !== undefined ? Number(v.freight) : undefined,
       })),

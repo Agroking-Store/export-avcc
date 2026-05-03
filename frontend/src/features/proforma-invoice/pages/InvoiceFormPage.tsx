@@ -289,7 +289,7 @@ export default function InvoiceFormPage() {
         generatedAt: new Date().toISOString(),
         vehicleId,
         type: invoiceType,
-        filePath: "",
+        hasPackingList: invoiceType === "USD",
         manualFields: form,
       });
     } catch (error: any) {

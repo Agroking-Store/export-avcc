@@ -339,6 +339,7 @@ const CreatePI = () => {
 const newVehicle = {
   booking_id: booking._id,
   vehicle_id: vehicle._id || "",
+  variant: vehicle.variant || "",
 
   model: `${vehicle.brandName || ""} ${vehicle.modelName || ""} ${vehicle.variant || ""}`.trim(),
 
@@ -481,7 +482,7 @@ toast.success("Vehicle added to invoice");
 
   return (
     <div className="bg-white text-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
         <form onSubmit={handleSubmit}>
           {/* HEADER */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-10">

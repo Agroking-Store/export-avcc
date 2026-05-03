@@ -11,6 +11,7 @@ const addressSchema = Joi.object({
 
 const vehicleDetailSchema = Joi.object({
   vehicle_id: Joi.string().optional().allow(null, ""),
+  variant: Joi.string().allow("").optional(),
   model: Joi.string().required(),
   color: Joi.string().allow("").optional(),
   engineNo: Joi.string().allow("").optional(),

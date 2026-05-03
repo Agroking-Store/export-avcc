@@ -13,11 +13,8 @@ export interface IInvoice extends Document {
   containerNo?: string;
   manualFields: Record<string, any>;
   computedFields: Record<string, any>;
-invoicePdf: {
-      type: Buffer,
-      required: true
-    };
-    packingListPdf?: Buffer;
+  invoicePdf: Buffer;
+  packingListPdf?: Buffer | null;
   generatedAt: Date;
   active: boolean;
   dataSnapshot: Record<string, any>;
@@ -73,13 +70,13 @@ const invoiceSchema = new Schema<IInvoice>(
       type: Schema.Types.Mixed,
       default: {},
     },
-    filePath: {
-      type: String,
+    invoicePdf: {
+      type: Buffer,
       required: true,
     },
-    packingListPath: {
-      type: String,
-      default: "",
+    packingListPdf: {
+      type: Buffer,
+      default: null,
     },
     generatedAt: {
       type: Date,

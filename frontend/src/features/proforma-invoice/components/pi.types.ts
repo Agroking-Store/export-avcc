@@ -1,6 +1,7 @@
 export type VehicleLineItem = {
   vehicle_id: string;
   booking_id?: string;
+  variant?: string;
   model: string;
   color: string;
   engineNo: string;

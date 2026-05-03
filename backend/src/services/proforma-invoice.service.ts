@@ -104,13 +104,17 @@ const generateNextPiNumber = async (
       new Date()
     );
 
-  const prefix = `${initials}/EX/PI/${fy}/`;
+  const prefix = `${initials}/PI/${fy}/`;
+  const legacyPrefix = `${initials}/EX/PI/${fy}/`;
 
   const invoices =
   await ProformaInvoice.find({
     company_id: companyId,
     piNumber: {
-      $regex: `^${prefix}\\d+$`,
+      $in: [
+        new RegExp(`^${prefix}\\d+$`),
+        new RegExp(`^${legacyPrefix}\\d+$`),
+      ],
     },
   });
 
@@ -226,7 +230,7 @@ const getCompanyShortCode = (
 export const createPIService = async (data: any) => {
   const totalAmount = (data.vehicleDetails || []).reduce(
     (sum: number, v: any) =>
-      sum + ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+      sum + (Number(v.quantity) || 1) * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
     0
   );
 

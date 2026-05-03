@@ -132,6 +132,32 @@ const sanitizeFileName = (value: string) =>
 
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
 
+const splitModelAndVariant = (modelLabel: string, variantLabel: string) => {
+  const normalizedModel = normalizeWhitespace(modelLabel || "");
+  const normalizedVariant = normalizeWhitespace(variantLabel || "");
+
+  if (!normalizedVariant || !normalizedModel) {
+    return {
+      model: normalizedModel,
+      variant: normalizedVariant,
+    };
+  }
+
+  if (normalizedModel.toLowerCase().endsWith(normalizedVariant.toLowerCase())) {
+    return {
+      model: normalizedModel
+        .slice(0, normalizedModel.length - normalizedVariant.length)
+        .trim(),
+      variant: normalizedVariant,
+    };
+  }
+
+  return {
+    model: normalizedModel,
+    variant: normalizedVariant,
+  };
+};
+
 const deriveVariantFromLine = ({
   make,
   modelName,
@@ -230,16 +256,23 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
   const orderVehicle = orderRef?.vehicleSnapshot || {};
 
   const make = vehicleRef?.brandName || orderVehicle?.brandName || "";
-  const modelName = vehicleRef?.modelName || orderVehicle?.modelName || line.model || "";
-  const variant =
+  const rawModelName =
+    vehicleRef?.modelName || orderVehicle?.modelName || line.model || "";
+  const rawVariant =
     vehicleRef?.variant ||
     orderVehicle?.variant ||
     line.variant ||
     deriveVariantFromLine({
       make,
-      modelName,
+      modelName: rawModelName,
       lineModel: line.model || "",
     });
+  const splitLine =
+    vehicleRef?.modelName || orderVehicle?.modelName
+      ? { model: rawModelName, variant: rawVariant }
+      : splitModelAndVariant(rawModelName, rawVariant);
+  const modelName = splitLine.model || rawModelName;
+  const variant = splitLine.variant || rawVariant;
   const colour = line.color || vehicleRef?.color || orderVehicle?.color || "";
   const hsnCode = line.hsn || booking?.hsnCode || vehicleRef?.hsnCode || orderVehicle?.hsnCode || "";
   const fobUSD = Number(line.fob || vehicleRef?.fobAmount || 0);
@@ -299,6 +332,7 @@ const buildPIInvoiceContext = async (piId: string) => {
   const buyer: any = (pi.clientSnapshot || pi.client_id || {}) as any;
   const invoices = await Invoice.find({ piId, active: true })
     .sort({ generatedAt: -1 })
+    .select("_id vehicleId type invoiceNumber generatedAt manualFields packingListPdf")
     .lean();
 
   const vehicles = (pi.vehicleDetails || []).map((line: any, index: number) =>
@@ -311,11 +345,24 @@ const buildPIInvoiceContext = async (piId: string) => {
         acc[invoice.vehicleId] = {};
       }
 
-      acc[invoice.vehicleId][invoice.type] = invoice;
+      acc[invoice.vehicleId][invoice.type] = {
+        _id: invoice._id,
+        vehicleId: invoice.vehicleId,
+        type: invoice.type,
+        invoiceNumber: invoice.invoiceNumber,
+        generatedAt: invoice.generatedAt,
+        manualFields: invoice.manualFields || {},
+        hasPackingList: !!invoice.packingListPdf,
+      };
 
       if (invoice.packingListPdf) {
         acc[invoice.vehicleId].PACKING_LIST = {
-          ...invoice,
+          _id: invoice._id,
+          vehicleId: invoice.vehicleId,
+          invoiceNumber: invoice.invoiceNumber,
+          generatedAt: invoice.generatedAt,
+          manualFields: invoice.manualFields || {},
+          hasPackingList: true,
           type: "PACKING_LIST",
         };
       }
@@ -343,7 +390,15 @@ const buildPIInvoiceContext = async (piId: string) => {
       ...vehicle,
       invoices: invoiceLookup[vehicle.vehicleId] || {},
     })),
-    existingInvoices: invoices,
+    existingInvoices: invoices.map((invoice: any) => ({
+      _id: invoice._id,
+      vehicleId: invoice.vehicleId,
+      type: invoice.type,
+      invoiceNumber: invoice.invoiceNumber,
+      generatedAt: invoice.generatedAt,
+      manualFields: invoice.manualFields || {},
+      hasPackingList: !!invoice.packingListPdf,
+    })),
     suggestedInvoiceNumber: await buildInvoiceNumber(),
   };
 };
@@ -540,6 +595,58 @@ const applyVehicleOverrides = (
   return merged;
 };
 
+const getTemplateNameForInvoiceType = (
+  type: InvoiceDocumentType,
+): "inrInvoice" | "usdInvoice" | "commercialInvoice" => {
+  switch (type) {
+    case "INR":
+      return "inrInvoice";
+    case "USD":
+      return "usdInvoice";
+    case "COMMERCIAL":
+      return "commercialInvoice";
+    default:
+      throw new Error(`Unsupported invoice type: ${type}`);
+  }
+};
+
+const restoreMissingPdfBuffers = async (invoice: any) => {
+  const templateData = invoice?.dataSnapshot?.templateData;
+
+  if (!templateData) {
+    return invoice;
+  }
+
+  let changed = false;
+
+  if (!invoice.invoicePdf || invoice.invoicePdf.length === 0) {
+    invoice.invoicePdf = await renderInvoicePDF({
+      templateName: getTemplateNameForInvoiceType(invoice.type),
+      data: templateData,
+      invoiceNumber: invoice.invoiceNumber,
+    });
+    changed = true;
+  }
+
+  if (
+    invoice.type === "USD" &&
+    (!invoice.packingListPdf || invoice.packingListPdf.length === 0)
+  ) {
+    invoice.packingListPdf = await renderInvoicePDF({
+      templateName: "packingList",
+      data: templateData,
+      invoiceNumber: invoice.invoiceNumber,
+    });
+    changed = true;
+  }
+
+  if (changed) {
+    await invoice.save();
+  }
+
+  return invoice;
+};
+
 
 
 export const getPIInvoiceContext = async (req: Request, res: Response) => {
@@ -585,6 +692,7 @@ export const getInvoicesByPI = async (req: Request, res: Response) => {
 
     const invoices = await Invoice.find({ piId, active: true })
       .sort({ generatedAt: -1 })
+      .select("_id vehicleId type invoiceNumber generatedAt packingListPdf")
       .lean();
 
     return res.json(
@@ -774,7 +882,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
 
 export const downloadInvoice = async (req: Request, res: Response) => {
   try {
-    const invoice = await Invoice.findById(req.params.invoiceId).lean();
+    const invoice = await Invoice.findById(req.params.invoiceId);
 
     if (!invoice) {
       return jsonError(res, 404, {
@@ -783,10 +891,12 @@ export const downloadInvoice = async (req: Request, res: Response) => {
       });
     }
 
+    await restoreMissingPdfBuffers(invoice);
+
     if (!invoice.invoicePdf || invoice.invoicePdf.length === 0) {
       return jsonError(res, 404, {
         error: "PDF_NOT_FOUND",
-        message: "Invoice PDF not found",
+        message: "Invoice PDF not found and could not be restored",
       });
     }
 
@@ -794,7 +904,7 @@ export const downloadInvoice = async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="${sanitizeFileName(invoice.invoiceNumber)}.pdf"`,
+      `${req.query.download === "true" ? "attachment" : "inline"}; filename="${sanitizeFileName(invoice.invoiceNumber)}.pdf"`,
     );
 
     return res.send(invoice.invoicePdf);
@@ -809,7 +919,7 @@ export const downloadInvoice = async (req: Request, res: Response) => {
 
 export const downloadPackingList = async (req: Request, res: Response) => {
   try {
-    const invoice = await Invoice.findById(req.params.invoiceId).lean();
+    const invoice = await Invoice.findById(req.params.invoiceId);
 
     if (!invoice) {
       return jsonError(res, 404, {
@@ -818,10 +928,12 @@ export const downloadPackingList = async (req: Request, res: Response) => {
       });
     }
 
+    await restoreMissingPdfBuffers(invoice);
+
     if (!invoice.packingListPdf || invoice.packingListPdf.length === 0) {
       return jsonError(res, 404, {
         error: "PACKING_LIST_NOT_FOUND",
-        message: "Packing list is not available for this invoice",
+        message: "Packing list is not available for this invoice and could not be restored",
       });
     }
 
@@ -829,7 +941,7 @@ export const downloadPackingList = async (req: Request, res: Response) => {
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="${sanitizeFileName(invoice.invoiceNumber)}-packing.pdf"`,
+      `${req.query.download === "true" ? "attachment" : "inline"}; filename="${sanitizeFileName(invoice.invoiceNumber)}-packing.pdf"`,
     );
 
     return res.send(invoice.packingListPdf);

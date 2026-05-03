@@ -4,11 +4,10 @@ export type InvoiceAssetType = InvoiceType | "PACKING_LIST";
 export interface GeneratedInvoiceRecord {
   _id: string;
   vehicleId: string;
-  type: InvoiceType;
+  type: InvoiceType | "PACKING_LIST";
   invoiceNumber: string;
-  filePath: string;
   generatedAt: string;
-  packingListPath?: string;
+  hasPackingList?: boolean;
   manualFields?: Record<string, any>;
 }
 

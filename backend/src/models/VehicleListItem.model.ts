@@ -7,6 +7,8 @@ export interface IVehicleListItem extends Document {
   color: string;
   hsnCode: string;
   quantity: number;
+  fobAmount?: number;
+  freight?: number;
   status: "Available" | "Out of Stock";
   createdAt: Date;
   updatedAt: Date;

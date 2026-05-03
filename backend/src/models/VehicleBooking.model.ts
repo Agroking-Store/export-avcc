@@ -19,6 +19,12 @@ export interface IVehicleBooking extends Document {
     companyName?: string;
     clientCode?: string;
   };
+  assignedDealerId?: mongoose.Types.ObjectId | null;
+  assignedDealerSnapshot?: {
+    name: string;
+    contact?: string;
+    gstNumber?: string;
+  };
   status: VehicleBookingStatus;
   quotationFile?: string;
   rejectionReason?: string;
