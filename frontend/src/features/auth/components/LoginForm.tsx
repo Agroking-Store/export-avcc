@@ -25,10 +25,19 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+  
     try {
       const result = await dispatch(login(formData)).unwrap();
-      const redirectPath = result?.user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
-      navigate(redirectPath);
+
+      const role = result?.user?.role?.toLowerCase();
+      
+      if (role === "accountant") {
+        navigate("/proforma-invoice/dashboard");
+      } else if (role === "sourcing_team") {
+        navigate("/vehicles/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch {
       setError("Invalid email or password");
     } finally {

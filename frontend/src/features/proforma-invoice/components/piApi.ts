@@ -18,6 +18,12 @@ const getAuthToken = () => {
   return token;
 };
 
+const authHeaders = () => ({
+  headers: getAuthToken()
+    ? { Authorization: `Bearer ${getAuthToken()}` }
+    : {},
+});
+
 export const piApi = {
   getClients: async (search: string) => {
     const res = await axios.get(`${apiConfig.baseURL}/clients`, {
@@ -49,15 +55,19 @@ export const piApi = {
   const res = await axios.get(
     `${apiConfig.baseURL}/proforma-invoices/booked-vehicle-orders`,
     {
-      params: { clientId, search },
-    }
+  params: { clientId, search },
+  ...authHeaders(),
+}
   );
 
   return res.data;
 },
 
   getPIById: async (id: string) => {
-    const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`);
+    const res = await axios.get(
+  `${apiConfig.baseURL}/proforma-invoices/${id}`,
+  authHeaders()
+);
     return res.data;
   },
 
@@ -71,15 +81,17 @@ export const piApi = {
   ): Promise<OrderDetailData> => {
     const res = await axios.get(
       `${apiConfig.baseURL}/proforma-invoices/orders/${orderId}/details`,
+      authHeaders()
     );
     return res.data;
   },
 
   createPI: async (payload: Partial<PIForm> & { totalAmount: number }) => {
     const res = await axios.post(
-      `${apiConfig.baseURL}/proforma-invoices`,
-      payload,
-    );
+  `${apiConfig.baseURL}/proforma-invoices`,
+  payload,
+  authHeaders()
+);
     return res.data;
   },
 
@@ -88,9 +100,10 @@ export const piApi = {
     payload: Partial<PIForm> & { totalAmount: number },
   ) => {
     const res = await axios.put(
-      `${apiConfig.baseURL}/proforma-invoices/${id}`,
-      payload,
-    );
+  `${apiConfig.baseURL}/proforma-invoices/${id}`,
+  payload,
+  authHeaders()
+);
     return res.data;
   },
 
@@ -108,6 +121,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/next-pi-number`,
       {
         params: { companyId },
+        ...authHeaders(),
       },
     );
     return res.data.piNumber;
@@ -118,6 +132,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/dashboard-kpis`,
       {
         params: { timeRange },
+        ...authHeaders(),
       },
     );
     return res.data;
@@ -128,6 +143,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/pi-status-distribution`,
       {
         params: { timeRange },
+        ...authHeaders(),
       },
     );
     return res.data;
@@ -138,6 +154,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/monthly-pi-value-trend`,
       {
         params: { timeRange },
+        ...authHeaders(),
       },
     );
     return res.data;
@@ -148,6 +165,7 @@ export const piApi = {
       `${apiConfig.baseURL}/proforma-invoices/top-clients-by-pi-value`,
       {
         params: { timeRange, limit },
+        ...authHeaders(),
       },
     );
     return res.data;
