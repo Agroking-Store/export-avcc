@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, Search, Filter, Car, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Eye,
+  Search,
+  Filter,
+  Car,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 interface Order {
@@ -21,7 +28,7 @@ interface Order {
 
 const DealerOrdersList = () => {
   const navigate = useNavigate();
-
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -34,7 +41,7 @@ const DealerOrdersList = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/v1/orders", {
+      const res = await axios.get(`${API_URL}/orders`, {
         params: {
           search,
           status: statusFilter === "All" ? undefined : statusFilter,
@@ -107,8 +114,12 @@ const DealerOrdersList = () => {
       {/* TOP SECTION */}
       <div className="px-8 py-6 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">Dealer Orders</h2>
-          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Manage and track all vehicle export orders</p>
+          <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
+            Dealer Orders
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+            Manage and track all vehicle export orders
+          </p>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400">
@@ -133,8 +144,10 @@ const DealerOrdersList = () => {
               className="cursor-pointer appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800"
             >
               <option value="All">All Statuses</option>
-              {orderStatuses.map(status => (
-                <option key={status} value={status}>{status}</option>
+              {orderStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
               ))}
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 pointer-events-none">
@@ -158,7 +171,10 @@ const DealerOrdersList = () => {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search order ID or client..."
@@ -174,7 +190,14 @@ const DealerOrdersList = () => {
         <table className="w-full text-center">
           <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
             <tr>
-              {["Order ID", "Client", "Vehicles", "Status", "Date", "Actions"].map((head, idx) => (
+              {[
+                "Order ID",
+                "Client",
+                "Vehicles",
+                "Status",
+                "Date",
+                "Actions",
+              ].map((head, idx) => (
                 <th
                   key={head}
                   className={`px-8 py-4 text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider ${
@@ -190,7 +213,10 @@ const DealerOrdersList = () => {
           <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-20 text-slate-400 italic">
+                <td
+                  colSpan={6}
+                  className="text-center py-20 text-slate-400 italic"
+                >
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     Loading orders...
@@ -199,7 +225,10 @@ const DealerOrdersList = () => {
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-20 text-slate-400 italic">
+                <td
+                  colSpan={6}
+                  className="text-center py-20 text-slate-400 italic"
+                >
                   No orders found
                 </td>
               </tr>
@@ -220,7 +249,9 @@ const DealerOrdersList = () => {
                     </div>
                     {(order.companyName || order.clientCountry) && (
                       <div className="text-xs text-slate-400 dark:text-gray-500">
-                        {[order.companyName, order.clientCountry].filter(Boolean).join(", ")}
+                        {[order.companyName, order.clientCountry]
+                          .filter(Boolean)
+                          .join(", ")}
                       </div>
                     )}
                   </td>
@@ -239,13 +270,13 @@ const DealerOrdersList = () => {
                     </div>
                   </td>
                   <td className="px-8 py-5 text-center">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(
-                          order.status
-                        )}`}
-                      >
-                        {order.status || "To be Sourced"}
-                      </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusStyle(
+                        order.status,
+                      )}`}
+                    >
+                      {order.status || "To be Sourced"}
+                    </span>
                   </td>
                   <td className="px-8 py-5 text-center text-sm font-medium text-slate-500 dark:text-gray-400">
                     {order.date
@@ -255,12 +286,15 @@ const DealerOrdersList = () => {
                           year: "numeric",
                         })
                       : order.createdAt
-                      ? new Date(order.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "-"}
+                        ? new Date(order.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )
+                        : "-"}
                   </td>
                   <td className="px-8 py-5 text-right">
                     <button
@@ -282,8 +316,11 @@ const DealerOrdersList = () => {
       {totalPages > 1 && (
         <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
           <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
-            Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of{" "}
-            {totalPages}
+            Page{" "}
+            <span className="text-[#0f172a] dark:text-white">
+              {currentPage}
+            </span>{" "}
+            of {totalPages}
           </span>
 
           <div className="flex gap-6">

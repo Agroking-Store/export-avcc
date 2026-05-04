@@ -6,7 +6,8 @@ export const ROLES = {
   DEALER: "dealer",
 } as const;
 
-export type UserRole = (typeof ROLES)[keyof typeof ROLES];
+// export type UserRole = (typeof ROLES)[keyof typeof ROLES];
+export type UserRole = typeof ROLES[keyof typeof ROLES];
 
 export const VEHICLE_STATUS = {
   PENDING: "pending",

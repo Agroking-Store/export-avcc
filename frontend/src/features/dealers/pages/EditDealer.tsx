@@ -1,32 +1,49 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { 
-  User, Phone, Mail, MapPin, Hash,
-  ArrowLeft, X, Save 
+import {
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Hash,
+  ArrowLeft,
+  X,
+  Save,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const EditDealer = () => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   const { id } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", contact: "", email: "", address: "", gstNumber: "" });
+  const [form, setForm] = useState({
+    name: "",
+    contact: "",
+    email: "",
+    address: "",
+    gstNumber: "",
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/v1/dealers/${id}`)
-      .then(res => setForm(res.data.data))
-      .catch((error: any) => toast.error(error.response?.data?.message || "Failed to load dealer"));
+    axios
+      .get(`${API_URL}/dealers/${id}`)
+      .then((res) => setForm(res.data.data))
+      .catch((error: any) =>
+        toast.error(error.response?.data?.message || "Failed to load dealer"),
+      );
   }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.contact) {
-      toast.error("Name and Contact are required!"); return;
+      toast.error("Name and Contact are required!");
+      return;
     }
     try {
       setLoading(true);
-      await axios.put(`http://localhost:5000/api/v1/dealers/${id}`, form);
+      await axios.put(`${API_URL}/dealers/${id}`, form);
       toast.success("Dealer updated successfully!");
       navigate("/dealers/list");
     } catch (error: any) {
@@ -48,8 +65,12 @@ const EditDealer = () => {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit Dealer</h1>
-          <p className="text-sm text-gray-500 mt-1">Modify dealer information</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+            Edit Dealer
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Modify dealer information
+          </p>
         </div>
 
         <button
@@ -61,12 +82,13 @@ const EditDealer = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-10">
-
         {/* DEALER DETAILS SECTION */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
             <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">General Information</h2>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+              General Information
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -120,7 +142,9 @@ const EditDealer = () => {
               <input
                 name="gstNumber"
                 value={form.gstNumber}
-                onChange={(e) => setForm({ ...form, gstNumber: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, gstNumber: e.target.value })
+                }
                 className={inputStyle}
                 placeholder="27ACEFA0695F1ZH"
               />
@@ -129,7 +153,8 @@ const EditDealer = () => {
             {/* Address */}
             <div className="md:col-span-2">
               <label className={labelStyle}>
-                <MapPin size={14} className="text-purple-500" /> Physical Business Address
+                <MapPin size={14} className="text-purple-500" /> Physical
+                Business Address
               </label>
               <textarea
                 name="address"
@@ -167,7 +192,6 @@ const EditDealer = () => {
             )}
           </button>
         </div>
-
       </form>
     </div>
   );
