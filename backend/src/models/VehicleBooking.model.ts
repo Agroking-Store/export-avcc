@@ -53,12 +53,6 @@ export interface IVehicleBooking extends Document {
   hsnCode?: string;
   createdAt: Date;
   updatedAt: Date;
-  assignedDealerId?: mongoose.Types.ObjectId;
-  assignedDealerSnapshot?: {
-    name: string;
-    contact?: string;
-    gstNumber?: string;
-  };
 }
 
 const vehicleBookingSchema = new Schema<IVehicleBooking>(

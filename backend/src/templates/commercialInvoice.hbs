@@ -5,181 +5,145 @@
   <title>Commercial Invoice</title>
   <style>
     @page { size: A4 portrait; margin: 10mm 12mm; }
-    body { font-family: "Times New Roman", Times, serif; font-size: 10pt; line-height: 1.15; color:#000; margin:0; }
-    * { box-sizing:border-box; }
-    table { width:100%; border-collapse:collapse; table-layout:fixed; }
-    td, th { border:0.5px solid #000; padding:2px 4px; vertical-align:top; }
-    .title { font-size: 17pt; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 12pt; }
-    .company-block { font-size: 10pt; line-height: 1.15; }
-    .company-block .name { font-weight: 700; }
-    .invoice-details { font-size: 10pt; text-align: right; line-height: 1.15; }
-    .invoice-details .label { font-weight: 700; }
-    .section-title { font-weight: 700; font-size: 10pt; margin-bottom: 4pt; }
-    .normal-text { font-size: 10pt; line-height: 1.15; }
-    .bold-label { font-weight: 700; }
-    .total-line { font-size: 12pt; font-weight: 700; text-align: right; margin-top: 10pt; }
-    .amount-words { font-size: 10pt; margin-top: 10pt; }
-    .footer-right { text-align: right; }
-    .footer-left { text-align: left; }
-    .spacing { height: 8px; }
-    .cert-line { margin: 0 0 3px; }
-    .accessory-line { margin: 0 0 3px; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 7.55px; line-height: 1.08; color: #000; margin: 0; }
+    * { box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td, th { border: 0.5px solid #000; padding: 1.5px 2.2px; vertical-align: top; font-weight: 400; }
+    .title { font-size: 8.9px; font-weight: 700; text-align: center; }
+    .section { font-weight: 700; }
+    .company { font-weight: 700; }
     .center { text-align: center; }
     .right { text-align: right; }
-    .left { text-align: left; }
+    .small { font-size: 6.95px; line-height: 1.08; }
+    .goods-cell { height: 118px; }
+    .desc-line { margin: 0 0 2px; }
+    .sign-block { height: 36px; vertical-align: bottom; }
   </style>
 </head>
 <body>
   <table>
     <colgroup>
-      <col style="width:4%"/>
-      <col style="width:38%"/>
-      <col style="width:12%"/>
-      <col style="width:12%"/>
-      <col style="width:12%"/>
-      <col style="width:6%"/>
-      <col style="width:12%"/>
-      <col style="width:4%"/>
-      <col style="width:4%"/>
-      <col style="width:8%"/>
+      <col style="width:5%">
+      <col style="width:49%">
+      <col style="width:11%">
+      <col style="width:11%">
+      <col style="width:11%">
+      <col style="width:5%">
+      <col style="width:8%">
     </colgroup>
-    <!-- TOP TITLE -->
+
     <tr>
-      <td colspan="10" class="title">COMMERCIAL INVOICE</td>
+      <td colspan="7" class="title">COMMERCIAL INVOICE</td>
     </tr>
-    <!-- HEADER: Company details (left) & Invoice details (right) -->
+
     <tr>
-      <td colspan="4" class="company-block">
-        <div class="name">{{exporter.companyName}}</div>
-        <div>Flat No 50</div>
-        <div>S No 27/4-27/5, Building No 7</div>
-        <div>Hingane Khurd, Parvati</div>
-        <div>Pune - 411009, Maharashtra, India</div>
+      <td colspan="2" rowspan="5">
+        <div class="company">{{exporter.companyName}}</div>
+        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
         <div>GSTIN/UIN: {{exporter.gstin}}</div>
         <div>State Name : Maharashtra, Code : 27</div>
       </td>
-      <td colspan="6" class="invoice-details">
-        <div><span class="label">INVOICE NO:</span> {{invoiceNumber}}</div>
-        <div><span class="label">DATE:</span> {{invoiceDate}}</div>
-        <div><span class="label">LC NO:</span> {{lcNumber}}</div>
-        <div><span class="label">LC DATE:</span> {{lcDate}}</div>
-        <div><span class="label">COUNTRY:</span> {{buyerCountry}}</div>
-      </td>
+      <td colspan="2">INVOICE NO</td>
+      <td colspan="3">Dated</td>
     </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- BUYER / CONSIGNEE SECTION -->
     <tr>
-      <td colspan="4" class="tiny">
-        <div class="section-title">Consignee (Ship to):</div>
-        <div class="normal-text">TO THE ORDER SAMPATH BANK PLC</div>
-      </td>
-      <td colspan="6" class="tiny">
-        <div class="section-title">Buyer (Bill to):</div>
-        <div class="normal-text">Print Pro<br/>12B, 258, Nagpur, Maharashtra, 440014<br/>Country: India</div>
-      </td>
+      <td colspan="2">{{invoiceNumber}}</td>
+      <td colspan="3">{{invoiceDate}}</td>
     </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- TERMS OF DELIVERY -->
     <tr>
-      <td colspan="6" class="tiny">
-        <div class="section-title">Terms of Delivery:</div>
-        <div class="normal-text">1) Delivery Term: CFR any port in Sri Lanka</div>
-        <div class="normal-text">2) Port of Loading: Nhava Sheva, India</div>
-        <div class="normal-text">3) Port of Discharge: Colombo, Sri Lanka</div>
-      </td>
+      <td colspan="2">Buyer's Ref./Order No.</td>
+      <td colspan="3">Other References</td>
     </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- TABLE HEADER -->
     <tr>
-      <td class="center"><strong>SL NO.</strong></td>
-      <td class="center"><strong>DESCRIPTION OF GOODS</strong></td>
-      <td class="center"><strong>HSN / SAC</strong></td>
-      <td class="center"><strong>FOB</strong></td>
-      <td class="center"><strong>FREIGHT</strong></td>
-      <td class="center"><strong>NO</strong></td>
-      <td class="center"><strong>AMOUNT</strong></td>
-      <td colspan="3"></td>
-    </tr>
-    <!-- DATA ROW -->
-    <tr>
-      <td class="center">1</td>
-      <td class="left desc-line">
-        {{#each descriptionLines}}<div>{{this}}</div>{{/each}}
-      </td>
-      <td class="center">{{vehicle.hsnCode}}</td>
-      <td class="right">{{values.fobUSD}}</td>
-      <td class="right">{{values.freightUSD}}</td>
-      <td class="center">No</td>
-      <td class="right">{{values.totalUSD}}</td>
-      <td colspan="3"></td>
-    </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- VEHICLE DETAILS BLOCK -->
-    <tr>
-      <td colspan="10" class="normal-text">
-        <div class="bold-label">CHASSIS NO:</div> {{vehicle.chassisNo}}<br/>
-        <div class="bold-label">ENGINE NO:</div> {{vehicle.engineNo}}<br/>
-        <div class="bold-label">YEAR OF MANUFACTURE:</div> {{vehicle.yearOfManufacture}}<br/>
-        <div class="bold-label">MONTH/YEAR OF FIRST REGISTRATION:</div> {{vehicle.monthYearFirstReg}}<br/>
-        <div class="bold-label">MAKE:</div> {{vehicle.make}}<br/>
-        <div class="bold-label">MODEL:</div> {{vehicle.model}} {{vehicle.variant}}<br/>
-        <div class="bold-label">TYPE OF VEHICLE:</div> {{vehicle.typeOfVehicle}}<br/>
-        <div class="bold-label">COUNTRY OF ORIGIN:</div> INDIA<br/>
-        <div class="bold-label">EXPORT INSPECTION CERTIFICATE NO:</div> {{vehicle.exportInspCertNo}}<br/>
-        <div class="bold-label">EXPORT INSPECTION CERTIFICATE DATE:</div> {{vehicle.exportInspCertDate}}
-      </td>
-    </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- DECLARATION PARAGRAPHS -->
-    <tr>
-      <td colspan="10" class="normal-text" style="text-transform: uppercase; text-align: justify;">
-        WE HEREBY CERTIFY THAT THIS SHIPMENT CONFIRMS TO PROFORMA INVOICE NO {{invoiceNumber}} … (additional declaration text as required).
-      </td>
-    </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- TOTAL SECTION -->
-    <tr>
-      <td colspan="9" class="total-line">TOTAL:</td>
-      <td class="total-line">${{values.totalUSD}}</td>
-    </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- AMOUNT IN WORDS -->
-    <tr>
-      <td colspan="5" class="amount-words"><span class="bold-label">Amount Chargeable (in words):</span> {{amountWordsUSD}}</td>
-      <td colspan="3" class="right tiny">E. &amp; O.E</td>
       <td colspan="2"></td>
-    </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- CERTIFICATION BLOCK -->
-    <tr>
-      <td colspan="10" class="tiny bold">CERTIFICATION</td>
+      <td colspan="3">LC NO :-{{lcNumber}} Dt {{lcDate}}</td>
     </tr>
     <tr>
-      <td colspan="10" class="tiny">
-        <div class="cert-line">WE HEREBY CONFIRM THAT THIS PROFORMA INVOICE IS ACCURATE.</div>
-        <div class="cert-line">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE HAVE THE FOLLOWING ACCESSORIES INSTALLED:</div>
-        <div class="cert-line">A) AUTOMATIC TRANSMISSION</div>
-        <div class="cert-line">B) ANTI-LOCK BRAKING SYSTEM</div>
-        <div class="cert-line">C) DRIVER &amp; FRONT PASSENGER HAVE STANDARD AIRBAGS</div>
-        <div class="cert-line">D) DRIVER &amp; FRONT PASSENGER HAVE THREE POINT SEAT BELT &amp; OTHER PASSENGERS HAVE MINIMUM TWO POINT SEAT BELT WHERE APPLICABLE.</div>
-        <div class="cert-line">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.</div>
+      <td colspan="2">Dispatched through<br>Country:</td>
+      <td colspan="3">Destination<br>{{buyerCountry}}</td>
+    </tr>
+
+    <tr>
+      <td colspan="2">
+        <div class="section">Consignee (Ship to)</div>
+        <div>{{buyerName}}</div>
+        <div>{{buyerAddress}}</div>
+        <div>{{buyerCountry}}</div>
+      </td>
+      <td colspan="5">
+        <div class="section">Terms of Delivery</div>
+        <div>1) Delivery Term: {{scheme.termsOfDelivery}}</div>
+        <div>2) Port of Loading: {{portOfLoading}}, India</div>
+        <div>3) Port of Discharge: {{portOfDischarge}}, {{buyerCountry}}</div>
       </td>
     </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
-    <!-- FOOTER -->
+
     <tr>
-      <td colspan="6" class="footer-right" style="vertical-align:bottom;height:80px;">
-        <div class="bold">FOR {{exporter.companyName}}</div>
-        <br><br><br>
-        <div class="bold">AUTHORISED SIGNATORY</div>
+      <td colspan="2">
+        <div class="section">Buyer (Bill to)</div>
+        <div>{{buyerName}}</div>
+        <div>{{buyerAddress}}</div>
+        <div>{{buyerCountry}}</div>
       </td>
-      <td colspan="4" class="footer-left">
-        <div>E. &amp; O.E</div>
+      <td colspan="5"></td>
+    </tr>
+
+    <tr>
+      <td class="center section">Sl No.</td>
+      <td class="center section">Description of Goods</td>
+      <td class="center section">HSN/SAC</td>
+      <td class="center section">FOB</td>
+      <td class="center section">FREIGHT per</td>
+      <td class="center section"></td>
+      <td class="center section">Amount</td>
+    </tr>
+
+    <tr>
+      <td class="goods-cell center">1</td>
+      <td class="goods-cell">
+        {{#each descriptionLines}}
+          <div class="desc-line">{{this}}</div>
+        {{/each}}
+      </td>
+      <td class="goods-cell center">{{vehicle.hsnCode}}</td>
+      <td class="goods-cell right">{{values.fobUSD}}</td>
+      <td class="goods-cell right">{{values.freightUSD}}</td>
+      <td class="goods-cell center">No</td>
+      <td class="goods-cell right">{{values.totalUSD}}</td>
+    </tr>
+
+    <tr>
+      <td colspan="7">
+        <div>WE HEREBY CERTIFY THAT THIS SHIPMENT CONFIRMS TO PROFORMA INVOICE NO. {{piNumber}} DT {{piDate}}</div>
+        <div style="margin-top:4px;">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE HAVE THE FOLLOWING ACCESSORIES INSTALLED</div>
+        <div style="margin-top:4px;">A) AUTOMATIC TRANSMISSION</div>
+        <div>B) ANTI-LOCK BRAKING SYSTEM</div>
+        <div>C) DRIVER &amp; FRONT PASSENGER HAVE STANDARD AIRBAGS</div>
+        <div>D) DRIVER &amp; FRONT PASSENGER HAVE THREE POINT SEAT BELT &amp; OTHER PASSENGERS HAVE MINIMUM TWO POINT SEAT BELT WHERE APPLICABLE.</div>
+        <div style="margin-top:4px;">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.</div>
       </td>
     </tr>
-    <tr class="spacing"><td colspan="10"></td></tr>
+
     <tr>
-      <td colspan="10" class="center tiny">THIS IS A COMPUTER GENERATED DOCUMENT</td>
+      <td colspan="6" class="right">Total</td>
+      <td class="right">${{values.totalUSD}}</td>
+    </tr>
+
+    <tr>
+      <td colspan="5">Amount Chargeable (in words)<br>{{amountWordsUSD}}</td>
+      <td colspan="2" class="right">E. &amp; O.E</td>
+    </tr>
+
+    <tr>
+      <td colspan="5" class="sign-block center">for {{exporter.companyName}}</td>
+      <td colspan="2" rowspan="2" class="center sign-block">Authorised Signatory</td>
+    </tr>
+    <tr>
+      <td colspan="5"></td>
+    </tr>
+
+    <tr>
+      <td colspan="7" class="center small">This is a Computer Generated Document</td>
     </tr>
   </table>
 </body>

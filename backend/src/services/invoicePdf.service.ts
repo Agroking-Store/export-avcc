@@ -59,18 +59,10 @@ const getTemplate = (templateName: string) => {
   return templateCache.get(templateName)!;
 };
 
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
 export const renderInvoicePDF = async ({
   templateName,
   data,
-  invoiceNumber,
+  invoiceNumber: _invoiceNumber,
 }: {
   templateName: "usdInvoice" | "commercialInvoice" | "inrInvoice" | "packingList";
   data: Record<string, any>;
@@ -89,16 +81,6 @@ export const renderInvoicePDF = async ({
       format: "A4",
       landscape: false,
       printBackground: false,
-      displayHeaderFooter: true,
-      headerTemplate: "<div></div>",
-      footerTemplate: `
-        <div style="width:100%; font-size:8px; color:#000; padding:0 12mm; box-sizing:border-box; font-family: Arial, Helvetica, sans-serif;">
-          <div style="display:flex; justify-content:space-between; width:100%;">
-            <span>${escapeHtml(invoiceNumber)}</span>
-            <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
-          </div>
-        </div>
-      `,
       margin: {
         top: "10mm",
         bottom: "10mm",
