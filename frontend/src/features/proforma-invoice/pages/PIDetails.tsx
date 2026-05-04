@@ -595,13 +595,13 @@ const PIDetails = () => {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-500 font-medium">
                 <p className="flex items-center gap-1.5"><span className="text-zinc-400">Ref:</span><span className="font-mono text-zinc-900 dark:text-zinc-300">{pi?.piNumber}</span></p>
                 {(pi?.vehicleBookingIds?.length ?? 0) > 0 && (
-  <p className="flex items-center gap-1.5 border-l border-zinc-300 dark:border-zinc-700 pl-4">
-    <span className="text-zinc-400">Vehicles:</span>
-    <span className="font-mono text-zinc-900 dark:text-zinc-300">
-      {pi?.vehicleBookingIds?.length ?? 0}
-    </span>
-  </p>
-)}
+                  <p className="flex items-center gap-1.5 border-l border-zinc-300 dark:border-zinc-700 pl-4">
+                    <span className="text-zinc-400">Vehicles:</span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-300">
+                      {pi?.vehicleBookingIds?.length ?? 0}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </div>

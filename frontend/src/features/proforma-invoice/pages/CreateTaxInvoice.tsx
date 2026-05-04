@@ -22,9 +22,26 @@ import {
 
 import { apiConfig } from "@/config/apiConfig";
 
-/* =====================================================
-   REUSABLE FIELD
-===================================================== */
+const getAuthToken = () => {
+  let token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken");
+
+  if (!token && localStorage.getItem("user")) {
+    try {
+      const userObj = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
+      token = userObj.token || userObj.accessToken;
+    } catch {}
+  }
+
+  if (token?.startsWith('"') && token?.endsWith('"')) {
+    token = token.slice(1, -1);
+  }
+
+  return token;
+};
 
 type FieldProps = {
   label: string;
@@ -170,16 +187,18 @@ const CreateTaxInvoice = () => {
     }));
   };
 
-  /* =====================================================
-     FETCH PI
-  ===================================================== */
 
   useEffect(() => {
     const fetchPI = async () => {
       try {
         const res = await axios.get(
-          `${apiConfig.baseURL}/proforma-invoices/${piId}`
-        );
+  `${apiConfig.baseURL}/proforma-invoices/${piId}`,
+  {
+    headers: getAuthToken()
+      ? { Authorization: `Bearer ${getAuthToken()}` }
+      : {},
+  }
+);
 
         const pi = res.data;
 
@@ -258,15 +277,20 @@ const CreateTaxInvoice = () => {
       setSaving(true);
 
       const res = await axios.post(
-        `${apiConfig.baseURL}/tax-invoices`,
-        {
-          piId,
-          ...form,
-          subtotal,
-          gstAmount,
-          grandTotal,
-        }
-      );
+  `${apiConfig.baseURL}/tax-invoices`,
+  {
+    piId,
+    ...form,
+    subtotal,
+    gstAmount,
+    grandTotal,
+  },
+  {
+    headers: getAuthToken()
+      ? { Authorization: `Bearer ${getAuthToken()}` }
+      : {},
+  }
+);
 
       setSavedId(res.data.data._id);
 
@@ -282,9 +306,9 @@ const CreateTaxInvoice = () => {
     if (!savedId) return;
 
     window.open(
-      `${apiConfig.baseURL}/tax-invoices/${savedId}/pdf`,
-      "_blank"
-    );
+  `${apiConfig.baseURL}/tax-invoices/${savedId}/pdf?token=${getAuthToken()}`,
+  "_blank"
+);
   };
 
   if (loading) {

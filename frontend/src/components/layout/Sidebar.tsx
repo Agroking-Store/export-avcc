@@ -5,34 +5,95 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  FileCheck,
   Truck,
+  ShieldCheck,
 } from "lucide-react";
+import { useAppSelector } from "../../app/hooks";
+
+type MenuItem = {
+  name: string;
+  icon: React.ReactNode;
+  path: string;
+};
 
 const AppSidebar: React.FC = () => {
   const location = useLocation();
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      icon: <LayoutDashboard size={20} />,
-      path: "/dashboard",
-    },
-    { name: "Vehicles", icon: <Car size={20} />, path: "/vehicles" },
-    { name: "Clients", icon: <Users size={20} />, path: "/clients" },
-    {
-      name: "Proforma Invoices",
-      icon: <FileText size={20} />,
-      path: "/proforma-invoice",
-    },
-    // {
-    //   name: "Letter of Credit",
-    //   icon: <FileCheck size={20} />,
-    //   path: "/letter-of-credit",
-    // },
-    { name: "Dealers", icon: <Truck size={20} />, path: "/dealers/dashboard" },
-    { name: "Companies", icon: <Users size={20} />, path: "/companies" },
-  ];
+  const { user } = useAppSelector((state) => state.auth);
+  const role = user?.role?.toLowerCase();
+
+  const isAdmin = role === "admin";
+  const isAccountant = role === "accountant";
+
+  let menuItems: MenuItem[] = [];
+
+  // ADMIN MENU
+  if (isAdmin) {
+    menuItems = [
+      {
+        name: "Dashboard",
+        icon: <LayoutDashboard size={20} />,
+        path: "/dashboard",
+      },
+      {
+        name: "Vehicles",
+        icon: <Car size={20} />,
+        path: "/vehicles",
+      },
+      {
+        name: "Clients",
+        icon: <Users size={20} />,
+        path: "/clients",
+      },
+      {
+        name: "Proforma Invoices",
+        icon: <FileText size={20} />,
+        path: "/proforma-invoice",
+      },
+      {
+        name: "Dealers",
+        icon: <Truck size={20} />,
+        path: "/dealers",
+      },
+      {
+        name: "Companies",
+        icon: <Users size={20} />,
+        path: "/companies",
+      },
+      {
+        name: "User Management",
+        icon: <ShieldCheck size={20} />,
+        path: "/user-management",
+      },
+    ];
+  }
+
+  // ACCOUNTANT MENU
+  else if (isAccountant) {
+    menuItems = [
+      {
+        name: "Dashboard",
+        icon: <LayoutDashboard size={20} />,
+        path: "/dashboard",
+      },
+      {
+        name: "Proforma Invoices",
+        icon: <FileText size={20} />,
+        path: "/proforma-invoice",
+      },
+    ];
+  }
+
+  // OTHER USERS
+  else {
+    menuItems = [
+      {
+        name: "Dashboard",
+        icon: <LayoutDashboard size={20} />,
+        path: "/dashboard",
+      },
+    ];
+  }
 
   return (
     <aside className="w-64 min-h-screen bg-white dark:bg-gray-900 border-r flex flex-col">
@@ -43,17 +104,7 @@ const AppSidebar: React.FC = () => {
 
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
-          const isActive =
-            item.name === "Vehicles"
-              ? location.pathname.startsWith("/vehicles")
-              : item.name === "Dealers"
-                ? location.pathname.startsWith("/dealers")
-                : item.name === "Clients"
-                  ? location.pathname.startsWith("/clients") ||
-                    location.pathname.startsWith("/orders")
-                  : item.name === "Companies"
-                    ? location.pathname.startsWith("/companies")
-                    : location.pathname === item.path;
+          const isActive = location.pathname.startsWith(item.path);
 
           return (
             <Link

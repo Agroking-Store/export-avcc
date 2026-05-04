@@ -7,50 +7,51 @@ import { useAuth } from "../hooks/useAuth";
 
 // Auth pages
 import Login from "../features/auth/pages/Login";
-import Register from "../features/auth/pages/Register";
+//import Register from "../features/auth/pages/Register";
 import Profile from "../features/auth/pages/Profile";
 
 // Dashboard
 import Dashboard from "../features/dashboard/pages/Dashboard";
 
-// Clients
+// Modules
 import ClientsModule from "../features/clients/pages/ClientsModule";
-// Orders
 import OrdersModule from "../features/orders/OrdersModule";
-
-// Dealers
 import DealersModule from "../features/dealers/pages/DealersModule";
-
-// PI
-import PIModule from "../features/proforma-invoice/pages/PIModule"; // Import the new PIModule
-
-// Companies
+import PIModule from "../features/proforma-invoice/pages/PIModule";
 import CompanyModule from "../features/company/pages/CompanyModule";
-
-// Vehicles
 import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
-
-// Admin
 import UserManagementModule from "../features/admin/pages/UserManagementModule";
 import VehicleSelectionPage from "../features/proforma-invoice/pages/VehicleSelectionPage";
 import InvoiceFormPage from "../features/proforma-invoice/pages/InvoiceFormPage";
 
+import { useAppSelector } from "../app/hooks";
 const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
-  const redirectPath = user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+  const role = user?.role?.toLowerCase() || "";
+  const redirectPath = role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
   return <Navigate to={redirectPath} replace />;
 };
 
 const AppRoutes: React.FC = () => {
+  const { user } = useAppSelector((state) => state.auth);
+  const role = user?.role?.toLowerCase();
+
+  const isAdmin = role === "admin";
+  const isAccountant = role === "accountant";
+  const isSourcingTeam = role === "sourcing_team";
+
+  const canAccessVehicles = isAdmin || isSourcingTeam;
+  const canAccessPI = isAdmin || isAccountant;
+
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* <Route path="/register" element={<Register />} /> */}
       </Route>
 
-      {/* Private routes */}
+      {/* Private */}
       <Route element={<PrivateRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/" element={<DefaultRedirect />} />
@@ -80,31 +81,58 @@ const AppRoutes: React.FC = () => {
             element={<InvoiceFormPage />}
           />
 
-          {/* Companies */}
-          <Route path="/companies/*" element={<CompanyModule />} />
-
-          {/* Admin - User Management */}
-          <Route path="/user-management/*" element={<UserManagementModule />} />
-
-          {/* Coming Soon */}
           <Route
-            path="/letter-of-credit"
+            path="/clients/*"
             element={
-              <div className="p-6">Letter of Credit Page (Coming Soon)</div>
+              isAdmin ? <ClientsModule /> : <Navigate to="/dashboard" replace />
             }
           />
+
           <Route
-            path="/invoices"
-            element={<div className="p-6">Invoices Page (Coming Soon)</div>}
+            path="/orders/*"
+            element={
+              isAdmin ? <OrdersModule /> : <Navigate to="/dashboard" replace />
+            }
           />
+
           <Route
-            path="/documents"
-            element={<div className="p-6">Documents Page (Coming Soon)</div>}
+            path="/dealers/*"
+            element={
+              isAdmin ? <DealersModule /> : <Navigate to="/dashboard" replace />
+            }
           />
+
           <Route
-            path="/verification"
-            element={<div className="p-6">Verification Page (Coming Soon)</div>}
+            path="/companies/*"
+            element={
+              isAdmin ? <CompanyModule /> : <Navigate to="/dashboard" replace />
+            }
           />
+
+          <Route
+            path="/user-management/*"
+            element={
+              isAdmin ? (
+                <UserManagementModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
+
+          {/* Admin + Accountant */}
+          <Route
+            path="/proforma-invoice/*"
+            element={
+              canAccessPI ? (
+                <PIModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
+
+          {/* Coming Soon */}
           <Route
             path="/reports"
             element={<div className="p-6">Reports Page (Coming Soon)</div>}
@@ -113,10 +141,7 @@ const AppRoutes: React.FC = () => {
       </Route>
 
       {/* 404 */}
-      <Route
-        path="*"
-        element={<div className="p-6">404 - Page Not Found</div>}
-      />
+      <Route path="*" element={<div className="p-6">404 - Page Not Found</div>} />
     </Routes>
   );
 };

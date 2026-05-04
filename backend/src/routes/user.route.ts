@@ -9,7 +9,6 @@ const userController = new UserController();
 
 router.use(authenticate);
 router.use(authorize(ROLES.ADMIN));
-
 router.get("/", userController.getUsers);
 router.patch("/:id/role", userController.updateRole);
 

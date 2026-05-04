@@ -46,7 +46,8 @@ const moduleIcons: { [key: string]: JSX.Element } = {
 const idLabelCache: Record<string, string> = {};
 
 /** Returns true if a URL segment looks like a MongoDB ObjectId (24 hex chars) */
-const isMongoId = (segment: string) => /^[a-f\d]{24}$/i.test(segment);
+const isMongoId = (segment: string) =>
+  /^[a-f\d]{24}$/i.test(segment) && isNaN(Number(segment));
 
 /**
  * Resolves a MongoDB ObjectId to a human-readable label by checking the

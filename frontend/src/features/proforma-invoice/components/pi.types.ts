@@ -143,17 +143,33 @@ export interface ProformaInvoiceAPI {
 
 export interface OrderWithPIStatus {
   _id: string;
-  orderId: string;
-  voucherNo: string;
-  date: string; // Assuming date comes as a string from the backend
-  client: { name: string; companyName?: string; clientCode?: string };
-  dealer: { name: string };
+
+  orderId?: string;
+  orderNumber?: string;
+
+  voucherNo?: string;
+  voucherNumber?: string;
+
+  client?: {
+    name?: string;
+    clientCode?: string;
+  };
+
+  clientName?: string;
+
+  dealer?: {
+    name?: string;
+  };
+
+  dealerName?: string;
+
   totalVehiclesInOrder: number;
   totalVehiclesPIed: number;
-  pendingVehicles: number;
+
   overallPIStatus: string;
-  createdAt: string; // Added for 'Created' column
-  updatedAt: string; // Added for 'Last Updated' column
+
+  createdAt: string;
+  updatedAt: string;
 }
 
 // New interfaces for Order Detail with Tracking
