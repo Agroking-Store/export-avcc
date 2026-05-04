@@ -59,41 +59,53 @@
 
   <table style="margin-top:8px;">
     <tr>
-      <td class="center bold" style="width:17%;">Marks &amp; Nos /<br />Container No</td>
-      <td class="center bold" style="width:8%;">Sr No</td>
+      <td class="center bold" style="width:18%;">Marks &amp; Nos. /<br>Container No.</td>
+      <td class="center bold" style="width:10%;">Carton /<br>Package Count</td>
       <td class="bold">Description of Goods</td>
-      <td class="center bold" style="width:12%;">Qty (Pcs)</td>
-      <td class="center bold" style="width:13%;">Net Wt (KG)</td>
-      <td class="center bold" style="width:13%;">Gross Wt (KG)</td>
-      <td class="center bold" style="width:16%;">Dimensions<br />L×W×H (cm)</td>
+      <td class="center bold" style="width:12%;">Net Wt<br>(KG)</td>
+      <td class="center bold" style="width:12%;">Gross Wt<br>(KG)</td>
+      <td class="center bold" style="width:18%;">Dimensions<br>L×W×H (cm)</td>
     </tr>
-    <tr class="no-break">
-      <td>{{containerNo}}</td>
-      <td class="center">1</td>
-      <td class="desc">
-        {{#each descriptionLines}}<div>{{this}}</div>{{/each}}
+    <tr class="no-break" style="min-height: 300px;">
+      <td style="vertical-align: top;">
+        {{containerNo}}<br><br>
+        {{placeOfDelivery}}
       </td>
-      <td class="center">{{totalQty}}</td>
-      <td class="center">{{vehicle.netWeightKg}}</td>
-      <td class="center">{{vehicle.grossWeightKg}}</td>
-      <td class="center">{{vehicle.dimensionsCm}}</td>
+      <td class="center" style="vertical-align: top;">
+        {{totalQty}}<br>Cartons
+      </td>
+      <td style="vertical-align: top;">
+        {{#each descriptionLines}}
+          <div style="margin-bottom: 2px;">{{this}}</div>
+        {{/each}}
+      </td>
+      <td class="center" style="vertical-align: top;">{{vehicle.netWeightKg}}</td>
+      <td class="center" style="vertical-align: top;">{{vehicle.grossWeightKg}}</td>
+      <td class="center" style="vertical-align: top;">{{vehicle.dimensionsCm}}</td>
     </tr>
     <tr>
-      <td colspan="3" class="bold">Totals</td>
+      <td class="bold">Totals</td>
       <td class="center bold">{{totalQty}}</td>
-      <td></td>
-      <td></td>
-      <td></td>
+      <td colspan="4"></td>
     </tr>
     <tr>
-      <td colspan="7" class="min"><span class="bold">DBK001:</span> {{staticText.DBK001}}</td>
+      <td colspan="6" class="min" style="padding: 10px;">
+        <div class="bold">Declaration:</div>
+        <div class="bold">DBK001:</div> {{staticText.DBK001}}<br>
+        {{staticText.MEIS}}<br>
+        <div class="bold">STATEMENT ON ORIGIN:</div>
+        {{staticText.GSP_ORIGIN}}
+      </td>
     </tr>
     <tr>
-      <td colspan="7" class="min">{{staticText.MEIS}}</td>
-    </tr>
-    <tr>
-      <td colspan="7" class="min">{{staticText.GSP_ORIGIN}}</td>
+      <td colspan="3"></td>
+      <td colspan="3" class="right" style="vertical-align: bottom; height: 80px;">
+        <div class="bold">For {{exporter.companyName}}</div>
+        <br><br><br>
+        <div class="bold">Authorised Signatory</div>
+      </td>
     </tr>
   </table>
+
 </body>
 </html>

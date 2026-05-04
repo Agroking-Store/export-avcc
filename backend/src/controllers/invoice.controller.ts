@@ -110,7 +110,7 @@ const formatAddress = (address: any) => {
     address.cityTown,
     address.state,
     address.pincode,
-    address.country,
+
   ]
     .filter(Boolean)
     .join(", ");

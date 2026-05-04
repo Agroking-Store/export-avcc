@@ -22,152 +22,153 @@
 
   <table>
     <colgroup>
-      <col style="width:17%">
+      <col style="width:18%">
+      <col style="width:32%">
       <col style="width:10%">
-      <col style="width:24%">
+      <col style="width:12%">
       <col style="width:10%">
-      <col style="width:10%">
-      <col style="width:10%">
-      <col style="width:10%">
-      <col style="width:9%">
+      <col style="width:18%">
     </colgroup>
     <tr>
-      <td colspan="4" rowspan="6">
-        <div>Exporter</div>
-        <div>{{exporter.companyName}}</div>
+      <td colspan="3" rowspan="6">
+        <div class="bold">Exporter</div>
+        <div class="bold" style="font-size:10px;">{{exporter.companyName}}</div>
         {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
-        <div>{{exporter.stateCode}}</div>
-        <div>Maharashtra, India.</div>
-        <div>GST NO- {{exporter.gstin}}</div>
+        <div>State Name: Maharashtra, Code: 27</div>
+        <div>GSTIN: {{exporter.gstin}}</div>
       </td>
-      <td colspan="4">Tax Invoice No &amp; Dt. <span style="float:right;">{{invoiceNumber}} Dt.{{invoiceDate}}</span></td>
+      <td colspan="3">Invoice No &amp; Dt. <span style="float:right;">{{invoiceNumber}} Dtd. {{invoiceDate}}</span></td>
     </tr>
     <tr>
-      <td colspan="2">Buyers Order &amp; Dt</td>
-      <td colspan="2">{{buyerOrderDate}}</td>
+      <td colspan="3">Buyer's Order &amp; Dt. <span style="float:right;">{{buyerOrderDate}}</span></td>
     </tr>
     <tr>
-      <td colspan="2">Other Reference</td>
-      <td colspan="2">PI No - {{piNumber}} Dt {{piDate}}</td>
+      <td colspan="3">Other Reference(s) <span style="float:right;">PI No - {{piNumber}} Dtd {{piDate}}</span></td>
     </tr>
     <tr>
-      <td colspan="2"></td>
-      <td colspan="2">LC NO - {{lcNumber}} DT {{lcDate}}</td>
+      <td colspan="3">LC NO - {{lcNumber}} Dtd {{lcDate}}</td>
     </tr>
     <tr>
-      <td colspan="2">Buyer if other than Consignee</td>
-      <td colspan="2"></td>
+      <td colspan="3">Buyer (if other than consignee)</td>
     </tr>
     <tr>
-      <td colspan="4">EXPORT UNDER DRAWBACK SCHEME .</td>
+      <td colspan="3"></td>
     </tr>
 
     <tr>
-      <td colspan="4" rowspan="7">
-        <div>Consignee</div>
-        <div>{{buyerName}}</div>
+      <td colspan="3" rowspan="6">
+        <div class="bold">Consignee</div>
+        <div class="bold">{{buyerName}}</div>
         <div>{{buyerAddress}}</div>
         <div>{{buyerCountry}}</div>
-        <div>Atte :</div>
-        <div>Tel :</div>
       </td>
-      <td colspan="4">RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</td>
+      <td colspan="3">Country of Origin: <span style="float:right;">INDIA</span></td>
     </tr>
     <tr>
-      <td colspan="4">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</td>
+      <td colspan="3">Country of Destination: <span style="float:right;">{{buyerCountry}}</span></td>
     </tr>
     <tr>
-      <td colspan="4">SHIPMENT EXPORT UNDER IGST PAID</td>
+      <td colspan="3">
+        <div>DRAWBACK SHIPMENT</div>
+        <div>RODTEP SCHEME CODE: {{scheme.rodtepSchemeCode}}</div>
+      </td>
     </tr>
     <tr>
-      <td colspan="2">IEC NO- {{exporter.iecNo}}</td>
-      <td colspan="2">AD CODE - {{exporter.adCode}}</td>
+      <td colspan="3">
+        <div>IEC NO: {{exporter.iecNo}}</div>
+        <div>AD CODE: {{exporter.adCode}}</div>
+      </td>
     </tr>
     <tr>
-      <td colspan="2">PAN NO-{{exporter.pan}}</td>
-      <td colspan="2">END USE CODE- {{scheme.endUseCode}}</td>
+      <td colspan="3">PAN NO: {{exporter.pan}}</td>
     </tr>
     <tr>
-      <td colspan="2">GST NO-</td>
-      <td colspan="2"></td>
-    </tr>
-    <tr>
-      <td colspan="4">Custom Exchange Rate: US DOLLAR 1 = <span style="float:right;">{{values.customExchangeRate}}</span></td>
+      <td colspan="3">END USE CODE: {{scheme.endUseCode}}</td>
     </tr>
 
     <tr>
-      <td>Pre -<br />Carriage</td>
+      <td>Pre-Carriage by</td>
       <td>{{preCarriage}}</td>
-      <td>Place of Rcpt by Pre Carrier</td>
-      <td>{{placeOfReceipt}}</td>
-      <td>Country of Origin</td>
-      <td>INDIA</td>
-      <td>Country of Destination</td>
-      <td>{{buyerCountry}}</td>
+      <td>Place of Receipt</td>
+      <td colspan="3">{{placeOfReceipt}}</td>
     </tr>
     <tr>
-      <td>Vessel/<br />Flight</td>
+      <td>Vessel/Flight No.</td>
       <td>{{vesselFlight}}</td>
       <td>Port of Loading</td>
-      <td>{{portOfLoading}}</td>
-      <td colspan="4">Terms of Delivery and Payment</td>
+      <td colspan="3">{{portOfLoading}}</td>
     </tr>
     <tr>
       <td>Port of Discharge</td>
       <td>{{portOfDischarge}}</td>
-      <td>Place of Delivery</td>
-      <td>{{placeOfDelivery}}</td>
-      <td colspan="4">{{scheme.termsOfPayment}}</td>
+      <td>Final Destination</td>
+      <td colspan="3">{{placeOfDelivery}}</td>
     </tr>
 
     <tr>
-      <td class="center">Marks &amp; Nos<br />Container No</td>
-      <td class="center">SR NO</td>
-      <td class="center">Description of Goods</td>
-      <td class="center">IGST RATE</td>
-      <td class="center">Quantity<br />In Pcs</td>
-      <td class="center">Rate<br />In (Rs.)</td>
-      <td class="center">Amount<br />In (Rs.)</td>
-      <td class="center">IGST<br />Amount (Rs)</td>
+      <td class="center bold">Marks &amp; Nos. /<br>Container No.</td>
+      <td class="center bold">Description of Goods</td>
+      <td class="center bold">Quantity</td>
+      <td class="center bold">Rate (Rs.)</td>
+      <td class="center bold">IGST Rate</td>
+      <td class="center bold">Amount (Rs.)</td>
     </tr>
-    <tr class="no-break spacing-row">
-      <td rowspan="8">{{containerNo}}<br /><br />{{placeOfDelivery}}</td>
-      <td rowspan="8" class="center">1</td>
-      <td rowspan="8">
-        {{#each descriptionLines}}<div>{{this}}</div>{{/each}}
+
+    <tr class="no-break" style="min-height: 200px;">
+      <td style="vertical-align: top;">
+        {{containerNo}}<br><br>
+        {{placeOfDelivery}}
       </td>
-      <td rowspan="8" class="center">{{vehicle.igstRate}}%</td>
-      <td rowspan="8" class="center">{{totalQty}}<br /><br />PCS</td>
-      <td rowspan="8" class="right">{{values.exShowroomINR}}</td>
-      <td rowspan="8" class="right">{{values.totalINR}}</td>
-      <td rowspan="8" class="right">{{values.igstAmountINR}}</td>
+      <td style="vertical-align: top;">
+        {{#each descriptionLines}}
+          <div style="margin-bottom: 2px;">{{this}}</div>
+        {{/each}}
+      </td>
+      <td class="center" style="vertical-align: top;">
+        {{totalQty}}<br>PCS
+      </td>
+      <td class="right" style="vertical-align: top;">
+        {{values.exShowroomINR}}
+      </td>
+      <td class="center" style="vertical-align: top;">
+        {{vehicle.igstRate}}%
+      </td>
+      <td class="right" style="vertical-align: top;">
+        {{values.totalINR}}
+      </td>
     </tr>
-    <tr class="spacing-row"></tr>
-    <tr class="spacing-row"></tr>
-    <tr class="spacing-row"></tr>
-    <tr class="spacing-row"></tr>
-    <tr class="spacing-row"></tr>
-    <tr class="spacing-row"></tr>
-    <tr class="spacing-row"></tr>
 
     <tr>
-      <td colspan="2">Amount<br />Chargeable<br />(In Words)</td>
-      <td colspan="4">{{amountWordsINR}}</td>
-      <td class="right">Total</td>
-      <td class="right">{{values.totalINR}}</td>
-      <td class="right">{{values.igstAmountINR}}</td>
+      <td colspan="2">
+        <div class="tiny bold">Amount Chargeable (in words)</div>
+        <div class="bold">{{amountWordsINR}}</div>
+      </td>
+      <td colspan="3" class="right bold">Total</td>
+      <td class="right bold">{{values.totalINR}}</td>
     </tr>
+
     <tr>
-      <td colspan="8" class="tiny">{{staticText.DECLARATION}} {{staticText.MEIS}}</td>
+      <td colspan="6" class="tiny" style="padding: 8px;">
+        <div class="bold">Declaration:</div>
+        {{staticText.DBK001}}<br>
+        {{staticText.DBK003}}<br>
+        {{staticText.DECLARATION}}<br>
+        {{staticText.MEIS}}
+      </td>
     </tr>
+
     <tr>
-      <td colspan="4">STATEMENT ON ORIGIN</td>
-      <td colspan="4" class="right">For {{exporter.companyName}}</td>
-    </tr>
-    <tr>
-      <td colspan="4" class="tiny">{{staticText.GSP_ORIGIN}}</td>
-      <td colspan="4" class="right">Authorized Signatory</td>
+      <td colspan="3">
+        <div class="bold">Statement on Origin:</div>
+        <div class="tiny">{{staticText.GSP_ORIGIN}}</div>
+      </td>
+      <td colspan="3" class="right" style="vertical-align: bottom; height: 60px;">
+        <div>For {{exporter.companyName}}</div>
+        <br><br><br>
+        <div class="bold">Authorised Signatory</div>
+      </td>
     </tr>
   </table>
+
 </body>
 </html>
