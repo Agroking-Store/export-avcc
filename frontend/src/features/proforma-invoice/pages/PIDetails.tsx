@@ -396,10 +396,39 @@ const PIDetails = () => {
   const fetchPI = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`);
+  
+      let token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+  
+      if (!token && localStorage.getItem("user")) {
+        try {
+          const userObj = JSON.parse(
+            localStorage.getItem("user") || "{}"
+          );
+          token = userObj.token || userObj.accessToken;
+        } catch {}
+      }
+  
+      if (token?.startsWith('"') && token?.endsWith('"')) {
+        token = token.slice(1, -1);
+      }
+  
+      const res = await axios.get(
+        `${apiConfig.baseURL}/proforma-invoices/${id}`,
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : {},
+        }
+      );
+  
       setData(res.data);
-    } catch { toast.error("Failed to load PI details"); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error("Failed to load PI details");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { if (id) fetchPI(); }, [id]);
@@ -542,13 +571,13 @@ const PIDetails = () => {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-500 font-medium">
                 <p className="flex items-center gap-1.5"><span className="text-zinc-400">Ref:</span><span className="font-mono text-zinc-900 dark:text-zinc-300">{pi?.piNumber}</span></p>
                 {(pi?.vehicleBookingIds?.length ?? 0) > 0 && (
-  <p className="flex items-center gap-1.5 border-l border-zinc-300 dark:border-zinc-700 pl-4">
-    <span className="text-zinc-400">Vehicles:</span>
-    <span className="font-mono text-zinc-900 dark:text-zinc-300">
-      {pi?.vehicleBookingIds?.length ?? 0}
-    </span>
-  </p>
-)}
+                  <p className="flex items-center gap-1.5 border-l border-zinc-300 dark:border-zinc-700 pl-4">
+                    <span className="text-zinc-400">Vehicles:</span>
+                    <span className="font-mono text-zinc-900 dark:text-zinc-300">
+                      {pi?.vehicleBookingIds?.length ?? 0}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </div>

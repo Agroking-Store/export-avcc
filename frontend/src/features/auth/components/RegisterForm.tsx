@@ -26,12 +26,13 @@ const RegisterForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const result = await dispatch(register(formData)).unwrap();
-      const redirectPath = result?.user?.role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+      const role = result?.user?.role?.toLowerCase() || "";
+      const redirectPath = role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
       navigate(redirectPath);
     } catch (error) {
       console.error("Registration failed:", error);
