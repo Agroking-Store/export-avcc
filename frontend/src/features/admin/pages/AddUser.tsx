@@ -1,27 +1,27 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { User, Mail, Phone, Lock } from "lucide-react";
+import { User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { register } from "@/features/auth/authSlice";
 import { authApi } from "@/services/authApi";
-
 
 const AddUser = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch<any>();
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     phone: "",
-    role: "", // ✅ added
+    role: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [errors, setErrors] = useState<any>({});
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setFormData({
       ...formData,
@@ -37,69 +37,59 @@ const AddUser = () => {
   const validate = () => {
     const newErrors: any = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
-
-    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!/^\S+@\S+\.\S+$/.test(formData.email))
       newErrors.email = "Enter a valid email";
-    }
-
-    if (!/^\d{10}$/.test(formData.phone)) {
+    if (!/^\d{10}$/.test(formData.phone))
       newErrors.phone = "Phone must be 10 digits";
-    }
 
     if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    if (!formData.role) {
-      newErrors.role = "Role is required";
+    // Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
     }
+
+    if (!formData.role) newErrors.role = "Role is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async () => {
-  if (!validate()) return;
+  const handleSubmit = async () => {
+    if (!validate()) return;
 
-  try {
-    const res = await authApi.register(formData);
+    try {
+      // We remove confirmPassword before sending to API
+      const { confirmPassword, ...submitData } = formData;
+      const res = await authApi.register(submitData);
 
-    console.log("User created:", res);
-
-    navigate("/user-management/users");
-  } catch (error) {
-    console.error("Registration failed:", error);
-  }
-};
+      console.log("User created:", res);
+      navigate("/user-management/users");
+    } catch (error) {
+      console.error("Registration failed:", error);
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
-
       {/* Header */}
       <div className="px-6 py-5 border-b">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Add User
-        </h2>
-        <p className="text-sm text-gray-500">
-          Create a new user account
-        </p>
+        <h2 className="text-xl font-semibold text-gray-800">Add User</h2>
+        <p className="text-sm text-gray-500">Create a new user account</p>
       </div>
 
       {/* Section */}
       <div className="px-6 pt-5">
         <div className="flex items-center gap-2 border-l-4 border-indigo-500 pl-3">
-          <h3 className="text-sm font-semibold text-gray-700">
-            User Details
-          </h3>
+          <h3 className="text-sm font-semibold text-gray-700">User Details</h3>
         </div>
       </div>
 
       {/* Form */}
       <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-
         {/* Name */}
         <div>
           <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
@@ -157,31 +147,11 @@ const handleSubmit = async () => {
           )}
         </div>
 
-        {/* Password */}
-        <div>
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
-            <Lock size={14} className="text-purple-500" />
-            Password *
-          </label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
-              ${errors.password ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
-          />
-          {errors.password && (
-            <p className="text-xs text-red-500 mt-1">{errors.password}</p>
-          )}
-        </div>
-
-        {/* Role (NEW - minimal addition) */}
+        {/* Role */}
         <div>
           <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
             Role *
           </label>
-
           <select
             name="role"
             value={formData.role}
@@ -196,12 +166,68 @@ const handleSubmit = async () => {
             <option value="accountant">Accountant</option>
             <option value="sourcing_team">Sourcing Team</option>
           </select>
-
           {errors.role && (
             <p className="text-xs text-red-500 mt-1">{errors.role}</p>
           )}
         </div>
 
+        {/* Password */}
+        <div className="relative">
+          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
+            <Lock size={14} className="text-purple-500" />
+            Password *
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
+                ${errors.password ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+          )}
+        </div>
+
+        {/* Confirm Password */}
+        <div className="relative">
+          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
+            <Lock size={14} className="text-orange-500" />
+            Confirm Password *
+          </label>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className={`mt-1 w-full px-4 py-2.5 border rounded-xl bg-gray-50 focus:outline-none focus:ring-2 
+                ${errors.confirmPassword ? "border-red-500 focus:ring-red-500" : "focus:ring-indigo-500"}`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.confirmPassword}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Buttons */}
@@ -220,7 +246,6 @@ const handleSubmit = async () => {
           ＋ Confirm & Save
         </button>
       </div>
-
     </div>
   );
 };
