@@ -5,107 +5,134 @@
   <title>Packing List</title>
   <style>
     @page { size: A4 portrait; margin: 10mm 12mm; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #000; margin: 0; }
-    * { box-sizing: border-box; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    td, th { border: 0.5px solid #000; padding: 2px 3px; vertical-align: top; }
-    .title { font-size: 11px; font-weight: 700; }
-    .right { text-align: right; }
+    body { font-family: "Times New Roman", Times, serif; font-size: 10pt; line-height: 1.15; color:#000; margin:0; }
+    * { box-sizing:border-box; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    td, th { border:0.5px solid #000; padding:2px 4px; vertical-align:top; }
+    .title { font-size: 17pt; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 12pt; }
+    .company-block { font-size: 10pt; line-height: 1.15; }
+    .company-block .name { font-weight: 700; }
+    .invoice-details { font-size: 10pt; text-align: right; line-height: 1.15; }
+    .invoice-details .label { font-weight: 700; }
+    .section-title { font-weight: 700; font-size: 10pt; margin-bottom: 4pt; }
+    .normal-text { font-size: 10pt; line-height: 1.15; }
+    .bold-label { font-weight: 700; }
+    .spacing { height: 8px; }
     .center { text-align: center; }
-    .bold { font-weight: 700; }
-    .min { font-size: 7.8px; }
-    .desc div { margin-bottom: 2px; }
-    .no-break { break-inside: avoid; page-break-inside: avoid; }
+    .right { text-align: right; }
+    .left { text-align: left; }
+    .tiny { font-size: 9pt; }
   </style>
 </head>
 <body>
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
-    <div class="title">PACKING LIST PAGE - I</div>
-    <div class="right bold">
-      <div>Invoice No: {{invoiceNumber}}</div>
-      <div>Date: {{invoiceDate}}</div>
-    </div>
-  </div>
-
   <table>
+    <colgroup>
+      <col style="width:18%"/><!-- Marks & Nos / Container No -->
+      <col style="width:10%"/><!-- Carton / Package Count -->
+      <col style="width:30%"/><!-- Description of Goods -->
+      <col style="width:12%"/><!-- Net Wt (KG) -->
+      <col style="width:12%"/><!-- Gross Wt (KG) -->
+      <col style="width:18%"/><!-- Dimensions -->
+    </colgroup>
+    <!-- TOP TITLE -->
     <tr>
-      <td colspan="4">
-        <div class="bold">EXPORTER</div>
-        <div class="bold" style="font-size:11px;">{{exporter.companyName}}</div>
-        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
+      <td colspan="6" class="title">PACKING LIST</td>
+    </tr>
+    <!-- HEADER: Exporter (left) & Invoice details (right) -->
+    <tr>
+      <td colspan="3" class="company-block">
+        <div class="name">{{exporter.companyName}}</div>
+        <div>Flat No 50</div>
+        <div>S No 27/4-27/5, Building No 7</div>
+        <div>Hingane Khurd, Parvati</div>
+        <div>Pune - 411009, Maharashtra, India</div>
+        <div>GSTIN/UIN: {{exporter.gstin}}</div>
+        <div>State Name : Maharashtra, Code : 27</div>
       </td>
-      <td colspan="3">
-        <div><span class="bold">PI No:</span> {{piNumber}}</div>
-        <div><span class="bold">PI Date:</span> {{piDate}}</div>
-        <div><span class="bold">LC No:</span> {{lcNumber}}</div>
-        <div><span class="bold">LC Date:</span> {{lcDate}}</div>
+      <td colspan="3" class="invoice-details">
+        <div><span class="label">INVOICE NO:</span> {{invoiceNumber}}</div>
+        <div><span class="label">DATE:</span> {{invoiceDate}}</div>
+        <div><span class="label">LC NO:</span> {{lcNumber}}</div>
+        <div><span class="label">LC DATE:</span> {{lcDate}}</div>
+        <div><span class="label">COUNTRY:</span> {{buyerCountry}}</div>
       </td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- CONSIGNEE SECTION -->
     <tr>
-      <td colspan="4">
-        <div class="bold">CONSIGNEE</div>
-        <div class="bold">{{buyerName}}</div>
+      <td colspan="6" class="normal-text">
+        <div class="section-title">Consignee</div>
+        <div class="bold-label">{{buyerName}}</div>
         <div>{{buyerAddress}}</div>
         <div>{{buyerCountry}}</div>
       </td>
-      <td colspan="3">
-        <div><span class="bold">Place of Receipt -</span> {{placeOfReceipt}}</div>
-        <div><span class="bold">Port of Loading -</span> {{portOfLoading}}</div>
-        <div><span class="bold">Port of Discharge -</span> {{portOfDischarge}}</div>
-        <div><span class="bold">Place of Delivery -</span> {{placeOfDelivery}}</div>
-      </td>
     </tr>
-  </table>
-
-  <table style="margin-top:8px;">
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- PLACE OF RECEIPT / LOADING / DISCHARGE -->
     <tr>
-      <td class="center bold" style="width:18%;">Marks &amp; Nos. /<br>Container No.</td>
-      <td class="center bold" style="width:10%;">Carton /<br>Package Count</td>
-      <td class="bold">Description of Goods</td>
-      <td class="center bold" style="width:12%;">Net Wt<br>(KG)</td>
-      <td class="center bold" style="width:12%;">Gross Wt<br>(KG)</td>
-      <td class="center bold" style="width:18%;">Dimensions<br>L×W×H (cm)</td>
+      <td colspan="6" class="normal-text">
+        <div><span class="bold-label">Place of Receipt:</span> {{placeOfReceipt}}</div>
+        <div><span class="bold-label">Port of Loading:</span> {{portOfLoading}}</div>
+        <div><span class="bold-label">Port of Discharge:</span> {{portOfDischarge}}</div>
+        <div><span class="bold-label">Place of Delivery:</span> {{placeOfDelivery}}</div>
+      </td>
     </tr>
-    <tr class="no-break" style="min-height: 300px;">
-      <td style="vertical-align: top;">
-        {{containerNo}}<br><br>
-        {{placeOfDelivery}}
-      </td>
-      <td class="center" style="vertical-align: top;">
-        {{totalQty}}<br>Cartons
-      </td>
-      <td style="vertical-align: top;">
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- TABLE HEADER -->
+    <tr>
+      <td class="center"><strong>MARKS &amp; NOS. /<br>Container No.</strong></td>
+      <td class="center"><strong>CARTON /<br>Package Count</strong></td>
+      <td class="center"><strong>DESCRIPTION OF GOODS</strong></td>
+      <td class="center"><strong>NET Wt<br>(KG)</strong></td>
+      <td class="center"><strong>GROSS Wt<br>(KG)</strong></td>
+      <td class="center"><strong>DIMENSIONS<br>L×W×H (CM)</strong></td>
+    </tr>
+    <!-- DATA ROW (repeat for each container) -->
+    <tr class="no-break">
+      <td class="left">{{containerNo}}<br/><br/>{{placeOfDelivery}}</td>
+      <td class="center">{{totalQty}}<br/>Cartons</td>
+      <td class="left">
         {{#each descriptionLines}}
-          <div style="margin-bottom: 2px;">{{this}}</div>
+          <div>{{this}}</div>
         {{/each}}
       </td>
-      <td class="center" style="vertical-align: top;">{{vehicle.netWeightKg}}</td>
-      <td class="center" style="vertical-align: top;">{{vehicle.grossWeightKg}}</td>
-      <td class="center" style="vertical-align: top;">{{vehicle.dimensionsCm}}</td>
+      <td class="center">{{vehicle.netWeightKg}}</td>
+      <td class="center">{{vehicle.grossWeightKg}}</td>
+      <td class="center">{{vehicle.dimensionsCm}}</td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- TOTALS ROW -->
     <tr>
-      <td class="bold">Totals</td>
-      <td class="center bold">{{totalQty}}</td>
+      <td class="bold-label">Totals</td>
+      <td class="center bold-label">{{totalQty}}</td>
       <td colspan="4"></td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- DECLARATION BLOCK -->
     <tr>
-      <td colspan="6" class="min" style="padding: 10px;">
-        <div class="bold">Declaration:</div>
-        <div class="bold">DBK001:</div> {{staticText.DBK001}}<br>
-        {{staticText.MEIS}}<br>
-        <div class="bold">STATEMENT ON ORIGIN:</div>
-        {{staticText.GSP_ORIGIN}}
+      <td colspan="6" class="normal-text">
+        <div class="bold-label">Declaration:</div>
+        <div class="bold-label">DBK001:</div> {{staticText.DBK001}}<br/>
+        {{staticText.MEIS}}<br/>
+        <div class="bold-label">STATEMENT ON ORIGIN:</div> {{staticText.GSP_ORIGIN}}
       </td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- FOOTER -->
     <tr>
-      <td colspan="3"></td>
-      <td colspan="3" class="right" style="vertical-align: bottom; height: 80px;">
-        <div class="bold">For {{exporter.companyName}}</div>
+      <td colspan="4" class="footer-left">
+        <div class="bold-label">For {{exporter.companyName}}</div>
         <br><br><br>
-        <div class="bold">Authorised Signatory</div>
+        <div class="bold-label">Authorised Signatory</div>
       </td>
+      <td colspan="2" class="footer-right" style="vertical-align:bottom; height:80px;">
+        <div class="bold-label">E. &amp; O.E</div>
+      </td>
+    </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <tr>
+      <td colspan="6" class="center tiny">THIS IS A COMPUTER GENERATED DOCUMENT</td>
     </tr>
   </table>
-
 </body>
 </html>

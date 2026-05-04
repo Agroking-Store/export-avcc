@@ -5,170 +5,170 @@
   <title>INR Tax Invoice</title>
   <style>
     @page { size: A4 portrait; margin: 10mm 12mm; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 7.7px; line-height: 1.05; color: #000; margin: 0; }
-    * { box-sizing: border-box; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    td, th { border: 0.5px solid #000; padding: 1.6px 2.4px; vertical-align: top; }
-    .title { text-align: center; font-size: 8.6px; font-weight: 700; margin-bottom: 4px; }
+    body { font-family: "Times New Roman", Times, serif; font-size: 10pt; line-height: 1.15; color:#000; margin:0; }
+    * { box-sizing:border-box; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    td, th { border:0.5px solid #000; padding:2px 4px; vertical-align:top; }
+    .title { font-size: 17pt; font-weight: 700; text-transform: uppercase; text-align: center; margin-bottom: 12pt; }
+    .company-block { font-size: 10pt; line-height: 1.15; }
+    .company-block .name { font-weight: 700; }
+    .invoice-details { font-size: 10pt; text-align: right; line-height: 1.15; }
+    .invoice-details .label { font-weight: 700; }
+    .section-title { font-weight: 700; font-size: 10pt; margin-bottom: 4pt; }
+    .normal-text { font-size: 10pt; line-height: 1.15; }
+    .bold-label { font-weight: 700; }
+    .total-line { font-size: 12pt; font-weight: 700; text-align: right; margin-top: 10pt; }
+    .amount-words { font-size: 10pt; margin-top: 10pt; }
+    .footer-right { text-align: right; }
+    .footer-left { text-align: left; }
+    .spacing { height: 8px; }
     .center { text-align: center; }
     .right { text-align: right; }
-    .tiny { font-size: 6.8px; }
-    .no-break { break-inside: avoid; page-break-inside: avoid; }
-    .spacing-row td { height: 15px; }
+    .left { text-align: left; }
+    .tiny { font-size: 9pt; }
   </style>
 </head>
 <body>
-  <div class="title">TAX INVOICE</div>
-
   <table>
     <colgroup>
-      <col style="width:18%">
-      <col style="width:32%">
-      <col style="width:10%">
-      <col style="width:12%">
-      <col style="width:10%">
-      <col style="width:18%">
+      <col style="width:18%"/><!-- Marks & Nos / Container No -->
+      <col style="width:32%"/><!-- Description -->
+      <col style="width:10%"/><!-- Quantity -->
+      <col style="width:12%"/><!-- Rate (Rs.) -->
+      <col style="width:10%"/><!-- IGST Rate -->
+      <col style="width:18%"/><!-- Amount (Rs.) -->
     </colgroup>
+    <!-- TOP TITLE -->
     <tr>
-      <td colspan="3" rowspan="6">
-        <div class="bold">Exporter</div>
-        <div class="bold" style="font-size:10px;">{{exporter.companyName}}</div>
-        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
-        <div>State Name: Maharashtra, Code: 27</div>
+      <td colspan="6" class="title">TAX INVOICE</td>
+    </tr>
+    <!-- HEADER: Exporter details (left) & Invoice details (right) -->
+    <tr>
+      <td colspan="3" class="company-block">
+        <div class="name">{{exporter.companyName}}</div>
+        <div>Flat No 50</div>
+        <div>S No 27/4-27/5, Building No 7</div>
+        <div>Hingane Khurd, Parvati</div>
+        <div>Pune - 411009, Maharashtra, India</div>
         <div>GSTIN: {{exporter.gstin}}</div>
+        <div>State Name : Maharashtra, Code : 27</div>
       </td>
-      <td colspan="3">Invoice No &amp; Dt. <span style="float:right;">{{invoiceNumber}} Dtd. {{invoiceDate}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="3">Buyer's Order &amp; Dt. <span style="float:right;">{{buyerOrderDate}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="3">Other Reference(s) <span style="float:right;">PI No - {{piNumber}} Dtd {{piDate}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="3">LC NO - {{lcNumber}} Dtd {{lcDate}}</td>
-    </tr>
-    <tr>
-      <td colspan="3">Buyer (if other than consignee)</td>
-    </tr>
-    <tr>
-      <td colspan="3"></td>
-    </tr>
-
-    <tr>
-      <td colspan="3" rowspan="6">
-        <div class="bold">Consignee</div>
-        <div class="bold">{{buyerName}}</div>
-        <div>{{buyerAddress}}</div>
-        <div>{{buyerCountry}}</div>
-      </td>
-      <td colspan="3">Country of Origin: <span style="float:right;">INDIA</span></td>
-    </tr>
-    <tr>
-      <td colspan="3">Country of Destination: <span style="float:right;">{{buyerCountry}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="3">
-        <div>DRAWBACK SHIPMENT</div>
-        <div>RODTEP SCHEME CODE: {{scheme.rodtepSchemeCode}}</div>
+      <td colspan="3" class="invoice-details">
+        <div><span class="label">INVOICE NO:</span> {{invoiceNumber}}</div>
+        <div><span class="label">DATE:</span> {{invoiceDate}}</div>
+        <div><span class="label">LC NO:</span> {{lcNumber}}</div>
+        <div><span class="label">LC DATE:</span> {{lcDate}}</div>
+        <div><span class="label">COUNTRY:</span> {{buyerCountry}}</div>
       </td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- BUYER / CONSIGNEE SECTION -->
     <tr>
-      <td colspan="3">
-        <div>IEC NO: {{exporter.iecNo}}</div>
-        <div>AD CODE: {{exporter.adCode}}</div>
+      <td colspan="3" class="tiny">
+        <div class="section-title">Consignee (Ship to):</div>
+        <div class="normal-text">{{buyerName}}</div>
+        <div class="normal-text">{{buyerAddress}}</div>
+        <div class="normal-text">{{buyerCountry}}</div>
+      </td>
+      <td colspan="3" class="tiny">
+        <div class="section-title">Buyer (Bill to):</div>
+        <div class="normal-text">{{buyerName}}</div>
+        <div class="normal-text">{{buyerAddress}}</div>
+        <div class="normal-text">{{buyerCountry}}</div>
       </td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- ADDITIONAL INFO -->
     <tr>
-      <td colspan="3">PAN NO: {{exporter.pan}}</td>
-    </tr>
-    <tr>
-      <td colspan="3">END USE CODE: {{scheme.endUseCode}}</td>
-    </tr>
-
-    <tr>
-      <td>Pre-Carriage by</td>
-      <td>{{preCarriage}}</td>
-      <td>Place of Receipt</td>
-      <td colspan="3">{{placeOfReceipt}}</td>
-    </tr>
-    <tr>
-      <td>Vessel/Flight No.</td>
-      <td>{{vesselFlight}}</td>
-      <td>Port of Loading</td>
-      <td colspan="3">{{portOfLoading}}</td>
-    </tr>
-    <tr>
-      <td>Port of Discharge</td>
-      <td>{{portOfDischarge}}</td>
-      <td>Final Destination</td>
-      <td colspan="3">{{placeOfDelivery}}</td>
-    </tr>
-
-    <tr>
-      <td class="center bold">Marks &amp; Nos. /<br>Container No.</td>
-      <td class="center bold">Description of Goods</td>
-      <td class="center bold">Quantity</td>
-      <td class="center bold">Rate (Rs.)</td>
-      <td class="center bold">IGST Rate</td>
-      <td class="center bold">Amount (Rs.)</td>
-    </tr>
-
-    <tr class="no-break" style="min-height: 200px;">
-      <td style="vertical-align: top;">
-        {{containerNo}}<br><br>
-        {{placeOfDelivery}}
+      <td colspan="6" class="normal-text">
+        <div><span class="bold-label">Country of Origin:</span> INDIA</div>
+        <div><span class="bold-label">Country of Destination:</span> {{buyerCountry}}</div>
+        <div><span class="bold-label">Drawback Shipment:</span></div>
+        <div><span class="bold-label">RODTEP Scheme Code:</span> {{scheme.rodtepSchemeCode}}</div>
+        <div><span class="bold-label">IEC NO:</span> {{exporter.iecNo}}</div>
+        <div><span class="bold-label">AD CODE:</span> {{exporter.adCode}}</div>
+        <div><span class="bold-label">PAN NO:</span> {{exporter.pan}}</div>
+        <div><span class="bold-label">END USE CODE:</span> {{scheme.endUseCode}}</div>
       </td>
-      <td style="vertical-align: top;">
+    </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- LOGISTICS ROWS -->
+    <tr>
+      <td class="normal-text">Pre‑Carriage by</td>
+      <td class="normal-text">{{preCarriage}}</td>
+      <td class="normal-text">Place of Receipt</td>
+      <td colspan="3" class="normal-text">{{placeOfReceipt}}</td>
+    </tr>
+    <tr>
+      <td class="normal-text">Vessel/Flight No.</td>
+      <td class="normal-text">{{vesselFlight}}</td>
+      <td class="normal-text">Port of Loading</td>
+      <td colspan="3" class="normal-text">{{portOfLoading}}</td>
+    </tr>
+    <tr>
+      <td class="normal-text">Port of Discharge</td>
+      <td class="normal-text">{{portOfDischarge}}</td>
+      <td class="normal-text">Final Destination</td>
+      <td colspan="3" class="normal-text">{{placeOfDelivery}}</td>
+    </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- TABLE HEADER -->
+    <tr>
+      <td class="center"><strong>MARKS &amp; NOS. /<br>Container No.</strong></td>
+      <td class="center"><strong>DESCRIPTION OF GOODS</strong></td>
+      <td class="center"><strong>QUANTITY</strong></td>
+      <td class="center"><strong>RATE (Rs.)</strong></td>
+      <td class="center"><strong>IGST RATE</strong></td>
+      <td class="center"><strong>AMOUNT (Rs.)</strong></td>
+    </tr>
+    <!-- DATA ROW -->
+    <tr class="no-break">
+      <td class="left">{{containerNo}}<br/><br/>{{placeOfDelivery}}</td>
+      <td class="left">
         {{#each descriptionLines}}
-          <div style="margin-bottom: 2px;">{{this}}</div>
+          <div>{{this}}</div>
         {{/each}}
       </td>
-      <td class="center" style="vertical-align: top;">
-        {{totalQty}}<br>PCS
-      </td>
-      <td class="right" style="vertical-align: top;">
-        {{values.exShowroomINR}}
-      </td>
-      <td class="center" style="vertical-align: top;">
-        {{vehicle.igstRate}}%
-      </td>
-      <td class="right" style="vertical-align: top;">
-        {{values.totalINR}}
-      </td>
+      <td class="center">{{totalQty}}<br/>PCS</td>
+      <td class="right">{{values.exShowroomINR}}</td>
+      <td class="center">{{vehicle.igstRate}}%</td>
+      <td class="right">{{values.totalINR}}</td>
     </tr>
-
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- TOTAL SECTION -->
     <tr>
-      <td colspan="2">
-        <div class="tiny bold">Amount Chargeable (in words)</div>
-        <div class="bold">{{amountWordsINR}}</div>
-      </td>
-      <td colspan="3" class="right bold">Total</td>
-      <td class="right bold">{{values.totalINR}}</td>
+      <td colspan="4" class="amount-words"><span class="bold-label">Amount Chargeable (in words):</span> {{amountWordsINR}}</td>
+      <td colspan="2" class="total-line">TOTAL: {{values.totalINR}}</td>
     </tr>
-
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- DECLARATION BLOCK -->
     <tr>
-      <td colspan="6" class="tiny" style="padding: 8px;">
-        <div class="bold">Declaration:</div>
-        {{staticText.DBK001}}<br>
-        {{staticText.DBK003}}<br>
-        {{staticText.DECLARATION}}<br>
-        {{staticText.MEIS}}
-      </td>
-    </tr>
-
-    <tr>
-      <td colspan="3">
-        <div class="bold">Statement on Origin:</div>
+      <td colspan="6" class="normal-text">
+        <div class="bold-label">Declaration:</div>
+        <div>{{staticText.DBK001}}</div>
+        <div>{{staticText.DBK003}}</div>
+        <div>{{staticText.DECLARATION}}</div>
+        <div>{{staticText.MEIS}}</div>
+        <div class="bold-label">Statement on Origin:</div>
         <div class="tiny">{{staticText.GSP_ORIGIN}}</div>
       </td>
-      <td colspan="3" class="right" style="vertical-align: bottom; height: 60px;">
-        <div>For {{exporter.companyName}}</div>
+    </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <!-- FOOTER -->
+    <tr>
+      <td colspan="4" class="footer-left">
+        <div class="bold-label">For {{exporter.companyName}}</div>
         <br><br><br>
-        <div class="bold">Authorised Signatory</div>
+        <div class="bold-label">Authorised Signatory</div>
+      </td>
+      <td colspan="2" class="footer-right" style="vertical-align:bottom; height:80px;">
+        <div class="bold-label">E. &amp; O.E</div>
       </td>
     </tr>
+    <tr class="spacing"><td colspan="6"></td></tr>
+    <tr>
+      <td colspan="6" class="center tiny">THIS IS A COMPUTER GENERATED DOCUMENT</td>
+    </tr>
   </table>
-
 </body>
 </html>
