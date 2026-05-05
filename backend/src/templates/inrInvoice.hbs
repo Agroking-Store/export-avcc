@@ -25,6 +25,32 @@
       vertical-align: top;
       font-weight: 400;
     }
+    .label {
+      font-weight: 700 !important;
+      padding: 2px 2px 0 !important;
+    }
+    .ship-label, .section {
+      padding: 2px 2px 0;
+      font-weight: 700;
+    }
+    .bank-row td {
+      border: none !important;
+    }
+    .desc-cell, .goods-cell {
+      line-height: 1.15;
+    }
+    .sign-box {
+      text-align: right;
+      vertical-align: bottom;
+      padding-bottom: 2px;
+    }
+    .amount-col {
+      text-align: right;
+    }
+    .qty-stack {
+      text-align: center;
+      line-height: 1.1;
+    }
     .title {
       font-size: 8.8px;
       font-weight: 700;
@@ -78,13 +104,13 @@
 <body>
   <table>
     <colgroup>
-      <col style="width:11%">
-      <col style="width:9%">
-      <col style="width:30%">
-      <col style="width:12%">
-      <col style="width:10%">
-      <col style="width:14%">
-      <col style="width:14%">
+      <col style="width:55px">
+      <col style="width:45px">
+      <col style="width:150px">
+      <col style="width:60px">
+      <col style="width:50px">
+      <col style="width:70px">
+      <col style="width:70px">
     </colgroup>
 
     <tr>
@@ -208,10 +234,8 @@
         {{/each}}
       </td>
       <td class="goods-cell center tight">{{vehicle.igstRate}}%</td>
-      <td class="goods-cell center tight">
-        1<br><br>
-        {{totalQty}}<br>
-        PCS
+      <td class="goods-cell qty-stack">
+        1<br>PCS<br>1
       </td>
       <td class="goods-cell right tight">{{values.exShowroomINR}}</td>
       <td class="goods-cell right tight">{{values.exShowroomINR}}</td>
@@ -233,10 +257,10 @@
         <div class="bold" style="margin-top:3px;">STATEMENT ON ORIGIN</div>
         <div class="tight">{{staticText.GSP_ORIGIN}}</div>
       </td>
-      <td colspan="2" class="sign-box center">
-        <div>For {{exporter.companyName}}</div>
+      <td colspan="2" class="sign-box">
+        <div style="text-align: right;">For {{exporter.companyName}}</div>
         <br><br>
-        <div>Authorized Signatory</div>
+        <div style="text-align: right;">Authorized Signatory</div>
       </td>
     </tr>
     <tr>
