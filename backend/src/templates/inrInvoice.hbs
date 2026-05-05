@@ -99,6 +99,51 @@
       font-size: 7.05px;
       line-height: 1.02;
     }
+    .label-top-left {
+      padding: 0 0 0 1px !important;
+      font-weight: 700;
+      line-height: 1.0;
+      position: relative;
+      top: 0;
+      left: 0;
+    }
+    .bank-single {
+      border: 0.5px solid #000 !important;
+      line-height: 1.08;
+      padding: 2px;
+    }
+    .bank-content {
+      vertical-align: top;
+      padding-top: 0;
+    }
+    .desc-spaced {
+      line-height: 1.18 !important;
+    }
+    .sign-bottom-right {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-weight: 700;
+    }
+    .sign-space {
+      height: 65px;
+      position: relative;
+      vertical-align: bottom;
+    }
+    .total-bold {
+      font-weight: 700 !important;
+    }
+    .qty-tight-center {
+      text-align: center;
+      line-height: 1.05;
+    }
+    .terms-same-line {
+      display: inline;
+      white-space: nowrap;
+    }
+    .title-bold {
+      font-weight: 700 !important;
+    }
   </style>
 </head>
 <body>
@@ -114,12 +159,12 @@
     </colgroup>
 
     <tr>
-      <td colspan="7" class="title">TAX INVOICE</td>
+      <td colspan="7" class="title title-bold">TAX INVOICE</td>
     </tr>
 
     <tr>
-      <td colspan="3" rowspan="6" class="topbox">
-        <div class="section">Exporter</div>
+      <td colspan="3" rowspan="15" class="topbox" style="border-right: 0.5px solid #000;">
+        <div class="label-top-left">Exporter</div>
         <div class="company">{{exporter.companyName}}</div>
         {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
         <div>Maharashtra, India.</div>
@@ -144,11 +189,11 @@
     </tr>
 
     <tr>
-      <td colspan="3" rowspan="9" class="topbox">
-        <div class="section">Consignee</div>
+      <td colspan="3" rowspan="8" class="topbox" style="border-right: 0.5px solid #000;">
+        <div class="label-top-left">Consignee</div>
         <div class="company">{{buyerName}}</div>
-        <div>{{buyerAddress}}</div>
-        <div>{{buyerCountry}}</div>
+        <div>{{buyerAddress.toUpperCase}}</div>
+        <div>{{buyerCountry.toUpperCase}}</div>
         <div>Atte :</div>
         <div>Tel :</div>
       </td>
@@ -193,8 +238,8 @@
       <td class="ship-value">{{vesselFlight}}</td>
       <td class="ship-label">Port of Loading</td>
       <td class="ship-value">{{portOfLoading}}</td>
-      <td class="ship-label">Terms of Delivery and Payment</td>
-      <td colspan="2" class="ship-value">{{scheme.termsOfPayment}}</td>
+      <td class="ship-label label-top-left">Terms of Delivery and Payment</td>
+      <td colspan="2" class="ship-value"><span class="terms-same-line">{{scheme.termsOfPayment}}</span></td>
     </tr>
     <tr>
       <td class="ship-label">Port of Discharge</td>
@@ -228,13 +273,13 @@
         CARTON<br>
         NOS.
       </td>
-      <td class="goods-cell desc-cell">
+      <td class="goods-cell desc-cell desc-spaced">
         {{#each descriptionLines}}
           <div>{{this}}</div>
         {{/each}}
       </td>
       <td class="goods-cell center tight">{{vehicle.igstRate}}%</td>
-      <td class="goods-cell qty-stack">
+      <td class="goods-cell qty-tight-center">
         1<br>PCS<br>1
       </td>
       <td class="goods-cell right tight">{{values.exShowroomINR}}</td>
@@ -243,8 +288,8 @@
 
     <tr class="amount-row">
       <td colspan="4" class="bold">Amount Chargeable (In Words)<br>{{amountWordsINR}}</td>
-      <td colspan="2" class="center bold">Total</td>
-      <td class="right bold">{{values.exShowroomINR}}</td>
+      <td colspan="2" class="center total-bold">Total</td>
+      <td class="right total-bold">{{values.exShowroomINR}}</td>
     </tr>
 
     <tr>
@@ -257,30 +302,16 @@
         <div class="bold" style="margin-top:3px;">STATEMENT ON ORIGIN</div>
         <div class="tight">{{staticText.GSP_ORIGIN}}</div>
       </td>
-      <td colspan="2" class="sign-box">
+      <td colspan="2" class="sign-space right">
         <div style="text-align: right;">For {{exporter.companyName}}</div>
-        <br><br>
-        <div style="text-align: right;">Authorized Signatory</div>
+        <div class="sign-bottom-right">Authorized Signatory</div>
       </td>
     </tr>
-    <tr>
-      <td colspan="2" class="bank-head">BANK DETAILS</td>
-    </tr>
-    <tr class="bank-row">
-      <td colspan="5"></td>
-      <td colspan="2">NAME - {{exporter.bankName}}</td>
-    </tr>
-    <tr class="bank-row">
-      <td colspan="5"></td>
-      <td colspan="2">ACCOUNT NO - {{exporter.accountNo}}</td>
-    </tr>
-    <tr class="bank-row">
-      <td colspan="5"></td>
-      <td colspan="2">IFSC Code - {{exporter.ifsc}}</td>
-    </tr>
-    <tr class="bank-row">
-      <td colspan="5"></td>
-      <td colspan="2">SWIFT code: {{exporter.swift}}</td>
+        <td colspan="2" class="bank-single">
+          <div class="label-top-left bold">BANK DETAILS</div>
+          <div class="bank-content">NAME - {{exporter.bankName}}<br>ACCOUNT NO - {{exporter.accountNo}}<br>IFSC Code - {{exporter.ifsc}}<br>SWIFT code: {{exporter.swift}}</div>
+        </td>
+      </tr>
     </tr>
   </table>
 </body>
