@@ -23,12 +23,12 @@ const getBrowserExecutablePath = () => {
   return candidates.find((candidate) => fs.existsSync(candidate));
 };
 
-const getBrowser = async (): Promise<Browser> => {
+  const getBrowser = async (): Promise<Browser> => {
   if (!browserInstance) {
     const executablePath = getBrowserExecutablePath();
 
     browserInstance = await puppeteer.launch({
-      headless: true,
+      headless: "new",
       executablePath,
       args: [
         "--no-sandbox",
