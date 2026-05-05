@@ -14,16 +14,16 @@
     .section { font-weight: 700; }
     .company { font-weight: 700; }
     .meta-row { height: 17px; }
-.party-box { padding-top: 4px; line-height: 1.16; border-right: 0.5px solid #000 !important; }
+    .party-box { padding-top: 4px; line-height: 1.16; border-right: 0.5px solid #000 !important; }
     .ship-label { padding: 3px 3px 1px 4px; }
-.ship-value { padding: 3px 10% 1px 4px; text-align: left; }
+    .ship-value { padding: 3px 10% 1px 4px; text-align: left; }
     .center { text-align: center; }
     .right { text-align: right; }
     .justify { text-align: justify; }
     .header-cell { font-weight: 700; text-align: center; line-height: 1.1; }
     .goods-cell { height: 136px; }
     .marks-cell { line-height: 1.2; }
-.description-cell { font-size: 7.15px; line-height: 1.25; padding-top: 4px; }
+    .description-cell { font-size: 7.15px; line-height: 1.25; padding-top: 4px; }
     .description-cell .desc-line { margin: 0 0 1px; line-height: 1.1; }
     .quantity-stack { margin: 0; line-height: 0.95; display: block; }
     .money-cell { font-size: 7.7px; padding-top: 10px; }
@@ -32,7 +32,7 @@
     .weight-value { text-align: center; }
     .declaration-box { font-size: 6.15px; line-height: 1.14; }
     .declaration-box p { margin: 0 0 3px; }
-.origin-box { font-size: 6.5px; line-height: 1.15; white-space: normal; }
+    .origin-box { font-size: 6.5px; line-height: 1.15; white-space: normal; }
     .sign-head { text-align: center; font-weight: 700; }
     .sign-box { height: 42px; position: relative; }
     .auth-sign { position: absolute; bottom: 5px; right: 5px; font-weight: 700; font-size: 7px; }
@@ -122,8 +122,7 @@
       <td class="ship-value">{{vesselFlight}}</td>
       <td class="ship-label">Port of Loading</td>
       <td class="ship-value">{{portOfLoading}}</td>
-      <td colspan="5" class="ship-label section">Terms of Delivery and Payment: {{remarksUSD}}</td>
-
+      <td colspan="3" class="ship-label section">Terms of Delivery and Payment<br>{{remarksUSD}}</td>
     </tr>
     <tr>
       <td class="ship-label">Port of Discharge</td>
@@ -142,7 +141,7 @@
       <td class="header-cell">No &amp; Kind<br>of Pkgs</td>
       <td class="header-cell">Description of Goods</td>
       <td class="header-cell">Quantity<br>In Nos</td>
-      <td class="header-cell">Rate<br>DDU</td>
+      <td class="header-cell">Rate<br>DDU<br>BY SEA</td>
       <td class="header-cell">Amount<br>In USD</td>
       <td class="header-cell">RMKS<br>(IF ANY)</td>
     </tr>
@@ -164,7 +163,6 @@
       </td>
       <td class="goods-cell center">
         <div class="quantity-stack">1</div>
-        <div class="quantity-stack">{{totalQty}}</div>
         <div class="quantity-stack">Pcs</div>
       </td>
       <td class="goods-cell right money-cell">${{values.totalUSD}}</td>
@@ -179,7 +177,7 @@
       <td class="right section">${{values.totalUSD}}</td>
     </tr>
     <tr>
-      <td colspan="2" class="weight-value">{{totalQty}} Nos</td>
+      <td colspan="2" class="weight-value">Nos</td>
       <td colspan="3" class="amount-words">{{amountWordsUSD}}</td>
       <td colspan="2"></td>
     </tr>
@@ -188,8 +186,8 @@
       <td colspan="2" class="weight-label">Total Net.Wt.</td>
       <td colspan="3" rowspan="8" class="declaration-box">
         <p><span class="section">Declaration</span></p>
-        <p class="justify"><span class="section">DBK001</span> - "{{staticText.DBK001}}"</p>
-        <p class="justify"><span class="section">DBK003</span> - "{{staticText.DBK003}}"</p>
+        <p class="justify"><span class="section">DBK001</span>- "{{staticText.DBK001}}"</p>
+        <p class="justify"><span class="section">DBK003</span>- "{{staticText.DBK003}}"</p>
         <p class="justify">{{staticText.DECLARATION}}</p>
         <p class="justify">{{staticText.MEIS}}</p>
         <p class="section">STATEMENT ON ORIGIN</p>
@@ -198,7 +196,7 @@
       <td colspan="2" class="sign-head">Sign &amp; Date</td>
     </tr>
     <tr>
-      <td colspan="2" class="weight-value">{{vehicle.netWeightKg}} K.G.</td>
+      <td colspan="2" class="weight-value">K.G.</td>
       <td colspan="2" rowspan="2" class="sign-box">
         <div class="auth-sign">Authorized Signatory</div>
       </td>
@@ -207,7 +205,7 @@
       <td colspan="2" class="weight-label">Total Gross.Wt.</td>
     </tr>
     <tr>
-      <td colspan="2" class="weight-value">{{vehicle.grossWeightKg}} K.G.</td>
+      <td colspan="2" class="weight-value">K.G.</td>
       <td colspan="2" class="bank-head">BANK DETAILS</td>
     </tr>
     <tr class="bank-row">

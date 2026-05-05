@@ -33,9 +33,6 @@
       padding: 2px 2px 0;
       font-weight: 700;
     }
-    .bank-row td {
-      border: none !important;
-    }
     .desc-cell, .goods-cell {
       line-height: 1.15;
     }
@@ -92,7 +89,7 @@
       line-height: 1.02;
     }
     .bold { font-weight: 700; }
-    .sign-box { height: 58px; vertical-align: bottom; }
+    .sign-space { height: 58px; vertical-align: bottom; position: relative; }
     .bank-head { font-weight: 700; }
     .bank-row { height: 17px; }
     .amount-row td {
@@ -125,11 +122,6 @@
       right: 4px;
       font-weight: 700;
     }
-    .sign-space {
-      height: 65px;
-      position: relative;
-      vertical-align: bottom;
-    }
     .total-bold {
       font-weight: 700 !important;
     }
@@ -150,16 +142,17 @@
   <table>
     <colgroup>
       <col style="width:55px">
+      <col style="width:38px">
+      <col style="width:140px">
       <col style="width:45px">
-      <col style="width:150px">
-      <col style="width:60px">
-      <col style="width:50px">
-      <col style="width:70px">
-      <col style="width:70px">
+      <col style="width:45px">
+      <col style="width:65px">
+      <col style="width:65px">
+      <col style="width:65px">
     </colgroup>
 
     <tr>
-      <td colspan="7" class="title title-bold">TAX INVOICE</td>
+      <td colspan="8" class="title title-bold">TAX INVOICE</td>
     </tr>
 
     <tr>
@@ -170,58 +163,58 @@
         <div>Maharashtra, India.</div>
         <div>GST NO- {{exporter.gstin}}</div>
       </td>
-      <td colspan="4" class="topbox"><span class="section">Tax Invoice No &amp; Dt.</span> <span style="float:right;">{{invoiceNumber}} Dt.{{invoiceDate}}</span></td>
+      <td colspan="5" class="topbox"><span class="section">Tax Invoice No &amp; Dt.</span> <span style="float:right;">{{invoiceNumber}} Dt.{{invoiceDate}}</span></td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox"><span class="section">Buyers Order &amp; Dt</span> <span style="float:right;">{{buyerOrderDate}}</span></td>
+      <td colspan="5" class="topbox"><span class="section">Buyers Order &amp; Dt</span> <span style="float:right;">{{buyerOrderDate}}</span></td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox"><span class="section">Other Reference</span> <span style="float:right;">PI No - {{piNumber}} Dt {{piDate}}</span></td>
+      <td colspan="5" class="topbox"><span class="section">Other Reference</span> <span style="float:right;">PI No - {{piNumber}} Dt {{piDate}}</span></td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">LC NO - {{lcNumber}} DT {{lcDate}}</td>
+      <td colspan="5" class="topbox">LC NO - {{lcNumber}} DT {{lcDate}}</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">Buyer if other than Consignee</td>
+      <td colspan="5" class="topbox">Buyer if other than Consignee</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">EXPORT UNDER DRAWBACK SCHEME .</td>
+      <td colspan="5" class="topbox">EXPORT UNDER DRAWBACK SCHEME .</td>
     </tr>
 
     <tr>
       <td colspan="3" rowspan="8" class="topbox" style="border-right: 0.5px solid #000;">
         <div class="label-top-left">Consignee</div>
         <div class="company">{{buyerName}}</div>
-        <div>{{buyerAddress.toUpperCase}}</div>
-        <div>{{buyerCountry.toUpperCase}}</div>
+        <div>{{buyerAddress}}</div>
+        <div>{{buyerCountry}}</div>
         <div>Atte :</div>
         <div>Tel :</div>
       </td>
-      <td colspan="4" class="topbox">RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</td>
+      <td colspan="5" class="topbox">RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</td>
+      <td colspan="5" class="topbox">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">IGST PAYMENT STATUS- YES</td>
+      <td colspan="5" class="topbox">IGST PAYMENT STATUS- YES</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">SHIPMENT EXPORT UNDER IGST PAID</td>
+      <td colspan="5" class="topbox">SHIPMENT EXPORT UNDER IGST PAID</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">IEC NO- {{exporter.iecNo}}</td>
+      <td colspan="5" class="topbox">IEC NO- {{exporter.iecNo}}</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">AD CODE - {{exporter.adCode}}</td>
+      <td colspan="5" class="topbox">AD CODE - {{exporter.adCode}}</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">PAN NO-{{exporter.pan}}</td>
+      <td colspan="5" class="topbox">PAN NO-{{exporter.pan}}</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">END USE CODE- {{scheme.endUseCode}}</td>
+      <td colspan="5" class="topbox">END USE CODE- {{scheme.endUseCode}}</td>
     </tr>
     <tr>
-      <td colspan="4" class="topbox">Custom Exchange Rate: US DOLLAR 1 = {{values.customExchangeRate}}</td>
+      <td colspan="5" class="topbox">Custom Exchange Rate: US DOLLAR 1 = &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{values.customExchangeRate}}</td>
     </tr>
 
     <tr>
@@ -231,7 +224,7 @@
       <td class="ship-value">{{placeOfReceipt}}</td>
       <td class="ship-label">Country of Origin</td>
       <td class="ship-value center">INDIA</td>
-      <td class="ship-label">Country of Destination<br>{{buyerCountry}}</td>
+      <td colspan="2" class="ship-label">Country of Destination<br>{{buyerCountry}}</td>
     </tr>
     <tr>
       <td class="ship-label">Vessel/<br>Flight</td>
@@ -239,18 +232,18 @@
       <td class="ship-label">Port of Loading</td>
       <td class="ship-value">{{portOfLoading}}</td>
       <td class="ship-label label-top-left">Terms of Delivery and Payment</td>
-      <td colspan="2" class="ship-value"><span class="terms-same-line">{{scheme.termsOfPayment}}</span></td>
+      <td colspan="3" class="ship-value"><span class="terms-same-line">{{scheme.termsOfPayment}}</span></td>
     </tr>
     <tr>
       <td class="ship-label">Port of Discharge</td>
       <td class="ship-value">{{portOfDischarge}}</td>
       <td class="ship-label">Place of Delivery</td>
       <td class="ship-value">{{placeOfDelivery}}</td>
-      <td colspan="3" class="ship-value">State of Origin of Goods - {{stateOfOrigin}}</td>
+      <td colspan="4" class="ship-value">State of Origin of Goods - {{stateOfOrigin}}</td>
     </tr>
     <tr>
       <td colspan="4"></td>
-      <td colspan="3" class="ship-value">District of Origin of Goods - {{districtOfOrigin}}</td>
+      <td colspan="4" class="ship-value">District of Origin of Goods - {{districtOfOrigin}}</td>
     </tr>
 
     <tr>
@@ -261,6 +254,7 @@
       <td class="header-cell">Quantity<br>In Pcs</td>
       <td class="header-cell">Rate<br>In (Rs.)</td>
       <td class="header-cell">Amount<br>In (Rs.)</td>
+      <td class="header-cell">IGST<br>Amount (Rs)</td>
     </tr>
 
     <tr>
@@ -284,12 +278,17 @@
       </td>
       <td class="goods-cell right tight">{{values.exShowroomINR}}</td>
       <td class="goods-cell right tight">{{values.exShowroomINR}}</td>
+      <td class="goods-cell right tight">{{values.igstAmountINR}}</td>
     </tr>
 
     <tr class="amount-row">
-      <td colspan="4" class="bold">Amount Chargeable (In Words)<br>{{amountWordsINR}}</td>
+      <td colspan="5" class="bold">Amount Chargeable (In Words)<br>{{amountWordsINR}}</td>
       <td colspan="2" class="center total-bold">Total</td>
       <td class="right total-bold">{{values.exShowroomINR}}</td>
+    </tr>
+    <tr>
+      <td colspan="6" class="right total-bold" style="border-top: none;"></td>
+      <td colspan="2" class="right total-bold">{{values.igstAmountINR}}</td>
     </tr>
 
     <tr>
@@ -302,16 +301,16 @@
         <div class="bold" style="margin-top:3px;">STATEMENT ON ORIGIN</div>
         <div class="tight">{{staticText.GSP_ORIGIN}}</div>
       </td>
-      <td colspan="2" class="sign-space right">
+      <td colspan="3" class="sign-space right">
         <div style="text-align: right;">For {{exporter.companyName}}</div>
         <div class="sign-bottom-right">Authorized Signatory</div>
       </td>
     </tr>
-        <td colspan="2" class="bank-single">
-          <div class="label-top-left bold">BANK DETAILS</div>
-          <div class="bank-content">NAME - {{exporter.bankName}}<br>ACCOUNT NO - {{exporter.accountNo}}<br>IFSC Code - {{exporter.ifsc}}<br>SWIFT code: {{exporter.swift}}</div>
-        </td>
-      </tr>
+    <tr>
+      <td colspan="3" class="bank-single">
+        <div class="label-top-left bold">BANK DETAILS</div>
+        <div class="bank-content">NAME - {{exporter.bankName}}<br>ACCOUNT NO - {{exporter.accountNo}}<br>IFSC Code - {{exporter.ifsc}}<br>SWIFT code: {{exporter.swift}}</div>
+      </td>
     </tr>
   </table>
 </body>
