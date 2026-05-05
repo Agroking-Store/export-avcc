@@ -14,28 +14,30 @@
     .section { font-weight: 700; }
     .company { font-weight: 700; }
     .meta-row { height: 17px; }
-    .party-box { padding-top: 4px; line-height: 1.16; }
+.party-box { padding-top: 4px; line-height: 1.16; border-right: 0.5px solid #000 !important; }
     .ship-label { padding: 3px 3px 1px 4px; }
-    .ship-value { padding: 3px 3px 1px 4px; }
+.ship-value { padding: 3px 10% 1px 4px; text-align: left; }
     .center { text-align: center; }
     .right { text-align: right; }
     .justify { text-align: justify; }
     .header-cell { font-weight: 700; text-align: center; line-height: 1.1; }
     .goods-cell { height: 136px; }
     .marks-cell { line-height: 1.2; }
-    .description-cell { font-size: 7.15px; line-height: 1.18; padding-top: 4px; }
-    .description-cell .desc-line { margin: 0 0 2px; }
+.description-cell { font-size: 7.15px; line-height: 1.25; padding-top: 4px; }
+    .description-cell .desc-line { margin: 0 0 1px; line-height: 1.1; }
+    .quantity-stack { margin: 0; line-height: 0.95; display: block; }
     .money-cell { font-size: 7.7px; padding-top: 10px; }
     .rmks-cell { padding-top: 10px; }
     .weight-label { text-align: center; font-weight: 700; }
     .weight-value { text-align: center; }
     .declaration-box { font-size: 6.15px; line-height: 1.14; }
     .declaration-box p { margin: 0 0 3px; }
-    .origin-box { font-size: 5.9px; line-height: 1.12; }
+.origin-box { font-size: 6.5px; line-height: 1.15; white-space: normal; }
     .sign-head { text-align: center; font-weight: 700; }
-    .sign-box { height: 42px; }
+    .sign-box { height: 42px; position: relative; }
+    .auth-sign { position: absolute; bottom: 5px; right: 5px; font-weight: 700; font-size: 7px; }
     .bank-head { font-weight: 700; }
-    .bank-row { height: 19px; font-size: 6.8px; }
+    .bank-row { height: auto; font-size: 6.8px; border-top: none; }
     .amount-words { font-size: 7.1px; line-height: 1.16; }
   </style>
 </head>
@@ -161,9 +163,9 @@
         {{/each}}
       </td>
       <td class="goods-cell center">
-        1<br><br>
-        {{totalQty}}<br>
-        Pcs
+        <div class="quantity-stack">1</div>
+        <div class="quantity-stack">{{totalQty}}</div>
+        <div class="quantity-stack">Pcs</div>
       </td>
       <td class="goods-cell right money-cell">${{values.totalUSD}}</td>
       <td class="goods-cell right money-cell">${{values.totalUSD}}</td>
@@ -197,7 +199,9 @@
     </tr>
     <tr>
       <td colspan="2" class="weight-value">{{vehicle.netWeightKg}} K.G.</td>
-      <td colspan="2" rowspan="2" class="sign-box"></td>
+      <td colspan="2" rowspan="2" class="sign-box">
+        <div class="auth-sign">Authorized Signatory</div>
+      </td>
     </tr>
     <tr>
       <td colspan="2" class="weight-label">Total Gross.Wt.</td>
