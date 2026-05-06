@@ -7,6 +7,7 @@ import {
   updatePI,
   getOrdersWithPIStatus, // Keep this for the PIList page's "Order Perspective" tab
   getPIStatusDistribution, // Import the new controller for PI status distribution
+  getPIDashboardOverview,
   getDashboardKPIs, // Import the new controller for dashboard KPIs
   getMonthlyPIValueTrend, // Import new controller
   getTopClientsByPIValue, // Import new controller
@@ -39,6 +40,7 @@ router.use(authorize(ROLES.ADMIN, ROLES.ACCOUNTANT));
 
 router.post("/", validate(createPIValidationSchema), createPI);
 
+router.get("/dashboard-overview", getPIDashboardOverview);
 router.get("/dashboard-kpis", getDashboardKPIs);
 router.get("/monthly-pi-value-trend", getMonthlyPIValueTrend);
 router.get("/top-clients-by-pi-value", getTopClientsByPIValue);

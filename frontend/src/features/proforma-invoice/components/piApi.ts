@@ -1,6 +1,6 @@
 import axios from "axios";
 import { apiConfig } from "../../../config/apiConfig";
-import { PIForm, OrderDetailData } from "./pi.types"; // Import OrderDetailData
+import { PIForm, OrderDetailData, PIDashboardOverview } from "./pi.types"; // Import OrderDetailData
 import { companyApi } from "../../company/components/companyApi"; // Import existing companyApi
 
 const getAuthToken = () => {
@@ -130,6 +130,19 @@ export const piApi = {
   getDashboardKPIs: async (timeRange: string) => {
     const res = await axios.get(
       `${apiConfig.baseURL}/proforma-invoices/dashboard-kpis`,
+      {
+        params: { timeRange },
+        ...authHeaders(),
+      },
+    );
+    return res.data;
+  },
+
+  getDashboardOverview: async (
+    timeRange: string,
+  ): Promise<PIDashboardOverview> => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/dashboard-overview`,
       {
         params: { timeRange },
         ...authHeaders(),
