@@ -380,6 +380,7 @@ const buildPIInvoiceContext = async (piId: string) => {
     buyerAddress: formatAddress(buyer.address) || buyer.country || "",
     buyerCity: buyer.address?.cityTown || "",
     buyerCountry: buyer.address?.country || buyer.country || "",
+    buyerGstin: buyer.gstNumber || buyer.gstin || buyer.gstNo || "", 
     lcNumber: latestLC?.lcNumber || latestLC?.extractedData?.lcNumber || "",
     lcDate: formatDisplayDate(latestLC?.uploadedAt),
     portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
