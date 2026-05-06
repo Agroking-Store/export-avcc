@@ -22,15 +22,9 @@
       word-break: break-word;
     }
 
-    /* 8 Columns Grid */
-    col.c1 { width: 14%; }
-    col.c2 { width: 8%; }
-    col.c3 { width: 28%; }
-    col.c4 { width: 8%; }
-    col.c5 { width: 8%; }
-    col.c6 { width: 11%; }
-    col.c7 { width: 11%; }
-    col.c8 { width: 12%; }
+    /* 12 Columns Grid */
+    col.c1, col.c2, col.c3, col.c4, col.c5, col.c6, 
+    col.c7, col.c8, col.c9, col.c10, col.c11, col.c12 { width: 8.33%; }
 
     .b { font-weight: bold; }
     .c { text-align: center; }
@@ -38,9 +32,12 @@
     .l { text-align: left; }
     .title { text-align: center; font-size: 10px; font-weight: bold; padding: 3px; border-bottom: 0.5px solid #000; }
     
-    .sh-l { font-size: 7px; font-weight: bold; border-bottom: none !important; height: 18px; }
-    .sh-v { font-size: 7.5px; border-top: none !important; height: 18px; text-align: center; vertical-align: middle; }
-    
+    /* Shipping Up-Down Patterns */
+    .sh-l { font-size: 6.8px; font-weight: bold; border-bottom: none !important; height: 18px; padding-top: 2px; }
+    .sh-v { font-size: 8px; border-top: none !important; height: 18px; text-align: center; vertical-align: middle; }
+    .sh-rs2 { vertical-align: middle; text-align: center; font-size: 8px; }
+    .sh-rs2-l { vertical-align: middle; text-align: left; font-weight: bold; font-size: 6.8px; }
+
     .hdr { font-weight: bold; text-align: center; vertical-align: middle; height: 25px; }
     
     .goods-row td { height: 260px; vertical-align: top; padding: 0; }
@@ -61,7 +58,7 @@
     .total-label { font-weight: bold; text-align: center; vertical-align: middle; }
     .total-val { font-weight: bold; text-align: right; vertical-align: middle; }
 
-    .bank-box { background-color: #f2f2f2; padding: 4px; height: 65px; }
+    .bank-box { background-color: #f2f2f2; padding: 4px; height: 65px; border-top: none !important; }
     .bank-label { font-weight: bold; font-size: 7px; }
     .bank-val { font-size: 7px; }
 
@@ -71,49 +68,49 @@
     .sign-box { height: 65px; padding: 4px; }
     .sign-h { font-weight: bold; font-size: 7px; text-align: center; border-bottom: 0.5px solid #000; padding-bottom: 2px; }
     
-    .no-line-box { line-height: 1.4; }
+    .no-line-box { line-height: 1.4; padding: 3px; }
+    .party-box { padding: 3px; }
   </style>
 </head>
 <body>
 <table class="main">
   <colgroup>
-    <col class="c1"><col class="c2"><col class="c3">
-    <col class="c4"><col class="c5">
-    <col class="c6"><col class="c7"><col class="c8">
+    <col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6">
+    <col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"><col class="c12">
   </colgroup>
 
   <!-- TITLE -->
   <tr>
-    <td colspan="8" class="title">COMMERCIAL INVOICE</td>
+    <td colspan="12" class="title">INVOICE</td>
   </tr>
 
   <!-- EXPORTER & INVOICE META -->
   <tr>
-    <td colspan="3" rowspan="4" style="height:80px;">
+    <td colspan="6" rowspan="4" class="party-box" style="height:80px;">
       <div class="b">Exporter</div>
       <div class="b">{{exporter.companyName}}</div>
       {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
       <div><span class="b">GST NO-</span> {{exporter.gstin}}</div>
     </td>
-    <td colspan="2" class="b">Invoice No &amp; Dt.</td>
+    <td colspan="3" class="b">Invoice No &amp; Dt.</td>
     <td colspan="3" class="r">{{invoiceNumber}} Dt.{{invoiceDate}}</td>
   </tr>
   <tr>
-    <td colspan="2" class="b">Buyers Order &amp; Dt</td>
+    <td colspan="3" class="b">Buyers Order &amp; Dt</td>
     <td colspan="3" class="r">{{buyerOrderDate}}</td>
   </tr>
   <tr>
-    <td colspan="2" class="b">Other Reference</td>
+    <td colspan="3" class="b">Other Reference</td>
     <td colspan="3" class="r">PI No - {{piNumber}} Dt {{piDate}}</td>
   </tr>
   <tr>
-    <td colspan="2" class="b">LC No &amp; Dt.</td>
+    <td colspan="3" class="b">LC No &amp; Dt.</td>
     <td colspan="3" class="l">LC NO - {{lcNumber}} DT {{lcDate}}</td>
   </tr>
 
   <!-- CONSIGNEE & SCHEME BLOCK -->
   <tr>
-    <td colspan="3" rowspan="2" style="height:120px;">
+    <td colspan="6" rowspan="2" class="party-box" style="height:120px;">
       <div class="b">Consignee</div>
       <div class="b">{{buyerName}}</div>
       {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
@@ -121,7 +118,7 @@
       <div style="margin-top:10px;">Atte :</div>
       <div>Tel :</div>
     </td>
-    <td colspan="5" class="no-line-box" style="height:100px;">
+    <td colspan="6" class="no-line-box" style="height:100px;">
       <div class="b">DRAWBACK SHIPMENT</div>
       <div>RODTEP SCHEME CODE {{scheme.rodtepSchemeCode}}</div>
       <div>END USE CODE- {{scheme.endUseCode}}</div>
@@ -129,53 +126,56 @@
       <div>{{scheme.shipmentExportUnderIgstPaid}}</div>
       <div>IEC NO- {{exporter.iecNo}}</div>
       <div style="color:#C00000; font-weight:bold;">AD CODE - {{exporter.adCode}}</div>
-      <div>PAN NO- {{exporter.pan}}</div>
     </td>
   </tr>
 
   <!-- SHIPPING SECTION -->
   <tr>
-    <td colspan="5"></td>
+    <td colspan="6" style="border:none;"></td>
   </tr>
+  <!-- Row 1 & 2 -->
   <tr>
-    <td colspan="2" class="sh-l">Pre - Carriage by</td>
-    <td colspan="1" class="sh-l">Place of Receipt by Pre-Carrier</td>
-    <td colspan="2" class="sh-l">Country of Origin of Goods</td>
+    <td rowspan="2" colspan="1" class="sh-rs2-l">Pre - Carriage by</td>
+    <td rowspan="2" colspan="2" class="sh-rs2">{{preCarriage}}</td>
+    <td colspan="3" class="sh-l">Place of Receipt by Pre-Carrier</td>
+    <td colspan="3" class="sh-l">Country of Origin of Goods</td>
     <td colspan="3" class="sh-l">Country of Final Destination</td>
   </tr>
   <tr>
-    <td colspan="2" class="sh-v">{{preCarriage}}</td>
-    <td colspan="1" class="sh-v">{{placeOfReceipt}}</td>
-    <td colspan="2" class="sh-v">INDIA</td>
+    <td colspan="3" class="sh-v">{{placeOfReceipt}}</td>
+    <td colspan="3" class="sh-v">INDIA</td>
     <td colspan="3" class="sh-v">{{buyerCountry}}</td>
   </tr>
+  <!-- Row 3 & 4 -->
   <tr>
-    <td colspan="2" class="sh-l">Vessel/Flight No.</td>
-    <td colspan="1" class="sh-l">Port of Loading</td>
-    <td colspan="5" class="sh-l">Terms of Delivery and Payment</td>
-  </tr>
-  <tr>
-    <td colspan="2" class="sh-v">{{vesselFlight}}</td>
-    <td colspan="1" class="sh-v">{{portOfLoading}}</td>
-    <td colspan="5" rowspan="3" style="border-top:none; vertical-align:top; font-weight:bold; padding:4px;">
-      {{remarksUSD}}
+    <td rowspan="2" colspan="1" class="sh-rs2-l">Vessel/Flight No.</td>
+    <td rowspan="2" colspan="2" class="sh-rs2">{{vesselFlight}}</td>
+    <td colspan="3" class="sh-l">Port of Loading</td>
+    <td colspan="6" rowspan="2" style="border-bottom:none !important; font-weight:bold; vertical-align:top; padding:4px;">
+      <div class="sh-l" style="border:none !important; padding:0;">Terms of Delivery and Payment</div>
+      <div style="margin-top:5px;">{{remarksUSD}}</div>
     </td>
   </tr>
   <tr>
-    <td colspan="2" class="sh-l">Port of Discharge</td>
-    <td colspan="1" class="sh-l">Final Destination</td>
+    <td colspan="3" class="sh-v">{{portOfLoading}}</td>
+  </tr>
+  <!-- Row 5 & 6 -->
+  <tr>
+    <td colspan="3" class="sh-l">Port of Discharge</td>
+    <td colspan="3" class="sh-l">Final Destination</td>
+    <td colspan="6" rowspan="2" style="border-top:none !important;"></td>
   </tr>
   <tr>
-    <td colspan="2" class="sh-v">{{portOfDischarge}}</td>
-    <td colspan="1" class="sh-v">{{placeOfDelivery}}</td>
+    <td colspan="3" class="sh-v">{{portOfDischarge}}</td>
+    <td colspan="3" class="sh-v">{{placeOfDelivery}}</td>
   </tr>
 
   <!-- COLUMN HEADERS -->
   <tr>
-    <td class="hdr">Marks &amp; Nos<br>Container No</td>
+    <td colspan="2" class="hdr">Marks &amp; Nos<br>Container No</td>
     <td class="hdr">No &amp; Kind<br>of Pkgs</td>
-    <td class="hdr">Description of Goods</td>
-    <td class="hdr" colspan="2">Quantity<br>In Nos</td>
+    <td colspan="5" class="hdr">Description of Goods</td>
+    <td class="hdr">Quantity<br>In Nos</td>
     <td class="hdr">Rate<br>DDU<br>BY SEA</td>
     <td class="hdr">Amount<br>In USD</td>
     <td class="hdr">RMKS<br>(IF ANY)</td>
@@ -183,7 +183,7 @@
 
   <!-- GOODS ROW -->
   <tr class="goods-row">
-    <td>
+    <td colspan="2">
       <div class="marks-container">
         <div class="marks-top">
           {{buyerCity}}<br>
@@ -210,13 +210,13 @@
     <td class="c" style="padding-top:4px;">
       Sr no<br><br>{{vehicle.srNo}}
     </td>
-    <td style="padding:4px;">
+    <td colspan="5" style="padding:4px;">
       {{#each descriptionLines}}
         {{#if @first}}<div class="desc-h">{{this}}</div>
         {{else}}<div class="desc-ln">{{this}}</div>{{/if}}
       {{/each}}
     </td>
-    <td class="c" colspan="2" style="padding-top:4px;">
+    <td class="c" style="padding-top:4px;">
       {{vehicle.quantity}}<br>Pcs
     </td>
     <td class="r" style="padding-top:4px;">${{values.totalUSD}}</td>
@@ -226,22 +226,22 @@
 
   <!-- TOTALS ROW -->
   <tr>
-    <td colspan="3" class="total-label">Total</td>
-    <td colspan="2" class="c b">{{vehicle.quantity}} Nos</td>
+    <td colspan="3" class="total-label" style="height:25px;">Total</td>
+    <td colspan="5" class="c b">{{vehicle.quantity}} Nos</td>
     <td class="total-label">Total</td>
-    <td class="total-val r b">${{values.totalUSD}}</td>
-    <td></td>
+    <td colspan="2" class="total-val r b">${{values.totalUSD}}</td>
+    <td style="border:0.5px solid #000;"></td>
   </tr>
 
   <!-- AMOUNT IN WORDS ROW -->
   <tr>
-    <td colspan="2" class="amt-words-box">Amount Chargeable (In Words)</td>
-    <td colspan="6" class="amt-words-val">{{amountWordsUSD}}</td>
+    <td colspan="3" class="amt-words-box">Amount Chargeable (In Words)</td>
+    <td colspan="9" class="amt-words-val">{{amountWordsUSD}}</td>
   </tr>
 
-  <!-- FINAL BLOCK: DECLARATION (3/4) | SIGN & BANK (1/4) -->
+  <!-- FINAL BLOCK -->
   <tr>
-    <td colspan="6" rowspan="2" class="declare-box">
+    <td colspan="9" rowspan="2" class="declare-box">
       <div class="declare-h">Declaration</div>
       <div>DBK001- "{{staticText.DBK001}}"</div>
       <div>DBK003- "{{staticText.DBK003}}"</div>
@@ -250,12 +250,12 @@
       <div class="declare-h" style="margin-top:5px;">STATEMENT ON ORIGIN</div>
       <div style="text-transform: uppercase;">{{staticText.GSP_ORIGIN}}</div>
     </td>
-    <td colspan="2" class="sign-box">
+    <td colspan="3" class="sign-box">
       <div class="sign-h">Sign &amp; Date</div>
     </td>
   </tr>
   <tr>
-    <td colspan="2" class="bank-box">
+    <td colspan="3" class="bank-box">
       <div class="bank-label">BANK DETAILS</div>
       <div class="bank-val">NAME: {{exporter.bankName}}</div>
       <div class="bank-val">A/C: {{exporter.accountNo}}</div>
