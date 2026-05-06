@@ -43,27 +43,29 @@
     
     .hdr { font-weight: bold; text-align: center; vertical-align: middle; height: 25px; }
     
-    .goods-row td { height: 220px; vertical-align: top; padding: 4px 3px; }
+    .goods-row td { height: 240px; vertical-align: top; padding: 0; }
+    .marks-cell { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 4px; }
+    .mini-box { border: 0.5px solid #000; margin-top: 2px; text-align: center; padding: 2px 1px; }
+    .mini-h { font-size: 6.5px; font-weight: bold; }
+    .mini-v { font-size: 7px; }
+
     .desc-h { font-weight: bold; margin-bottom: 3px; font-size: 8px; }
     .desc-ln { margin: 0; line-height: 1.3; }
+
+    .amt-words-box { padding: 4px; font-weight: bold; font-size: 7px; vertical-align: top; border-right: none !important; }
+    .amt-words-val { padding: 4px; vertical-align: middle; line-height: 1.4; border-left: none !important; }
 
     .total-label { font-weight: bold; text-align: center; vertical-align: middle; }
     .total-val { font-weight: bold; text-align: right; vertical-align: middle; }
 
-    .amt-words-box { padding: 4px; font-weight: bold; font-size: 7px; vertical-align: top; }
-    .amt-words-val { padding: 4px; vertical-align: middle; line-height: 1.4; }
-
-    .weight-label { font-weight: bold; font-size: 7px; text-align: left; vertical-align: middle; }
-    .weight-val { font-size: 8px; text-align: center; vertical-align: middle; }
-
-    .bank-box { background-color: #f2f2f2; padding: 4px; border-top: none !important; }
+    .bank-box { background-color: #f2f2f2; padding: 4px; border-top: none !important; height: 65px; }
     .bank-label { font-weight: bold; font-size: 7px; margin-bottom: 2px; }
     .bank-val { font-size: 7px; margin-bottom: 1px; }
 
-    .declare-box { padding: 5px; font-size: 6.5px; line-height: 1.3; height: 120px; }
+    .declare-box { padding: 5px; font-size: 6.5px; line-height: 1.3; height: 130px; }
     .declare-h { font-weight: bold; margin-bottom: 2px; font-size: 7px; }
     
-    .sign-box { height: 50px; padding: 4px; }
+    .sign-box { height: 65px; padding: 4px; }
     .sign-h { font-weight: bold; font-size: 7px; text-align: center; border-bottom: 0.5px solid #000; padding-bottom: 2px; }
     
     .no-line-box { line-height: 1.4; }
@@ -79,7 +81,7 @@
 
   <!-- TITLE -->
   <tr>
-    <td colspan="8" class="title">INVOICE</td>
+    <td colspan="8" class="title">COMMERCIAL INVOICE</td>
   </tr>
 
   <!-- EXPORTER & INVOICE META -->
@@ -130,7 +132,7 @@
 
   <!-- SHIPPING SECTION -->
   <tr>
-    <td colspan="5"></td> <!-- spacer -->
+    <td colspan="5"></td>
   </tr>
   <tr>
     <td colspan="2" class="sh-l">Pre - Carriage by</td>
@@ -179,42 +181,53 @@
   <!-- GOODS ROW -->
   <tr class="goods-row">
     <td>
-      {{buyerCity}}<br>
-      {{buyerCountry}}<br>
-      <br><br>
-      {{#if containerNo}}{{containerNo}}{{/if}}
+      <div class="marks-cell">
+        <div class="top-text">
+          {{buyerCity}}<br>
+          {{buyerCountry}}<br>
+          <br>
+          {{#if containerNo}}{{containerNo}}{{/if}}
+        </div>
+        <div class="bottom-boxes">
+          <div class="mini-box">
+            <div class="mini-h">Total No of Cartons</div>
+            <div class="mini-v">{{vehicle.quantity}} Nos</div>
+          </div>
+          <div class="mini-box">
+            <div class="mini-h">Total Net.Wt.</div>
+            <div class="mini-v">{{totalNetWeight}} K.G.</div>
+          </div>
+          <div class="mini-box">
+            <div class="mini-h">Total Gross.Wt.</div>
+            <div class="mini-v">{{totalGrossWeight}} K.G.</div>
+          </div>
+        </div>
+      </div>
     </td>
-    <td class="c">
+    <td class="c" style="padding-top:4px;">
       Sr no<br><br>{{vehicle.srNo}}
     </td>
-    <td>
+    <td style="padding:4px;">
       {{#each descriptionLines}}
         {{#if @first}}<div class="desc-h">{{this}}</div>
         {{else}}<div class="desc-ln">{{this}}</div>{{/if}}
       {{/each}}
     </td>
-    <td class="c" colspan="2">
+    <td class="c" colspan="2" style="padding-top:4px;">
       {{vehicle.quantity}}<br>Pcs
     </td>
-    <td class="r">${{values.totalUSD}}</td>
-    <td class="r">${{values.totalUSD}}</td>
-    <td class="c">{{vesselFlight}}</td>
+    <td class="r" style="padding-top:4px;">${{values.totalUSD}}</td>
+    <td class="r" style="padding-top:4px;">${{values.totalUSD}}</td>
+    <td class="c" style="padding-top:4px;">{{vesselFlight}}</td>
   </tr>
 
   <!-- TOTALS ROW -->
   <tr>
-    <td colspan="2" class="total-label">Total No of Cartons / Nos</td>
-    <td colspan="3" class="c">{{vehicle.quantity}} Nos</td>
-    <td colspan="2" class="total-label">Total</td>
+    <td colspan="3" class="total-label">Total</td>
+    <td colspan="2" class="c b">{{vehicle.quantity}} Nos</td>
+    <td class="total-label">Total</td>
     <td class="total-val r b">${{values.totalUSD}}</td>
-  </tr>
-
-  <!-- WEIGHTS ROW -->
-  <tr>
-    <td colspan="2" class="weight-label">Total Net.Wt.</td>
-    <td colspan="1" class="weight-val">{{totalNetWeight}} K.G.</td>
-    <td colspan="2" class="weight-label">Total Gross.Wt.</td>
-    <td colspan="3" class="weight-val">{{totalGrossWeight}} K.G.</td>
+    <td></td>
   </tr>
 
   <!-- AMOUNT IN WORDS ROW -->
