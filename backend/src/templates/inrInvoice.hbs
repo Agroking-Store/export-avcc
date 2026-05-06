@@ -60,13 +60,16 @@
     .total-label { font-weight: bold; text-align: center; vertical-align: middle; }
     .total-val { font-weight: bold; text-align: right; vertical-align: middle; }
 
-    .declare-row td { text-align: center; padding: 5px; font-size: 8px; line-height: 1.4; }
+    .declare-row td { text-align: center; padding: 4px; font-size: 8px; line-height: 1.4; border-bottom: none; }
+    .declare-row-2 td { text-align: center; padding: 2px; font-size: 8px; line-height: 1.4; border-top: none; font-weight: bold; }
     
-    .footer-box { height: 90px; }
-    .origin-box { font-size: 6.5px; line-height: 1.25; padding: 4px; }
+    .footer-row td { height: 100px; }
+    .origin-box { font-size: 6.5px; line-height: 1.25; padding: 4px; vertical-align: top; }
     .sign-box { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 4px; }
     .sign-for { font-weight: bold; text-align: right; }
-    .sign-auth { font-weight: bold; text-align: right; }
+    .sign-auth { font-weight: bold; text-align: right; margin-top: auto; }
+
+    .no-line-box { line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -102,69 +105,69 @@
     <td colspan="3" class="r">LC NO - {{lcNumber}} DT {{lcDate}}</td>
   </tr>
 
-  <!-- ROW 5-15: CONSIGNEE & RIGHT META -->
+  <!-- ROW 5-15: CONSIGNEE & MERGED RIGHT BLOCK -->
   <tr>
-    <td colspan="3" rowspan="11" class="party-box">
+    <td colspan="3" rowspan="2" class="party-box" style="height:120px;">
       <div class="label">Consignee</div>
       <div class="b">{{buyerName}}</div>
       {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
       <div>{{buyerCountry}}</div>
-      <div>Atte :</div>
+      <div style="margin-top:5px;">Atte :</div>
       <div>Tel :</div>
     </td>
-    <td colspan="5">Buyer if other than Consignee</td>
+    <td colspan="5" class="no-line-box" style="height:110px; border-bottom:none;">
+      <div>Buyer if other than Consignee</div>
+      <div>EXPORT UNDER DRAWBACK SCHEME .</div>
+      <div>RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</div>
+      <div>SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</div>
+      <div>SHIPMENT EXPORT UNDER IGST PAID</div>
+      <div>IEC NO- {{exporter.iecNo}}</div>
+      <div>AD CODE - {{exporter.adCode}}</div>
+      <div>PAN NO- {{exporter.pan}}</div>
+      <div>END USE CODE- {{scheme.endUseCode}}</div>
+      <div>GST NO-</div>
+    </td>
   </tr>
-  <tr><td colspan="5">EXPORT UNDER DRAWBACK SCHEME .</td></tr>
-  <tr><td colspan="5">RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</td></tr>
-  <tr><td colspan="5">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</td></tr>
-  <tr><td colspan="5">SHIPMENT EXPORT UNDER IGST PAID</td></tr>
-  <tr><td colspan="5">IEC NO- {{exporter.iecNo}}</td></tr>
-  <tr><td colspan="5">AD CODE - {{exporter.adCode}}</td></tr>
-  <tr><td colspan="5">PAN NO- {{exporter.pan}}</td></tr>
-  <tr><td colspan="5">END USE CODE- {{scheme.endUseCode}}</td></tr>
-  <tr><td colspan="5">GST NO-</td></tr>
   <tr>
-    <td colspan="3" style="background:#ffff00; font-weight:bold;">Custom Exchange Rate: US DOLLAR 1 =</td>
-    <td colspan="2" class="r b" style="background:#ffff00;">{{values.customExchangeRate}}</td>
+    <td colspan="3" style="background:#ffff00; font-weight:bold; height:20px; vertical-align:middle;">Custom Exchange Rate: US DOLLAR 1 =</td>
+    <td colspan="2" class="r b" style="background:#ffff00; vertical-align:middle;">{{values.customExchangeRate}}</td>
   </tr>
 
-  <!-- SHIPPING SECTION -->
+  <!-- SHIPPING SECTION: Labels then Values -->
   <tr>
-    <td class="ship-label">Pre-<br>Carriage</td>
-    <td class="ship-label" style="border-left:none;"></td>
-    <td class="ship-label">Place of Rcpt by Pre Carrier</td>
-    <td colspan="2" class="ship-label">Country of Origin</td>
-    <td colspan="3" class="ship-label">Country of Destination</td>
+    <td colspan="1" class="sh-l">Pre-<br>Carriage</td>
+    <td colspan="1" class="sh-l" style="border-left:none;"></td>
+    <td colspan="1" class="sh-l">Place of Rcpt by Pre Carrier</td>
+    <td colspan="2" class="sh-l">Country of Origin</td>
+    <td colspan="3" class="sh-l">Country of Destination</td>
   </tr>
   <tr>
-    <td class="ship-val">Carriage</td>
-    <td class="ship-val" style="border-left:none; text-align:center;">{{preCarriage}}</td>
-    <td class="ship-val">{{placeOfReceipt}}</td>
-    <td colspan="2" class="ship-val center">INDIA</td>
-    <td colspan="3" class="ship-val center">{{buyerCountry}}</td>
+    <td colspan="1" class="sh-v">Carriage</td>
+    <td colspan="1" class="sh-v" style="border-left:none;">{{preCarriage}}</td>
+    <td colspan="1" class="sh-v">{{placeOfReceipt}}</td>
+    <td colspan="2" class="sh-v">INDIA</td>
+    <td colspan="3" class="sh-v">{{buyerCountry}}</td>
   </tr>
   <tr>
-    <td class="ship-label">Vessel/<br>Flight</td>
-    <td class="ship-label" style="border-left:none; text-align:center;">{{vesselFlight}}</td>
-    <td class="ship-label">Port of Loading</td>
-    <td colspan="5" class="ship-label">Terms of Delivery and Payment</td>
+    <td colspan="2" class="sh-l">Vessel/Flight</td>
+    <td colspan="1" class="sh-l">Port of Loading</td>
+    <td colspan="5" class="sh-l">Terms of Delivery and Payment</td>
   </tr>
   <tr>
-    <td class="ship-label" style="border-bottom:0.5px solid #000;"></td>
-    <td class="ship-val" style="border-left:none; border-bottom:0.5px solid #000;"></td>
-    <td class="ship-val" style="border-bottom:0.5px solid #000;">{{portOfLoading}}</td>
+    <td colspan="2" class="sh-v">{{vesselFlight}}</td>
+    <td colspan="1" class="sh-v">{{portOfLoading}}</td>
     <td colspan="5" rowspan="3" style="vertical-align:top; border-top:none;">
       <div class="b">{{scheme.termsOfPayment}}</div>
       <div style="margin-top:10px;">30 DAYS</div>
     </td>
   </tr>
   <tr>
-    <td colspan="2" class="ship-label">Port of Discharge</td>
-    <td class="ship-label">Place of Delivery</td>
+    <td colspan="2" class="sh-l">Port of Discharge</td>
+    <td colspan="1" class="sh-l">Place of Delivery</td>
   </tr>
   <tr>
-    <td colspan="2" class="ship-val">{{portOfDischarge}}</td>
-    <td class="ship-val">{{placeOfDelivery}}</td>
+    <td colspan="2" class="sh-v">{{portOfDischarge}}</td>
+    <td colspan="1" class="sh-v">{{placeOfDelivery}}</td>
   </tr>
 
   <!-- COLUMN HEADERS -->
@@ -212,7 +215,7 @@
   <tr>
     <td colspan="5" class="amt-words-box">
       <span class="b">Amount Chargeable (In Words)</span><br>
-      Rupees {{amountWordsINR}}
+      {{amountWordsINR}}
     </td>
     <td class="total-label">Total</td>
     <td class="total-val">{{values.exShowroomINR}}</td>
@@ -225,13 +228,15 @@
   <!-- DECLARATION -->
   <tr class="declare-row">
     <td colspan="8">
-      We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. We intend to claim rewards under Merchandise Exports From India Scheme (MEIS)<br>
-      <span class="b">RoDTEP Scheme</span>
+      We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. We intend to claim rewards under Merchandise Exports From India Scheme (MEIS)
     </td>
+  </tr>
+  <tr class="declare-row-2">
+    <td colspan="8">RoDTEP Scheme</td>
   </tr>
 
   <!-- FOOTER -->
-  <tr class="footer-box">
+  <tr class="footer-row">
     <td colspan="5" class="origin-box">
       <div class="b">STATEMENT ON ORIGIN</div>
       <div>{{staticText.GSP_ORIGIN}}</div>
