@@ -33,56 +33,53 @@ const CompanyDashboard = () => {
       setLoading(true);
 
       const res = await companyApi.getCompanies(
-  "",
-  1,
-  1000,
-  "createdAt",
-  "desc",
-  "all"
-);
+        "",
+        1,
+        1000,
+        "createdAt",
+        "desc",
+        "all",
+      );
 
-setCompanies(res.data || []);
+      setCompanies(res.data || []);
 
-/* PI FETCH START */
-const piRes = await axios.get(
-  `${apiConfig.baseURL}/proforma-invoices`,
-  {
-    params: {
-      page: 1,
-      limit: 1000,
-    },
-  }
-);
+      const token = localStorage.getItem("accessToken");
+      /* PI FETCH START */
+      const piRes = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
+        params: {
+          page: 1,
+          limit: 1000,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-const piRows = Array.isArray(piRes.data?.data)
-  ? piRes.data.data
-  : [];
+      const piRows = Array.isArray(piRes.data?.data) ? piRes.data.data : [];
 
-const companyMap: Record<string, number> = {};
+      const companyMap: Record<string, number> = {};
 
-piRows.forEach((item: any) => {
-  const companyName =
-    item.company_id?.name ||
-    item.companySnapshot?.name ||
-    "Unknown";
+      piRows.forEach((item: any) => {
+        const companyName =
+          item.company_id?.name || item.companySnapshot?.name || "Unknown";
 
-  if (!companyMap[companyName]) {
-    companyMap[companyName] = 0;
-  }
+        if (!companyMap[companyName]) {
+          companyMap[companyName] = 0;
+        }
 
-  companyMap[companyName]++;
-});
+        companyMap[companyName]++;
+      });
 
-const topCompanies = Object.entries(companyMap)
-  .map(([name, count]) => ({
-    name,
-    count,
-  }))
-  .sort((a, b) => b.count - a.count)
-  .slice(0, 5);
+      const topCompanies = Object.entries(companyMap)
+        .map(([name, count]) => ({
+          name,
+          count,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
-setPiStats(topCompanies);
-/* PI FETCH END */
+      setPiStats(topCompanies);
+      /* PI FETCH END */
     } catch (error) {
       console.error(error);
       toast.error("Failed to load company dashboard.");
@@ -94,32 +91,23 @@ setPiStats(topCompanies);
   const stats = useMemo(() => {
     const totalCompanies = companies.length;
 
-    const activeCompanies = companies.filter(
-      (c) => c.isActive
-    ).length;
+    const activeCompanies = companies.filter((c) => c.isActive).length;
 
-    const inactiveCompanies = companies.filter(
-      (c) => !c.isActive
-    ).length;
+    const inactiveCompanies = companies.filter((c) => !c.isActive).length;
 
-    const thisMonthCompanies = companies.filter(
-      (c) => {
-        if (!c.createdAt) return false;
+    const thisMonthCompanies = companies.filter((c) => {
+      if (!c.createdAt) return false;
 
-        const d = new Date(c.createdAt);
-        const now = new Date();
+      const d = new Date(c.createdAt);
+      const now = new Date();
 
-        return (
-          d.getMonth() === now.getMonth() &&
-          d.getFullYear() === now.getFullYear()
-        );
-      }
-    ).length;
+      return (
+        d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      );
+    }).length;
 
     const countries = new Set(
-      companies
-        .map((c) => c.address?.country)
-        .filter(Boolean)
+      companies.map((c) => c.address?.country).filter(Boolean),
     ).size;
 
     return {
@@ -135,12 +123,8 @@ setPiStats(topCompanies);
     return [...companies]
       .sort(
         (a, b) =>
-          new Date(
-            b.createdAt || ""
-          ).getTime() -
-          new Date(
-            a.createdAt || ""
-          ).getTime()
+          new Date(b.createdAt || "").getTime() -
+          new Date(a.createdAt || "").getTime(),
       )
       .slice(0, 5);
   }, [companies]);
@@ -149,8 +133,7 @@ setPiStats(topCompanies);
     const map: any = {};
 
     companies.forEach((company) => {
-      const country =
-        company.address?.country || "Unknown";
+      const country = company.address?.country || "Unknown";
 
       if (!map[country]) map[country] = 0;
 
@@ -162,10 +145,7 @@ setPiStats(topCompanies);
         country,
         count,
       }))
-      .sort(
-        (a: any, b: any) =>
-          b.count - a.count
-      )
+      .sort((a: any, b: any) => b.count - a.count)
       .slice(0, 5);
   }, [companies]);
 
@@ -178,18 +158,16 @@ setPiStats(topCompanies);
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          {[1, 2, 3, 4, 5].map(
-            (item) => (
-              <div
-                key={item}
-                className="rounded-2xl bg-white border p-6 animate-pulse"
-              >
-                <div className="h-10 w-10 bg-slate-200 rounded-xl mb-4"></div>
-                <div className="h-3 w-24 bg-slate-100 rounded mb-3"></div>
-                <div className="h-8 w-16 bg-slate-200 rounded"></div>
-              </div>
-            )
-          )}
+          {[1, 2, 3, 4, 5].map((item) => (
+            <div
+              key={item}
+              className="rounded-2xl bg-white border p-6 animate-pulse"
+            >
+              <div className="h-10 w-10 bg-slate-200 rounded-xl mb-4"></div>
+              <div className="h-3 w-24 bg-slate-100 rounded mb-3"></div>
+              <div className="h-8 w-16 bg-slate-200 rounded"></div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -252,9 +230,7 @@ setPiStats(topCompanies);
           title="Add Company"
           subtitle="Create new company profile"
           icon={<UserPlus size={20} />}
-          onClick={() =>
-            navigate("/companies/add")
-          }
+          onClick={() => navigate("/companies/add")}
         />
       </div>
 
@@ -264,17 +240,12 @@ setPiStats(topCompanies);
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-slate-50 rounded-lg">
-              <Building2
-                size={18}
-                className="text-slate-500"
-              />
+              <Building2 size={18} className="text-slate-500" />
             </div>
-        
-            <h2 className="font-bold text-slate-800 text-lg">
-              Top Companies
-            </h2>
+
+            <h2 className="font-bold text-slate-800 text-lg">Top Companies</h2>
           </div>
-        
+
           <div className="space-y-4">
             {piStats.length === 0 ? (
               <Empty text="No PI created yet" />
@@ -285,15 +256,13 @@ setPiStats(topCompanies);
                   className="flex items-center justify-between rounded-2xl border border-slate-50 bg-slate-50/30 px-5 py-4 hover:border-blue-100 transition-colors"
                 >
                   <div>
-                    <p className="font-bold text-slate-800">
-                      {item.name}
-                    </p>
-        
+                    <p className="font-bold text-slate-800">{item.name}</p>
+
                     <p className="text-xs text-slate-400 mt-0.5">
                       Export Company
                     </p>
                   </div>
-        
+
                   <span className="px-4 py-1.5 rounded-xl bg-white text-sm font-bold text-blue-600 shadow-sm">
                     {item.count} PI
                   </span>
@@ -307,10 +276,7 @@ setPiStats(topCompanies);
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-slate-50 rounded-lg">
-              <Clock3
-                size={18}
-                className="text-slate-500"
-              />
+              <Clock3 size={18} className="text-slate-500" />
             </div>
 
             <h2 className="font-bold text-slate-800 text-lg">
@@ -322,44 +288,30 @@ setPiStats(topCompanies);
             <Empty text="No recent companies found" />
           ) : (
             <div className="space-y-4">
-              {recentCompanies.map(
-                (company, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between rounded-2xl border border-slate-50 bg-slate-50/30 px-5 py-4 hover:border-blue-100 transition-colors"
-                  >
-                    <div>
-                      <p className="font-bold text-slate-800">
-                        {
-                          company.name
-                        }
-                      </p>
+              {recentCompanies.map((company, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between rounded-2xl border border-slate-50 bg-slate-50/30 px-5 py-4 hover:border-blue-100 transition-colors"
+                >
+                  <div>
+                    <p className="font-bold text-slate-800">{company.name}</p>
 
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {
-                          company.companyId
-                        }
-                      </p>
-                    </div>
-
-                    <div className="text-right space-y-2">
-                      <StatusBadge
-                        active={
-                          company.isActive
-                        }
-                      />
-
-                      <p className="text-xs text-slate-400">
-                        {company.createdAt
-                          ? new Date(
-                              company.createdAt
-                            ).toLocaleDateString()
-                          : "-"}
-                      </p>
-                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {company.companyId}
+                    </p>
                   </div>
-                )
-              )}
+
+                  <div className="text-right space-y-2">
+                    <StatusBadge active={company.isActive} />
+
+                    <p className="text-xs text-slate-400">
+                      {company.createdAt
+                        ? new Date(company.createdAt).toLocaleDateString()
+                        : "-"}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -368,12 +320,7 @@ setPiStats(topCompanies);
   );
 };
 
-const StatCard = ({
-  title,
-  value,
-  icon,
-  color,
-}: any) => (
+const StatCard = ({ title, value, icon, color }: any) => (
   <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md transition-all">
     <div
       className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-4 shadow-sm`}
@@ -391,12 +338,7 @@ const StatCard = ({
   </div>
 );
 
-const ActionCard = ({
-  title,
-  subtitle,
-  icon,
-  onClick,
-}: any) => (
+const ActionCard = ({ title, subtitle, icon, onClick }: any) => (
   <button
     onClick={onClick}
     className="cursor-pointer group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all text-left"
@@ -413,22 +355,14 @@ const ActionCard = ({
     </div>
 
     <div className="mt-4 relative z-10">
-      <h3 className="font-bold text-slate-800 text-lg">
-        {title}
-      </h3>
+      <h3 className="font-bold text-slate-800 text-lg">{title}</h3>
 
-      <p className="text-sm text-slate-500 mt-1">
-        {subtitle}
-      </p>
+      <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
     </div>
   </button>
 );
 
-const StatusBadge = ({
-  active,
-}: {
-  active: boolean;
-}) => (
+const StatusBadge = ({ active }: { active: boolean }) => (
   <span
     className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
       active
@@ -440,11 +374,7 @@ const StatusBadge = ({
   </span>
 );
 
-const Empty = ({
-  text,
-}: {
-  text: string;
-}) => (
+const Empty = ({ text }: { text: string }) => (
   <div className="rounded-2xl bg-slate-50/50 border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-medium text-slate-400">
     {text}
   </div>
