@@ -1,283 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <title>INR Tax Invoice</title>
   <style>
-    @page { size: A4 portrait; margin: 10mm 12mm; }
-    html, body { margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 7.15px; line-height: 1.04; color: #000; }
+    @page { size: A4 portrait; margin: 8mm 10mm; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 7px; color: #000; line-height: 1.0; }
     * { box-sizing: border-box; }
 
-    /* Outer border thick, inner thin */
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1.5px solid #000; }
-    td, th { border: 0.5px solid #000; padding: 1.5px 2.5px; vertical-align: top; font-weight: 400; }
+    table.main {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1px solid #000;
+    }
+    table.main td {
+      border: 0.5px solid #000;
+      padding: 1px 2px;
+      vertical-align: top;
+      overflow: hidden;
+      word-break: break-word;
+    }
 
-    /* Labels bold */
-    .section { font-weight: 700; }
-    .company { font-weight: 700; }
-    .bold { font-weight: 700; }
+    /*
+      8 columns total. Using % widths to match PDF proportions:
+      c1: Marks/Container (left party block uses c1+c2+c3)
+      c2: SR NO
+      c3: Description
+      c4: IGST Rate
+      c5: Qty
+      c6: Rate Rs
+      c7: Amount Rs
+      c8: IGST Amt
+    */
+    col.c1 { width: 12%; }
+    col.c2 { width:  7%; }
+    col.c3 { width: 27%; }
+    col.c4 { width:  8%; }
+    col.c5 { width:  8%; }
+    col.c6 { width: 11%; }
+    col.c7 { width: 12%; }
+    col.c8 { width: 15%; }
 
-    /* Title */
-    .title { font-size: 8.8px; font-weight: 700; text-align: center; padding: 3px 0; }
+    /* helpers */
+    .b   { font-weight: 700; }
+    .c   { text-align: center; }
+    .r   { text-align: right; }
+    .vm  { vertical-align: middle; }
+    .vb  { vertical-align: bottom; }
 
-    /* Top info boxes */
-    .topbox { line-height: 1.1; padding: 1.5px 2.5px; }
-    .label-top { font-weight: 700; }
+    /* TITLE */
+    .td-title {
+      text-align: center; font-size: 9px; font-weight: 700;
+      padding: 3px 2px; border-bottom: 0.5px solid #000;
+    }
 
-    /* Header cells - vertically centered */
-    .header-cell { font-weight: 700; text-align: center; line-height: 1.1; padding: 2px; vertical-align: middle; }
+    /* Party blocks (exporter / consignee) left side */
+    .td-party {
+      font-size: 7px; padding: 2px 3px; line-height: 1.2; vertical-align: top;
+    }
 
-    /* Goods row */
-    .goods-cell { height: 135px; vertical-align: top; line-height: 1.04; }
-    .desc-cell { font-size: 6.5px; line-height: 1.15; padding: 2px 3px; }
-    .desc-cell .desc-name { font-weight: 700; margin-bottom: 2px; }
-    .desc-cell div { margin: 0; padding: 0; }
+    /* Right-side meta rows (normal height) */
+    .td-r {
+      font-size: 7px; padding: 1px 3px; line-height: 1.15;
+      height: 13px; vertical-align: middle;
+    }
 
-    /* Alignment helpers */
-    .center { text-align: center; }
-    .right { text-align: right; }
-    .justify { text-align: justify; }
-    .vmid { vertical-align: middle; }
+    /* Shipping label cells */
+    .sh-l {
+      font-size: 7px; font-weight: 700; padding: 1px 2px;
+      line-height: 1.1; vertical-align: top;
+    }
+    /* Shipping value cells */
+    .sh-v {
+      font-size: 7px; padding: 1px 2px;
+      line-height: 1.1; vertical-align: top;
+    }
 
-    /* Qty cell */
-    .qty-cell { text-align: center; vertical-align: middle; line-height: 1.4; }
+    /* Column header cells */
+    .td-hdr {
+      font-size: 7px; font-weight: 700; text-align: center;
+      vertical-align: middle; padding: 1px 2px; line-height: 1.15;
+    }
 
-    /* Shipping rows */
-    .ship-label { padding: 2px 2.5px; font-weight: 700; font-size: 7px; line-height: 1.05; }
-    .ship-value { padding: 2px 2.5px; font-size: 7px; line-height: 1.05; }
+    /* Goods data cells */
+    .td-g {
+      height: 125px; font-size: 7px;
+      vertical-align: top; padding: 2px 2px; line-height: 1.2;
+    }
+    .td-g-desc {
+      height: 125px; font-size: 6.5px;
+      vertical-align: top; padding: 2px 3px; line-height: 1.25;
+    }
+    .desc-h  { font-weight: 700; margin-bottom: 2px; }
+    .desc-ln { margin: 0; }
 
     /* Amount row */
-    .amount-row td { font-size: 7px; }
-    .amount-words-label { font-weight: 700; }
-    .amount-words-val { font-style: normal; font-weight: 400; }
-
-    /* Declaration */
-    .decl-box { font-size: 6.1px; line-height: 1.15; padding: 2px 3px; }
-    .decl-box .decl-head { font-weight: 700; margin-bottom: 2px; }
-    .decl-box .decl-para { text-align: justify; margin: 0 0 3px; }
-    .decl-box .origin-head { font-weight: 700; margin: 2px 0 1px; }
-    .decl-box .origin-text { font-size: 5.9px; line-height: 1.12; text-align: justify; }
-
-    /* Sign area */
-    .sign-space { height: 65px; position: relative; vertical-align: bottom; padding: 2px 3px; }
-    .sign-for { text-align: right; font-size: 7px; padding-bottom: 2px; }
-    .sign-bottom-right { position: absolute; bottom: 3px; right: 4px; font-weight: 700; font-size: 7px; }
-
-    /* Bank: single clean box, NO inner horizontal lines */
-    .bank-head-cell { font-weight: 700; padding: 2px 3px; }
-    .bank-content-cell {
-      font-size: 7px;
-      line-height: 1.55;
-      padding: 3px 4px;
-      vertical-align: top;
-      border-top: none !important;
+    .td-aw {
+      font-size: 7px; padding: 2px 3px; line-height: 1.3; vertical-align: middle;
     }
-    .bank-label { font-weight: 700; }
+    .td-tot {
+      font-size: 7px; font-weight: 700;
+      text-align: center; vertical-align: middle; padding: 1px 2px;
+    }
+    .td-totv {
+      font-size: 7px; font-weight: 700;
+      text-align: right; vertical-align: middle; padding: 1px 3px;
+    }
 
-    /* Custom exchange rate value prominent */
-    .exch-rate-val { font-weight: 700; }
+    /* Empty spacer box */
+    .td-empty {
+      height: 28px;
+      border-left: 0.5px solid #000 !important;
+      border-right: 0.5px solid #000 !important;
+      border-top: none !important;
+      border-bottom: none !important;
+    }
 
-    /* Total row */
-    .total-bold { font-weight: 700; }
+    /* "We declare" full-width row - bigger font, 2 lines */
+    .td-wedeclare {
+      font-size: 7.5px; padding: 3px 4px;
+      text-align: center; line-height: 1.5;
+    }
 
-    /* No-border helpers */
-    .no-top { border-top: none !important; }
-    .no-border-v { border-top: none !important; border-bottom: none !important; }
+    /* Statement on origin left box */
+    .td-origin {
+      font-size: 6px; line-height: 1.18; padding: 2px 3px; vertical-align: top;
+    }
+    .origin-h { font-weight: 700; margin-bottom: 2px; font-size: 6.5px; }
+    .origin-p { text-align: justify; }
 
-    /* IGST total row secondary */
-    .igst-total-row td { border-top: none !important; }
+    /* Sign box right */
+    .td-sign {
+      font-size: 7px; padding: 3px 4px;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .sign-for  { font-weight: 700; text-align: right; white-space: nowrap; font-size: 6.5px; }
+    .sign-auth { font-weight: 700; text-align: right; align-self: flex-end; font-size: 6.5px; }
   </style>
 </head>
 <body>
-  <table>
-    <colgroup>
-      <col style="width:52px">
-      <col style="width:36px">
-      <col style="width:138px">
-      <col style="width:44px">
-      <col style="width:44px">
-      <col style="width:62px">
-      <col style="width:62px">
-      <col style="width:62px">
-    </colgroup>
+<table class="main">
+  <colgroup>
+    <col class="c1"><col class="c2"><col class="c3">
+    <col class="c4"><col class="c5">
+    <col class="c6"><col class="c7"><col class="c8">
+  </colgroup>
 
-    <!-- ═══ TITLE ═══ -->
-    <tr>
-      <td colspan="8" class="title">TAX INVOICE</td>
-    </tr>
+  <!-- ══ ROW 1: TITLE ══ -->
+  <tr>
+    <td colspan="8" class="td-title">TAX INVOICE</td>
+  </tr>
 
-    <!-- ═══ EXPORTER + RIGHT META (rowspan=15) ═══ -->
-    <tr>
-      <td colspan="3" rowspan="15" class="topbox" style="border-right:0.5px solid #000;">
-        <div class="label-top">Exporter</div>
-        <div class="company">{{exporter.companyName}}</div>
-        {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
-        <div>Maharashtra, India.</div>
-        <div><span class="section">GST NO-</span> {{exporter.gstin}}</div>
-      </td>
-      <td colspan="5" class="topbox"><span class="section">Tax Invoice No &amp; Dt.</span><span style="float:right;">{{invoiceNumber}} Dt.{{invoiceDate}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox"><span class="section">Buyers Order &amp; Dt</span><span style="float:right;">{{buyerOrderDate}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox"><span class="section">Other Reference</span><span style="float:right;">PI No - {{piNumber}} Dt {{piDate}}</span></td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">LC NO - {{lcNumber}} DT {{lcDate}}</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">Buyer if other than Consignee</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">EXPORT UNDER DRAWBACK SCHEME .</td>
-    </tr>
+  <!-- ══════════════════════════════════════════════
+       EXPORTER SECTION
+       LEFT = cols 1-3, rowspan=7
+       RIGHT = cols 4-8, each row individual
+       Row 2 right: [Tax Invoice No & Dt.] [EMPTY] [value]  ← 3 cells
+       Row 3 right: [Buyers Order & Dt] [PI No...]          ← 2 cells
+       Row 4 right: [Other Reference]   [LC NO...]          ← 2 cells
+       Row 5: [Buyer if other than Consignee]               ← 1 merged
+       Row 6: [EXPORT UNDER DRAWBACK SCHEME .]              ← 1 merged
+       Row 7: [RODTEP Scheme CODE xx]                       ← 1 merged
+  ══════════════════════════════════════════════ -->
+  <tr>
+    <td colspan="3" rowspan="7" class="td-party">
+      <div class="b">Exporter</div>
+      <div class="b">{{exporter.companyName}}</div>
+      {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
+      <div>Maharashtra, India.</div>
+      <div><span class="b">GST NO-</span> {{exporter.gstin}}</div>
+    </td>
+    <!-- Row 2 right: label | value (no empty middle cell) -->
+    <td colspan="2" class="td-r b">Tax Invoice No &amp; Dt.</td>
+    <td colspan="3" class="td-r r">{{invoiceNumber}} Dt.{{invoiceDate}}</td>
+  </tr>
+  <!-- Row 3: label | value -->
+  <tr>
+    <td colspan="2" class="td-r b">Buyers Order &amp; Dt</td>
+    <td colspan="3" class="td-r r">{{buyerOrderDate}}</td>
+  </tr>
+  <!-- Row 4: label | value -->
+  <tr>
+    <td colspan="2" class="td-r b">Other Reference</td>
+    <td colspan="3" class="td-r r">PI No - {{piNumber}} Dt {{piDate}}</td>
+  </tr>
+  <!-- Row 4b: LC NO full right -->
+  <tr>
+    <td colspan="5" class="td-r">LC NO - {{lcNumber}} DT {{lcDate}}</td>
+  </tr>
+  <!-- Row 5 -->
+  <tr>
+    <td colspan="5" class="td-r">Buyer if other than Consignee</td>
+  </tr>
+  <!-- Row 6 -->
+  <tr>
+    <td colspan="5" class="td-r">EXPORT UNDER DRAWBACK SCHEME .</td>
+  </tr>
+  <!-- Row 7 -->
+  <tr>
+    <td colspan="5" class="td-r">RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</td>
+  </tr>
 
-    <!-- Consignee block rowspan=8 -->
-    <tr>
-      <td colspan="3" rowspan="8" class="topbox" style="border-right:0.5px solid #000;">
-        <div class="label-top">Consignee</div>
-        <div class="company">{{buyerName}}</div>
-        {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
-        <div>{{buyerCountry}}</div>
-        {{#if consigneeAtte}}<div>Atte : {{consigneeAtte}}</div>{{else}}<div>Atte :</div>{{/if}}
-        {{#if consigneeTel}}<div>Tel : {{consigneeTel}}</div>{{else}}<div>Tel :</div>{{/if}}
-      </td>
-      <td colspan="5" class="topbox">RODTEP Scheme CODE {{scheme.rodtepSchemeCode}}</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">IGST PAYMENT STATUS- YES</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">SHIPMENT EXPORT UNDER IGST PAID</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">IEC NO- {{exporter.iecNo}}</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">AD CODE - {{exporter.adCode}}</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">PAN NO- {{exporter.pan}}</td>
-    </tr>
-    <tr>
-      <td colspan="5" class="topbox">END USE CODE- {{scheme.endUseCode}}</td>
-    </tr>
-    <!-- Exchange rate row: value prominent and right-aligned -->
-    <tr>
-      <td colspan="5" class="topbox">Custom Exchange Rate: US DOLLAR 1 =<span class="exch-rate-val" style="float:right; padding-right:8px;">{{values.customExchangeRate}}</span></td>
-    </tr>
+  <!-- ══════════════════════════════════════════════
+       CONSIGNEE SECTION
+       LEFT = cols 1-3, rowspan=10
+       RIGHT = single merged box, no internal horizontal lines
+       Last right row = Custom Exchange Rate (bottom of merged box)
+  ══════════════════════════════════════════════ -->
+  <tr>
+    <td colspan="3" rowspan="10" class="td-party">
+      <div class="b">Consignee</div>
+      <div class="b">{{buyerName}}</div>
+      {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
+      <div>{{buyerCountry}}</div>
+      <div>Atte :</div>
+      <div>Tel :</div>
+    </td>
+    <td colspan="5" class="td-r" style="border-bottom:none;">SUPPLY MEANT FOR EXPORT ON PAYMENT OF IGST</td>
+  </tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">IGST PAYMENT STATUS- YES</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">SHIPMENT EXPORT UNDER IGST PAID</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">IEC NO- {{exporter.iecNo}}</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">AD CODE - {{exporter.adCode}}</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">PAN NO-{{exporter.pan}}</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">END USE CODE- {{scheme.endUseCode}}</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;">GST NO-</td></tr>
+  <tr><td colspan="5" class="td-r" style="border-top:none; border-bottom:none;"></td></tr>
+  <!-- Custom Exchange Rate: bottom of merged box -->
+  <tr>
+    <td colspan="3" class="td-r" style="border-top:none;">Custom Exchange Rate: US DOLLAR 1 =</td>
+    <td colspan="2" class="td-r r b" style="border-top:none;">{{values.customExchangeRate}}</td>
+  </tr>
 
-    <!-- ═══ SHIPPING ROWS ═══ -->
-    <tr>
-      <td class="ship-label">Pre -<br>Carriage</td>
-      <td class="ship-value">{{preCarriage}}</td>
-      <td class="ship-label">Place of Rcpt by Pre Carrier</td>
-      <td class="ship-value">{{placeOfReceipt}}</td>
-      <td class="ship-label">Country of Origin</td>
-      <td class="ship-value center">INDIA</td>
-      <td colspan="2" class="ship-label"><span class="section">Country of Destination</span><br>{{buyerCountry}}</td>
-    </tr>
-    <tr>
-      <td class="ship-label">Vessel/<br>Flight</td>
-      <td class="ship-value">{{vesselFlight}}</td>
-      <td class="ship-label">Port of Loading</td>
-      <td class="ship-value">{{portOfLoading}}</td>
-      <td class="ship-label"><span class="section">Terms of Delivery and Payment</span></td>
-      <td colspan="3" class="ship-value">{{scheme.termsOfPayment}}</td>
-    </tr>
-    <tr>
-      <td class="ship-label">Port of Discharge</td>
-      <td class="ship-value">{{portOfDischarge}}</td>
-      <td class="ship-label">Place of Delivery</td>
-      <td class="ship-value">{{placeOfDelivery}}</td>
-      <td colspan="4" class="ship-value">State of Origin of Goods - {{stateOfOrigin}}</td>
-    </tr>
-    <tr>
-      <td colspan="4" style="border-top:none;"></td>
-      <td colspan="4" class="ship-value">District of Origin of Goods - {{districtOfOrigin}}</td>
-    </tr>
+  <!-- ══════════════════════════════════════════════
+       SHIPPING SECTION
+       Each field: label row (bold, border-bottom:none) + value row (border-top:none)
+       Row A labels: Pre-Carriage | Place of Rcpt | Country of Origin | Country of Destination
+       Row A values: Road         | Narhe,Pune    | INDIA             | SRI LANKA
+       Row B labels: Vessel/Flight | Port of Loading | Port of Discharge | Place of Delivery | Terms (rowspan=4)
+       Row B values: SEA           | JNPT            | COLOMBO 05        | SRI LANKA         |
+       State of Origin & District of Origin REMOVED
+  ══════════════════════════════════════════════ -->
 
-    <!-- ═══ COLUMN HEADERS (vertically centered) ═══ -->
-    <tr>
-      <td class="header-cell">Marks &amp; Nos<br>Container No</td>
-      <td class="header-cell">SR NO</td>
-      <td class="header-cell">Description of Goods</td>
-      <td class="header-cell">IGST RATE</td>
-      <td class="header-cell">Quantity<br>In Pcs</td>
-      <td class="header-cell">Rate<br>In (Rs.)</td>
-      <td class="header-cell">Amount<br>In (Rs.)</td>
-      <td class="header-cell">IGST<br>Amount (Rs)</td>
-    </tr>
+  <!-- Labels row A -->
+  <tr>
+    <td class="sh-l" style="border-bottom:none;">Pre-<br>Carriage</td>
+    <td class="sh-l" style="border-bottom:none;">Place of Rcpt by Pre Carrier</td>
+    <td class="sh-l" style="border-bottom:none;">Country of Origin</td>
+    <td colspan="2" class="sh-l" style="border-bottom:none;">Country of Destination</td>
+    <!-- Terms: rowspan=4 spans all label+value rows -->
+    <td colspan="3" rowspan="4" class="sh-v" style="vertical-align:top; padding:3px 4px; font-size:7px;">
+      <div style="font-weight:700; margin-bottom:4px;">Terms of Delivery and Payment</div>
+      <div>{{scheme.termsOfPayment}}</div>
+    </td>
+  </tr>
+  <!-- Values row A -->
+  <tr>
+    <td class="sh-v" style="border-top:none; text-align:center;">{{preCarriage}}</td>
+    <td class="sh-v" style="border-top:none; text-align:center;">{{placeOfReceipt}}</td>
+    <td class="sh-v" style="border-top:none; text-align:center;">INDIA</td>
+    <td colspan="2" class="sh-v" style="border-top:none; text-align:center;">{{buyerCountry}}</td>
+  </tr>
 
-    <!-- ═══ GOODS ROW ═══ -->
-    <tr>
-      <td class="goods-cell" style="padding:2px 3px; line-height:1.1;">
-        {{placeOfDelivery}}<br>{{buyerCountry}}
-      </td>
-      <td class="goods-cell center" style="padding-top:2px; line-height:1.3;">
-        1<br><br>CARTON<br>NOS.
-      </td>
-      <td class="goods-cell desc-cell">
-        {{#each descriptionLines}}
-          {{#if @first}}<div class="desc-name">{{this}}</div>
-          {{else}}<div>{{this}}</div>{{/if}}
-        {{/each}}
-      </td>
-      <td class="goods-cell center vmid">{{vehicle.igstRate}}%</td>
-      <td class="goods-cell qty-cell">1<br>PCS<br>1</td>
-      <td class="goods-cell right" style="padding:2px 3px;">{{values.exShowroomINR}}</td>
-      <td class="goods-cell right" style="padding:2px 3px;">{{values.exShowroomINR}}</td>
-      <td class="goods-cell right" style="padding:2px 3px;">{{values.igstAmountINR}}</td>
-    </tr>
+  <!-- Labels row B -->
+  <tr>
+    <td class="sh-l" style="border-bottom:none;">Vessel/<br>Flight</td>
+    <td class="sh-l" style="border-bottom:none;">Port of Loading</td>
+    <td class="sh-l" style="border-bottom:none;">Port of Discharge</td>
+    <td colspan="2" class="sh-l" style="border-bottom:none;">Place of Delivery</td>
+  </tr>
+  <!-- Values row B -->
+  <tr>
+    <td class="sh-v" style="border-top:none; text-align:center;">{{vesselFlight}}</td>
+    <td class="sh-v" style="border-top:none; text-align:center;">{{portOfLoading}}</td>
+    <td class="sh-v" style="border-top:none; text-align:center;">{{portOfDischarge}}</td>
+    <td colspan="2" class="sh-v" style="border-top:none; text-align:center;">{{placeOfDelivery}}</td>
+  </tr>
 
-    <!-- ═══ AMOUNT ROWS ═══ -->
-    <tr class="amount-row">
-      <td colspan="5">
-        <span class="bold">Amount Chargeable (In Words)</span><br>
-        <span class="amount-words-val">{{amountWordsINR}}</span>
-      </td>
-      <td colspan="2" class="center total-bold vmid">Total</td>
-      <td class="right total-bold vmid">{{values.exShowroomINR}}</td>
-    </tr>
-    <tr class="igst-total-row">
-      <td colspan="6" style="border-top:none;"></td>
-      <td class="right total-bold" style="border-top:none;font-size:6.8px;">IGST Total</td>
-      <td class="right total-bold" style="border-top:none;">{{values.igstAmountINR}}</td>
-    </tr>
+  <!-- ══ COLUMN HEADERS ══ -->
+  <tr>
+    <td class="td-hdr">Marks &amp; Nos<br>Container No</td>
+    <td class="td-hdr">SR NO</td>
+    <td class="td-hdr">Description of Goods</td>
+    <td class="td-hdr">IGST RATE</td>
+    <td class="td-hdr">Quantity<br>In Pcs</td>
+    <td class="td-hdr">Rate<br>In (Rs.)</td>
+    <td class="td-hdr">Amount<br>In (Rs.)</td>
+    <td class="td-hdr">IGST<br>Amount (Rs)</td>
+  </tr>
 
-    <!-- ═══ DECLARATION + SIGN + BANK ═══ -->
-    <tr>
-      <td colspan="5" rowspan="2" class="decl-box">
-        <div class="decl-head">Declaration</div>
-        <div class="decl-para">{{staticText.DBK001}}</div>
-        <div class="decl-para">{{staticText.DBK003}}</div>
-        <div class="decl-para">{{staticText.DECLARATION}}</div>
-        <div class="decl-para">{{staticText.MEIS}}</div>
-        <div class="origin-head">STATEMENT ON ORIGIN</div>
-        <div class="origin-text">{{staticText.GSP_ORIGIN}}</div>
-      </td>
-      <!-- Sign space: "For Company" top-right, "Authorized Signatory" bottom-right -->
-      <td colspan="3" class="sign-space">
-        <div class="sign-for">For {{exporter.companyName}}</div>
-        <div class="sign-bottom-right">Authorized Signatory</div>
-      </td>
-    </tr>
-    <!-- Bank: single merged cell, NO inner lines -->
-    <tr>
-      <td colspan="3" class="bank-content-cell" style="border-top:0.5px solid #000;">
-        <div><span class="bank-label">BANK DETAILS</span></div>
-        <div><span class="bank-label">NAME</span> - {{exporter.bankName}}</div>
-        <div><span class="bank-label">ACCOUNT NO</span> - {{exporter.accountNo}}</div>
-        <div><span class="bank-label">IFSC Code</span> - {{exporter.ifsc}}</div>
-        <div><span class="bank-label">SWIFT code</span>: {{exporter.swift}}</div>
-      </td>
-    </tr>
+  <!-- ══ GOODS ROW ══ -->
+  <tr>
+    <td class="td-g">
+      {{buyerCity}}<br>
+      {{buyerCountry}}<br>
+      <br>
+      CARTON<br>
+      NOS.
+    </td>
+    <td class="td-g c">{{lineItem.srNo}}</td>
+    <td class="td-g-desc">
+      <div class="desc-h">{{vehicle.modelName}}</div>
+      {{#each vehicle.details}}<div class="desc-ln">{{this}}</div>{{/each}}
+    </td>
+    <td class="td-g c">{{vehicle.igstRate}}%</td>
+    <td class="td-g c">
+      {{lineItem.quantity}}<br>PCS<br>{{lineItem.quantity}}
+    </td>
+    <td class="td-g r">{{values.exShowroomINR}}</td>
+    <td class="td-g r">{{values.exShowroomINR}}</td>
+    <td class="td-g r">{{values.igstAmountINR}}</td>
+  </tr>
 
-  </table>
+  <!-- ══ AMOUNT CHARGEABLE ROW ══ -->
+  <tr>
+    <td colspan="3" class="td-aw">
+      <span class="b">Amount<br>Chargeable (In Words)</span><br>
+      {{amountWordsINR}}
+    </td>
+    <td colspan="2" style="border:0.5px solid #000; height:30px;"></td>
+    <td class="td-tot">Total</td>
+    <td class="td-totv">{{values.exShowroomINR}}</td>
+    <td class="td-totv">{{values.igstAmountINR}}</td>
+  </tr>
+
+  <!-- ══ EMPTY SPACER BOX (no lines inside, just outer left+right border) ══ -->
+  <tr>
+    <td colspan="8" class="td-empty"></td>
+  </tr>
+
+  <!-- ══ WE DECLARE ROW (full width, bigger font, 2 lines, center) ══ -->
+  <tr>
+    <td colspan="8" class="td-wedeclare">
+      We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. We intend to claim rewards under Merchandise Exports From India Scheme (MEIS)<br>
+      RoDTEP Scheme
+    </td>
+  </tr>
+
+  <!-- ══ BOTTOM: STATEMENT ON ORIGIN (left) + SIGN (right) ══ -->
+  <tr>
+    <td colspan="5" class="td-origin">
+      <div class="origin-h">STATEMENT ON ORIGIN</div>
+      <div class="origin-p">{{staticText.GSP_ORIGIN}}</div>
+    </td>
+    <td colspan="3" class="td-sign" style="height:80px; border-right:none;">
+      <div class="sign-for">For {{exporter.companyName}}</div>
+      <div class="sign-auth">Authorized Signatory</div>
+    </td>
+  </tr>
+
+</table>
 </body>
 </html>
