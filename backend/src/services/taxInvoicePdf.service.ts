@@ -5,10 +5,29 @@ import path from "path";
 
 let browserInstance: Browser | null = null;
 
+const getBrowserExecutablePath = () => {
+  const configuredPath =
+    process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH;
+
+  if (configuredPath && fs.existsSync(configuredPath)) {
+    return configuredPath;
+  }
+
+  const candidates = [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  ];
+
+  return candidates.find((candidate) => fs.existsSync(candidate));
+};
+
 const getBrowser = async () => {
   if (!browserInstance) {
     browserInstance = await puppeteer.launch({
-      headless: true,
+      headless: "new",
+      executablePath: getBrowserExecutablePath(),
       args: ["--no-sandbox"],
     });
   }

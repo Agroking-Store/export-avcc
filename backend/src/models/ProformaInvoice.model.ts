@@ -11,6 +11,7 @@ export interface IProformaInvoice extends Document {
 
   vehicleDetails: {
     vehicle_id?: mongoose.Types.ObjectId;
+    variant?: string;
     model?: string;
     color?: string;
     engineNo?: string;
@@ -122,6 +123,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
     vehicleDetails: [
       {
         vehicle_id: { type: Schema.Types.ObjectId, ref: "VehicleListItem" },
+        variant: { type: String },
         model: { type: String },
         color: { type: String },
         engineNo: { type: String, trim: true },

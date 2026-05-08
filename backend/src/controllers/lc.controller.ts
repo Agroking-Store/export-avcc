@@ -42,7 +42,7 @@ export const uploadLC = async (req: Request, res: Response) => {
       pi_id: new mongoose.Types.ObjectId(id),
       documentUrl: filePath,
       lcNumber: lcData.lcNumber,
-      status: "uploaded",
+      status: comparison.status === "PASSED" ? "verified" : "rejected",
       extractedData: lcData,
     });
 

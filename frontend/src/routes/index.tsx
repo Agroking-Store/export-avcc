@@ -21,6 +21,8 @@ import PIModule from "../features/proforma-invoice/pages/PIModule";
 import CompanyModule from "../features/company/pages/CompanyModule";
 import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
 import UserManagementModule from "../features/admin/pages/UserManagementModule";
+import VehicleSelectionPage from "../features/proforma-invoice/pages/VehicleSelectionPage";
+import InvoiceFormPage from "../features/proforma-invoice/pages/InvoiceFormPage";
 
 import { useAppSelector } from "../app/hooks";
 const DefaultRedirect: React.FC = () => {
@@ -56,12 +58,27 @@ const AppRoutes: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
 
-{/* Admin + Sourcing Team Routes */}
+          {/* Vehicles */}
+          <Route path="/vehicles/*" element={<VehiclesModule />} />
+
+          {/* Clients */}
+          <Route path="/clients/*" element={<ClientsModule />} />
+
+          {/* Orders - Main module route (general order management) */}
+          <Route path="/orders/*" element={<OrdersModule />} />
+
+          {/* Dealers */}
+          <Route path="/dealers/*" element={<DealersModule />} />
+
+          {/* Proforma Invoice */}
+          <Route path="/proforma-invoice/*" element={<PIModule />} />
           <Route
-            path="/vehicles/*"
-            element={
-              canAccessVehicles ? <VehiclesModule /> : <Navigate to="/dashboard" replace />
-            }
+            path="/invoices/generate/:piId/:type"
+            element={<VehicleSelectionPage />}
+          />
+          <Route
+            path="/invoices/generate/:piId/:type/:vehicleId"
+            element={<InvoiceFormPage />}
           />
 
           <Route

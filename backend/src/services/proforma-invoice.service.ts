@@ -6,6 +6,7 @@ import { IBookingVehicle, IBooking } from "../models/Booking.model"; // Import B
 import Dealer from "../models/Dealer.model";
 import { Booking } from "../models/Booking.model"; // Import Booking model
 import { VehicleOrder } from "../models/VehicleOrder.model";
+import LetterOfCredit from "../models/LetterOfCredit.model";
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
@@ -104,13 +105,17 @@ const generateNextPiNumber = async (
       new Date()
     );
 
-  const prefix = `${initials}/EX/PI/${fy}/`;
+  const prefix = `${initials}/PI/${fy}/`;
+  const legacyPrefix = `${initials}/EX/PI/${fy}/`;
 
   const invoices =
   await ProformaInvoice.find({
     company_id: companyId,
     piNumber: {
-      $regex: `^${prefix}\\d+$`,
+      $in: [
+        new RegExp(`^${prefix}\\d+$`),
+        new RegExp(`^${legacyPrefix}\\d+$`),
+      ],
     },
   });
 
@@ -226,7 +231,7 @@ const getCompanyShortCode = (
 export const createPIService = async (data: any) => {
   const totalAmount = (data.vehicleDetails || []).reduce(
     (sum: number, v: any) =>
-      sum + ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+      sum + (Number(v.quantity) || 1) * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
     0
   );
 
@@ -492,6 +497,397 @@ const getDateRange = (timeRange: string) => {
 const calculateTrend = (currentValue: number, previousValue: number) => {
   if (previousValue === 0) return currentValue > 0 ? 1 : 0; // If previous was 0, any positive current is 100% growth
   return (currentValue - previousValue) / previousValue;
+};
+
+const getLatestLCByPIMap = async (piIds: Array<Types.ObjectId | string>) => {
+  if (piIds.length === 0) {
+    return new Map<string, any>();
+  }
+
+  const normalizedIds = piIds.map((id) =>
+    typeof id === "string" ? new Types.ObjectId(id) : id
+  );
+
+  const latestLCs = await LetterOfCredit.aggregate([
+    {
+      $match: {
+        pi_id: { $in: normalizedIds },
+      },
+    },
+    { $sort: { uploadedAt: -1, _id: -1 } },
+    {
+      $group: {
+        _id: "$pi_id",
+        latest: { $first: "$$ROOT" },
+      },
+    },
+  ]);
+
+  return new Map<string, any>(
+    latestLCs.map((entry) => [String(entry._id), entry.latest])
+  );
+};
+
+const getClientDisplayName = (pi: any) =>
+  pi.clientSnapshot?.name ||
+  pi.clientSnapshot?.companyName ||
+  pi.client_id?.name ||
+  pi.client_id?.companyName ||
+  "Unknown Buyer";
+
+const getLCStageLabel = (pi: any, latestLC: any) => {
+  if (latestLC?.status === "verified") {
+    return "Verified LC";
+  }
+
+  if (latestLC?.status === "rejected") {
+    return "Amendment Needed";
+  }
+
+  if (latestLC) {
+    return "Received LC";
+  }
+
+  if (pi.status === "approved" || pi.status === "sent_to_buyer") {
+    return "Awaiting LC";
+  }
+
+  return "In Preparation";
+};
+
+const getTimelineBucket = (dateValue: Date, timeRange: string) => {
+  const date = new Date(dateValue);
+
+  switch (timeRange) {
+    case "today":
+      return {
+        key: `${date.getHours()}`.padStart(2, "0"),
+        label: `${`${date.getHours()}`.padStart(2, "0")}:00`,
+        sortValue: date.getHours(),
+      };
+    case "thisWeek":
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
+        label: date.toLocaleDateString("en-US", { weekday: "short" }),
+        sortValue: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate()
+        ).getTime(),
+      };
+    case "thisMonth":
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
+        label: date.toLocaleDateString("en-US", {
+          day: "2-digit",
+          month: "short",
+        }),
+        sortValue: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate()
+        ).getTime(),
+      };
+    case "thisYear":
+    case "allTime":
+    default:
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}`,
+        label: date.toLocaleDateString("en-US", {
+          month: "short",
+          year: "2-digit",
+        }),
+        sortValue: new Date(date.getFullYear(), date.getMonth(), 1).getTime(),
+      };
+  }
+};
+
+const buildTimeline = (pis: any[], timeRange: string) => {
+  const grouped = new Map<
+    string,
+    {
+      label: string;
+      sortValue: number;
+      totalAmount: number;
+      totalPI: number;
+    }
+  >();
+
+  pis.forEach((pi) => {
+    const createdAt = pi.createdAt ? new Date(pi.createdAt) : null;
+    if (!createdAt) {
+      return;
+    }
+
+    const bucket = getTimelineBucket(createdAt, timeRange);
+    const current = grouped.get(bucket.key) || {
+      label: bucket.label,
+      sortValue: bucket.sortValue,
+      totalAmount: 0,
+      totalPI: 0,
+    };
+
+    current.totalAmount += Number(pi.totalAmount || 0);
+    current.totalPI += 1;
+    grouped.set(bucket.key, current);
+  });
+
+  return Array.from(grouped.values()).sort(
+    (left, right) => left.sortValue - right.sortValue
+  );
+};
+
+const buildTopClients = (pis: any[]) => {
+  const grouped = new Map<
+    string,
+    {
+      clientName: string;
+      totalAmount: number;
+      totalPI: number;
+    }
+  >();
+
+  pis.forEach((pi) => {
+    const clientName = getClientDisplayName(pi);
+    const current = grouped.get(clientName) || {
+      clientName,
+      totalAmount: 0,
+      totalPI: 0,
+    };
+
+    current.totalAmount += Number(pi.totalAmount || 0);
+    current.totalPI += 1;
+    grouped.set(clientName, current);
+  });
+
+  return Array.from(grouped.values())
+    .sort((left, right) => right.totalAmount - left.totalAmount)
+    .slice(0, 5);
+};
+
+const getDashboardMetricSet = (pis: any[], latestLCMap: Map<string, any>) => {
+  const totalPI = pis.length;
+  const totalPIAmount = pis.reduce(
+    (sum, pi) => sum + Number(pi.totalAmount || 0),
+    0
+  );
+  const awaitingLC = pis.filter((pi) => {
+    const id = String(pi._id);
+    return (
+      (pi.status === "approved" || pi.status === "sent_to_buyer") &&
+      !latestLCMap.has(id)
+    );
+  }).length;
+  const receivedLC = latestLCMap.size;
+  const verifiedLC = Array.from(latestLCMap.values()).filter(
+    (lc) => lc.status === "verified"
+  ).length;
+  const amendmentLC = Array.from(latestLCMap.values()).filter(
+    (lc) => lc.status === "rejected"
+  ).length;
+
+  return {
+    totalPI,
+    totalPIAmount,
+    awaitingLC,
+    receivedLC,
+    verifiedLC,
+    amendmentLC,
+  };
+};
+
+export const getPIDashboardOverviewService = async (timeRange: string) => {
+  const normalizedTimeRange = timeRange || "thisMonth";
+  const { createdAtMatch, prevCreatedAtMatch } =
+    getDateRange(normalizedTimeRange);
+  const canCompare = normalizedTimeRange !== "allTime";
+
+  const [currentPIs, previousPIs] = await Promise.all([
+    ProformaInvoice.find(createdAtMatch)
+      .select(
+        "piNumber status totalAmount validityDate createdAt clientSnapshot client_id"
+      )
+      .populate("client_id", "name companyName")
+      .sort({ createdAt: -1 })
+      .lean(),
+    ProformaInvoice.find(prevCreatedAtMatch)
+      .select("status totalAmount createdAt clientSnapshot client_id")
+      .populate("client_id", "name companyName")
+      .lean(),
+  ]);
+
+  const [currentLCMap, previousLCMap] = await Promise.all([
+    getLatestLCByPIMap(currentPIs.map((pi: any) => pi._id)),
+    getLatestLCByPIMap(previousPIs.map((pi: any) => pi._id)),
+  ]);
+
+  const currentMetrics = getDashboardMetricSet(currentPIs, currentLCMap);
+  const previousMetrics = getDashboardMetricSet(previousPIs, previousLCMap);
+
+  const now = new Date();
+  const sevenDaysFromNow = new Date(
+    now.getTime() + 7 * 24 * 60 * 60 * 1000
+  );
+
+  const expiringSoon = currentPIs.filter((pi: any) => {
+    if (!pi.validityDate) {
+      return false;
+    }
+
+    const validityDate = new Date(pi.validityDate);
+    return (
+      validityDate >= now &&
+      validityDate <= sevenDaysFromNow &&
+      !["lc_received", "expired"].includes(pi.status)
+    );
+  }).length;
+
+  const draftOrApproval = currentPIs.filter((pi: any) =>
+    ["draft", "pending_approval"].includes(pi.status)
+  ).length;
+  const buyersWithActivity = new Set(
+    currentPIs.map((pi: any) => getClientDisplayName(pi))
+  ).size;
+  const verificationRate =
+    currentMetrics.receivedLC > 0
+      ? Math.round((currentMetrics.verifiedLC / currentMetrics.receivedLC) * 100)
+      : 0;
+  const amendmentRate =
+    currentMetrics.receivedLC > 0
+      ? Math.round(
+          (currentMetrics.amendmentLC / currentMetrics.receivedLC) * 100
+        )
+      : 0;
+
+  const lcStageDistribution = [
+    { key: "awaiting_lc", label: "Awaiting LC", value: currentMetrics.awaitingLC },
+    { key: "received_lc", label: "Received LC", value: currentMetrics.receivedLC },
+    { key: "verified_lc", label: "Verified LC", value: currentMetrics.verifiedLC },
+    {
+      key: "amendment_lc",
+      label: "Amendment LC",
+      value: currentMetrics.amendmentLC,
+    },
+  ];
+
+  const piStatusCounts = {
+    draft: 0,
+    pending_approval: 0,
+    approved: 0,
+    sent_to_buyer: 0,
+    lc_received: 0,
+    expired: 0,
+  };
+
+  currentPIs.forEach((pi: any) => {
+    if (pi.status in piStatusCounts) {
+      piStatusCounts[pi.status as keyof typeof piStatusCounts] += 1;
+    }
+  });
+
+  const piStatusDistribution = [
+    { key: "draft", label: "Draft", value: piStatusCounts.draft },
+    {
+      key: "pending_approval",
+      label: "Pending Approval",
+      value: piStatusCounts.pending_approval,
+    },
+    { key: "approved", label: "Approved", value: piStatusCounts.approved },
+    {
+      key: "sent_to_buyer",
+      label: "Sent to Buyer",
+      value: piStatusCounts.sent_to_buyer,
+    },
+    {
+      key: "lc_received",
+      label: "LC Received",
+      value: piStatusCounts.lc_received,
+    },
+    { key: "expired", label: "Expired", value: piStatusCounts.expired },
+  ];
+
+  const recentActivity = currentPIs.slice(0, 6).map((pi: any) => {
+    const latestLC = currentLCMap.get(String(pi._id));
+
+    return {
+      id: String(pi._id),
+      piNumber: pi.piNumber,
+      clientName: getClientDisplayName(pi),
+      totalAmount: Number(pi.totalAmount || 0),
+      status: pi.status,
+      lcStage: getLCStageLabel(pi, latestLC),
+      validityDate: pi.validityDate,
+      createdAt: pi.createdAt,
+    };
+  });
+
+  return {
+    summary: {
+      totalPI: {
+        value: currentMetrics.totalPI,
+        trend: canCompare
+          ? calculateTrend(currentMetrics.totalPI, previousMetrics.totalPI)
+          : null,
+      },
+      totalPIAmount: {
+        value: currentMetrics.totalPIAmount,
+        trend: canCompare
+          ? calculateTrend(
+              currentMetrics.totalPIAmount,
+              previousMetrics.totalPIAmount
+            )
+          : null,
+      },
+      awaitingLC: {
+        value: currentMetrics.awaitingLC,
+        trend: canCompare
+          ? calculateTrend(
+              currentMetrics.awaitingLC,
+              previousMetrics.awaitingLC
+            )
+          : null,
+      },
+      receivedLC: {
+        value: currentMetrics.receivedLC,
+        trend: canCompare
+          ? calculateTrend(
+              currentMetrics.receivedLC,
+              previousMetrics.receivedLC
+            )
+          : null,
+      },
+      verifiedLC: {
+        value: currentMetrics.verifiedLC,
+        trend: canCompare
+          ? calculateTrend(
+              currentMetrics.verifiedLC,
+              previousMetrics.verifiedLC
+            )
+          : null,
+      },
+      amendmentLC: {
+        value: currentMetrics.amendmentLC,
+        trend: canCompare
+          ? calculateTrend(
+              currentMetrics.amendmentLC,
+              previousMetrics.amendmentLC
+            )
+          : null,
+      },
+    },
+    health: {
+      expiringSoon,
+      draftOrApproval,
+      buyersWithActivity,
+      verificationRate,
+      amendmentRate,
+    },
+    lcStageDistribution,
+    piStatusDistribution,
+    timeline: buildTimeline(currentPIs, normalizedTimeRange),
+    topClients: buildTopClients(currentPIs),
+    recentActivity,
+  };
 };
 
 // GET DASHBOARD KPIS

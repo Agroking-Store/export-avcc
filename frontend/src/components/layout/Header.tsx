@@ -49,6 +49,29 @@ const idLabelCache: Record<string, string> = {};
 const isMongoId = (segment: string) =>
   /^[a-f\d]{24}$/i.test(segment) && isNaN(Number(segment));
 
+const formatBreadcrumbLabel = (segment: string, resolvedLabel?: string) => {
+  if (resolvedLabel && resolvedLabel.trim()) {
+    return resolvedLabel.length > 24
+      ? `${resolvedLabel.slice(0, 21)}...`
+      : resolvedLabel;
+  }
+
+  if (isMongoId(segment)) {
+    return `ID ${segment.slice(-6)}`;
+  }
+
+  const pretty = segment
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  if (pretty.length > 24 && /[\d_]/.test(segment)) {
+    return `${pretty.slice(0, 21)}...`;
+  }
+
+  return pretty;
+};
+
 /**
  * Resolves a MongoDB ObjectId to a human-readable label by checking the
  * preceding path segment to determine which API to call.
@@ -169,19 +192,10 @@ const Header: React.FC = () => {
       currentPath += `/${segment}`;
       const isLast = index === pathSegments.length - 1;
 
-      // Human-readable label: resolved API label for IDs, capitalised words otherwise
-      let displayName: string;
-      if (isMongoId(segment)) {
-        displayName =
-          resolvedLabels[segment] ||
-          idLabelCache[segment] ||
-          `${segment.slice(0, 6)}…`;
-      } else {
-        displayName = segment
-          .split("-")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
-      }
+      const displayName = formatBreadcrumbLabel(
+        segment,
+        resolvedLabels[segment] || idLabelCache[segment]
+      );
 
       const icon = moduleIcons[segment] || <Folders size={16} />;
       const showIcon = !isMongoId(segment);
@@ -190,7 +204,7 @@ const Header: React.FC = () => {
         <React.Fragment key={currentPath}>
           <BreadcrumbItem>
             {isLast ? (
-              <BreadcrumbPage className="px-2 py-1 rounded-md font-semibold text-gray-900 dark:text-white cursor-default flex items-center gap-1">
+              <BreadcrumbPage className="max-w-[220px] truncate px-2 py-1 rounded-md font-semibold text-gray-900 dark:text-white cursor-default flex items-center gap-1">
                 {showIcon && icon}
                 {displayName}
               </BreadcrumbPage>
@@ -198,7 +212,7 @@ const Header: React.FC = () => {
               <BreadcrumbLink asChild>
                 <Link
                   to={currentPath}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
+                  className="max-w-[220px] truncate flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
                 >
                   {showIcon && icon}
                   {displayName}
@@ -229,7 +243,7 @@ const Header: React.FC = () => {
         </div>
         <div className="flex-1 min-w-0">
           <Breadcrumb className="py-2 px-2 min-w-0 text-base">
-            <BreadcrumbList className="flex items-center text-lg space-x-2 flex-nowrap overflow-x-auto list-none">
+            <BreadcrumbList className="flex items-center text-lg space-x-2 flex-nowrap overflow-x-auto list-none max-w-[58vw]">
               {generateBreadcrumbs(location.pathname)}
             </BreadcrumbList>
           </Breadcrumb>

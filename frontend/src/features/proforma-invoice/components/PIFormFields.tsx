@@ -65,6 +65,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
 }) => {
   const inputClass =
     "w-full h-12 px-4 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-base shadow-sm";
+  const lockedInputClass =
+    "w-full h-12 px-4 rounded-md border border-gray-200 bg-gray-50 text-gray-600 placeholder-gray-400 shadow-sm cursor-not-allowed";
   const getInputClass = (errKey?: string) =>
     `w-full h-12 px-4 bg-white border ${
       errKey && errors[errKey]
@@ -85,6 +87,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   // Use snapshot for display if available, otherwise fallback to initial selected
   const displayClient = form.clientSnapshot || initialSelectedClient;
   const displayCompany = form.companySnapshot || initialSelectedCompany;
+  const isClientAutofilled = !!form.client_id;
+  const isCompanyAutofilled = !!form.company_id;
 
   return (
     <>
@@ -132,10 +136,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.companyName || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("companyName", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -143,10 +148,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.name || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("name", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -154,13 +160,14 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.address?.houseBuilding || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange(
                   "address.houseBuilding",
                   e.target.value,
                 )
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -168,10 +175,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.address?.streetArea || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("address.streetArea", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -179,10 +187,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.address?.cityTown || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("address.cityTown", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -190,10 +199,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.address?.state || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("address.state", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -201,10 +211,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.email || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("email", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -212,10 +223,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.address?.pincode || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("address.pincode", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -223,10 +235,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayClient?.address?.country || ""}
+              readOnly={isClientAutofilled}
               onChange={(e) =>
                 handleClientSnapshotChange("address.country", e.target.value)
               }
-              className={inputClass}
+              className={isClientAutofilled ? lockedInputClass : inputClass}
             />
           </div>
         </div>
@@ -706,8 +719,6 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
 
       {divider}
 
-      {divider}
-
       {/* EXPORTER / COMPANY DATA */}
       <div>
         <h3 className={sectionTitleClass}>Company Details (Exporter)</h3>
@@ -744,10 +755,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.name || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("name", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -755,10 +767,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.gstNumber || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("gstNumber", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -766,13 +779,14 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.address?.houseBuilding || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "address.houseBuilding",
                   e.target.value,
                 )
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -780,13 +794,14 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.address?.streetArea || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "address.streetArea",
                   e.target.value,
                 )
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -794,10 +809,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.address?.cityTown || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.cityTown", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -805,10 +821,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.address?.state || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.state", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -816,10 +833,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.address?.pincode || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.pincode", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -827,10 +845,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.email || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("email", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
           <div>
@@ -838,10 +857,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             {/* Read-only display */}
             <input
               value={displayCompany?.address?.country || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.country", e.target.value)
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
         </div>
@@ -857,43 +877,42 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             <input
               placeholder="Bank Name"
               value={displayCompany?.bankDetails?.bankName || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.bankName",
                   e.target.value,
                 )
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
             <input
               placeholder="Account No"
               value={displayCompany?.bankDetails?.accountNo || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.accountNo",
                   e.target.value,
                 )
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
             <input
               placeholder="Branch / IFSC"
               value={displayCompany?.bankDetails?.branchIfsc || ""} // Use displayCompany
+              readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.branchIfsc",
                   e.target.value,
                 )
               }
-              className={inputClass}
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
             />
           </div>
         </div>
       </div>
-
-      {divider}
-
-      {divider}
     </>
   );
 };

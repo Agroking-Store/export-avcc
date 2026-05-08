@@ -8,6 +8,7 @@ import {
   getSuggestedNextPiNumberService, // Import the new service
   getOrdersWithPIStatusService,
   updatePIStatusService,
+  getPIDashboardOverviewService,
   getDashboardKPIsService,
   getPIStatusDistributionService,
   getMonthlyPIValueTrendService,
@@ -76,6 +77,19 @@ export const getDashboardKPIs = async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({
       message: "Failed to fetch dashboard KPIs",
+      error: error.message,
+    });
+  }
+};
+
+export const getPIDashboardOverview = async (req: Request, res: Response) => {
+  try {
+    const { timeRange } = req.query;
+    const overview = await getPIDashboardOverviewService(timeRange as string);
+    res.status(200).json(overview);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Failed to fetch PI dashboard overview",
       error: error.message,
     });
   }

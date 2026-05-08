@@ -1,6 +1,7 @@
 export type VehicleLineItem = {
   vehicle_id: string;
   booking_id?: string;
+  variant?: string;
   model: string;
   color: string;
   engineNo: string;
@@ -221,4 +222,57 @@ export interface OrderDetailData {
   pendingVehicles: number;
   overallPIStatus: string;
   vehicleTracking: VehicleTracking[];
+}
+
+export interface DashboardMetric {
+  value: number;
+  trend: number | null;
+}
+
+export interface PIDashboardOverview {
+  summary: {
+    totalPI: DashboardMetric;
+    totalPIAmount: DashboardMetric;
+    awaitingLC: DashboardMetric;
+    receivedLC: DashboardMetric;
+    verifiedLC: DashboardMetric;
+    amendmentLC: DashboardMetric;
+  };
+  health: {
+    expiringSoon: number;
+    draftOrApproval: number;
+    buyersWithActivity: number;
+    verificationRate: number;
+    amendmentRate: number;
+  };
+  lcStageDistribution: Array<{
+    key: string;
+    label: string;
+    value: number;
+  }>;
+  piStatusDistribution: Array<{
+    key: string;
+    label: string;
+    value: number;
+  }>;
+  timeline: Array<{
+    label: string;
+    totalAmount: number;
+    totalPI: number;
+  }>;
+  topClients: Array<{
+    clientName: string;
+    totalAmount: number;
+    totalPI: number;
+  }>;
+  recentActivity: Array<{
+    id: string;
+    piNumber: string;
+    clientName: string;
+    totalAmount: number;
+    status: string;
+    lcStage: string;
+    validityDate?: string;
+    createdAt: string;
+  }>;
 }
