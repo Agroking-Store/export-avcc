@@ -579,86 +579,105 @@ const PIDetails = () => {
   //   finally { setViewingLC(false); }
   // };
 
-  const handleViewLC = async () => {
-    try {
-      setViewingLC(true);
-      const token = getToken();
+  // const handleViewLC = async () => {
+  //   try {
+  //     setViewingLC(true);
+  //     const token = getToken();
 
-      const res = await axios.get(
-        `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`,
-        {
-          responseType: "blob",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
-      );
+  //     const res = await axios.get(
+  //       `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`,
+  //       {
+  //         responseType: "blob",
+  //         headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //       },
+  //     );
 
-      // Check if we actually got a PDF
-      if (res.data.type !== "application/pdf" && res.data.size < 100) {
-        console.error("Received non-PDF or empty response");
-        toast.error("Invalid PDF response from server");
-        return;
-      }
+  //     // Check if we actually got a PDF
+  //     if (res.data.type !== "application/pdf" && res.data.size < 100) {
+  //       console.error("Received non-PDF or empty response");
+  //       toast.error("Invalid PDF response from server");
+  //       return;
+  //     }
 
-      const blobUrl = URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" }),
-      );
+  //     const blobUrl = URL.createObjectURL(
+  //       new Blob([res.data], { type: "application/pdf" }),
+  //     );
 
-      const newTab = window.open(blobUrl, "_blank");
-      if (!newTab) {
-        toast.warning("Popup blocked. PDF will download instead.");
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = "letter-of-credit.pdf"; // optional
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
+  //     const newTab = window.open(blobUrl, "_blank");
+  //     if (!newTab) {
+  //       toast.warning("Popup blocked. PDF will download instead.");
+  //       const a = document.createElement("a");
+  //       a.href = blobUrl;
+  //       a.download = "letter-of-credit.pdf"; // optional
+  //       document.body.appendChild(a);
+  //       a.click();
+  //       a.remove();
+  //     }
 
-      // Optional: revoke URL after some time
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-    } catch (err: any) {
-      console.error("View LC Error:", err);
-      console.error("Response data:", err.response?.data);
-      console.error("Status:", err.response?.status);
+  //     // Optional: revoke URL after some time
+  //     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  //   } catch (err: any) {
+  //     console.error("View LC Error:", err);
+  //     console.error("Response data:", err.response?.data);
+  //     console.error("Status:", err.response?.status);
 
-      if (err.response?.status === 404) {
-        toast.error("Letter of Credit file not found");
-      } else if (err.response?.status === 401 || err.response?.status === 403) {
-        toast.error("Authentication failed. Please login again.");
-      } else {
-        toast.error(
-          err.response?.data?.message || "Failed to open Letter of Credit",
-        );
-      }
-    } finally {
-      setViewingLC(false);
-    }
+  //     if (err.response?.status === 404) {
+  //       toast.error("Letter of Credit file not found");
+  //     } else if (err.response?.status === 401 || err.response?.status === 403) {
+  //       toast.error("Authentication failed. Please login again.");
+  //     } else {
+  //       toast.error(
+  //         err.response?.data?.message || "Failed to open Letter of Credit",
+  //       );
+  //     }
+  //   } finally {
+  //     setViewingLC(false);
+  //   }
+  // };
+
+  const handleViewLC = () => {
+    if (!id) return;
+    const url = piApi.getLCViewUrl(id);
+    window.open(url, "_blank"); // Direct Port 5000 link
   };
-  const handlePdfAction = async (action: "view" | "download") => {
-    try {
-      const res = await axios.get(
-        `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
-        {
-          responseType: "blob",
-          headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
-        },
-      );
-      const url = URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" }),
-      );
-      if (action === "view") {
-        window.open(url, "_blank");
-      } else {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${data?.piNumber || "proforma-invoice"}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast.success("PDF downloaded");
-      }
-    } catch {
-      toast.error("Failed to download PDF");
+
+  // const handlePdfAction = async (action: "view" | "download") => {
+  //   try {
+  //     const res = await axios.get(
+  //       `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
+  //       {
+  //         responseType: "blob",
+  //         headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+  //       },
+  //     );
+  //     const url = URL.createObjectURL(
+  //       new Blob([res.data], { type: "application/pdf" }),
+  //     );
+  //     if (action === "view") {
+  //       window.open(url, "_blank");
+  //     } else {
+  //       const a = document.createElement("a");
+  //       a.href = url;
+  //       a.download = `${data?.piNumber || "proforma-invoice"}.pdf`;
+  //       document.body.appendChild(a);
+  //       a.click();
+  //       a.remove();
+  //       toast.success("PDF downloaded");
+  //     }
+  //   } catch {
+  //     toast.error("Failed to download PDF");
+  //   }
+  // };
+
+  const handlePdfAction = (action: "view" | "download") => {
+    if (!id) return;
+    const url = piApi.getPIViewUrl(id, action === "download");
+
+    if (action === "view") {
+      window.open(url, "_blank"); // Direct Port 5000 link
+    } else {
+      // For direct download
+      window.location.href = url;
     }
   };
 

@@ -237,32 +237,51 @@ const PIOrderDetail = () => {
           );
         },
       },
+      // {
+      //   id: "associatedPIs",
+      //   header: "Associated PI(s)",
+      //   cell: ({ row }) => (
+      //     <div className="flex flex-wrap gap-1 min-w-30">
+      //       {row.original.associatedPIs.length > 0 ? (
+      //         row.original.associatedPIs.map((pi) => (
+      //           <TooltipProvider key={pi.piId}>
+      //             <Tooltip>
+      //               <TooltipTrigger asChild>
+      //                 <Button
+      //                   variant="outline"
+      //                   size="sm"
+      //                   className="h-7 px-2 text-xs"
+      //                   onClick={() => navigate(`/proforma-invoice/${pi.piId}`)}
+      //                 >
+      //                   {pi.piNumber}
+      //                 </Button>
+      //               </TooltipTrigger>
+      //               <TooltipContent>View PI {pi.piNumber}</TooltipContent>
+      //             </Tooltip>
+      //           </TooltipProvider>
+      //         ))
+      //       ) : (
+      //         <span className="text-gray-500">-</span>
+      //       )}
+      //     </div>
+      //   ),
+      // },
       {
         id: "associatedPIs",
         header: "Associated PI(s)",
         cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1 min-w-30">
-            {row.original.associatedPIs.length > 0 ? (
-              row.original.associatedPIs.map((pi) => (
-                <TooltipProvider key={pi.piId}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => navigate(`/proforma-invoice/${pi.piId}`)}
-                      >
-                        {pi.piNumber}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>View PI {pi.piNumber}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))
-            ) : (
-              <span className="text-gray-500">-</span>
-            )}
+          <div className="flex flex-wrap gap-1">
+            {row.original.associatedPIs.map((pi) => (
+              <Button
+                key={pi.piId}
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => handleViewPI(pi.piId)}
+              >
+                {pi.piNumber}
+              </Button>
+            ))}
           </div>
         ),
       },
@@ -392,23 +411,26 @@ const PIOrderDetail = () => {
                         variant="outline"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => {
-                          // INSTEAD OF NAVIGATE:
-                          if (selectedPI) {
-                            const modal = (
-                              <VehiclePIViewModal
-                                isOpen={isViewModalOpen}
-                                onClose={() => {
-                                  setIsViewModalOpen(false);
-                                  setSelectedPI(null);
-                                }}
-                                piData={selectedPI}
-                              />
-                            );
-                            setIsViewModalOpen(true);
-                            return modal; // Return the modal component
-                          }
-                        }}
+                        // onClick={() => {
+                        //   // INSTEAD OF NAVIGATE:
+                        //   if (selectedPI) {
+                        //     const modal = (
+                        //       <VehiclePIViewModal
+                        //         isOpen={isViewModalOpen}
+                        //         onClose={() => {
+                        //           setIsViewModalOpen(false);
+                        //           setSelectedPI(null);
+                        //         }}
+                        //         piData={selectedPI}
+                        //       />
+                        //     );
+                        //     setIsViewModalOpen(true);
+                        //     return modal; // Return the modal component
+                        //   }
+                        // }}
+                        onClick={() =>
+                          handleViewPI(row.original.associatedPIs[0].piId)
+                        }
                       >
                         <Eye className="h-4 w-4 text-slate-600" />
                       </Button>
@@ -550,13 +572,28 @@ const PIOrderDetail = () => {
     onColumnVisibilityChange: setColumnVisibility, // Add this
   });
 
+  // const handleViewPI = async (piId: string) => {
+  //   try {
+  //     // 1. Fetch PI JSON details only
+  //     const data = await piApi.getPIById(piId);
+
+  //     // 2. Set data and open modal (The modal will handle the PDF URL)
+  //     setSelectedPI(data);
+  //     setIsViewModalOpen(true);
+  //   } catch (err) {
+  //     toast.error("Failed to open PI viewer");
+  //   }
+  // };
+
   const handleViewPI = async (piId: string) => {
     try {
-      // 1. Fetch the full PI object (which now contains the 'documents' field)
+      // 1. Fetch PI data (JSON only) to get the ID and piNumber
       const data = await piApi.getPIById(piId);
 
-      // 2. Set it to state to open the modal
+      // 2. Set the PI data to state
       setSelectedPI(data);
+
+      // 3. Open the Modal
       setIsViewModalOpen(true);
     } catch (err) {
       toast.error("Failed to fetch PI details");

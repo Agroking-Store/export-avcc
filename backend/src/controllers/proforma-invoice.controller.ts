@@ -191,8 +191,6 @@ export const getOrdersWithPIStatus = async (req: Request, res: Response) => {
 //   }
 // };
 
-// backend/src/controllers/proforma-invoice.controller.ts
-
 export const getPIById = async (req: Request, res: Response) => {
   try {
     const pi = await getPIByIdService(req.params.id as string);
@@ -200,18 +198,22 @@ export const getPIById = async (req: Request, res: Response) => {
 
     const piData = pi.toObject();
 
-    const responseWithDocuments = {
+    const absoluteDiskPath = piData.pdfPath
+      ? path.resolve(process.cwd(), piData.pdfPath)
+      : "";
+
+    res.json({
       ...piData,
       assignedClientSnapshot: piData.clientSnapshot,
-      assignedCompanySnapshot: piData.companySnapshot,
+      assignedDealerSnapshot: piData.companySnapshot,
       documents: {
-        proformaInvoice: `${piData._id}/pdf`,
+        proformaInvoice: absoluteDiskPath,
       },
-    };
-
-    res.json(responseWithDocuments);
+      orderId: piData.order_id,
+      vehicleId: piData.vehicleDetails?.[0]?.vehicle_id,
+    });
   } catch (error: any) {
-    res.status(404).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -327,13 +329,11 @@ export const getLCFile = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "File not found on server disk" });
     }
 
-    // Important headers for reliable PDF viewing
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
       'inline; filename="letter-of-credit.pdf"',
     );
-    // Optional: add cache control
     res.setHeader("Cache-Control", "no-cache");
 
     res.sendFile(absolutePath);

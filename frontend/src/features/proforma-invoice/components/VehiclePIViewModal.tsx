@@ -16,19 +16,33 @@ const VehiclePIViewModal = ({ isOpen, onClose, piData }: Props) => {
     localStorage.getItem("accessToken") ||
     localStorage.getItem("auth_token");
 
-  const getFileUrl = (download = false) => {
-    const cleanBaseUrl = apiConfig.baseURL;
+  // const getFileUrl = (download = false) => {
+  //   const cleanBaseUrl = apiConfig.baseURL;
 
-    const documentPath = piData?.documents?.proformaInvoice;
-    if (!documentPath) return "#";
+  //   const documentPath = piData?.documents?.proformaInvoice;
+  //   if (!documentPath) return "#";
 
-    const baseUrl = `${cleanBaseUrl}${documentPath}`;
+  //   const baseUrl = `${cleanBaseUrl}${documentPath}`;
+  //   const params = new URLSearchParams();
+
+  //   if (download) params.append("download", "true");
+  //   if (token) params.append("token", token);
+
+  //   return `${cleanBaseUrl}${documentPath}`;
+  // };
+
+  const getFileUrl = (isDownload = false) => {
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("accessToken");
+
+    // Direct path to PORT 5000 (Backend)
+    const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${piData._id}/pdf`;
+    console.log("Generated PDF URL:", baseUrl); // Debug log to verify URL generation
     const params = new URLSearchParams();
-
-    if (download) params.append("download", "true");
+    if (isDownload) params.append("download", "true");
     if (token) params.append("token", token);
 
-    return `${cleanBaseUrl}${documentPath}`;
+    return `${baseUrl}?${params.toString()}`;
   };
 
   return (

@@ -19,9 +19,7 @@ const getAuthToken = () => {
 };
 
 const authHeaders = () => ({
-  headers: getAuthToken()
-    ? { Authorization: `Bearer ${getAuthToken()}` }
-    : {},
+  headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {},
 });
 
 export const piApi = {
@@ -48,26 +46,23 @@ export const piApi = {
     return res.data?.data || res.data;
   },
 
-  getBookedVehicleOrders: async (
-  clientId: string,
-  search: string = ""
-) => {
-  const res = await axios.get(
-    `${apiConfig.baseURL}/proforma-invoices/booked-vehicle-orders`,
-    {
-  params: { clientId, search },
-  ...authHeaders(),
-}
-  );
+  getBookedVehicleOrders: async (clientId: string, search: string = "") => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/proforma-invoices/booked-vehicle-orders`,
+      {
+        params: { clientId, search },
+        ...authHeaders(),
+      },
+    );
 
-  return res.data;
-},
+    return res.data;
+  },
 
   getPIById: async (id: string) => {
     const res = await axios.get(
-  `${apiConfig.baseURL}/proforma-invoices/${id}`,
-  authHeaders()
-);
+      `${apiConfig.baseURL}/proforma-invoices/${id}`,
+      authHeaders(),
+    );
     return res.data;
   },
 
@@ -81,17 +76,17 @@ export const piApi = {
   ): Promise<OrderDetailData> => {
     const res = await axios.get(
       `${apiConfig.baseURL}/proforma-invoices/orders/${orderId}/details`,
-      authHeaders()
+      authHeaders(),
     );
     return res.data;
   },
 
   createPI: async (payload: Partial<PIForm> & { totalAmount: number }) => {
     const res = await axios.post(
-  `${apiConfig.baseURL}/proforma-invoices`,
-  payload,
-  authHeaders()
-);
+      `${apiConfig.baseURL}/proforma-invoices`,
+      payload,
+      authHeaders(),
+    );
     return res.data;
   },
 
@@ -100,10 +95,10 @@ export const piApi = {
     payload: Partial<PIForm> & { totalAmount: number },
   ) => {
     const res = await axios.put(
-  `${apiConfig.baseURL}/proforma-invoices/${id}`,
-  payload,
-  authHeaders()
-);
+      `${apiConfig.baseURL}/proforma-invoices/${id}`,
+      payload,
+      authHeaders(),
+    );
     return res.data;
   },
 
@@ -184,7 +179,7 @@ export const piApi = {
     return res.data;
   },
 
-  uploadLC: async (id: string, file: File, config?: any ) => {
+  uploadLC: async (id: string, file: File, config?: any) => {
     const formData = new FormData();
     formData.append("lcFile", file);
 
@@ -199,5 +194,24 @@ export const piApi = {
       },
     );
     return res.data;
+  },
+
+  // Inside piApi object in frontend/src/features/proforma-invoice/components/piApi.ts
+
+  getPIViewUrl: (id: string, download = false) => {
+    const token = getAuthToken();
+    const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`;
+    const params = new URLSearchParams();
+    if (download) params.append("download", "true");
+    if (token) params.append("token", token);
+    return `${baseUrl}?${params.toString()}`;
+  },
+
+  getLCViewUrl: (id: string) => {
+    const token = getAuthToken();
+    const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`;
+    const params = new URLSearchParams();
+    if (token) params.append("token", token);
+    return `${baseUrl}?${params.toString()}`;
   },
 };
