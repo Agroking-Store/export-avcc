@@ -23,12 +23,12 @@ const getBrowserExecutablePath = () => {
   return candidates.find((candidate) => fs.existsSync(candidate));
 };
 
-  const getBrowser = async (): Promise<Browser> => {
+const getBrowser = async (): Promise<Browser> => {
   if (!browserInstance) {
     const executablePath = getBrowserExecutablePath();
 
     browserInstance = await puppeteer.launch({
-      headless: "new",
+      // headless: "new",
       executablePath,
       args: [
         "--no-sandbox",
@@ -64,7 +64,11 @@ export const renderInvoicePDF = async ({
   data,
   invoiceNumber: _invoiceNumber,
 }: {
-  templateName: "usdInvoice" | "commercialInvoice" | "inrInvoice" | "packingList";
+  templateName:
+    | "usdInvoice"
+    | "commercialInvoice"
+    | "inrInvoice"
+    | "packingList";
   data: Record<string, any>;
   invoiceNumber: string;
 }): Promise<Buffer> => {
