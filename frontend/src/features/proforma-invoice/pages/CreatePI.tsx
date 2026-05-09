@@ -76,27 +76,27 @@ const CreatePI = () => {
 
   // Fetch orders for the combobox
   useEffect(() => {
-  const fetchBookings = async () => {
-    try {
-      if (!form.client_id) {
+    const fetchBookings = async () => {
+      try {
+        if (!form.client_id) {
+          setBookings([]);
+          return;
+        }
+
+        const data = await piApi.getBookedVehicleOrders(
+          form.client_id,
+          debouncedBookingSearch,
+        );
+
+        setBookings(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch bookings:", err);
         setBookings([]);
-        return;
       }
+    };
 
-      const data = await piApi.getBookedVehicleOrders(
-        form.client_id,
-        debouncedBookingSearch
-      );
-
-      setBookings(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Failed to fetch bookings:", err);
-      setBookings([]);
-    }
-  };
-
-  fetchBookings();
-}, [form.client_id, debouncedBookingSearch]);
+    fetchBookings();
+  }, [form.client_id, debouncedBookingSearch]);
 
   // Fetch suggested PI number for new PI creation
   useEffect(() => {
@@ -105,7 +105,7 @@ const CreatePI = () => {
       const fetchSuggestedPiNumber = async () => {
         try {
           const suggestedPi = await piApi.getSuggestedNextPiNumber(
-            form.company_id
+            form.company_id,
           );
           setForm((prev) => ({ ...prev, piNumber: suggestedPi }));
         } catch (error) {
@@ -221,7 +221,7 @@ const CreatePI = () => {
   const handleVehicleChange = (
     index: number,
     field: keyof VehicleLineItem,
-    value: any
+    value: any,
   ) => {
     const updated = [...form.vehicleDetails];
     (updated[index] as any)[field] = value;
@@ -332,56 +332,57 @@ const CreatePI = () => {
   // Fetch Order Logic
   const handleSelectBooking = (booking: any) => {
     console.log("BOOKING DATA =", booking);
-  setSelectedBooking(booking);
+    setSelectedBooking(booking);
 
-  const vehicle = booking.vehicleId || {};
+    const vehicle = booking.vehicleId || {};
 
-const newVehicle = {
-  booking_id: booking._id,
-  vehicle_id: vehicle._id || "",
-  variant: vehicle.variant || "",
+    const newVehicle = {
+      booking_id: booking._id,
+      vehicle_id: vehicle._id || "",
+      variant: vehicle.variant || "",
 
-  model: `${vehicle.brandName || ""} ${vehicle.modelName || ""} ${vehicle.variant || ""}`.trim(),
+      model:
+        `${vehicle.brandName || ""} ${vehicle.modelName || ""} ${vehicle.variant || ""}`.trim(),
 
-  color: vehicle.color || "",
+      color: vehicle.color || "",
 
-  engineNo: booking.engineNumber || "",
-  chassisNo: booking.chassisNumber || "",
+      engineNo: booking.engineNumber || "",
+      chassisNo: booking.chassisNumber || "",
 
-  quantity: 1,
+      quantity: 1,
 
-  hsn: booking.hsnCode || "",
+      hsn: booking.hsnCode || "",
 
-  fob: vehicle.fobAmount || 0,
-  freight: vehicle.freight || 0,
+      fob: vehicle.fobAmount || 0,
+      freight: vehicle.freight || 0,
 
-  yom: booking.yom || "",
-  fuelType: booking.fuelType || "",
-  countryOfOrigin: booking.countryOfOrigin || "",
-  engineCapacity: booking.engineCapacity || "",
+      yom: booking.yom || "",
+      fuelType: booking.fuelType || "",
+      countryOfOrigin: booking.countryOfOrigin || "",
+      engineCapacity: booking.engineCapacity || "",
 
-  selected: true,
-};
+      selected: true,
+    };
 
-  setForm((prev) => {
-  const alreadyAdded =
-    prev.vehicleBookingIds?.includes(booking._id) ?? false;
+    setForm((prev) => {
+      const alreadyAdded =
+        prev.vehicleBookingIds?.includes(booking._id) ?? false;
 
-  if (alreadyAdded) {
-    toast.info("Vehicle already added");
-    return prev;
-  }
+      if (alreadyAdded) {
+        toast.info("Vehicle already added");
+        return prev;
+      }
 
-  return {
-    ...prev,
-    vehicleBookingIds: [...(prev.vehicleBookingIds || []), booking._id],
-    vehicleDetails: [...prev.vehicleDetails, newVehicle],
+      return {
+        ...prev,
+        vehicleBookingIds: [...(prev.vehicleBookingIds || []), booking._id],
+        vehicleDetails: [...prev.vehicleDetails, newVehicle],
+      };
+    });
+
+    setSelectedBooking(null);
+    toast.success("Vehicle added to invoice");
   };
-});
-
-  setSelectedBooking(null);
-toast.success("Vehicle added to invoice");
-};
 
   const toggleRow = (index: number) => {
     setExpandedRows((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -389,7 +390,7 @@ toast.success("Vehicle added to invoice");
 
   const totalAmount = form.vehicleDetails.reduce(
     (sum, v) => (v.selected !== false ? sum + getAmount(v) : sum),
-    0
+    0,
   );
 
   const validateForm = () => {
@@ -419,7 +420,7 @@ toast.success("Vehicle added to invoice");
     };
 
     payload.vehicleBookingIds =
-    payload.vehicleBookingIds?.filter(Boolean) || [];
+      payload.vehicleBookingIds?.filter(Boolean) || [];
 
     payload.vehicleDetails = payload.vehicleDetails
       .filter((v: any) => v.selected !== false)
@@ -450,35 +451,43 @@ toast.success("Vehicle added to invoice");
     }
   };
 
-  const handlePreview = async () => {
+  const handlePreview = () => {
     if (!id) {
       toast.info("Please save the invoice first to enable preview.");
       return;
     }
-    try {
-      setPreviewLoading(true);
-      const res = await piApi.previewPDF(id);
-
-      const url = window.URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" })
-      );
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error("PDF Preview error", error);
-      toast.error("Failed to generate PDF preview");
-    } finally {
-      setPreviewLoading(false);
-    }
+    const url = piApi.getPIViewUrl(id, false);
+    window.open(url, "_blank"); // Direct Port 5000 link
   };
+  // const handlePreview = async () => {
+  //   if (!id) {
+  //     toast.info("Please save the invoice first to enable preview.");
+  //     return;
+  //   }
+  //   try {
+  //     setPreviewLoading(true);
+  //     const res = await piApi.previewPDF(id);
+
+  //     const url = window.URL.createObjectURL(
+  //       new Blob([res.data], { type: "application/pdf" })
+  //     );
+  //     window.open(url, "_blank");
+  //   } catch (error) {
+  //     console.error("PDF Preview error", error);
+  //     toast.error("Failed to generate PDF preview");
+  //   } finally {
+  //     setPreviewLoading(false);
+  //   }
+  // };
 
   const bookingsWithDisplay = bookings.map((b, index) => ({
-  ...b,
-  serialNumber: index + 1,
-  displayName:
-  `${b.orderId?.orderNumber || "-"} | ` +
-  `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} | ` +
-  `${b.chassisNumber || "No Chassis"}`
-}));
+    ...b,
+    serialNumber: index + 1,
+    displayName:
+      `${b.orderId?.orderNumber || "-"} | ` +
+      `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} | ` +
+      `${b.chassisNumber || "No Chassis"}`,
+  }));
 
   return (
     <div className="bg-white text-gray-900">
@@ -519,8 +528,8 @@ toast.success("Vehicle added to invoice");
                 {loading
                   ? "Processing..."
                   : id
-                  ? "Save Changes"
-                  : "Generate PI"}
+                    ? "Save Changes"
+                    : "Generate PI"}
               </Button>
             </div>
           </div>

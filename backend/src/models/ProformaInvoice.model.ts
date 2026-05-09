@@ -5,7 +5,7 @@ export interface IProformaInvoice extends Document {
 
   order_id?: mongoose.Types.ObjectId; // legacy old order
   vehicleBookingIds?: mongoose.Types.ObjectId[];
-  
+
   client_id: mongoose.Types.ObjectId; // Buyer
   company_id?: mongoose.Types.ObjectId; // Exporter details (Company)
 
@@ -88,6 +88,7 @@ export interface IProformaInvoice extends Document {
   __v?: number; // Mongoose version key
 
   createdAt: Date;
+  pdfPath?: string;
   updatedAt: Date;
 }
 
@@ -237,6 +238,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       ],
       default: "draft",
     },
+    pdfPath: { type: String },
   },
   {
     timestamps: true,
@@ -246,15 +248,15 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Index
 proformaInvoiceSchema.index({ client_id: 1 }); // Existing index
-proformaInvoiceSchema.index({ order_id: 1 }); 
-proformaInvoiceSchema.index({ vehicleBookingIds: 1 });// New index for order_id
+proformaInvoiceSchema.index({ order_id: 1 });
+proformaInvoiceSchema.index({ vehicleBookingIds: 1 }); // New index for order_id
 
 export default mongoose.model<IProformaInvoice>(
   "ProformaInvoice",
-  proformaInvoiceSchema
+  proformaInvoiceSchema,
 );

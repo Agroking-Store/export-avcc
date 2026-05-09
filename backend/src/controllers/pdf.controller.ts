@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { generateProformaInvoicePDF } from "../services/pdf.service";
 import { getPIByIdService } from "../services/proforma-invoice.service";
 import { VehicleBooking } from "../models/VehicleBooking.model";
+import path from "path";
+import fs from "fs";
 
 const formatDate = (dateString: string | Date) => {
   const d = new Date(dateString);
@@ -175,146 +177,59 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const pi = await getPIByIdService(id as string);
-    const invoiceData = preparePIData(pi);
-    const pdfBuffer = await generateProformaInvoicePDF(invoiceData);
-    const isDownload = req.query.download === "true";
 
-    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     res.setHeader("Content-Type", "application/pdf");
-    if (isDownload) {
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="PI-${pi.piNumber}.pdf"`,
-      );
-    } else {
-      res.setHeader("Content-Disposition", "inline");
+
+    if (pi.pdfPath) {
+      const absolutePath = path.resolve(process.cwd(), pi.pdfPath);
+      if (fs.existsSync(absolutePath)) {
+        return res.sendFile(absolutePath);
+      }
     }
 
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${pi.piNumber}.pdf"`,
-    );
+    const invoiceData = preparePIData(pi);
+    const pdfBuffer = await generateProformaInvoicePDF(invoiceData);
     res.end(pdfBuffer);
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to generate PDF" });
+    res.status(500).send("Error generating PDF");
   }
 };
 
 // export const downloadProformaInvoice = async (req: Request, res: Response) => {
 //   try {
 //     const { id } = req.params;
-//     if (!id) {
-//       res.status(400).json({ success: false, message: "PI ID is required" });
-//       return;
+//     const pi = await getPIByIdService(id as string);
+
+//     if (!pi) return res.status(404).json({ message: "PI not found" });
+
+//     // 1. Check if a physical file path exists in DB and on Disk
+//     if (pi.pdfPath) {
+//       const absolutePath = path.join(process.cwd(), pi.pdfPath);
+
+//       if (fs.existsSync(absolutePath)) {
+//         const isDownload = req.query.download === "true";
+
+//         res.setHeader("Content-Type", "application/pdf");
+//         if (isDownload) {
+//           res.setHeader(
+//             "Content-Disposition",
+//             `attachment; filename="${pi.piNumber}.pdf"`,
+//           );
+//         } else {
+//           res.setHeader("Content-Disposition", "inline");
+//         }
+
+//         return res.sendFile(absolutePath);
+//       }
 //     }
 
-//     // 1. Fetch PI from database
-//     const pi: any = await getPIByIdService(id as string);
-
-//     // Prioritize snapshot data if available, otherwise use populated data
-//     const clientForPdf: any = pi.clientSnapshot || pi.client_id;
-//     const companyForPdf: any = pi.companySnapshot || pi.company_id;
-
-//     // 2. Map vehicle items to HBS template format
-//     let totalQty = 0;
-//     const items = pi.vehicleDetails.map((v: any, index: number) => {
-//       totalQty += v.quantity;
-//       return {
-//         slNo: index + 1,
-//         description: v.model || "N/A",
-//         qty: v.quantity,
-//         rate: ((Number(v.fob) || 0) + (Number(v.freight) || 0)).toFixed(2),
-//         per: "No",
-//         amount: (
-//           v.quantity *
-//           ((Number(v.fob) || 0) + (Number(v.freight) || 0))
-//         ).toFixed(2),
-//         specs: {
-//           color: v.color,
-//           chassisNo: v.chassisNo,
-//           engineNo: v.engineNo,
-//           yom: v.yom,
-//           fuelType: v.fuelType,
-//           countryOfOrigin: v.countryOfOrigin,
-//           engineCapacity: v.engineCapacity
-//             ? `${v.engineCapacity}cc`
-//             : undefined,
-//           hsn: v.hsn,
-//           fob: (Number(v.fob) || 0).toFixed(2),
-//           freight: (Number(v.freight) || 0).toFixed(2),
-//         },
-//       };
-//     });
-
-//     // 3. Construct the payload matching proforma-invoice.hbs exactly
-//     const invoiceData = {
-//       invoiceNumber: pi.piNumber,
-//       date: pi.validityDate
-//         ? formatDate(pi.validityDate)
-//         : formatDate(pi.createdAt),
-//       paymentTerms: pi.paymentTerms || "As agreed",
-//       termsOfDelivery: pi.termsOfDelivery || " ",
-//       incoterm: pi.incoterm || " ",
-//       portOfLoading: pi.portOfLoading || "N/A",
-//       portOfDischarge: pi.portOfDischarge || "N/A",
-//       buyersRef: pi.buyersRef || " ",
-//       otherRef: pi.otherRef || " ",
-//       exporter: {
-//         name: companyForPdf?.name || "N/A",
-//         address: formatAddress(companyForPdf?.address) || "N/A",
-//         gstin: companyForPdf?.gstNumber || "N/A",
-//         state: companyForPdf?.address?.state || "N/A",
-//         stateCode: companyForPdf?.address?.pincode || "N/A", // Using pincode as a proxy if stateCode is not available
-//       },
-//       buyer: {
-//         name: clientForPdf?.companyName || clientForPdf?.name || " ",
-//         address:
-//           formatAddress(clientForPdf?.address) ||
-//           clientForPdf?.address ||
-//           clientForPdf?.country ||
-//           "", // Assuming client.address is a string or object
-//         state: clientForPdf?.address?.state || " ", // Assuming client.address is an object
-//       },
-//       consignee: {
-//         name: clientForPdf?.companyName || clientForPdf?.name || " ",
-//         address:
-//           formatAddress(clientForPdf?.address) || clientForPdf?.country || "",
-//         state: clientForPdf?.address?.state || " ",
-//       },
-//       dispatchedThrough: pi.dispatchedThrough || " ",
-//       destination: pi.destination || clientForPdf?.country || " ",
-//       items,
-//       totalQty,
-//       totalAmount: pi.totalAmount.toLocaleString("en-US", {
-//         minimumFractionDigits: 2,
-//         maximumFractionDigits: 2,
-//       }),
-//       amountInWords: pi.amountInWords || "N/A",
-//       bankDetails: companyForPdf?.bankDetails || {
-//         bankName: "N/A",
-//         accountNo: "N/A",
-//         branchIfsc: "N/A",
-//       },
-//     };
-
+//     const invoiceData = preparePIData(pi);
 //     const pdfBuffer = await generateProformaInvoicePDF(invoiceData);
 
-//     // Ensure headers are exposed for CORS so the frontend can read the filename
-//     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
 //     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader(
-//       "Content-Disposition",
-//       `attachment; filename="${pi.piNumber}.pdf"`,
-//     );
-//     res.setHeader("Content-Length", pdfBuffer.length.toString());
-
+//     res.setHeader("Content-Disposition", "inline");
 //     res.end(pdfBuffer);
 //   } catch (error) {
-//     console.error("PDF Controller Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to generate PDF",
-//       error: error instanceof Error ? error.message : "Unknown error",
-//     });
+//     res.status(500).json({ success: false, message: "Failed to generate PDF" });
 //   }
 // };

@@ -55,11 +55,12 @@ import {
   Table,
   TableHeader,
 } from "@/components/ui/table";
+import { piApi } from "../components/piApi";
 
 interface PITablePageProps {
   generatePagination: (
     currentPage: number,
-    totalPages: number
+    totalPages: number,
   ) => (number | string)[];
 }
 
@@ -96,7 +97,7 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
             validityDate: false, // Explicitly hidden by default
             createdAt: false, // Explicitly hidden by default
           };
-    }
+    },
   );
 
   // Debounce search input to avoid slamming the API
@@ -126,30 +127,30 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         sorting.length > 0 ? (sorting[0].desc ? "desc" : "asc") : undefined;
 
       let token =
-  localStorage.getItem("token") || localStorage.getItem("accessToken");
+        localStorage.getItem("token") || localStorage.getItem("accessToken");
 
-if (!token && localStorage.getItem("user")) {
-  try {
-    const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-    token = userObj.token || userObj.accessToken;
-  } catch (e) {}
-}
+      if (!token && localStorage.getItem("user")) {
+        try {
+          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+          token = userObj.token || userObj.accessToken;
+        } catch (e) {}
+      }
 
-if (token && token.startsWith('"') && token.endsWith('"')) {
-  token = token.slice(1, -1);
-}
+      if (token && token.startsWith('"') && token.endsWith('"')) {
+        token = token.slice(1, -1);
+      }
 
-const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
-  params: {
-    search: globalFilter,
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
-    sortBy: sortParam,
-    sortOrder: sortOrder,
-    status: statusFilter,
-  },
-  headers: token ? { Authorization: `Bearer ${token}` } : {},
-});
+      const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
+        params: {
+          search: globalFilter,
+          page: pagination.pageIndex + 1,
+          limit: pagination.pageSize,
+          sortBy: sortParam,
+          sortOrder: sortOrder,
+          status: statusFilter,
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
       setPiData(res.data.data);
       setPiPageCount(res.data.totalPages || 1);
@@ -189,53 +190,68 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
     }
   };
 
-  const handlePiPdfAction = async (
+  // const handlePiPdfAction = async (
+  //   id: string,
+  //   piNumber: string,
+  //   action: "view" | "download"
+  // ) => {
+  //   try {
+  //     setPiPdfLoading(id);
+  //     let token =
+  //       localStorage.getItem("token") || localStorage.getItem("accessToken");
+  //     if (!token && localStorage.getItem("user")) {
+  //       try {
+  //         const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+  //         token = userObj.token || userObj.accessToken;
+  //       } catch (e) {}
+  //     }
+  //     if (token && token.startsWith('"') && token.endsWith('"')) {
+  //       token = token.slice(1, -1);
+  //     }
+
+  //     const res = await axios.get(
+  //       `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
+  //       {
+  //         responseType: "blob",
+  //         headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //       }
+  //     );
+
+  //     const url = window.URL.createObjectURL(
+  //       new Blob([res.data], { type: "application/pdf" })
+  //     );
+
+  //     if (action === "view") {
+  //       window.open(url, "_blank");
+  //     } else {
+  //       const link = document.createElement("a");
+  //       link.href = url;
+  //       link.setAttribute("download", `${piNumber}.pdf`);
+  //       document.body.appendChild(link);
+  //       link.click();
+  //       link.parentNode?.removeChild(link);
+  //       toast.success("PDF Downloaded successfully!");
+  //     }
+  //   } catch (error) {
+  //     console.error("PDF Action Error", error);
+  //     toast.error("Failed to process PDF");
+  //   } finally {
+  //     setPiPdfLoading(null);
+  //   }
+  // };
+
+  // Replace the entire handlePiPdfAction function with this:
+  const handlePiPdfAction = (
     id: string,
-    piNumber: string,
-    action: "view" | "download"
+    _piNumber: string,
+    action: "view" | "download",
   ) => {
-    try {
-      setPiPdfLoading(id);
-      let token =
-        localStorage.getItem("token") || localStorage.getItem("accessToken");
-      if (!token && localStorage.getItem("user")) {
-        try {
-          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-          token = userObj.token || userObj.accessToken;
-        } catch (e) {}
-      }
-      if (token && token.startsWith('"') && token.endsWith('"')) {
-        token = token.slice(1, -1);
-      }
+    const url = piApi.getPIViewUrl(id, action === "download");
 
-      const res = await axios.get(
-        `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
-        {
-          responseType: "blob",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-
-      const url = window.URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" })
-      );
-
-      if (action === "view") {
-        window.open(url, "_blank");
-      } else {
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${piNumber}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        toast.success("PDF Downloaded successfully!");
-      }
-    } catch (error) {
-      console.error("PDF Action Error", error);
-      toast.error("Failed to process PDF");
-    } finally {
-      setPiPdfLoading(null);
+    if (action === "view") {
+      window.open(url, "_blank");
+    } else {
+      window.location.href = url;
     }
   };
 
@@ -252,7 +268,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
               1}
           </div>
         ),
-        enableHiding: false, // Serial number should always be visible
+        enableHiding: false,
       },
       {
         accessorKey: "piNumber",
@@ -358,7 +374,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
-                  }
+                  },
                 )
               : "-"}
           </div>
@@ -403,7 +419,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
           <div className="flex justify-center">
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                row.original.status
+                row.original.status,
               )}`}
             >
               {row.original.status
@@ -433,7 +449,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                       handlePiPdfAction(
                         row.original._id,
                         row.original.piNumber,
-                        "view"
+                        "view",
                       )
                     }
                     disabled={piPdfLoading === row.original._id}
@@ -462,7 +478,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                       handlePiPdfAction(
                         row.original._id,
                         row.original.piNumber,
-                        "download"
+                        "download",
                       )
                     }
                     disabled={piPdfLoading === row.original._id}
@@ -504,7 +520,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
         enableHiding: false, // Actions column should always be visible
       },
     ],
-    [navigate, piPdfLoading, getStatusColor, handlePiPdfAction, pagination]
+    [navigate, piPdfLoading, getStatusColor, handlePiPdfAction, pagination],
   );
 
   const table = useReactTable<ProformaInvoiceAPI>({
@@ -792,7 +808,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -858,7 +874,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                     const target = e.target as HTMLElement;
                     if (
                       target.closest(
-                        "button, a, input, textarea, select, label"
+                        "button, a, input, textarea, select, label",
                       )
                     )
                       return;
@@ -874,7 +890,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -929,7 +945,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
             <div className="items-center space-x-1 flex sm:flex">
               {generatePagination(
                 table.getState().pagination.pageIndex + 1,
-                table.getPageCount()
+                table.getPageCount(),
               ).map((item, idx) =>
                 item === "..." ? (
                   <span key={idx} className="px-2 text-gray-500 text-xs">
@@ -949,7 +965,7 @@ const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
                   >
                     {item}
                   </Button>
-                )
+                ),
               )}
             </div>
 

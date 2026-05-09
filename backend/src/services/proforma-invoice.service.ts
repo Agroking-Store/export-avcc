@@ -7,6 +7,8 @@ import Dealer from "../models/Dealer.model";
 import { Booking } from "../models/Booking.model"; // Import Booking model
 import { VehicleOrder } from "../models/VehicleOrder.model";
 import LetterOfCredit from "../models/LetterOfCredit.model";
+import { savePIPdfToDisk } from "./pdf.service";
+import { preparePIDataForService } from "../utils/pi-pdf-helper";
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
@@ -75,80 +77,48 @@ const numberToWords = (num: number): string => {
 };
 
 // Helper to generate the next PI number based on company/year/sequential
-const generateNextPiNumber = async (
-  companyId: string
-): Promise<string> => {
+const generateNextPiNumber = async (companyId: string): Promise<string> => {
   if (!companyId) {
-    throw new Error(
-      "Company is required."
-    );
+    throw new Error("Company is required.");
   }
 
-  const company =
-    await Company.findById(
-      companyId
-    );
+  const company = await Company.findById(companyId);
 
   if (!company) {
-    throw new Error(
-      "Company not found."
-    );
+    throw new Error("Company not found.");
   }
 
-  const initials =
-    getCompanyShortCode(
-      company.name
-    );
+  const initials = getCompanyShortCode(company.name);
 
-  const fy =
-    getFinancialYear(
-      new Date()
-    );
+  const fy = getFinancialYear(new Date());
 
   const prefix = `${initials}/PI/${fy}/`;
   const legacyPrefix = `${initials}/EX/PI/${fy}/`;
 
-  const invoices =
-  await ProformaInvoice.find({
+  const invoices = await ProformaInvoice.find({
     company_id: companyId,
     piNumber: {
-      $in: [
-        new RegExp(`^${prefix}\\d+$`),
-        new RegExp(`^${legacyPrefix}\\d+$`),
-      ],
+      $in: [new RegExp(`^${prefix}\\d+$`), new RegExp(`^${legacyPrefix}\\d+$`)],
     },
   });
 
-let maxSeq = 0;
+  let maxSeq = 0;
 
-invoices.forEach((pi) => {
-  if (!pi.piNumber)
-    return;
+  invoices.forEach((pi) => {
+    if (!pi.piNumber) return;
 
-  const parts =
-    pi.piNumber.split("/");
+    const parts = pi.piNumber.split("/");
 
-  const num =
-    Number(
-      parts[
-        parts.length - 1
-      ]
-    );
+    const num = Number(parts[parts.length - 1]);
 
-  if (
-    !isNaN(num) &&
-    num > maxSeq
-  ) {
-    maxSeq = num;
-  }
-});
+    if (!isNaN(num) && num > maxSeq) {
+      maxSeq = num;
+    }
+  });
 
-const nextSeq =
-  maxSeq + 1;
+  const nextSeq = maxSeq + 1;
 
-  return `${prefix}${String(
-    nextSeq
-  ).padStart(3, "0")}`;
+  return `${prefix}${String(nextSeq).padStart(3, "0")}`;
 };
 
 // New service to get the suggested next PI number
@@ -165,19 +135,14 @@ export const getBookedVehicleOrdersService = async (clientId: string) => {
     vehicleBookingIds: { $exists: true, $ne: [] },
   }).select("vehicleBookingIds");
 
-  const usedIds = usedBookings.flatMap((pi: any) =>
-    pi.vehicleBookingIds?.map((id: any) => id.toString()) || []
+  const usedIds = usedBookings.flatMap(
+    (pi: any) => pi.vehicleBookingIds?.map((id: any) => id.toString()) || [],
   );
 
   const bookings = await VehicleBooking.find({
     assignedClientId: clientId,
     status: {
-      $in: [
-        "approved",
-        "payment_done",
-        "chassis_received",
-        "delivered",
-      ],
+      $in: ["approved", "payment_done", "chassis_received", "delivered"],
     },
     _id: { $nin: usedIds },
   })
@@ -205,34 +170,26 @@ const getFinancialYear = (date: Date): string => {
 };
 
 // Helper to derive company short code
-const getCompanyShortCode = (
-  companyName: string
-): string => {
+const getCompanyShortCode = (companyName: string): string => {
   if (!companyName) return "XX";
 
-  const words = companyName
-    .trim()
-    .split(" ")
-    .filter(Boolean);
+  const words = companyName.trim().split(" ").filter(Boolean);
 
   if (words.length >= 2) {
-    return (
-      words[0][0] +
-      words[1][0]
-    ).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
-  return companyName
-    .substring(0, 2)
-    .toUpperCase();
+  return companyName.substring(0, 2).toUpperCase();
 };
 
 // CREATE PI
 export const createPIService = async (data: any) => {
   const totalAmount = (data.vehicleDetails || []).reduce(
     (sum: number, v: any) =>
-      sum + (Number(v.quantity) || 1) * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
-    0
+      sum +
+      (Number(v.quantity) || 1) *
+        ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+    0,
   );
 
   data.totalAmount = totalAmount;
@@ -244,12 +201,25 @@ export const createPIService = async (data: any) => {
     finalPiNumber = await generateNextPiNumber(data.company_id);
   }
 
-  const pi = new ProformaInvoice({
-    ...data,
-    piNumber: finalPiNumber,
-  });
+  const pi = new ProformaInvoice({ ...data, piNumber: finalPiNumber });
+  const savedPI = await pi.save();
 
-  return await pi.save();
+  try {
+    // Populate to get full names for the PDF
+    const fullPI = await ProformaInvoice.findById(savedPI._id).populate(
+      "client_id company_id",
+    );
+    const pdfData = preparePIDataForService(fullPI);
+    const relativePath = await savePIPdfToDisk(pdfData);
+
+    // Update the record with the file path
+    await ProformaInvoice.findByIdAndUpdate(savedPI._id, {
+      pdfPath: relativePath,
+    });
+  } catch (err) {
+    console.error("Auto PDF Generation failed", err);
+  }
+  return savedPI;
 };
 
 // Helper types for the service function's return value, mirroring frontend's VehicleTracking and AssociatedPI
@@ -285,7 +255,7 @@ interface VehicleTracking {
 export const getOrderDetailWithTrackingService = async (orderId: string) => {
   const order = await VehicleOrder.findById(orderId).populate(
     "clientId",
-    "name clientCode email phone companyName address country"
+    "name clientCode email phone companyName address country",
   );
 
   if (!order) {
@@ -315,80 +285,81 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
   }).populate("company_id", "name");
 
   const vehicleTracking: VehicleTracking[] = [];
-let totalVehiclesInOrder = 0;
-let totalVehiclesPIed = 0;
-let globalIndex = 0;
+  let totalVehiclesInOrder = 0;
+  let totalVehiclesPIed = 0;
+  let globalIndex = 0;
 
-const qty = order.quantity || 1;
-totalVehiclesInOrder = qty;
+  const qty = order.quantity || 1;
+  totalVehiclesInOrder = qty;
 
-for (let qIdx = 0; qIdx < qty; qIdx++) {
-  const currentSrNo = String(globalIndex + 1);
-  globalIndex++;
+  for (let qIdx = 0; qIdx < qty; qIdx++) {
+    const currentSrNo = String(globalIndex + 1);
+    globalIndex++;
 
-      // 1. Find the individual booking for this specific unit using srNo
-      let foundBookingVehicle: any = null;
-      let unitDealerName = "N/A";
-      for (const b of bookings) {
-        const bv = b.vehicles.find((v) => String(v.srNo) === currentSrNo);
-        if (bv) {
-          foundBookingVehicle = bv;
-          unitDealerName = (b.dealerId as any)?.name || "N/A";
-          break;
+    // 1. Find the individual booking for this specific unit using srNo
+    let foundBookingVehicle: any = null;
+    let unitDealerName = "N/A";
+    for (const b of bookings) {
+      const bv = b.vehicles.find((v) => String(v.srNo) === currentSrNo);
+      if (bv) {
+        foundBookingVehicle = bv;
+        unitDealerName = (b.dealerId as any)?.name || "N/A";
+        break;
+      }
+    }
+
+    const unitChassis = foundBookingVehicle?.chassisNo || "N/A";
+    const unitEngine = foundBookingVehicle?.engineNo || "N/A";
+    const bookingStatus = foundBookingVehicle ? "Booked" : "Draft";
+
+    // 2. Determine PI Status using the Chassis Number from the Booking
+    let piStatus: "PI'd" | "Pending" = "Pending";
+    const associatedPIs: AssociatedPI[] = [];
+
+    if (unitChassis && unitChassis !== "N/A") {
+      const normalizedChassis = unitChassis.trim().toLowerCase();
+
+      for (const pi of proformaInvoices) {
+        const piVehicle = pi.vehicleDetails.find(
+          (vd) =>
+            vd.chassisNo &&
+            vd.chassisNo.trim().toLowerCase() === normalizedChassis,
+        );
+        if (piVehicle) {
+          piStatus = "PI'd";
+          totalVehiclesPIed += 1;
+          associatedPIs.push({
+            piId: pi._id.toString(),
+            piNumber: pi.piNumber,
+            companyName: (pi.company_id as any)?.name || "N/A",
+            createdAt: pi.createdAt.toISOString(),
+          });
+          break; // Stop looking for this vehicle once found in a PI
         }
       }
+    }
 
-      const unitChassis = foundBookingVehicle?.chassisNo || "N/A";
-      const unitEngine = foundBookingVehicle?.engineNo || "N/A";
-      const bookingStatus = foundBookingVehicle ? "Booked" : "Draft";
-
-      // 2. Determine PI Status using the Chassis Number from the Booking
-      let piStatus: "PI'd" | "Pending" = "Pending";
-      const associatedPIs: AssociatedPI[] = [];
-
-      if (unitChassis && unitChassis !== "N/A") {
-        const normalizedChassis = unitChassis.trim().toLowerCase();
-
-        for (const pi of proformaInvoices) {
-          const piVehicle = pi.vehicleDetails.find(
-            (vd) =>
-              vd.chassisNo &&
-              vd.chassisNo.trim().toLowerCase() === normalizedChassis
-          );
-          if (piVehicle) {
-            piStatus = "PI'd";
-            totalVehiclesPIed += 1;
-            associatedPIs.push({
-              piId: pi._id.toString(),
-              piNumber: pi.piNumber,
-              companyName: (pi.company_id as any)?.name || "N/A",
-              createdAt: pi.createdAt.toISOString(),
-            });
-            break; // Stop looking for this vehicle once found in a PI
-          }
-        }
-      }
-
-      vehicleTracking.push({
-  _id: new Types.ObjectId().toString(),
-  make: order.vehicleSnapshot?.brandName || "N/A",
-  model: order.vehicleSnapshot?.modelName || "N/A",
-  chassisNo: unitChassis,
-  engineNo: unitEngine,
-  color: foundBookingVehicle?.color || order.vehicleSnapshot?.color || "N/A",
-  hsn: foundBookingVehicle?.hsnCode || "N/A",
-  yom: foundBookingVehicle?.yom ? String(foundBookingVehicle.yom) : "N/A",
-  fuelType: foundBookingVehicle?.fuelType || "N/A",
-  countryOfOrigin: foundBookingVehicle?.countryOfOrigin || "N/A",
-  dealerName: unitDealerName,
-  engineCapacity: foundBookingVehicle?.engineCapacity || "N/A",
-  fob: foundBookingVehicle?.fobAmount || 0,
-  freight: foundBookingVehicle?.freight || 0,
-  quantity: 1,
-  bookingStatus,
-  piStatus,
-  associatedPIs,
-});
+    vehicleTracking.push({
+      _id: new Types.ObjectId().toString(),
+      make: order.vehicleSnapshot?.brandName || "N/A",
+      model: order.vehicleSnapshot?.modelName || "N/A",
+      chassisNo: unitChassis,
+      engineNo: unitEngine,
+      color:
+        foundBookingVehicle?.color || order.vehicleSnapshot?.color || "N/A",
+      hsn: foundBookingVehicle?.hsnCode || "N/A",
+      yom: foundBookingVehicle?.yom ? String(foundBookingVehicle.yom) : "N/A",
+      fuelType: foundBookingVehicle?.fuelType || "N/A",
+      countryOfOrigin: foundBookingVehicle?.countryOfOrigin || "N/A",
+      dealerName: unitDealerName,
+      engineCapacity: foundBookingVehicle?.engineCapacity || "N/A",
+      fob: foundBookingVehicle?.fobAmount || 0,
+      freight: foundBookingVehicle?.freight || 0,
+      quantity: 1,
+      bookingStatus,
+      piStatus,
+      associatedPIs,
+    });
   }
 
   const pendingVehicles = totalVehiclesInOrder - totalVehiclesPIed;
@@ -406,7 +377,7 @@ for (let qIdx = 0; qIdx < qty; qIdx++) {
   return {
     _id: order._id.toString(),
     orderId: order.orderNumber,
-voucherNo: "-",
+    voucherNo: "-",
     client: {
       _id: (order.clientId as any)?._id?.toString() || "N/A", // Add client _id
       name: (order.clientId as any)?.name || "N/A",
@@ -442,7 +413,7 @@ const getDateRange = (timeRange: string) => {
       prevStartDate = new Date(
         now.getFullYear(),
         now.getMonth(),
-        now.getDate() - 1
+        now.getDate() - 1,
       );
       prevEndDate = startDate;
       break;
@@ -451,12 +422,12 @@ const getDateRange = (timeRange: string) => {
       startDate = new Date(
         now.getFullYear(),
         now.getMonth(),
-        now.getDate() - dayOfWeek
+        now.getDate() - dayOfWeek,
       ); // Start of Sunday
       endDate = new Date(
         now.getFullYear(),
         now.getMonth(),
-        now.getDate() + (6 - dayOfWeek) + 1
+        now.getDate() + (6 - dayOfWeek) + 1,
       ); // End of Saturday
       prevStartDate = new Date(startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
       prevEndDate = startDate;
@@ -505,7 +476,7 @@ const getLatestLCByPIMap = async (piIds: Array<Types.ObjectId | string>) => {
   }
 
   const normalizedIds = piIds.map((id) =>
-    typeof id === "string" ? new Types.ObjectId(id) : id
+    typeof id === "string" ? new Types.ObjectId(id) : id,
   );
 
   const latestLCs = await LetterOfCredit.aggregate([
@@ -524,7 +495,7 @@ const getLatestLCByPIMap = async (piIds: Array<Types.ObjectId | string>) => {
   ]);
 
   return new Map<string, any>(
-    latestLCs.map((entry) => [String(entry._id), entry.latest])
+    latestLCs.map((entry) => [String(entry._id), entry.latest]),
   );
 };
 
@@ -572,7 +543,7 @@ const getTimelineBucket = (dateValue: Date, timeRange: string) => {
         sortValue: new Date(
           date.getFullYear(),
           date.getMonth(),
-          date.getDate()
+          date.getDate(),
         ).getTime(),
       };
     case "thisMonth":
@@ -585,7 +556,7 @@ const getTimelineBucket = (dateValue: Date, timeRange: string) => {
         sortValue: new Date(
           date.getFullYear(),
           date.getMonth(),
-          date.getDate()
+          date.getDate(),
         ).getTime(),
       };
     case "thisYear":
@@ -633,7 +604,7 @@ const buildTimeline = (pis: any[], timeRange: string) => {
   });
 
   return Array.from(grouped.values()).sort(
-    (left, right) => left.sortValue - right.sortValue
+    (left, right) => left.sortValue - right.sortValue,
   );
 };
 
@@ -669,7 +640,7 @@ const getDashboardMetricSet = (pis: any[], latestLCMap: Map<string, any>) => {
   const totalPI = pis.length;
   const totalPIAmount = pis.reduce(
     (sum, pi) => sum + Number(pi.totalAmount || 0),
-    0
+    0,
   );
   const awaitingLC = pis.filter((pi) => {
     const id = String(pi._id);
@@ -680,10 +651,10 @@ const getDashboardMetricSet = (pis: any[], latestLCMap: Map<string, any>) => {
   }).length;
   const receivedLC = latestLCMap.size;
   const verifiedLC = Array.from(latestLCMap.values()).filter(
-    (lc) => lc.status === "verified"
+    (lc) => lc.status === "verified",
   ).length;
   const amendmentLC = Array.from(latestLCMap.values()).filter(
-    (lc) => lc.status === "rejected"
+    (lc) => lc.status === "rejected",
   ).length;
 
   return {
@@ -705,7 +676,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
   const [currentPIs, previousPIs] = await Promise.all([
     ProformaInvoice.find(createdAtMatch)
       .select(
-        "piNumber status totalAmount validityDate createdAt clientSnapshot client_id"
+        "piNumber status totalAmount validityDate createdAt clientSnapshot client_id",
       )
       .populate("client_id", "name companyName")
       .sort({ createdAt: -1 })
@@ -725,9 +696,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
   const previousMetrics = getDashboardMetricSet(previousPIs, previousLCMap);
 
   const now = new Date();
-  const sevenDaysFromNow = new Date(
-    now.getTime() + 7 * 24 * 60 * 60 * 1000
-  );
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const expiringSoon = currentPIs.filter((pi: any) => {
     if (!pi.validityDate) {
@@ -743,26 +712,40 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
   }).length;
 
   const draftOrApproval = currentPIs.filter((pi: any) =>
-    ["draft", "pending_approval"].includes(pi.status)
+    ["draft", "pending_approval"].includes(pi.status),
   ).length;
   const buyersWithActivity = new Set(
-    currentPIs.map((pi: any) => getClientDisplayName(pi))
+    currentPIs.map((pi: any) => getClientDisplayName(pi)),
   ).size;
   const verificationRate =
     currentMetrics.receivedLC > 0
-      ? Math.round((currentMetrics.verifiedLC / currentMetrics.receivedLC) * 100)
+      ? Math.round(
+          (currentMetrics.verifiedLC / currentMetrics.receivedLC) * 100,
+        )
       : 0;
   const amendmentRate =
     currentMetrics.receivedLC > 0
       ? Math.round(
-          (currentMetrics.amendmentLC / currentMetrics.receivedLC) * 100
+          (currentMetrics.amendmentLC / currentMetrics.receivedLC) * 100,
         )
       : 0;
 
   const lcStageDistribution = [
-    { key: "awaiting_lc", label: "Awaiting LC", value: currentMetrics.awaitingLC },
-    { key: "received_lc", label: "Received LC", value: currentMetrics.receivedLC },
-    { key: "verified_lc", label: "Verified LC", value: currentMetrics.verifiedLC },
+    {
+      key: "awaiting_lc",
+      label: "Awaiting LC",
+      value: currentMetrics.awaitingLC,
+    },
+    {
+      key: "received_lc",
+      label: "Received LC",
+      value: currentMetrics.receivedLC,
+    },
+    {
+      key: "verified_lc",
+      label: "Verified LC",
+      value: currentMetrics.verifiedLC,
+    },
     {
       key: "amendment_lc",
       label: "Amendment LC",
@@ -834,7 +817,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
         trend: canCompare
           ? calculateTrend(
               currentMetrics.totalPIAmount,
-              previousMetrics.totalPIAmount
+              previousMetrics.totalPIAmount,
             )
           : null,
       },
@@ -843,7 +826,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
         trend: canCompare
           ? calculateTrend(
               currentMetrics.awaitingLC,
-              previousMetrics.awaitingLC
+              previousMetrics.awaitingLC,
             )
           : null,
       },
@@ -852,7 +835,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
         trend: canCompare
           ? calculateTrend(
               currentMetrics.receivedLC,
-              previousMetrics.receivedLC
+              previousMetrics.receivedLC,
             )
           : null,
       },
@@ -861,7 +844,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
         trend: canCompare
           ? calculateTrend(
               currentMetrics.verifiedLC,
-              previousMetrics.verifiedLC
+              previousMetrics.verifiedLC,
             )
           : null,
       },
@@ -870,7 +853,7 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
         trend: canCompare
           ? calculateTrend(
               currentMetrics.amendmentLC,
-              previousMetrics.amendmentLC
+              previousMetrics.amendmentLC,
             )
           : null,
       },
@@ -923,9 +906,9 @@ export const getDashboardKPIsService = async (timeRange: string) => {
     { $group: { _id: null, totalAmount: { $sum: "$totalAmount" } } },
   ]);
   const prevActivePipelineValue =
-  prevActivePipelineValueResult.length > 0
-    ? prevActivePipelineValueResult[0].totalAmount
-    : 0;
+    prevActivePipelineValueResult.length > 0
+      ? prevActivePipelineValueResult[0].totalAmount
+      : 0;
 
   // KPI 2: Pending PI Approvals
   const pendingApprovalsResult = await ProformaInvoice.aggregate([
@@ -1101,7 +1084,7 @@ export const getDashboardKPIsService = async (timeRange: string) => {
       value: overallOrderPICompletionPercentage,
       trend: calculateTrend(
         overallOrderPICompletionPercentage,
-        prevOverallOrderPICompletionPercentage
+        prevOverallOrderPICompletionPercentage,
       ),
     },
   };
@@ -1156,7 +1139,7 @@ export const getMonthlyPIValueTrendService = async (timeRange: string) => {
 // GET TOP CLIENTS BY PI VALUE FOR CHARTS
 export const getTopClientsByPIValueService = async (
   timeRange: string,
-  limit: number = 5
+  limit: number = 5,
 ) => {
   const { createdAtMatch } = getDateRange(timeRange);
 
@@ -1496,14 +1479,14 @@ export const getPIsService = async (query: any) => {
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
     .populate("order_id", "orderNumber")
-    .populate("vehicleBookingIds")// Order model se orderId field fetch karne ke liye
+    .populate("vehicleBookingIds") // Order model se orderId field fetch karne ke liye
     .populate(
       "client_id", // Populate client_id to get original details if no snapshot
-      "name clientCode email phone country address companyName" // Select fields to populate
+      "name clientCode email phone country address companyName", // Select fields to populate
     )
     .populate(
       "company_id", // Populate company_id to get original details if no snapshot
-      "name email phone address gstNumber bankDetails"
+      "name email phone address gstNumber bankDetails",
     ); // Select fields to populate
 
   // If company_id is not populated, and dealer_id was previously used,
@@ -1524,7 +1507,7 @@ export const updatePIService = async (id: string, data: any) => {
       (sum: number, v: any) =>
         // Ensure fob and freight are treated as numbers
         sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
-      0
+      0,
     );
 
     data.amountInWords = numberToWords(data.totalAmount);
@@ -1557,7 +1540,7 @@ export const updatePIStatusService = async (id: string, status: string) => {
   const updated = await ProformaInvoice.findByIdAndUpdate(
     id,
     { status },
-    { new: true }
+    { new: true },
   );
 
   return updated;
