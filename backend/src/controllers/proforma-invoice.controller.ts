@@ -14,7 +14,7 @@ import {
   getMonthlyPIValueTrendService,
   getTopClientsByPIValueService,
   getOrderDetailWithTrackingService,
-  getBookedVehicleOrdersService
+  getBookedVehicleOrdersService,
 } from "../services/proforma-invoice.service";
 
 import LetterOfCredit from "../models/LetterOfCredit.model";
@@ -164,11 +164,52 @@ export const getOrdersWithPIStatus = async (req: Request, res: Response) => {
 };
 
 // GET PI BY ID
+// export const getPIById = async (req: Request, res: Response) => {
+//   try {
+//     const pi = await getPIByIdService(req.params.id as string);
+
+//     const piData = pi.toObject();
+
+//     const formattedResponse = {
+//       ...piData,
+//       assignedClientSnapshot: piData.clientSnapshot,
+//       assignedCompanySnapshot: piData.companySnapshot,
+
+//       // 2. Add the "documents" object with the PDF route
+//       // We point this to the existing PDF generation route
+//       documents: {
+//         proformaInvoice: `/proforma-invoices/${piData._id}/pdf`,
+//       },
+
+//       // Flags to match UI logic
+//       isPIUploaded: true,
+//     };
+
+//     res.json(pi);
+//   } catch (error: any) {
+//     res.status(404).json({ message: error.message });
+//   }
+// };
+
+// backend/src/controllers/proforma-invoice.controller.ts
+
 export const getPIById = async (req: Request, res: Response) => {
   try {
     const pi = await getPIByIdService(req.params.id as string);
+    if (!pi) return res.status(404).json({ message: "PI not found" });
 
-    res.json(pi);
+    const piData = pi.toObject();
+
+    const responseWithDocuments = {
+      ...piData,
+      assignedClientSnapshot: piData.clientSnapshot,
+      assignedCompanySnapshot: piData.companySnapshot,
+      documents: {
+        proformaInvoice: `${piData._id}/pdf`,
+      },
+    };
+
+    res.json(responseWithDocuments);
   } catch (error: any) {
     res.status(404).json({ message: error.message });
   }
@@ -264,17 +305,19 @@ export const uploadLC = async (req: Request, res: Response) => {
 //   }
 // };
 
-
 export const getLCFile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const piIdString = Array.isArray(id) ? id[0] : id;
 
-    const lc = await LetterOfCredit.findOne({ pi_id: piIdString })
-      .sort({ uploadedAt: -1 });
+    const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
+      uploadedAt: -1,
+    });
 
     if (!lc || !lc.documentUrl) {
-      return res.status(404).json({ message: "Letter of Credit file not found" });
+      return res
+        .status(404)
+        .json({ message: "Letter of Credit file not found" });
     }
 
     const absolutePath = path.join(process.cwd(), lc.documentUrl);
@@ -286,7 +329,10 @@ export const getLCFile = async (req: Request, res: Response) => {
 
     // Important headers for reliable PDF viewing
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'inline; filename="letter-of-credit.pdf"');
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="letter-of-credit.pdf"',
+    );
     // Optional: add cache control
     res.setHeader("Cache-Control", "no-cache");
 
@@ -297,16 +343,11 @@ export const getLCFile = async (req: Request, res: Response) => {
   }
 };
 
-export const getBookedVehicleOrders = async (
-  req: Request,
-  res: Response
-) => {
+export const getBookedVehicleOrders = async (req: Request, res: Response) => {
   try {
     const { clientId } = req.query;
 
-    const data = await getBookedVehicleOrdersService(
-      clientId as string
-    );
+    const data = await getBookedVehicleOrdersService(clientId as string);
 
     res.json(data);
   } catch (error: any) {

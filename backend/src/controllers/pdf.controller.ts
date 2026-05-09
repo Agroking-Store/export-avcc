@@ -137,25 +137,25 @@ export const getProformaInvoiceData = async (req: Request, res: Response) => {
     const pi = await getPIByIdService(id as string);
 
     if (pi?.vehicleBookingIds?.length) {
-  const bookings = await VehicleBooking.find({
-    _id: { $in: pi.vehicleBookingIds }
-  });
+      const bookings = await VehicleBooking.find({
+        _id: { $in: pi.vehicleBookingIds },
+      });
 
-  pi.vehicleDetails = pi.vehicleDetails.map((v: any, i: number) => {
-    const b: any = bookings[i];
+      pi.vehicleDetails = pi.vehicleDetails.map((v: any, i: number) => {
+        const b: any = bookings[i];
 
-    return {
-      ...v,
-      yom: v.yom || b?.yom || "",
-      fuelType: v.fuelType || b?.fuelType || "",
-      countryOfOrigin: v.countryOfOrigin || b?.countryOfOrigin || "",
-      engineCapacity: v.engineCapacity || b?.engineCapacity || "",
-      hsn: v.hsn || b?.hsnCode || "",
-      engineNo: v.engineNo || b?.engineNumber || "",
-      chassisNo: v.chassisNo || b?.chassisNumber || "",
-    };
-  });
-}
+        return {
+          ...v,
+          yom: v.yom || b?.yom || "",
+          fuelType: v.fuelType || b?.fuelType || "",
+          countryOfOrigin: v.countryOfOrigin || b?.countryOfOrigin || "",
+          engineCapacity: v.engineCapacity || b?.engineCapacity || "",
+          hsn: v.hsn || b?.hsnCode || "",
+          engineNo: v.engineNo || b?.engineNumber || "",
+          chassisNo: v.chassisNo || b?.chassisNumber || "",
+        };
+      });
+    }
 
     if (!pi) {
       return res.status(404).json({ success: false, message: "PI not found" });
@@ -177,9 +177,19 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
     const pi = await getPIByIdService(id as string);
     const invoiceData = preparePIData(pi);
     const pdfBuffer = await generateProformaInvoicePDF(invoiceData);
+    const isDownload = req.query.download === "true";
 
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     res.setHeader("Content-Type", "application/pdf");
+    if (isDownload) {
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="PI-${pi.piNumber}.pdf"`,
+      );
+    } else {
+      res.setHeader("Content-Disposition", "inline");
+    }
+
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${pi.piNumber}.pdf"`,

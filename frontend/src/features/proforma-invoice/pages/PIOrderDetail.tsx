@@ -65,6 +65,7 @@ import {
 } from "@tanstack/react-table";
 
 import { VehicleTracking, OrderDetailData } from "../components/pi.types"; // Import from pi.types
+import VehiclePIViewModal from "../components/VehiclePIViewModal";
 
 const generatePagination = (currentPage: number, totalPages: number) => {
   if (totalPages <= 7) {
@@ -102,6 +103,9 @@ const PIOrderDetail = () => {
   const [orderDetail, setOrderDetail] = useState<OrderDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedPI, setSelectedPI] = useState<any>(null);
+
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     () => {
       const saved = localStorage.getItem("pi-order-detail-columns");
@@ -121,7 +125,7 @@ const PIOrderDetail = () => {
             piCreationDate: true,
             actions: true,
           };
-    }
+    },
   );
 
   useEffect(() => {
@@ -161,7 +165,7 @@ const PIOrderDetail = () => {
   useEffect(() => {
     localStorage.setItem(
       "pi-order-detail-columns",
-      JSON.stringify(columnVisibility)
+      JSON.stringify(columnVisibility),
     );
   }, [columnVisibility]);
 
@@ -269,7 +273,7 @@ const PIOrderDetail = () => {
           <div className="text-center">
             {row.original.associatedPIs.length > 0
               ? new Date(
-                  row.original.associatedPIs[0].createdAt
+                  row.original.associatedPIs[0].createdAt,
                 ).toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "short",
@@ -313,39 +317,72 @@ const PIOrderDetail = () => {
           </div>
         ),
       },
+      // {
+      //   id: "actions",
+      //   header: () => <div className="text-center">Actions</div>,
+      //   cell: ({ row }) => (
+      //     <div className="flex justify-center gap-2">
+      //       {row.original.piStatus === "Pending" && (
+      //         <TooltipProvider>
+      //           <Tooltip>
+      //             <TooltipTrigger asChild>
+      //               <span>
+      //                 <Button
+      //                   variant="outline"
+      //                   size="sm"
+      //                   className="h-8 w-8 p-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+      //                   disabled={row.original.bookingStatus !== "Booked"}
+      //                   onClick={() =>
+      //                     navigate(
+      //                       `/proforma-invoice/add?orderId=${orderDetail?._id}&chassisNo=${row.original.chassisNo}`,
+      //                     )
+      //                   }
+      //                 >
+      //                   <Plus className="h-4 w-4 text-blue-600" />
+      //                 </Button>
+      //               </span>
+      //             </TooltipTrigger>
+      //             <TooltipContent>
+      //               {row.original.bookingStatus === "Booked"
+      //                 ? "Create PI for this vehicle"
+      //                 : "Vehicle must be Booked to create PI"}
+      //             </TooltipContent>
+      //           </Tooltip>
+      //         </TooltipProvider>
+      //       )}
+      //       {row.original.piStatus === "PI'd" &&
+      //         row.original.associatedPIs.length > 0 && (
+      //           <TooltipProvider>
+      //             <Tooltip>
+      //               <TooltipTrigger asChild>
+      //                 <Button
+      //                   variant="outline"
+      //                   size="sm"
+      //                   className="h-8 w-8 p-0"
+      //                   onClick={() =>
+      //                     navigate(
+      //                       `/proforma-invoice/${row.original.associatedPIs[0].piId}`,
+      //                     )
+      //                   }
+      //                 >
+      //                   <Eye className="h-4 w-4 text-slate-600" />
+      //                 </Button>
+      //               </TooltipTrigger>
+      //               <TooltipContent>View associated PI</TooltipContent>
+      //             </Tooltip>
+      //           </TooltipProvider>
+      //         )}
+      //     </div>
+      //   ),
+      //   enableHiding: false, // Actions column should always be visible
+      // },
       {
         id: "actions",
         header: () => <div className="text-center">Actions</div>,
         cell: ({ row }) => (
           <div className="flex justify-center gap-2">
-            {row.original.piStatus === "Pending" && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={row.original.bookingStatus !== "Booked"}
-                        onClick={() =>
-                          navigate(
-                            `/proforma-invoice/add?orderId=${orderDetail?._id}&chassisNo=${row.original.chassisNo}`
-                          )
-                        }
-                      >
-                        <Plus className="h-4 w-4 text-blue-600" />
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {row.original.bookingStatus === "Booked"
-                      ? "Create PI for this vehicle"
-                      : "Vehicle must be Booked to create PI"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+            {/* ... (Plus button logic) ... */}
+
             {row.original.piStatus === "PI'd" &&
               row.original.associatedPIs.length > 0 && (
                 <TooltipProvider>
@@ -355,25 +392,36 @@ const PIOrderDetail = () => {
                         variant="outline"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() =>
-                          navigate(
-                            `/proforma-invoice/${row.original.associatedPIs[0].piId}`
-                          )
-                        }
+                        onClick={() => {
+                          // INSTEAD OF NAVIGATE:
+                          if (selectedPI) {
+                            const modal = (
+                              <VehiclePIViewModal
+                                isOpen={isViewModalOpen}
+                                onClose={() => {
+                                  setIsViewModalOpen(false);
+                                  setSelectedPI(null);
+                                }}
+                                piData={selectedPI}
+                              />
+                            );
+                            setIsViewModalOpen(true);
+                            return modal; // Return the modal component
+                          }
+                        }}
                       >
                         <Eye className="h-4 w-4 text-slate-600" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>View associated PI</TooltipContent>
+                    <TooltipContent>View Proforma Invoice</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
           </div>
         ),
-        enableHiding: false, // Actions column should always be visible
       },
     ],
-    [navigate, orderDetail]
+    [navigate, orderDetail],
   );
 
   const MIN_VISIBLE_HIDEABLE_COLUMNS = 4; // Minimum dynamic columns to be visible
@@ -411,7 +459,7 @@ const PIOrderDetail = () => {
       nextVisibleHideableCount < MIN_VISIBLE_HIDEABLE_COLUMNS
     ) {
       toast.warning(
-        `At least ${MIN_VISIBLE_HIDEABLE_COLUMNS} columns must be visible!`
+        `At least ${MIN_VISIBLE_HIDEABLE_COLUMNS} columns must be visible!`,
       );
       return;
     }
@@ -420,7 +468,7 @@ const PIOrderDetail = () => {
       nextVisibleHideableCount > MAX_VISIBLE_HIDEABLE_COLUMNS
     ) {
       toast.warning(
-        `Maximum ${MAX_VISIBLE_HIDEABLE_COLUMNS} columns can be visible!`
+        `Maximum ${MAX_VISIBLE_HIDEABLE_COLUMNS} columns can be visible!`,
       );
       return;
     }
@@ -501,6 +549,19 @@ const PIOrderDetail = () => {
     },
     onColumnVisibilityChange: setColumnVisibility, // Add this
   });
+
+  const handleViewPI = async (piId: string) => {
+    try {
+      // 1. Fetch the full PI object (which now contains the 'documents' field)
+      const data = await piApi.getPIById(piId);
+
+      // 2. Set it to state to open the modal
+      setSelectedPI(data);
+      setIsViewModalOpen(true);
+    } catch (err) {
+      toast.error("Failed to fetch PI details");
+    }
+  };
 
   if (loading) {
     return (
@@ -810,7 +871,7 @@ const PIOrderDetail = () => {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -839,7 +900,7 @@ const PIOrderDetail = () => {
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -895,7 +956,7 @@ const PIOrderDetail = () => {
               <div className="items-center space-x-1 flex">
                 {generatePagination(
                   table.getState().pagination.pageIndex + 1,
-                  table.getPageCount()
+                  table.getPageCount(),
                 ).map((item, idx) =>
                   item === "..." ? (
                     <span key={idx} className="px-2 text-gray-500 text-xs">
@@ -915,7 +976,7 @@ const PIOrderDetail = () => {
                     >
                       {item}
                     </Button>
-                  )
+                  ),
                 )}
               </div>
 
@@ -940,6 +1001,15 @@ const PIOrderDetail = () => {
           </div>
         )}
       </div>
+
+      <VehiclePIViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedPI(null);
+        }}
+        piData={selectedPI}
+      />
     </div>
   );
 };
