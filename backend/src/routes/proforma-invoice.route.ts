@@ -35,6 +35,8 @@ import { ROLES } from "../config/constants";
 
 const router = Router();
 
+router.get("/:id/pdf", downloadProformaInvoice);
+
 router.use(authenticate);
 router.use(authorize(ROLES.ADMIN, ROLES.ACCOUNTANT));
 
@@ -55,7 +57,7 @@ router.get("/booked-vehicle-orders", getBookedVehicleOrders);
 router.get("/", getPIs);
 
 router.get("/:id/data", getProformaInvoiceData);
-router.get("/:id/pdf", downloadProformaInvoice);
+// router.get("/:id/pdf", downloadProformaInvoice);
 router.get("/:id/lc/view", getLCFile);
 router.get("/:id", getPIById);
 

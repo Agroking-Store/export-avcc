@@ -194,24 +194,21 @@ export const getOrdersWithPIStatus = async (req: Request, res: Response) => {
 export const getPIById = async (req: Request, res: Response) => {
   try {
     const pi = await getPIByIdService(req.params.id as string);
-    if (!pi) return res.status(404).json({ message: "PI not found" });
-
     const piData = pi.toObject();
 
-    const absoluteDiskPath = piData.pdfPath
-      ? path.resolve(process.cwd(), piData.pdfPath)
-      : "";
+    // Use the Port 5000 Base URL (from your .env)
+    const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
 
-    res.json({
+    const formattedResponse = {
       ...piData,
       assignedClientSnapshot: piData.clientSnapshot,
-      assignedDealerSnapshot: piData.companySnapshot,
       documents: {
-        proformaInvoice: absoluteDiskPath,
+        // Construct a direct path to the public PDF route
+        proformaInvoice: `${serverUrl}/api/v1/proforma-invoices/${piData._id}/pdf`,
       },
-      orderId: piData.order_id,
-      vehicleId: piData.vehicleDetails?.[0]?.vehicle_id,
-    });
+    };
+
+    res.json(formattedResponse);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
