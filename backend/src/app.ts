@@ -7,6 +7,7 @@ import routes from "./routes";
 import { errorHandler, notFound } from "./middleware/error.middleware";
 import dealerRoutes from "./routes/dealer.route";
 import companyRoutes from "./routes/company.routes"; // Import company routes
+import path from "path";
 
 const app: Application = express();
 
@@ -38,7 +39,8 @@ app.get("/health", (req, res) => {
 });
 
 // Static file serving for uploads
-app.use("/uploads", express.static("uploads"));
+// app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // API routes
 app.use("/api/v1", routes);

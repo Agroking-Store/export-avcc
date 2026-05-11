@@ -198,13 +198,18 @@ export const piApi = {
 
   // Inside piApi object in frontend/src/features/proforma-invoice/components/piApi.ts
 
+  // getPIViewUrl: (id: string, download = false) => {
+  //   const token = getAuthToken();
+  //   const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`;
+  //   const params = new URLSearchParams();
+  //   if (download) params.append("download", "true");
+  //   if (token) params.append("token", token);
+  //   return `${baseUrl}?${params.toString()}`;
+  // },
+
   getPIViewUrl: (id: string, download = false) => {
-    const token = getAuthToken();
     const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`;
-    const params = new URLSearchParams();
-    if (download) params.append("download", "true");
-    if (token) params.append("token", token);
-    return `${baseUrl}?${params.toString()}`;
+    return download ? `${baseUrl}?download=true` : baseUrl;
   },
 
   getLCViewUrl: (id: string) => {

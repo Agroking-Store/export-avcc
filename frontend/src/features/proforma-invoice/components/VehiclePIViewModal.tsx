@@ -32,17 +32,11 @@ const VehiclePIViewModal = ({ isOpen, onClose, piData }: Props) => {
   // };
 
   const getFileUrl = (isDownload = false) => {
-    const token =
-      localStorage.getItem("token") || localStorage.getItem("accessToken");
+    const url = piData?.documents?.proformaInvoice;
 
-    // Direct path to PORT 5000 (Backend)
-    const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${piData._id}/pdf`;
-    console.log("Generated PDF URL:", baseUrl); // Debug log to verify URL generation
-    const params = new URLSearchParams();
-    if (isDownload) params.append("download", "true");
-    if (token) params.append("token", token);
+    if (!url) return "#";
 
-    return `${baseUrl}?${params.toString()}`;
+    return isDownload ? `${url}?download=true` : url;
   };
 
   return (
