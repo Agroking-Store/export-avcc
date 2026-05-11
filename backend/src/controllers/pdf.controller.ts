@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { generateProformaInvoicePDF } from "../services/pdf.service";
 import { getPIByIdService } from "../services/proforma-invoice.service";
 import { VehicleBooking } from "../models/VehicleBooking.model";
+import { preparePIDataForService } from "../utils/pi-pdf-helper";
 import path from "path";
 import fs from "fs";
 
@@ -187,7 +188,9 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
       }
     }
 
-    const invoiceData = preparePIData(pi);
+    // const invoiceData = preparePIData(pi);
+    const invoiceData = preparePIDataForService(pi);
+
     const pdfBuffer = await generateProformaInvoicePDF(invoiceData);
     res.end(pdfBuffer);
   } catch (error) {

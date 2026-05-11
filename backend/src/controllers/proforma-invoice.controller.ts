@@ -196,14 +196,12 @@ export const getPIById = async (req: Request, res: Response) => {
     const pi = await getPIByIdService(req.params.id as string);
     const piData = pi.toObject();
 
-    // Use the Port 5000 Base URL (from your .env)
-    const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+    const serverUrl = process.env.SERVER_URL;
 
     const formattedResponse = {
       ...piData,
       assignedClientSnapshot: piData.clientSnapshot,
       documents: {
-        // Construct a direct path to the public PDF route
         proformaInvoice: `${serverUrl}/api/v1/proforma-invoices/${piData._id}/pdf`,
       },
     };
