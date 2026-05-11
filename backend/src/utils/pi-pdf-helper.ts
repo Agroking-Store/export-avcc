@@ -1,5 +1,5 @@
-// backend/src/utils/pi-pdf-helper.ts
 export const formatDate = (dateString: string | Date) => {
+  if (!dateString) return "-";
   const d = new Date(dateString);
   const months = [
     "Jan",
@@ -21,14 +21,18 @@ export const formatDate = (dateString: string | Date) => {
 export const formatAddress = (addr: any) => {
   if (!addr) return "-";
   if (typeof addr === "string") return addr;
+
   const addressParts = [
     addr.houseBuilding,
     addr.streetArea,
     addr.cityTown,
-    [addr.state, addr.pincode].filter(Boolean).join(" - "),
+    addr.state
+      ? `${addr.state}${addr.pincode ? ` - ${addr.pincode}` : ""}`
+      : addr.pincode,
     addr.country,
   ].filter(Boolean);
-  return addressParts.join("\n");
+
+  return addressParts.join("\n"); // Joins with new lines, no braces!
 };
 
 export const preparePIDataForService = (pi: any) => {
@@ -40,8 +44,10 @@ export const preparePIDataForService = (pi: any) => {
     return {
       slNo: index + 1,
       description: v.model || "N/A",
+      hsn: v.hsn || "",
       qty: v.quantity,
       rate: unitPrice.toFixed(2),
+      per: "No",
       amount: (v.quantity * unitPrice).toFixed(2),
       specs: {
         color: v.color,
@@ -50,23 +56,61 @@ export const preparePIDataForService = (pi: any) => {
         yom: v.yom,
         fuelType: v.fuelType,
         countryOfOrigin: v.countryOfOrigin,
+        engineCapacity: v.engineCapacity ? `${v.engineCapacity}cc` : "",
         hsn: v.hsn,
+        fob: (Number(v.fob) || 0).toFixed(2),
+        freight: (Number(v.freight) || 0).toFixed(2),
       },
     };
   });
 
   return {
     invoiceNumber: pi.piNumber,
-    date: new Date(pi.createdAt).toLocaleDateString("en-GB"),
+    date: pi.validityDate
+      ? formatDate(pi.validityDate)
+      : formatDate(pi.createdAt),
+    voucherNo: pi.piNumber,
+
+    // NEW: Populating separate fields for State Name and Code
     exporter: {
       name: companyForPdf?.name || "N/A",
-      address: companyForPdf?.address || "N/A",
+      address: formatAddress(companyForPdf?.address),
       gstin: companyForPdf?.gstNumber || "N/A",
+      state: companyForPdf?.address?.state || "",
+      stateCode: companyForPdf?.address?.pincode || "",
     },
     buyer: {
       name: clientForPdf?.companyName || clientForPdf?.name || " ",
-      address: clientForPdf?.address || clientForPdf?.country || "",
+      address: formatAddress(clientForPdf?.address),
+      state: clientForPdf?.address?.state || "",
+      clientCode: clientForPdf?.clientCode || "",
     },
+    consignee: {
+      name:
+        pi.consigneeSnapshot?.name ||
+        clientForPdf?.companyName ||
+        clientForPdf?.name ||
+        " ",
+      address: formatAddress(
+        pi.consigneeSnapshot?.address || clientForPdf?.address,
+      ),
+      state:
+        pi.consigneeSnapshot?.address?.state ||
+        clientForPdf?.address?.state ||
+        "-",
+    },
+
+    // Delivery fields
+    paymentTerms: pi.paymentTerms || "Advance",
+    termsOfDelivery: pi.termsOfDelivery || "",
+    incoterm: pi.incoterm || "",
+    portOfLoading: pi.portOfLoading || "",
+    portOfDischarge: pi.portOfDischarge || "",
+    dispatchedThrough: pi.dispatchedThrough || "",
+    destination: pi.destination || "",
+    buyersRef: pi.buyersRef || "",
+    otherRef: pi.otherRef || "",
+
     items,
     totalQty: pi.vehicleDetails.reduce(
       (sum: number, v: any) => sum + v.quantity,
@@ -77,6 +121,10 @@ export const preparePIDataForService = (pi: any) => {
     }),
     currency: pi.currency || "USD",
     amountInWords: pi.amountInWords || "N/A",
-    bankDetails: companyForPdf?.bankDetails || {},
+    bankDetails: {
+      bankName: companyForPdf?.bankDetails?.bankName || "",
+      accountNo: companyForPdf?.bankDetails?.accountNo || "",
+      branchIfsc: companyForPdf?.bankDetails?.branchIfsc || "",
+    },
   };
 };
