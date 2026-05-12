@@ -112,7 +112,7 @@ const getBrowser = async (): Promise<Browser> => {
 export const generateProformaInvoicePDF = async (
   invoiceData: any,
 ): Promise<Buffer> => {
-  // Launch fresh for every request - very stable on Linux
+  // Launch fresh for every request - solves the "Connection Closed" error on Linux
   const browser = await puppeteer.launch({
     headless: true,
     executablePath: getBrowserExecutablePath(),
@@ -126,16 +126,21 @@ export const generateProformaInvoicePDF = async (
   });
 
   try {
+    // Correct template path using process.cwd() to work in both src and dist
     const templatePath = path.join(
       process.cwd(),
       "src/templates/proforma-invoice.hbs",
     );
+
+    if (!fs.existsSync(templatePath)) {
+      throw new Error(`Template not found at: ${templatePath}`);
+    }
+
     const templateHtml = fs.readFileSync(templatePath, "utf8");
     const template = handlebars.compile(templateHtml);
     const finalHtml = template(invoiceData);
 
     const page = await browser.newPage();
-    // Wait for networkidle0 to ensure images/styles load
     await page.setContent(finalHtml, {
       waitUntil: "networkidle0",
       timeout: 30000,
@@ -148,8 +153,10 @@ export const generateProformaInvoicePDF = async (
     });
 
     return Buffer.from(pdfUint8Array);
+  } catch (error) {
+    console.error("Error in PDF generation service:", error);
+    throw error;
   } finally {
-    // ALWAYS CLOSE
     if (browser) await browser.close();
   }
 };
@@ -175,13 +182,30 @@ export const savePIPdfLocally = async (
   return `/uploads/proforma-invoices/${fileName}`;
 };
 
+// export const savePIPdfToDisk = async (piData: any): Promise<string> => {
+//   const pdfBuffer = await generateProformaInvoicePDF(piData);
+
+//   const dirPath = path.join(process.cwd(), "uploads", "proforma-invoices");
+//   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+
+//   const safeNumber = piData.invoiceNumber.replace(/\//g, "-");
+//   const fileName = `doc-${Date.now()}-${safeNumber}.pdf`;
+//   const relativePath = path.join("uploads", "proforma-invoices", fileName);
+//   const absolutePath = path.join(process.cwd(), relativePath);
+
+//   fs.writeFileSync(absolutePath, pdfBuffer);
+//   return relativePath;
+// };
+
 export const savePIPdfToDisk = async (piData: any): Promise<string> => {
   const pdfBuffer = await generateProformaInvoicePDF(piData);
-
   const dirPath = path.join(process.cwd(), "uploads", "proforma-invoices");
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 
-  const safeNumber = piData.invoiceNumber.replace(/\//g, "-");
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  const safeNumber = (piData.invoiceNumber || "PI").replace(/\//g, "-");
   const fileName = `doc-${Date.now()}-${safeNumber}.pdf`;
   const relativePath = path.join("uploads", "proforma-invoices", fileName);
   const absolutePath = path.join(process.cwd(), relativePath);

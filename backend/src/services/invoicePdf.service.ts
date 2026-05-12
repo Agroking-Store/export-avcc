@@ -14,6 +14,9 @@ const getBrowserExecutablePath = () => {
   }
 
   const candidates = [
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/chromium",
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -45,18 +48,28 @@ const getBrowser = async (): Promise<Browser> => {
 
 const templateCache = new Map<string, HandlebarsTemplateDelegate<any>>();
 
-const getTemplate = (templateName: string) => {
-  if (!templateCache.has(templateName)) {
-    const templatePath = path.join(
-      __dirname,
-      "../templates",
-      `${templateName}.hbs`,
-    );
-    const html = fs.readFileSync(templatePath, "utf8");
-    templateCache.set(templateName, handlebars.compile(html));
-  }
+// const getTemplate = (templateName: string) => {
+//   if (!templateCache.has(templateName)) {
+//     const templatePath = path.join(
+//       __dirname,
+//       "../templates",
+//       `${templateName}.hbs`,
+//     );
+//     const html = fs.readFileSync(templatePath, "utf8");
+//     templateCache.set(templateName, handlebars.compile(html));
+//   }
 
-  return templateCache.get(templateName)!;
+//   return templateCache.get(templateName)!;
+// };
+
+const getTemplate = (templateName: string) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src/templates",
+    `${templateName}.hbs`,
+  );
+  const html = fs.readFileSync(templatePath, "utf8");
+  return handlebars.compile(html);
 };
 
 export const renderInvoicePDF = async ({
@@ -72,12 +85,21 @@ export const renderInvoicePDF = async ({
   data: Record<string, any>;
   invoiceNumber: string;
 }): Promise<Buffer> => {
-  const browser = await getBrowser();
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: getBrowserExecutablePath(),
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+    ],
+  });
   const page = await browser.newPage();
 
   try {
     const template = getTemplate(templateName);
     const html = template(data);
+    const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: "networkidle0" });
 
