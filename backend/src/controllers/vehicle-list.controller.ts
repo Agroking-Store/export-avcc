@@ -6,11 +6,21 @@ import {
   getVehicleOrderFormOptionsService,
   getVehicleListItemByIdService,
   updateVehicleListItemService,
+  deleteVehicleListItemService,
 } from "../services/vehicle-list.service";
 
 export const createVehicleListItem = async (req: Request, res: Response) => {
   try {
-    const { brandName, modelName, variant, color, hsnCode, quantity, fobAmount, freight } = req.body;
+    const {
+      brandName,
+      modelName,
+      variant,
+      color,
+      hsnCode,
+      quantity,
+      fobAmount,
+      freight,
+    } = req.body;
 
     if (!brandName || !modelName || !variant || !color || !hsnCode) {
       throw new Error("All vehicle fields are required");
@@ -72,7 +82,13 @@ export const createVehicleListItems = async (req: Request, res: Response) => {
     }
 
     for (const v of vehicles) {
-      if (!v.brandName || !v.modelName || !v.variant || !v.color || !v.hsnCode) {
+      if (
+        !v.brandName ||
+        !v.modelName ||
+        !v.variant ||
+        !v.color ||
+        !v.hsnCode
+      ) {
         throw new Error("All vehicle fields are required for each entry");
       }
     }
@@ -102,10 +118,23 @@ export const updateVehicleListItem = async (req: Request, res: Response) => {
       ...req.body,
       quantity:
         req.body.quantity !== undefined ? Number(req.body.quantity) : undefined,
-      fobAmount: req.body.fobAmount !== undefined ? Number(req.body.fobAmount) : undefined,
-      freight: req.body.freight !== undefined ? Number(req.body.freight) : undefined,
+      fobAmount:
+        req.body.fobAmount !== undefined
+          ? Number(req.body.fobAmount)
+          : undefined,
+      freight:
+        req.body.freight !== undefined ? Number(req.body.freight) : undefined,
     });
     res.json(item);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteVehicleListItem = async (req: Request, res: Response) => {
+  try {
+    await deleteVehicleListItemService(req.params.id as string);
+    res.json({ message: "Vehicle deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

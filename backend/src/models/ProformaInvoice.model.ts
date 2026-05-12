@@ -89,6 +89,7 @@ export interface IProformaInvoice extends Document {
 
   createdAt: Date;
   pdfPath?: string;
+  hblPath?: string;
   updatedAt: Date;
 }
 
@@ -239,6 +240,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
       default: "draft",
     },
     pdfPath: { type: String },
+    hblPath: { type: String },
   },
   {
     timestamps: true,

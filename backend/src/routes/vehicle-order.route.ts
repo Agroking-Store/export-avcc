@@ -7,6 +7,7 @@ import {
   getVehicleOrderById,
   getVehicleOrders,
   updateVehicleOrder,
+  deleteVehicleOrder,
 } from "../controllers/vehicle-order.controller";
 
 const router = Router();
@@ -18,5 +19,6 @@ router.get("/:id", authenticate, getVehicleOrderById);
 // Write routes: admin only
 router.post("/", authenticate, authorize(ROLES.ADMIN), createVehicleOrder);
 router.put("/:id", authenticate, authorize(ROLES.ADMIN), updateVehicleOrder);
+router.delete("/:id", authenticate, authorize(ROLES.ADMIN), deleteVehicleOrder);
 
 export default router;

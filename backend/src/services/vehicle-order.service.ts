@@ -1,6 +1,7 @@
 import { Client } from "../models/Client.model";
 import { VehicleListItem } from "../models/VehicleListItem.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 
 interface CreateVehicleOrderDto {
   clientId?: string;
@@ -30,7 +31,9 @@ const generateVehicleOrderNumber = async (): Promise<string> => {
   return `VOR-${String(lastNumber + 1).padStart(3, "0")}`;
 };
 
-export const createVehicleOrderService = async (data: CreateVehicleOrderDto) => {
+export const createVehicleOrderService = async (
+  data: CreateVehicleOrderDto,
+) => {
   const vehicle = await VehicleListItem.findById(data.vehicleId);
 
   if (!vehicle) {
@@ -181,4 +184,18 @@ export const updateVehicleOrderService = async (
   };
 
   return await order.save();
+};
+
+export const deleteVehicleOrderService = async (id: string) => {
+  // Check if any bookings exist for this order
+  const hasBookings = await VehicleBooking.findOne({ orderId: id });
+  if (hasBookings) {
+    throw new Error(
+      "Cannot delete: This order has existing vehicle bookings/allotments.",
+    );
+  }
+
+  const order = await VehicleOrder.findByIdAndDelete(id);
+  if (!order) throw new Error("Order not found");
+  return order;
 };

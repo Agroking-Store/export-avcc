@@ -200,6 +200,7 @@ export const getPIById = async (req: Request, res: Response) => {
 
     const formattedResponse = {
       ...piData,
+      hblPath: piData.hblPath,
       assignedClientSnapshot: piData.clientSnapshot,
       documents: {
         proformaInvoice: `${serverUrl}/api/v1/proforma-invoices/${piData._id}/pdf`,
@@ -345,6 +346,43 @@ export const getBookedVehicleOrders = async (req: Request, res: Response) => {
     const data = await getBookedVehicleOrdersService(clientId as string);
 
     res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const uploadHBL = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const filePath = `/uploads/hbls/${req.file.filename}`;
+
+    await ProformaInvoice.findByIdAndUpdate(id, { hblPath: filePath });
+
+    res
+      .status(200)
+      .json({ message: "HBL uploaded successfully", path: filePath });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getHBLFile = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const pi = await ProformaInvoice.findById(id);
+
+    if (!pi || !pi.hblPath)
+      return res.status(404).json({ message: "HBL file not found" });
+
+    const absolutePath = path.join(process.cwd(), pi.hblPath);
+    if (!fs.existsSync(absolutePath))
+      return res.status(404).json({ message: "File missing on disk" });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="hbl-document.pdf"');
+    res.sendFile(absolutePath);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

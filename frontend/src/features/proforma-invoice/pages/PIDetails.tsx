@@ -39,6 +39,7 @@ import { piApi } from "../components/piApi";
 import InvoiceTypeModal from "../components/InvoiceTypeModal";
 import { invoiceApi } from "../components/invoiceApi";
 import type { PIInvoiceContext } from "../components/invoice.types";
+import HBLUploadModal from "../components/HBLUploadModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -529,6 +530,7 @@ const PIDetails = () => {
   const [viewingLC, setViewingLC] = useState(false);
   const [showLCModal, setShowLCModal] = useState(false);
   const [showInvoiceTypeModal, setShowInvoiceTypeModal] = useState(false);
+  const [showHBLModal, setShowHBLModal] = useState(false);
 
   const fetchPI = async () => {
     try {
@@ -784,6 +786,11 @@ const PIDetails = () => {
     </Button>
   );
 
+  const handleViewHBL = () => {
+    if (!id) return;
+    window.open(piApi.getHBLViewUrl(id), "_blank");
+  };
+
   return (
     <div className="bg-[#FAFAFA] dark:bg-[#0A0A0A] p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -881,6 +888,28 @@ const PIDetails = () => {
                 >
                   <FileUp className="w-4 h-4" />
                   Upload LC
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800 ml-2">
+              {pi?.hblPath ? (
+                <Button
+                  onClick={handleViewHBL}
+                  variant="ghost"
+                  size="sm"
+                  className="text-emerald-600 h-8 gap-2"
+                >
+                  <Eye className="w-4 h-4" /> View HBL
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setShowHBLModal(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-2"
+                >
+                  <FileUp className="w-4 h-4" /> Upload HBL
                 </Button>
               )}
             </div>
@@ -1274,6 +1303,17 @@ const PIDetails = () => {
           onClose={() => setShowLCModal(false)}
           onSuccess={() => {
             setShowLCModal(false);
+            fetchPI();
+          }}
+        />
+      )}
+
+      {showHBLModal && id && (
+        <HBLUploadModal
+          piId={id}
+          onClose={() => setShowHBLModal(false)}
+          onSuccess={() => {
+            setShowHBLModal(false);
             fetchPI();
           }}
         />
