@@ -30,8 +30,7 @@ const STATIC_TEXT = {
     "I declare that no input tax credit of the Central Goods and Services Tax or of the Integrated Goods and Services Tax has been availed for any of the inputs or input services used in the manufacture of the export goods.",
   DBK003:
     "I declare that CENVAT credit on the inputs or input services used in the manufacture of the export goods has not been carried forward in terms of the Central Goods and Services Tax Act, 2017.",
-  MEIS:
-    "We intend to claim rewards under Merchandise Exports From India Scheme (MEIS) RoDTEP Scheme",
+  MEIS: "We intend to claim rewards under Merchandise Exports From India Scheme (MEIS) RoDTEP Scheme",
   GSP_ORIGIN:
     "The Exporter ANANYATA TRADELINK LLP, Flat No 50, S No 27/4-27/5, Building No 7, Hingane Khurd, Parvati, Pune - 411009, Maharashtra, India declares that, except where otherwise clearly indicated, these products are of Indian preferential origin according to rules of origin of the generalized system of preferences of the European Union and that the origin criterion met is 'P'.",
   DECLARATION:
@@ -42,9 +41,8 @@ const STATIC_TEXT = {
     "WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.",
 };
 
-
-
-const isValidObjectId = (value: string) => mongoose.Types.ObjectId.isValid(value);
+const isValidObjectId = (value: string) =>
+  mongoose.Types.ObjectId.isValid(value);
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
@@ -110,7 +108,6 @@ const formatAddress = (address: any) => {
     address.cityTown,
     address.state,
     address.pincode,
-
   ]
     .filter(Boolean)
     .join(", ");
@@ -130,7 +127,8 @@ const formatCurrency = (value: number, currency: "USD" | "INR") => {
 const sanitizeFileName = (value: string) =>
   value.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_");
 
-const normalizeWhitespace = (value: string) => value.replace(/\s+/g, " ").trim();
+const normalizeWhitespace = (value: string) =>
+  value.replace(/\s+/g, " ").trim();
 
 const splitModelAndVariant = (modelLabel: string, variantLabel: string) => {
   const normalizedModel = normalizeWhitespace(modelLabel || "");
@@ -274,7 +272,12 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
   const modelName = splitLine.model || rawModelName;
   const variant = splitLine.variant || rawVariant;
   const colour = line.color || vehicleRef?.color || orderVehicle?.color || "";
-  const hsnCode = line.hsn || booking?.hsnCode || vehicleRef?.hsnCode || orderVehicle?.hsnCode || "";
+  const hsnCode =
+    line.hsn ||
+    booking?.hsnCode ||
+    vehicleRef?.hsnCode ||
+    orderVehicle?.hsnCode ||
+    "";
   const fobUSD = Number(line.fob || vehicleRef?.fobAmount || 0);
   const freightUSD = Number(line.freight || vehicleRef?.freight || 0);
   const exShowroomINR = Number(line.exShowroomINR || 0);
@@ -289,7 +292,8 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
     vehicleId,
     vehicleLineIndex: index,
     srNo: index + 1,
-    sourceVehicleId: line.vehicle_id?.toString?.() || vehicleRef?._id?.toString?.() || "",
+    sourceVehicleId:
+      line.vehicle_id?.toString?.() || vehicleRef?._id?.toString?.() || "",
     make,
     model: modelName,
     variant,
@@ -317,7 +321,8 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
     grossWeightKg: line.grossWeightKg || "",
     dimensionsCm: line.dimensionsCm || "",
     quantity: Number(line.quantity || 1),
-    displayModel: [modelName, variant].filter(Boolean).join(" ").trim() || line.model || "",
+    displayModel:
+      [modelName, variant].filter(Boolean).join(" ").trim() || line.model || "",
   };
 };
 
@@ -332,7 +337,9 @@ const buildPIInvoiceContext = async (piId: string) => {
   const buyer: any = (pi.clientSnapshot || pi.client_id || {}) as any;
   const invoices = await Invoice.find({ piId, active: true })
     .sort({ generatedAt: -1 })
-    .select("_id vehicleId type invoiceNumber generatedAt manualFields packingListPdf")
+    .select(
+      "_id vehicleId type invoiceNumber generatedAt manualFields packingListPdf",
+    )
     .lean();
 
   const vehicles = (pi.vehicleDetails || []).map((line: any, index: number) =>
@@ -380,12 +387,13 @@ const buildPIInvoiceContext = async (piId: string) => {
     buyerAddress: formatAddress(buyer.address) || buyer.country || "",
     buyerCity: buyer.address?.cityTown || "",
     buyerCountry: buyer.address?.country || buyer.country || "",
-    buyerGstin: buyer.gstNumber || buyer.gstin || buyer.gstNo || "", 
+    buyerGstin: buyer.gstNumber || buyer.gstin || buyer.gstNo || "",
     lcNumber: latestLC?.lcNumber || latestLC?.extractedData?.lcNumber || "",
     lcDate: formatDisplayDate(latestLC?.uploadedAt),
     portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
     portOfDischarge: pi.portOfDischarge || "",
-    placeOfDelivery: pi.destination || buyer.address?.country || buyer.country || "",
+    placeOfDelivery:
+      pi.destination || buyer.address?.country || buyer.country || "",
     placeOfReceipt: "Narhe, Pune",
     termsOfDelivery: pi.termsOfDelivery || "",
     vehicles: vehicles.map((vehicle) => ({
@@ -418,7 +426,13 @@ const getMissingFields = (
   const common = ["invoiceNumber", "invoiceDate"];
   const requiredByType: Record<InvoiceDocumentType, string[]> = {
     INR: ["placeOfSupply", "termsOfPayment", "customExchangeRate"],
-    USD: ["termsOfDelivery", "termsOfPayment", "drawbackScheme", "rodtepSchemeCode", "endUseCode"],
+    USD: [
+      "termsOfDelivery",
+      "termsOfPayment",
+      "drawbackScheme",
+      "rodtepSchemeCode",
+      "endUseCode",
+    ],
     COMMERCIAL: ["termsOfDelivery", "termsOfPayment"],
   };
 
@@ -474,7 +488,9 @@ const buildTemplateData = ({
 }) => {
   const invoiceDate = formatDisplayDate(manualFields.invoiceDate);
   const totalUSD = Number(vehicle.totalUSD || 0);
-  const exShowroomINR = Number(vehicle.exShowroomINR || manualFields.exShowroomINR || 0);
+  const exShowroomINR = Number(
+    vehicle.exShowroomINR || manualFields.exShowroomINR || 0,
+  );
   const igstRate = Number(vehicle.igstRate || manualFields.igstRate || 18);
   const igstAmountINR = Number(((exShowroomINR * igstRate) / 100).toFixed(2));
   const totalINR = Number((exShowroomINR + igstAmountINR).toFixed(2));
@@ -519,7 +535,7 @@ const buildTemplateData = ({
       exShowroomINR: formatCurrency(exShowroomINR, "INR"),
       igstAmountINR: formatCurrency(igstAmountINR, "INR"),
       totalINR: formatCurrency(totalINR, "INR"),
-      customExchangeRate: manualFields.customExchangeRate || "92.55",
+      customExchangeRate: manualFields.customExchangeRate,
     },
     scheme: {
       drawbackScheme: manualFields.drawbackScheme || "RODTEP",
@@ -650,8 +666,6 @@ const restoreMissingPdfBuffers = async (invoice: any) => {
   return invoice;
 };
 
-
-
 export const getPIInvoiceContext = async (req: Request, res: Response) => {
   try {
     const piId = asParamString(req.params.piId);
@@ -767,7 +781,9 @@ export const generateInvoice = async (req: Request, res: Response) => {
       });
     }
 
-    const vehicle = context.vehicles.find((item: any) => item.vehicleId === vehicleId);
+    const vehicle = context.vehicles.find(
+      (item: any) => item.vehicleId === vehicleId,
+    );
 
     if (!vehicle) {
       return jsonError(res, 400, {
@@ -881,8 +897,6 @@ export const generateInvoice = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const downloadInvoice = async (req: Request, res: Response) => {
   try {
     const invoice = await Invoice.findById(req.params.invoiceId);
@@ -936,7 +950,8 @@ export const downloadPackingList = async (req: Request, res: Response) => {
     if (!invoice.packingListPdf || invoice.packingListPdf.length === 0) {
       return jsonError(res, 404, {
         error: "PACKING_LIST_NOT_FOUND",
-        message: "Packing list is not available for this invoice and could not be restored",
+        message:
+          "Packing list is not available for this invoice and could not be restored",
       });
     }
 
