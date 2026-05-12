@@ -109,15 +109,18 @@ const buildInitialForm = (
   context: PIInvoiceContext,
   vehicle: PIInvoiceVehicle,
   invoiceType: InvoiceType,
-  existingInvoice?: GeneratedInvoiceRecord & { manualFields?: Record<string, any> },
+  existingInvoice?: GeneratedInvoiceRecord & {
+    manualFields?: Record<string, any>;
+  },
 ): InvoiceManualFields => {
   const manual = (existingInvoice?.manualFields || {}) as InvoiceManualFields;
 
   return {
-    invoiceNumber: manual.invoiceNumber || existingInvoice?.invoiceNumber || context.suggestedInvoiceNumber,
-    invoiceDate:
-      manual.invoiceDate ||
-      new Date().toISOString().slice(0, 10),
+    invoiceNumber:
+      manual.invoiceNumber ||
+      existingInvoice?.invoiceNumber ||
+      context.suggestedInvoiceNumber,
+    invoiceDate: manual.invoiceDate || new Date().toISOString().slice(0, 10),
     containerNo: manual.containerNo || "",
     buyerOrderDate: manual.buyerOrderDate || "",
     otherReference: manual.otherReference || context.piNumber || "",
@@ -128,7 +131,7 @@ const buildInitialForm = (
     endUseCode: manual.endUseCode || "",
     typeOfVehicle: manual.typeOfVehicle || "SUV",
     placeOfSupply: manual.placeOfSupply || "Maharashtra - 27",
-    customExchangeRate: manual.customExchangeRate || "92.55",
+    customExchangeRate: manual.customExchangeRate,
     exShowroomINR: manual.exShowroomINR || String(vehicle.exShowroomINR || ""),
     igstRate: manual.igstRate || String(vehicle.igstRate || 18),
     make: manual.make || vehicle.make || "",
@@ -137,19 +140,28 @@ const buildInitialForm = (
     colour: manual.colour || vehicle.colour || "",
     engineCapacity: manual.engineCapacity || vehicle.engineCapacity || "",
     fuelType: manual.fuelType || vehicle.fuelType || "",
-    yearOfManufacture: manual.yearOfManufacture || vehicle.yearOfManufacture || "",
-    monthYearFirstReg: manual.monthYearFirstReg || vehicle.monthYearFirstReg || "",
+    yearOfManufacture:
+      manual.yearOfManufacture || vehicle.yearOfManufacture || "",
+    monthYearFirstReg:
+      manual.monthYearFirstReg || vehicle.monthYearFirstReg || "",
     hsnCode: manual.hsnCode || vehicle.hsnCode || "",
     dbkSrNo: manual.dbkSrNo || vehicle.dbkSrNo || "",
     exportInspCertNo: manual.exportInspCertNo || vehicle.exportInspCertNo || "",
-    exportInspCertDate: manual.exportInspCertDate || vehicle.exportInspCertDate || "",
+    exportInspCertDate:
+      manual.exportInspCertDate || vehicle.exportInspCertDate || "",
     netWeightKg: manual.netWeightKg || vehicle.netWeightKg || "",
     grossWeightKg: manual.grossWeightKg || vehicle.grossWeightKg || "",
     dimensionsCm: manual.dimensionsCm || vehicle.dimensionsCm || "",
   };
 };
 
-const ReadOnlyField = ({ label, value }: { label: string; value: string | number }) => (
+const ReadOnlyField = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) => (
   <div className="space-y-2">
     <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
       {label}
@@ -216,7 +228,9 @@ export default function InvoiceFormPage() {
       try {
         setLoading(true);
         const data = await invoiceApi.getPIContext(piId);
-        const selectedVehicle = data.vehicles.find((item) => item.vehicleId === vehicleId);
+        const selectedVehicle = data.vehicles.find(
+          (item) => item.vehicleId === vehicleId,
+        );
 
         if (!selectedVehicle) {
           toast.error("Selected vehicle was not found in this PI");
@@ -224,16 +238,23 @@ export default function InvoiceFormPage() {
           return;
         }
 
-        const currentInvoice =
-          selectedVehicle.invoices[invoiceType] ||
-          null;
+        const currentInvoice = selectedVehicle.invoices[invoiceType] || null;
 
         setContext(data);
         setVehicle(selectedVehicle);
         setExistingInvoice(currentInvoice as any);
-        setForm(buildInitialForm(data, selectedVehicle, invoiceType, currentInvoice as any));
+        setForm(
+          buildInitialForm(
+            data,
+            selectedVehicle,
+            invoiceType,
+            currentInvoice as any,
+          ),
+        );
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load invoice form");
+        toast.error(
+          error.response?.data?.message || "Failed to load invoice form",
+        );
       } finally {
         setLoading(false);
       }
@@ -258,9 +279,18 @@ export default function InvoiceFormPage() {
           ? toIndianWords(Math.round(totalINR))
           : formatUsdWords(totalUSD),
     };
-  }, [form?.exShowroomINR, form?.igstRate, invoiceType, vehicle?.igstRate, vehicle?.totalUSD]);
+  }, [
+    form?.exShowroomINR,
+    form?.igstRate,
+    invoiceType,
+    vehicle?.igstRate,
+    vehicle?.totalUSD,
+  ]);
 
-  const handleFieldChange = (name: keyof InvoiceManualFields, value: string) => {
+  const handleFieldChange = (
+    name: keyof InvoiceManualFields,
+    value: string,
+  ) => {
     setForm((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
@@ -304,7 +334,9 @@ export default function InvoiceFormPage() {
         return;
       }
 
-      toast.error(error.response?.data?.message || "Failed to generate invoice");
+      toast.error(
+        error.response?.data?.message || "Failed to generate invoice",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -323,7 +355,8 @@ export default function InvoiceFormPage() {
   const showCommercialFields = invoiceType === "COMMERCIAL";
   const showUsdOnlyFields = invoiceType === "USD";
   const showPackingSupportFields = invoiceType === "USD";
-  const showCommonExportDetailFields = invoiceType === "USD" || invoiceType === "INR";
+  const showCommonExportDetailFields =
+    invoiceType === "USD" || invoiceType === "INR";
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
@@ -333,7 +366,8 @@ export default function InvoiceFormPage() {
             Invoice Generation
           </p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">
-            Fill Details for {invoiceType === "COMMERCIAL" ? "Commercial" : invoiceType} Invoice
+            Fill Details for{" "}
+            {invoiceType === "COMMERCIAL" ? "Commercial" : invoiceType} Invoice
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Vehicle {vehicle.chassisNo || vehicle.displayModel}
@@ -350,24 +384,42 @@ export default function InvoiceFormPage() {
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="space-y-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900">PI & Vehicle Data</h2>
+            <h2 className="text-lg font-bold text-slate-900">
+              PI & Vehicle Data
+            </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Read-only fields are prefilled from the PI. Fields not available from fetch are
-              kept editable below so the invoice can still be generated per vehicle.
+              Read-only fields are prefilled from the PI. Fields not available
+              from fetch are kept editable below so the invoice can still be
+              generated per vehicle.
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <ReadOnlyField label="PI Number" value={context.piNumber} />
               <ReadOnlyField label="PI Date" value={context.piDate} />
               <ReadOnlyField label="Buyer" value={context.buyerName} />
-              <ReadOnlyField label="Buyer Address" value={context.buyerAddress} />
+              <ReadOnlyField
+                label="Buyer Address"
+                value={context.buyerAddress}
+              />
               <ReadOnlyField label="LC Number" value={context.lcNumber} />
               <ReadOnlyField label="LC Date" value={context.lcDate} />
-              <ReadOnlyField label="Port of Loading" value={context.portOfLoading} />
-              <ReadOnlyField label="Port of Discharge" value={context.portOfDischarge} />
-              <ReadOnlyField label="Place of Delivery" value={context.placeOfDelivery} />
+              <ReadOnlyField
+                label="Port of Loading"
+                value={context.portOfLoading}
+              />
+              <ReadOnlyField
+                label="Port of Discharge"
+                value={context.portOfDischarge}
+              />
+              <ReadOnlyField
+                label="Place of Delivery"
+                value={context.placeOfDelivery}
+              />
               <ReadOnlyField label="VIN / Chassis" value={vehicle.chassisNo} />
               <ReadOnlyField label="Engine No" value={vehicle.engineNo} />
-              <ReadOnlyField label="Vehicle Value (USD)" value={vehicle.totalUSD.toFixed(2)} />
+              <ReadOnlyField
+                label="Vehicle Value (USD)"
+                value={vehicle.totalUSD.toFixed(2)}
+              />
             </div>
           </div>
 
@@ -381,35 +433,137 @@ export default function InvoiceFormPage() {
                   : "INR tax invoice follows the GST export format with custom exchange rate and IGST values."}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <EditableField label="Invoice Number" name="invoiceNumber" value={form.invoiceNumber} onChange={handleFieldChange} required placeholder="AN/EX/26-27/001" />
-              <EditableField label="Invoice Date" name="invoiceDate" value={form.invoiceDate} onChange={handleFieldChange} type="date" required />
-              <EditableField label="Container No" name="containerNo" value={form.containerNo} onChange={handleFieldChange} placeholder="Optional container no" />
+              <EditableField
+                label="Invoice Number"
+                name="invoiceNumber"
+                value={form.invoiceNumber}
+                onChange={handleFieldChange}
+                required
+                placeholder="AN/EX/26-27/001"
+              />
+              <EditableField
+                label="Invoice Date"
+                name="invoiceDate"
+                value={form.invoiceDate}
+                onChange={handleFieldChange}
+                type="date"
+                required
+              />
+              <EditableField
+                label="Container No"
+                name="containerNo"
+                value={form.containerNo}
+                onChange={handleFieldChange}
+                placeholder="Optional container no"
+              />
               {showUsdOnlyFields && (
                 <>
-                  <EditableField label="Buyer Order & Date" name="buyerOrderDate" value={form.buyerOrderDate} onChange={handleFieldChange} placeholder="Buyer order reference" />
-                  <EditableField label="Other Reference" name="otherReference" value={form.otherReference} onChange={handleFieldChange} placeholder="PI or internal reference" />
+                  <EditableField
+                    label="Buyer Order & Date"
+                    name="buyerOrderDate"
+                    value={form.buyerOrderDate}
+                    onChange={handleFieldChange}
+                    placeholder="Buyer order reference"
+                  />
+                  <EditableField
+                    label="Other Reference"
+                    name="otherReference"
+                    value={form.otherReference}
+                    onChange={handleFieldChange}
+                    placeholder="PI or internal reference"
+                  />
                 </>
               )}
               {showUsdOnlyFields && (
                 <>
-                  <EditableField label="Terms of Delivery" name="termsOfDelivery" value={form.termsOfDelivery} onChange={handleFieldChange} required placeholder="DDU / CFR" />
-                  <EditableField label="Terms of Payment" name="termsOfPayment" value={form.termsOfPayment} onChange={handleFieldChange} required placeholder="Immediate / As agreed" />
-                  <EditableField label="Drawback Scheme" name="drawbackScheme" value={form.drawbackScheme} onChange={handleFieldChange} required placeholder="RODTEP" />
-                  <EditableField label="RODTEP Scheme Code" name="rodtepSchemeCode" value={form.rodtepSchemeCode} onChange={handleFieldChange} required placeholder="60 / 61" />
-                  <EditableField label="End Use Code" name="endUseCode" value={form.endUseCode} onChange={handleFieldChange} required placeholder="GNX100" />
+                  <EditableField
+                    label="Terms of Delivery"
+                    name="termsOfDelivery"
+                    value={form.termsOfDelivery}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="DDU / CFR"
+                  />
+                  <EditableField
+                    label="Terms of Payment"
+                    name="termsOfPayment"
+                    value={form.termsOfPayment}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="Immediate / As agreed"
+                  />
+                  <EditableField
+                    label="Drawback Scheme"
+                    name="drawbackScheme"
+                    value={form.drawbackScheme}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="RODTEP"
+                  />
+                  <EditableField
+                    label="RODTEP Scheme Code"
+                    name="rodtepSchemeCode"
+                    value={form.rodtepSchemeCode}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="60 / 61"
+                  />
+                  <EditableField
+                    label="End Use Code"
+                    name="endUseCode"
+                    value={form.endUseCode}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="GNX100"
+                  />
                 </>
               )}
               {showCommercialFields && (
                 <>
-                  <EditableField label="Terms of Delivery" name="termsOfDelivery" value={form.termsOfDelivery} onChange={handleFieldChange} required placeholder="CFR any port in Sri Lanka" />
-                  <EditableField label="Consignee Bank Name" name="termsOfPayment" value={form.termsOfPayment} onChange={handleFieldChange} required placeholder="SAMPATH BANK PLC" />
+                  <EditableField
+                    label="Terms of Delivery"
+                    name="termsOfDelivery"
+                    value={form.termsOfDelivery}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="CFR any port in Sri Lanka"
+                  />
+                  <EditableField
+                    label="Consignee Bank Name"
+                    name="termsOfPayment"
+                    value={form.termsOfPayment}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="SAMPATH BANK PLC"
+                  />
                 </>
               )}
               {showInrFields && (
                 <>
-                  <EditableField label="Place of Supply" name="placeOfSupply" value={form.placeOfSupply} onChange={handleFieldChange} required placeholder="Maharashtra - 27" />
-                  <EditableField label="Terms of Payment" name="termsOfPayment" value={form.termsOfPayment} onChange={handleFieldChange} required placeholder="ABC / 30 Days" />
-                  <EditableField label="Custom Exchange Rate" name="customExchangeRate" value={form.customExchangeRate} onChange={handleFieldChange} required placeholder="92.55" />
+                  <EditableField
+                    label="Place of Supply"
+                    name="placeOfSupply"
+                    value={form.placeOfSupply}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="Maharashtra - 27"
+                  />
+                  <EditableField
+                    label="Terms of Payment"
+                    name="termsOfPayment"
+                    value={form.termsOfPayment}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="ABC / 30 Days"
+                  />
+                  <EditableField
+                    label="Custom Exchange Rate"
+                    name="customExchangeRate"
+                    value={form.customExchangeRate}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="92.55"
+                  />
                 </>
               )}
             </div>
@@ -426,41 +580,149 @@ export default function InvoiceFormPage() {
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {showCommercialFields && (
-                <EditableField label="Make" name="make" value={form.make} onChange={handleFieldChange} placeholder="KIA INDIA PRIVATE LIMITED" />
+                <EditableField
+                  label="Make"
+                  name="make"
+                  value={form.make}
+                  onChange={handleFieldChange}
+                  placeholder="KIA INDIA PRIVATE LIMITED"
+                />
               )}
-              <EditableField label="Model" name="model" value={form.model} onChange={handleFieldChange} placeholder="Toyota Hyryder" />
-              <EditableField label="Variant" name="variant" value={form.variant} onChange={handleFieldChange} placeholder="V AT / G1.0T 7DCT HTX" />
+              <EditableField
+                label="Model"
+                name="model"
+                value={form.model}
+                onChange={handleFieldChange}
+                placeholder="Toyota Hyryder"
+              />
+              <EditableField
+                label="Variant"
+                name="variant"
+                value={form.variant}
+                onChange={handleFieldChange}
+                placeholder="V AT / G1.0T 7DCT HTX"
+              />
               {showCommercialFields && (
-                <EditableField label="Type of Vehicle" name="typeOfVehicle" value={form.typeOfVehicle} onChange={handleFieldChange} placeholder="SUV" />
+                <EditableField
+                  label="Type of Vehicle"
+                  name="typeOfVehicle"
+                  value={form.typeOfVehicle}
+                  onChange={handleFieldChange}
+                  placeholder="SUV"
+                />
               )}
               {showCommonExportDetailFields && (
                 <>
-                  <EditableField label="Colour" name="colour" value={form.colour} onChange={handleFieldChange} placeholder="Gaming Grey" />
-                  <EditableField label="Engine Capacity" name="engineCapacity" value={form.engineCapacity} onChange={handleFieldChange} placeholder="1490" />
-                  <EditableField label="Fuel Type" name="fuelType" value={form.fuelType} onChange={handleFieldChange} placeholder="Petrol" />
-                  <EditableField label="HSN Code" name="hsnCode" value={form.hsnCode} onChange={handleFieldChange} placeholder="8703.40.35" />
-                  <EditableField label="DBK Sr No" name="dbkSrNo" value={form.dbkSrNo} onChange={handleFieldChange} placeholder="870302" />
+                  <EditableField
+                    label="Colour"
+                    name="colour"
+                    value={form.colour}
+                    onChange={handleFieldChange}
+                    placeholder="Gaming Grey"
+                  />
+                  <EditableField
+                    label="Engine Capacity"
+                    name="engineCapacity"
+                    value={form.engineCapacity}
+                    onChange={handleFieldChange}
+                    placeholder="1490"
+                  />
+                  <EditableField
+                    label="Fuel Type"
+                    name="fuelType"
+                    value={form.fuelType}
+                    onChange={handleFieldChange}
+                    placeholder="Petrol"
+                  />
+                  <EditableField
+                    label="HSN Code"
+                    name="hsnCode"
+                    value={form.hsnCode}
+                    onChange={handleFieldChange}
+                    placeholder="8703.40.35"
+                  />
+                  <EditableField
+                    label="DBK Sr No"
+                    name="dbkSrNo"
+                    value={form.dbkSrNo}
+                    onChange={handleFieldChange}
+                    placeholder="870302"
+                  />
                 </>
               )}
               {showCommercialFields && (
                 <>
-                  <EditableField label="Year of Manufacture" name="yearOfManufacture" value={form.yearOfManufacture} onChange={handleFieldChange} placeholder="2026" />
-                  <EditableField label="Month / Year First Reg" name="monthYearFirstReg" value={form.monthYearFirstReg} onChange={handleFieldChange} placeholder="2026/MAR/19" />
-                  <EditableField label="Export Insp Cert No" name="exportInspCertNo" value={form.exportInspCertNo} onChange={handleFieldChange} placeholder="IND.M.9.26.1035/09" />
-                  <EditableField label="Export Insp Cert Date" name="exportInspCertDate" value={form.exportInspCertDate} onChange={handleFieldChange} placeholder="28/03/2026" />
+                  <EditableField
+                    label="Year of Manufacture"
+                    name="yearOfManufacture"
+                    value={form.yearOfManufacture}
+                    onChange={handleFieldChange}
+                    placeholder="2026"
+                  />
+                  <EditableField
+                    label="Month / Year First Reg"
+                    name="monthYearFirstReg"
+                    value={form.monthYearFirstReg}
+                    onChange={handleFieldChange}
+                    placeholder="2026/MAR/19"
+                  />
+                  <EditableField
+                    label="Export Insp Cert No"
+                    name="exportInspCertNo"
+                    value={form.exportInspCertNo}
+                    onChange={handleFieldChange}
+                    placeholder="IND.M.9.26.1035/09"
+                  />
+                  <EditableField
+                    label="Export Insp Cert Date"
+                    name="exportInspCertDate"
+                    value={form.exportInspCertDate}
+                    onChange={handleFieldChange}
+                    placeholder="28/03/2026"
+                  />
                 </>
               )}
               {showPackingSupportFields && (
                 <>
-                  <EditableField label="Net Weight (KG)" name="netWeightKg" value={form.netWeightKg} onChange={handleFieldChange} placeholder="Optional" />
-                  <EditableField label="Gross Weight (KG)" name="grossWeightKg" value={form.grossWeightKg} onChange={handleFieldChange} placeholder="Optional" />
-                  <EditableField label="Dimensions (cm)" name="dimensionsCm" value={form.dimensionsCm} onChange={handleFieldChange} placeholder="Optional" />
+                  <EditableField
+                    label="Net Weight (KG)"
+                    name="netWeightKg"
+                    value={form.netWeightKg}
+                    onChange={handleFieldChange}
+                    placeholder="Optional"
+                  />
+                  <EditableField
+                    label="Gross Weight (KG)"
+                    name="grossWeightKg"
+                    value={form.grossWeightKg}
+                    onChange={handleFieldChange}
+                    placeholder="Optional"
+                  />
+                  <EditableField
+                    label="Dimensions (cm)"
+                    name="dimensionsCm"
+                    value={form.dimensionsCm}
+                    onChange={handleFieldChange}
+                    placeholder="Optional"
+                  />
                 </>
               )}
               {showInrFields && (
                 <>
-                  <EditableField label="Ex Showroom INR" name="exShowroomINR" value={form.exShowroomINR} onChange={handleFieldChange} placeholder="0.00" />
-                  <EditableField label="IGST Rate %" name="igstRate" value={form.igstRate} onChange={handleFieldChange} placeholder="18" />
+                  <EditableField
+                    label="Ex Showroom INR"
+                    name="exShowroomINR"
+                    value={form.exShowroomINR}
+                    onChange={handleFieldChange}
+                    placeholder="0.00"
+                  />
+                  <EditableField
+                    label="IGST Rate %"
+                    name="igstRate"
+                    value={form.igstRate}
+                    onChange={handleFieldChange}
+                    placeholder="18"
+                  />
                 </>
               )}
             </div>
@@ -474,23 +736,33 @@ export default function InvoiceFormPage() {
                 <FileText className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Calculated Summary</h2>
-                <p className="text-sm text-slate-500">Auto-read-only totals shown before generation.</p>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Calculated Summary
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Auto-read-only totals shown before generation.
+                </p>
               </div>
             </div>
 
             <div className="mt-5 space-y-4 rounded-3xl bg-slate-50 p-5">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">USD Total</span>
-                <span className="font-semibold text-slate-900">{computed.totalUSD.toFixed(2)}</span>
+                <span className="font-semibold text-slate-900">
+                  {computed.totalUSD.toFixed(2)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">IGST Amount</span>
-                <span className="font-semibold text-slate-900">{computed.igstAmount.toFixed(2)}</span>
+                <span className="font-semibold text-slate-900">
+                  {computed.igstAmount.toFixed(2)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">INR Total</span>
-                <span className="font-semibold text-slate-900">{computed.totalINR.toFixed(2)}</span>
+                <span className="font-semibold text-slate-900">
+                  {computed.totalINR.toFixed(2)}
+                </span>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                 <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -517,20 +789,24 @@ export default function InvoiceFormPage() {
 
             {existingInvoice && (
               <p className="mt-3 text-xs text-slate-500">
-                Existing {invoiceType} invoice found for this vehicle: {existingInvoice.invoiceNumber}
+                Existing {invoiceType} invoice found for this vehicle:{" "}
+                {existingInvoice.invoiceNumber}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      <AlertDialog open={showReplaceConfirm} onOpenChange={setShowReplaceConfirm}>
+      <AlertDialog
+        open={showReplaceConfirm}
+        onOpenChange={setShowReplaceConfirm}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate invoice?</AlertDialogTitle>
             <AlertDialogDescription>
-              An invoice already exists for this vehicle and type. Regenerating will replace the
-              old PDF file with the updated one.
+              An invoice already exists for this vehicle and type. Regenerating
+              will replace the old PDF file with the updated one.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -617,7 +893,10 @@ export default function InvoiceFormPage() {
           </div>
 
           <DialogFooter className="mt-2">
-            <Button variant="outline" onClick={() => navigate(`/proforma-invoice/${piId}`)}>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/proforma-invoice/${piId}`)}
+            >
               Back to PI
             </Button>
           </DialogFooter>
