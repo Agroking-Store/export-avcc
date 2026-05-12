@@ -74,7 +74,7 @@ export interface ProformaInvoiceAPI {
   _id: string;
   piNumber: string;
   order_id?: string | { _id: string; orderId: string };
-  vehicleBookingIds?: string[];// Updated to support populated object
+  vehicleBookingIds?: string[]; // Updated to support populated object
   client_id:
     | string
     | {
@@ -137,6 +137,7 @@ export interface ProformaInvoiceAPI {
     | "sent_to_buyer"
     | "lc_received"
     | "expired";
+  hblPath?: string;
   createdAt: string;
   updatedAt: string;
 }

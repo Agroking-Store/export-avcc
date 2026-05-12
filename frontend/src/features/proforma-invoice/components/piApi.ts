@@ -219,4 +219,19 @@ export const piApi = {
     if (token) params.append("token", token);
     return `${baseUrl}?${params.toString()}`;
   },
+
+  uploadHBL: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("hblFile", file);
+    const res = await axios.post(
+      `${apiConfig.baseURL}/proforma-invoices/${id}/hbl`,
+      formData,
+      authHeaders(),
+    );
+    return res.data;
+  },
+
+  getHBLViewUrl: (id: string) => {
+    return `${apiConfig.baseURL}/proforma-invoices/${id}/hbl/view`;
+  },
 };

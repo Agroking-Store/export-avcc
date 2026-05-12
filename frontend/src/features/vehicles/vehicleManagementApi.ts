@@ -68,16 +68,18 @@ export const vehicleManagementApi = {
     return response.data;
   },
 
-  createVehiclesBulk: async (vehicles: Array<{
-    brandName: string;
-    modelName: string;
-    variant: string;
-    color: string;
-    hsnCode: string;
-    quantity?: number;
-    fobAmount?: number;
-    freight?: number;
-  }>) => {
+  createVehiclesBulk: async (
+    vehicles: Array<{
+      brandName: string;
+      modelName: string;
+      variant: string;
+      color: string;
+      hsnCode: string;
+      quantity?: number;
+      fobAmount?: number;
+      freight?: number;
+    }>,
+  ) => {
     const response = await api.post("/vehicle-list/bulk", { vehicles });
     return response.data;
   },
@@ -145,6 +147,18 @@ export const vehicleManagementApi = {
 
   getOrderOptions: async (): Promise<VehicleManagementFormOptions> => {
     const response = await api.get("/vehicle-list/order-options");
+    return response.data;
+  },
+
+  deleteVehicleListItem: async (id: string) => {
+    // Uses the existing 'api' instance which includes headers and baseUrl
+    const response = await api.delete(`/vehicle-list/${id}`);
+    return response.data;
+  },
+
+  deleteVehicleOrder: async (id: string) => {
+    // Uses the existing 'api' instance
+    const response = await api.delete(`/vehicle-orders/${id}`);
     return response.data;
   },
 };

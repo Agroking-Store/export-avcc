@@ -4,6 +4,7 @@ import {
   getVehicleOrderByIdService,
   getVehicleOrdersService,
   updateVehicleOrderService,
+  deleteVehicleOrderService,
 } from "../services/vehicle-order.service";
 
 export const createVehicleOrder = async (req: Request, res: Response) => {
@@ -62,6 +63,15 @@ export const updateVehicleOrder = async (req: Request, res: Response) => {
     });
 
     res.json(order);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteVehicleOrder = async (req: Request, res: Response) => {
+  try {
+    await deleteVehicleOrderService(req.params.id as string);
+    res.json({ message: "Order deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

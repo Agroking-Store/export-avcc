@@ -3,22 +3,47 @@ import path from "path";
 import fs from "fs";
 
 // Dynamic storage configuration
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     // Determine folder based on URL or a query param
+//     const isVehicleDoc = req.originalUrl.includes("vehicles");
+//     const folder = isVehicleDoc ? "uploads/vehicles" : "uploads/lcs";
+
+//     const uploadDir = path.join(process.cwd(), folder);
+
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir, { recursive: true });
+//     }
+//     cb(null, uploadDir);
+//   },
+//   filename: (req, file, cb) => {
+//     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+//     const prefix = req.originalUrl.includes("vehicles") ? "veh" : "lc";
+//     cb(
+//       null,
+//       `${prefix}-${req.params.id || "new"}-${uniqueSuffix}${path.extname(file.originalname)}`,
+//     );
+//   },
+// });
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Determine folder based on URL or a query param
-    const isVehicleDoc = req.originalUrl.includes("vehicles");
-    const folder = isVehicleDoc ? "uploads/vehicles" : "uploads/lcs";
+    let folder = "uploads/others";
+    if (req.originalUrl.includes("vehicles")) folder = "uploads/vehicles";
+    else if (req.originalUrl.includes("lc")) folder = "uploads/lcs";
+    else if (req.originalUrl.includes("hbl")) folder = "uploads/hbls";
 
     const uploadDir = path.join(process.cwd(), folder);
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const prefix = req.originalUrl.includes("vehicles") ? "veh" : "lc";
+    let prefix = "doc";
+    if (req.originalUrl.includes("vehicles")) prefix = "veh";
+    else if (req.originalUrl.includes("lc")) prefix = "lc";
+    else if (req.originalUrl.includes("hbl")) prefix = "hbl";
+
     cb(
       null,
       `${prefix}-${req.params.id || "new"}-${uniqueSuffix}${path.extname(file.originalname)}`,

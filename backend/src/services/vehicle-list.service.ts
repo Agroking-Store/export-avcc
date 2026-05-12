@@ -1,5 +1,6 @@
 import { Client } from "../models/Client.model";
 import { VehicleListItem } from "../models/VehicleListItem.model";
+import { VehicleOrder } from "../models/VehicleOrder.model";
 
 interface CreateVehicleListItemDto {
   brandName: string;
@@ -28,8 +29,7 @@ export const createVehicleListItemService = async (
 ) => {
   const item = new VehicleListItem({
     ...data,
-    quantity:
-      data.quantity !== undefined ? Number(data.quantity) : 1,
+    quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
   });
 
   return await item.save();
@@ -83,9 +83,7 @@ export const getVehicleListItemsService = async (query: any) => {
 
 export const getVehicleOrderFormOptionsService = async () => {
   const [clients, vehicles] = await Promise.all([
-    Client.find({})
-      .select("name companyName")
-      .sort({ createdAt: -1 }),
+    Client.find({}).select("name companyName").sort({ createdAt: -1 }),
     VehicleListItem.find({})
       .select("brandName modelName variant color quantity status")
       .sort({ createdAt: -1 }),
@@ -123,11 +121,27 @@ export const updateVehicleListItemService = async (
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
   if (updateData.hsnCode !== undefined) item.hsnCode = updateData.hsnCode;
-  if (updateData.quantity !== undefined) item.quantity = Number(updateData.quantity);
-  if (updateData.fobAmount !== undefined) item.fobAmount = Number(updateData.fobAmount);
-  if (updateData.freight !== undefined) item.freight = Number(updateData.freight);
+  if (updateData.quantity !== undefined)
+    item.quantity = Number(updateData.quantity);
+  if (updateData.fobAmount !== undefined)
+    item.fobAmount = Number(updateData.fobAmount);
+  if (updateData.freight !== undefined)
+    item.freight = Number(updateData.freight);
 
   item.status = item.quantity > 0 ? "Available" : "Out of Stock";
 
   return await item.save();
+};
+
+export const deleteVehicleListItemService = async (id: string) => {
+  const isUsed = await VehicleOrder.findOne({ vehicleId: id });
+  if (isUsed) {
+    throw new Error(
+      "Cannot delete: This vehicle is currently linked to an active order.",
+    );
+  }
+
+  const item = await VehicleListItem.findByIdAndDelete(id);
+  if (!item) throw new Error("Vehicle not found");
+  return item;
 };

@@ -7,19 +7,20 @@ import {
   ChevronRight,
   Eye,
   FilePenLine,
+  Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import {
-  VehicleListItem,
-  vehicleManagementApi,
-} from "../vehicleManagementApi";
+import { VehicleListItem, vehicleManagementApi } from "../vehicleManagementApi";
 
 import { useAuth } from "../../../hooks/useAuth";
+import { useAppSelector } from "@/app/hooks";
 
 const VehicleList = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isSourcingTeam } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
+  const role = user?.role?.toLowerCase();
 
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +68,23 @@ const VehicleList = () => {
     }
   }, [location.state, location.pathname, navigate]);
 
+  const handleDelete = async (id: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this vehicle? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await vehicleManagementApi.deleteVehicleListItem(id);
+      toast.success("Vehicle deleted successfully");
+      fetchVehicles();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete vehicle");
+    }
+  };
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
       <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
@@ -84,7 +102,7 @@ const VehicleList = () => {
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
               {vehicles.length} Vehicles
             </span>
-            {!isSourcingTeam && (
+            {role === "admin" && (
               <button
                 onClick={() => navigate("/vehicles/add")}
                 className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
@@ -138,13 +156,19 @@ const VehicleList = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20 text-slate-400 italic">
+                  <td
+                    colSpan={5}
+                    className="text-center py-20 text-slate-400 italic"
+                  >
                     Loading vehicles...
                   </td>
                 </tr>
               ) : vehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20 text-slate-400 italic">
+                  <td
+                    colSpan={5}
+                    className="text-center py-20 text-slate-400 italic"
+                  >
                     No vehicles found
                   </td>
                 </tr>
@@ -173,20 +197,34 @@ const VehicleList = () => {
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">
                         <button
-                          onClick={() => navigate(`/vehicles/list/${vehicle._id}`)}
+                          onClick={() =>
+                            navigate(`/vehicles/list/${vehicle._id}`)
+                          }
                           className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                           title="View Vehicle"
                         >
                           <Eye size={18} />
                         </button>
                         {!isSourcingTeam && (
-                          <button
-                            onClick={() => navigate(`/vehicles/edit/${vehicle._id}`)}
-                            className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                            title="Edit Vehicle"
-                          >
-                            <FilePenLine size={18} />
-                          </button>
+                          <>
+                            <button
+                              onClick={() =>
+                                navigate(`/vehicles/edit/${vehicle._id}`)
+                              }
+                              className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
+                              title="Edit Vehicle"
+                            >
+                              <FilePenLine size={18} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDelete(vehicle._id)}
+                              className="cursor-pointer p-2.5 text-red-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50 hover:scale-110 transition-all duration-200"
+                              title="Delete Vehicle"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -199,7 +237,11 @@ const VehicleList = () => {
 
         <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800">
           <span className="text-sm font-medium text-slate-500 dark:text-gray-400">
-            Page <span className="text-[#0f172a] dark:text-white">{currentPage}</span> of {totalPages}
+            Page{" "}
+            <span className="text-[#0f172a] dark:text-white">
+              {currentPage}
+            </span>{" "}
+            of {totalPages}
           </span>
 
           <div className="flex gap-6">

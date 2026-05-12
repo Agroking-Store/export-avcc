@@ -28,6 +28,8 @@ import { createPIValidationSchema } from "../validations/proforma-invoice.valida
 import { uploadLC } from "../controllers/lc.controller";
 import { getLCFile } from "../controllers/proforma-invoice.controller";
 import { upload } from "../middleware/upload.middleware";
+import { getHBLFile } from "../controllers/proforma-invoice.controller";
+import { uploadHBL } from "../controllers/proforma-invoice.controller";
 
 import { authenticate } from "../middleware/auth.middleware";
 import { authorize } from "../middleware/role.middleware";
@@ -36,6 +38,7 @@ import { ROLES } from "../config/constants";
 const router = Router();
 
 router.get("/:id/pdf", downloadProformaInvoice);
+router.get("/:id/hbl/view", getHBLFile);
 
 router.use(authenticate);
 router.use(authorize(ROLES.ADMIN, ROLES.ACCOUNTANT));
@@ -64,5 +67,6 @@ router.get("/:id", getPIById);
 router.put("/:id", validate(createPIValidationSchema), updatePI);
 router.patch("/:id/status", updatePIStatus);
 router.post("/:id/lc", upload.single("lcFile"), uploadLC);
+router.post("/:id/hbl", upload.single("hblFile"), uploadHBL);
 
 export default router;
