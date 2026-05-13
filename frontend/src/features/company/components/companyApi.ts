@@ -24,7 +24,7 @@ export const companyApi = {
     limit: number = 10,
     sortBy: string = "createdAt",
     sortOrder: "asc" | "desc" = "desc",
-    status: "all" | "active" | "inactive" = "all" // Added status parameter
+    status: "all" | "active" | "inactive" = "all", // Added status parameter
   ) => {
     const res = await axios.get(`${apiConfig.baseURL}/companies`, {
       params: { search, page, limit, sortBy, sortOrder, status }, // Include status in params
@@ -42,7 +42,7 @@ export const companyApi = {
         headers: getAuthToken()
           ? { Authorization: `Bearer ${getAuthToken()}` }
           : {},
-      }
+      },
     );
     return res.data;
   },
@@ -55,7 +55,7 @@ export const companyApi = {
         headers: getAuthToken()
           ? { Authorization: `Bearer ${getAuthToken()}` }
           : {},
-      }
+      },
     );
     return res.data;
   },
@@ -68,7 +68,7 @@ export const companyApi = {
         headers: getAuthToken()
           ? { Authorization: `Bearer ${getAuthToken()}` }
           : {},
-      }
+      },
     );
     return res.data;
   },
@@ -79,5 +79,17 @@ export const companyApi = {
         ? { Authorization: `Bearer ${getAuthToken()}` }
         : {},
     });
+  },
+
+  getDealerInvoices: async (companyId: string) => {
+    const res = await axios.get(
+      `${apiConfig.baseURL}/companies/dealer-invoices/${companyId}`,
+      {
+        headers: getAuthToken()
+          ? { Authorization: `Bearer ${getAuthToken()}` }
+          : {},
+      },
+    );
+    return res.data;
   },
 };

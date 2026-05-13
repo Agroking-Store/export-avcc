@@ -57,3 +57,15 @@ export interface UpdateCompanyForm {
   gstNumber?: string;
   isActive?: boolean; // Added isActive for updating company status
 }
+
+export interface DealerInvoiceInfo {
+  _id: string;
+  chassisNumber: string;
+  assignedDealerSnapshot?: {
+    name: string;
+  };
+  documents: {
+    dealerInvoice: string;
+  };
+  createdAt: string;
+}

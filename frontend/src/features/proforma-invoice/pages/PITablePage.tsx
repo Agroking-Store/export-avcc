@@ -189,69 +189,56 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
-
-  // const handlePiPdfAction = async (
+  // const handlePiPdfAction = (
   //   id: string,
-  //   piNumber: string,
-  //   action: "view" | "download"
+  //   _piNumber: string,
+  //   action: "view" | "download",
   // ) => {
-  //   try {
-  //     setPiPdfLoading(id);
-  //     let token =
-  //       localStorage.getItem("token") || localStorage.getItem("accessToken");
-  //     if (!token && localStorage.getItem("user")) {
-  //       try {
-  //         const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-  //         token = userObj.token || userObj.accessToken;
-  //       } catch (e) {}
-  //     }
-  //     if (token && token.startsWith('"') && token.endsWith('"')) {
-  //       token = token.slice(1, -1);
-  //     }
+  //   const url = piApi.getPIViewUrl(id, action === "download");
 
-  //     const res = await axios.get(
-  //       `${apiConfig.baseURL}/proforma-invoices/${id}/pdf`,
-  //       {
-  //         responseType: "blob",
-  //         headers: token ? { Authorization: `Bearer ${token}` } : {},
-  //       }
-  //     );
-
-  //     const url = window.URL.createObjectURL(
-  //       new Blob([res.data], { type: "application/pdf" })
-  //     );
-
-  //     if (action === "view") {
-  //       window.open(url, "_blank");
-  //     } else {
-  //       const link = document.createElement("a");
-  //       link.href = url;
-  //       link.setAttribute("download", `${piNumber}.pdf`);
-  //       document.body.appendChild(link);
-  //       link.click();
-  //       link.parentNode?.removeChild(link);
-  //       toast.success("PDF Downloaded successfully!");
-  //     }
-  //   } catch (error) {
-  //     console.error("PDF Action Error", error);
-  //     toast.error("Failed to process PDF");
-  //   } finally {
-  //     setPiPdfLoading(null);
+  //   if (action === "view") {
+  //     window.open(url, "_blank");
+  //   } else {
+  //     window.location.href = url;
   //   }
   // };
 
-  // Replace the entire handlePiPdfAction function with this:
-  const handlePiPdfAction = (
+  const handlePiPdfAction = async (
     id: string,
-    _piNumber: string,
+    piNumber: string,
     action: "view" | "download",
   ) => {
-    const url = piApi.getPIViewUrl(id, action === "download");
+    try {
+      setPiPdfLoading(id);
 
-    if (action === "view") {
-      window.open(url, "_blank");
-    } else {
-      window.location.href = url;
+      const response = await piApi.previewPDF(id);
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      if (action === "view") {
+        window.open(url, "_blank");
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      } else {
+        const link = document.createElement("a");
+        link.href = url;
+
+        const fileName = `${piNumber.replace(/\//g, "-")}.pdf`;
+        link.setAttribute("download", fileName);
+
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success("Download started...");
+      }
+    } catch (error) {
+      console.error("PDF Action Error", error);
+      toast.error("Failed to process PDF download");
+    } finally {
+      setPiPdfLoading(null);
     }
   };
 

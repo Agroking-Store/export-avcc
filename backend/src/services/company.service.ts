@@ -1,6 +1,9 @@
 import { Company } from "../models/Company.model";
 import { CreateCompanyDto, UpdateCompanyDto } from "../dto/company.dto";
 import ProformaInvoice from "../models/ProformaInvoice.model";
+import mongoose from "mongoose";
+import { VehicleBooking } from "../models/VehicleBooking.model";
+
 // Helper to generate unique companyId (e.g., CO-001, CO-002)
 const generateCompanyId = async (): Promise<string> => {
   const latest = await Company.findOne()
@@ -90,7 +93,7 @@ export const getCompanyByIdService = async (id: string) => {
 // Update an existing company
 export const updateCompanyService = async (
   id: string,
-  data: UpdateCompanyDto
+  data: UpdateCompanyDto,
 ) => {
   const updated = await Company.findByIdAndUpdate(id, data, { new: true }); // `new: true` returns the updated document
 
@@ -103,17 +106,61 @@ export const updateCompanyService = async (
 
 export const getCompanyProformaInvoiceService = async (id: string) => {
   const invoices = await ProformaInvoice.find(
-  { company_id: id },
-  {
-    _id: 1,
-    totalAmount: 1,
-    buyersRef: 1
-  }
-);
+    { company_id: id },
+    {
+      _id: 1,
+      totalAmount: 1,
+      buyersRef: 1,
+    },
+  );
 
   if (!invoices) {
     throw new Error("Company invoices not found");
   }
 
   return invoices;
+};
+
+export const getCompanyDealerInvoicesService = async (companyId: string) => {
+  // console.log("Searching for Dealer Invoices for Company:", companyId);
+
+  const pis = await mongoose.model("ProformaInvoice").find({
+    company_id: new mongoose.Types.ObjectId(companyId),
+  });
+
+  if (!pis || pis.length === 0) {
+    // console.log("No PIs found for this company.");
+    return [];
+  }
+
+  const bookingIds = pis.flatMap((pi: any) => pi.vehicleBookingIds || []);
+  const chassisNumbers = pis.flatMap(
+    (pi: any) =>
+      pi.vehicleDetails?.map((v: any) => v.chassisNo).filter(Boolean) || [],
+  );
+
+  // console.log(
+  //   `Found ${bookingIds.length} booking IDs and ${chassisNumbers.length} chassis numbers.`,
+  // );
+
+  const dealerInvoices = await VehicleBooking.find({
+    $or: [
+      { _id: { $in: bookingIds } },
+      { chassisNumber: { $in: chassisNumbers } },
+    ],
+    isDealerInvoiceUploaded: true,
+  }).select("chassisNumber assignedDealerSnapshot documents createdAt");
+
+  return dealerInvoices.map((inv) => {
+    const doc = inv.toObject();
+    if (doc.documents?.dealerInvoice) {
+      const normalizedPath = doc.documents.dealerInvoice.replace(/\\/g, "/");
+
+      const match = normalizedPath.match(/\/uploads\/(.+)/);
+      if (match) {
+        doc.documents.dealerInvoice = `uploads/${match[1]}`;
+      }
+    }
+    return doc;
+  });
 };

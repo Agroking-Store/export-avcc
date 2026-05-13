@@ -12,7 +12,12 @@ import path from "path";
 const app: Application = express();
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
+  }),
+);
 app.use(
   cors({
     origin: config.CORS_ORIGIN,

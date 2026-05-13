@@ -163,34 +163,6 @@ export const getOrdersWithPIStatus = async (req: Request, res: Response) => {
   }
 };
 
-// GET PI BY ID
-// export const getPIById = async (req: Request, res: Response) => {
-//   try {
-//     const pi = await getPIByIdService(req.params.id as string);
-
-//     const piData = pi.toObject();
-
-//     const formattedResponse = {
-//       ...piData,
-//       assignedClientSnapshot: piData.clientSnapshot,
-//       assignedCompanySnapshot: piData.companySnapshot,
-
-//       // 2. Add the "documents" object with the PDF route
-//       // We point this to the existing PDF generation route
-//       documents: {
-//         proformaInvoice: `/proforma-invoices/${piData._id}/pdf`,
-//       },
-
-//       // Flags to match UI logic
-//       isPIUploaded: true,
-//     };
-
-//     res.json(pi);
-//   } catch (error: any) {
-//     res.status(404).json({ message: error.message });
-//   }
-// };
-
 export const getPIById = async (req: Request, res: Response) => {
   try {
     const pi = await getPIByIdService(req.params.id as string);
@@ -240,6 +212,45 @@ export const updatePIStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const getPIPdf = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const pi = await ProformaInvoice.findById(id);
+
+    if (!pi || !pi.pdfPath) {
+      return res
+        .status(404)
+        .json({ message: "Proforma Invoice PDF not found" });
+    }
+
+    const absolutePath = path.join(process.cwd(), pi.pdfPath);
+
+    if (!fs.existsSync(absolutePath)) {
+      return res
+        .status(404)
+        .json({ message: "PDF file missing on server disk" });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+
+    if (req.query.download === "true") {
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${pi.piNumber}.pdf"`,
+      );
+    } else {
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="${pi.piNumber}.pdf"`,
+      );
+    }
+
+    res.sendFile(absolutePath);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Upload LC
 export const uploadLC = async (req: Request, res: Response) => {
   try {
@@ -275,33 +286,6 @@ export const uploadLC = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// export const getLCFile = async (req: Request, res: Response) => {
-//   try {
-//     const { id } = req.params;
-//     const piIdString = Array.isArray(id) ? id[0] : id;
-
-//     const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
-//       uploadedAt: -1,
-//     });
-
-//     if (!lc || !lc.documentUrl) {
-//       return res
-//         .status(404)
-//         .json({ message: "Letter of Credit file not found" });
-//     }
-
-//     const absolutePath = path.join(process.cwd(), lc.documentUrl);
-
-//     if (!fs.existsSync(absolutePath)) {
-//       return res.status(404).json({ message: "File not found on server disk" });
-//     }
-
-//     res.sendFile(absolutePath);
-//   } catch (error: any) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 
 export const getLCFile = async (req: Request, res: Response) => {
   try {
