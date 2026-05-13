@@ -1,6 +1,16 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Calendar, CalendarIcon, CheckCircle2, Fuel, Globe, Hash, Package, Truck } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  CalendarIcon,
+  CheckCircle2,
+  Fuel,
+  Globe,
+  Hash,
+  Package,
+  Truck,
+} from "lucide-react";
 import CreatableSelect from "react-select/creatable";
 import { toast } from "react-toastify";
 import { vehicleManagementApi } from "../vehicleManagementApi";
@@ -8,13 +18,20 @@ import {
   VehicleBookingItem,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 import { useAuth } from "../../../hooks/useAuth";
 
 const VehicleOrderVehicleEdit = () => {
-  const { id, vehicleIndex } = useParams<{ id: string; vehicleIndex: string }>();
+  const { id, vehicleIndex } = useParams<{
+    id: string;
+    vehicleIndex: string;
+  }>();
   const navigate = useNavigate();
   const { isSourcingTeam } = useAuth();
 
@@ -45,8 +62,10 @@ const VehicleOrderVehicleEdit = () => {
   const inputStyle =
     "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
 
-  const validateChassis = (value: string) => /^[A-Z0-9]{17}$/i.test(value.trim());
-  const validateEngine = (value: string) => /^[A-Z0-9]{6,20}$/i.test(value.trim());
+  const validateChassis = (value: string) =>
+    /^[A-Z0-9]{17}$/i.test(value.trim());
+  const validateEngine = (value: string) =>
+    /^[A-Z0-9]{6,20}$/i.test(value.trim());
 
   useEffect(() => {
     const load = async () => {
@@ -71,14 +90,22 @@ const VehicleOrderVehicleEdit = () => {
         setAllBookings(bookingRes);
         setEngineNumber(currentBooking?.engineNumber || "");
         setChassisNumber(currentBooking?.chassisNumber || "");
-        setDeliveryDate(currentBooking?.deliveryDate ? currentBooking.deliveryDate.split("T")[0] : "");
+        setDeliveryDate(
+          currentBooking?.deliveryDate
+            ? currentBooking.deliveryDate.split("T")[0]
+            : "",
+        );
         setEngineCapacity(currentBooking?.engineCapacity || "");
         setFuelType(currentBooking?.fuelType || "");
         setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
         setYom(currentBooking?.yom || "");
-        setHsnCode(currentBooking?.hsnCode || orderRes?.vehicleSnapshot?.hsnCode || "");
+        setHsnCode(
+          currentBooking?.hsnCode || orderRes?.vehicleSnapshot?.hsnCode || "",
+        );
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load vehicle details");
+        toast.error(
+          error.response?.data?.message || "Failed to load vehicle details",
+        );
       } finally {
         setLoading(false);
       }
@@ -91,15 +118,15 @@ const VehicleOrderVehicleEdit = () => {
     event.preventDefault();
 
     if (!booking) return;
-    if (!engineNumber.trim() || !chassisNumber.trim()) {
-      toast.error("Engine number and chassis number are required");
+    if (!chassisNumber.trim()) {
+      toast.error("Chassis number is required");
       return;
     }
 
     const eng = engineNumber.trim().toUpperCase();
     const chassis = chassisNumber.trim().toUpperCase();
 
-    if (!validateEngine(eng)) {
+    if (eng !== "" && !validateEngine(eng)) {
       toast.error("Engine number must be 6-20 alphanumeric characters");
       return;
     }
@@ -112,7 +139,8 @@ const VehicleOrderVehicleEdit = () => {
       (b) => b._id !== booking._id && b.engineNumber?.toUpperCase() === eng,
     );
     const duplicateChassis = allBookings.find(
-      (b) => b._id !== booking._id && b.chassisNumber?.toUpperCase() === chassis,
+      (b) =>
+        b._id !== booking._id && b.chassisNumber?.toUpperCase() === chassis,
     );
 
     if (duplicateEngine) {
@@ -154,7 +182,9 @@ const VehicleOrderVehicleEdit = () => {
   const markDelivered = async () => {
     if (!booking) return;
     if (!booking.assignedClientId) {
-      toast.error("Please allot a client before marking this vehicle as delivered.");
+      toast.error(
+        "Please allot a client before marking this vehicle as delivered.",
+      );
       return;
     }
 
@@ -194,7 +224,8 @@ const VehicleOrderVehicleEdit = () => {
     );
   }
 
-  const vehicleName = `${order.vehicleSnapshot.brandName || ""} ${order.vehicleSnapshot.modelName || ""}`.trim();
+  const vehicleName =
+    `${order.vehicleSnapshot.brandName || ""} ${order.vehicleSnapshot.modelName || ""}`.trim();
 
   return (
     <div className="space-y-6">
@@ -228,17 +259,21 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Package size={14} className="text-amber-500" />
-              Engine Number <span className="text-red-500 ml-0.5">*</span>
+              Engine Number
             </label>
             <input
               type="text"
               value={engineNumber}
-              onChange={(event) => setEngineNumber(event.target.value.toUpperCase())}
+              onChange={(event) =>
+                setEngineNumber(event.target.value.toUpperCase())
+              }
               className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               placeholder="e.g. G3LCSM578833"
               maxLength={20}
             />
-            <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: G3LCSM578833</p>
+            <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">
+              Sample: G3LCSM578833
+            </p>
           </div>
 
           <div>
@@ -249,12 +284,16 @@ const VehicleOrderVehicleEdit = () => {
             <input
               type="text"
               value={chassisNumber}
-              onChange={(event) => setChassisNumber(event.target.value.toUpperCase())}
+              onChange={(event) =>
+                setChassisNumber(event.target.value.toUpperCase())
+              }
               className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               placeholder="e.g. MALFK81AVSD035213"
               maxLength={17}
             />
-            <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">Sample: MALFK81AVSD035213</p>
+            <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">
+              Sample: MALFK81AVSD035213
+            </p>
           </div>
 
           <div>
@@ -292,7 +331,10 @@ const VehicleOrderVehicleEdit = () => {
               }}
               onKeyDown={(e) => {
                 // Commit typed value on Enter or Tab even without selecting from dropdown
-                if ((e.key === "Enter" || e.key === "Tab") && fuelInputValue.trim()) {
+                if (
+                  (e.key === "Enter" || e.key === "Tab") &&
+                  fuelInputValue.trim()
+                ) {
                   setFuelType(fuelInputValue.trim());
                   setFuelInputValue("");
                   e.preventDefault();
@@ -316,7 +358,9 @@ const VehicleOrderVehicleEdit = () => {
                   padding: "2px 4px",
                   fontSize: "0.875rem",
                   color: "#4A5568",
-                  boxShadow: state.isFocused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+                  boxShadow: state.isFocused
+                    ? "0 0 0 3px rgba(99,102,241,0.12)"
+                    : "none",
                   minHeight: "46px",
                   "&:hover": { borderColor: "#6366f1" },
                 }),
@@ -325,11 +369,20 @@ const VehicleOrderVehicleEdit = () => {
                 option: (base, state) => ({
                   ...base,
                   fontSize: "0.875rem",
-                  background: state.isSelected ? "#6366f1" : state.isFocused ? "#EEF2FF" : "white",
+                  background: state.isSelected
+                    ? "#6366f1"
+                    : state.isFocused
+                      ? "#EEF2FF"
+                      : "white",
                   color: state.isSelected ? "white" : "#4A5568",
                   cursor: "pointer",
                 }),
-                menu: (base) => ({ ...base, borderRadius: "0.75rem", overflow: "hidden", zIndex: 50 }),
+                menu: (base) => ({
+                  ...base,
+                  borderRadius: "0.75rem",
+                  overflow: "hidden",
+                  zIndex: 50,
+                }),
                 indicatorSeparator: () => ({ display: "none" }),
               }}
             />
@@ -387,12 +440,16 @@ const VehicleOrderVehicleEdit = () => {
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  disabled={!engineNumber.trim() || !chassisNumber.trim()}
+                  // disabled={!engineNumber.trim() || !chassisNumber.trim()}
                   className="inline-flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className={deliveryDate ? "text-slate-700" : "text-slate-400"}>
+                  <span
+                    className={
+                      deliveryDate ? "text-slate-700" : "text-slate-400"
+                    }
+                  >
                     {!engineNumber.trim() || !chassisNumber.trim()
-                      ? "Fill engine & chassis first"
+                      ? "Select Date Of Delivery"
                       : deliveryDate
                         ? new Date(deliveryDate).toLocaleDateString()
                         : "Select date..."}
@@ -400,35 +457,40 @@ const VehicleOrderVehicleEdit = () => {
                   <CalendarIcon size={16} className="text-slate-400" />
                 </button>
               </PopoverTrigger>
-              {engineNumber.trim() && chassisNumber.trim() && (
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={deliveryDate ? new Date(deliveryDate) : undefined}
-                    onSelect={(date) => {
-                      if (date) {
-                        const yyyy = date.getFullYear();
-                        const mm = String(date.getMonth() + 1).padStart(2, "0");
-                        const dd = String(date.getDate()).padStart(2, "0");
-                        setDeliveryDate(`${yyyy}-${mm}-${dd}`);
-                      } else {
-                        setDeliveryDate("");
-                      }
-                      setCalendarOpen(false);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              )}
+
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={deliveryDate ? new Date(deliveryDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setDeliveryDate(`${yyyy}-${mm}-${dd}`);
+                    } else {
+                      setDeliveryDate("");
+                    }
+                    setCalendarOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
             </Popover>
           </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-          Current status: <span className="font-semibold text-slate-900">{booking.status}</span>
+          Current status:{" "}
+          <span className="font-semibold text-slate-900">{booking.status}</span>
           <p className="mt-1">
-            Once both engine and chassis numbers are saved after payment, status moves to
-            <span className="font-semibold text-slate-900"> chassis_received</span>.
+            Once both engine and chassis numbers are saved after payment, status
+            moves to
+            <span className="font-semibold text-slate-900">
+              {" "}
+              chassis_received
+            </span>
+            .
           </p>
         </div>
 
