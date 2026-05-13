@@ -14,6 +14,7 @@ import {
   getOrderDetailWithTracking, // Import the new controller for order details with tracking
   updatePIStatus, // Import the controller for the new route
   getBookedVehicleOrders,
+  getPIPdf,
 } from "../controllers/proforma-invoice.controller";
 import {
   getProformaInvoiceData,
@@ -68,5 +69,6 @@ router.put("/:id", validate(createPIValidationSchema), updatePI);
 router.patch("/:id/status", updatePIStatus);
 router.post("/:id/lc", upload.single("lcFile"), uploadLC);
 router.post("/:id/hbl", upload.single("hblFile"), uploadHBL);
+router.get("/:id/pdf", getPIPdf);
 
 export default router;
