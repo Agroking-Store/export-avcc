@@ -4,19 +4,34 @@ import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
 import { toast } from "react-toastify";
 import {
-  ArrowLeft, Edit, Building2, Mail, Phone, MapPin,
-  Globe, Landmark, CreditCard, Activity, Calendar,
-  ClipboardList, CheckCircle2, XCircle,
+  ArrowLeft,
+  Edit,
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Landmark,
+  CreditCard,
+  Activity,
+  Calendar,
+  ClipboardList,
+  CheckCircle2,
+  XCircle,
   Info,
-  Eye
+  Eye,
+  FileText,
+  ReceiptText,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Company } from "../components/company.types";
+import { Company, DealerInvoiceInfo } from "../components/company.types";
+import { companyApi } from "../components/companyApi";
 
 interface CompanyProfomaInvoice {
   _id: string;
   totalAmount: number;
-  buyersRef: string
+  buyersRef: string;
 }
 const CompanyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,17 +39,25 @@ const CompanyDetails: React.FC = () => {
   const [piPdfLoading, setPiPdfLoading] = useState<string | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [companyInvoices, setCompanyInvoices] = useState<CompanyProfomaInvoice[]>([]);
+  const [companyInvoices, setCompanyInvoices] = useState<
+    CompanyProfomaInvoice[]
+  >([]);
+
+  const [activeTab, setActiveTab] = useState<"pi" | "dealer">("pi");
+  const [dealerInvoices, setDealerInvoices] = useState<DealerInvoiceInfo[]>([]);
 
   useEffect(() => {
     const fetchCompanyDetails = async () => {
       try {
         setLoading(true);
-        const res = await axios.get<Company>(`${apiConfig.baseURL}/companies/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("accessToken")}`,
+        const res = await axios.get<Company>(
+          `${apiConfig.baseURL}/companies/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("accessToken")}`,
+            },
           },
-        });
+        );
         setCompany(res.data);
       } catch (err: any) {
         toast.error("Failed to load company details.");
@@ -49,12 +72,15 @@ const CompanyDetails: React.FC = () => {
     const fetchCompanyInvoices = async () => {
       try {
         setLoading(true);
-        const res = await axios.get<CompanyProfomaInvoice[]>(`${apiConfig.baseURL}/companies/proformainvoice/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("accessToken")}`,
+        const res = await axios.get<CompanyProfomaInvoice[]>(
+          `${apiConfig.baseURL}/companies/proformainvoice/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token") || localStorage.getItem("accessToken")}`,
+            },
           },
-        });
-        setCompanyInvoices(res.data)
+        );
+        setCompanyInvoices(res.data);
       } catch (err: any) {
         toast.error("Failed to load company details.");
         navigate("/companies/list");
@@ -68,10 +94,28 @@ const CompanyDetails: React.FC = () => {
   useEffect(() => {
     console.log("companyInvoices updated:", companyInvoices);
   }, [companyInvoices]);
-  const handlePiPdfAction = async (
-    id: string,
-    action: "view"
-  ) => {
+
+  useEffect(() => {
+    const fetchDealerInvoices = async () => {
+      if (!id) {
+        console.log("No ID found in URL params");
+        return;
+      }
+
+      try {
+        console.log("Frontend: Fetching dealer invoices for company ID:", id);
+        const data = await companyApi.getDealerInvoices(id);
+        console.log("Frontend: Received dealer invoices data:", data);
+        setDealerInvoices(data);
+      } catch (err) {
+        console.error("Frontend: Error fetching dealer invoices:", err);
+      }
+    };
+
+    fetchDealerInvoices();
+  }, [id]);
+
+  const handlePiPdfAction = async (id: string, action: "view") => {
     try {
       setPiPdfLoading(id);
       let token =
@@ -80,7 +124,7 @@ const CompanyDetails: React.FC = () => {
         try {
           const userObj = JSON.parse(localStorage.getItem("user") || "{}");
           token = userObj.token || userObj.accessToken;
-        } catch (e) { }
+        } catch (e) {}
       }
       if (token && token.startsWith('"') && token.endsWith('"')) {
         token = token.slice(1, -1);
@@ -91,16 +135,16 @@ const CompanyDetails: React.FC = () => {
         {
           responseType: "blob",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
+        },
       );
 
       const url = window.URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" })
+        new Blob([res.data], { type: "application/pdf" }),
       );
 
       if (action === "view") {
         window.open(url, "_blank");
-      } 
+      }
     } catch (error) {
       console.error("PDF Action Error", error);
       toast.error("Failed to process PDF");
@@ -111,32 +155,54 @@ const CompanyDetails: React.FC = () => {
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric", month: "short", day: "numeric",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const InfoBox = ({ label, value, icon: Icon, colorClass }: any) => (
     <div className="group bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl p-4 transition-all duration-300 hover:bg-white hover:border-blue-100 hover:shadow-md hover:-translate-y-1">
       <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-wider mb-1 flex items-center gap-2 transition-colors group-hover:text-[#005A9C]">
-        {Icon && <Icon size={12} className="transition-colors group-hover:text-[#005A9C]" />} {label}
+        {Icon && (
+          <Icon
+            size={12}
+            className="transition-colors group-hover:text-[#005A9C]"
+          />
+        )}{" "}
+        {label}
       </p>
-      <p className="text-sm font-semibold text-[#2D3748] transition-colors group-hover:text-[#005A9C]">{value || "-"}</p>
+      <p className="text-sm font-semibold text-[#2D3748] transition-colors group-hover:text-[#005A9C]">
+        {value || "-"}
+      </p>
     </div>
   );
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center h-96">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-      <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Loading Company...</span>
-    </div>
-  );
+  const viewDealerInvoice = (filePath: string) => {
+    if (!filePath) return;
+
+    const serverRoot = apiConfig.baseURL.split("/api")[0];
+
+    const finalUrl = `${serverRoot}/${filePath}`;
+
+    console.log("Requesting file from:", finalUrl);
+    window.open(finalUrl, "_blank");
+  };
+
+  if (loading)
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+        <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+          Loading Company...
+        </span>
+      </div>
+    );
 
   if (!company) return null;
 
   return (
-
     <div className="w-full animate-in fade-in duration-500">
-
       {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-6">
         <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
@@ -162,15 +228,15 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
         {/* LEFT COLUMN: Main Details */}
         <div className="lg:col-span-12 space-y-6">
-
           {/* PROFILE CARD */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
               <ClipboardList size={18} className="text-gray-400" />
-              <h2 className="text-lg font-bold text-[#1B2559]">Corporate Profile</h2>
+              <h2 className="text-lg font-bold text-[#1B2559]">
+                Corporate Profile
+              </h2>
             </div>
 
             <div className="space-y-6">
@@ -179,24 +245,44 @@ const CompanyDetails: React.FC = () => {
                   {company.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-widest mb-0.5">Company Name</p>
-                  <h3 className="text-3xl font-bold text-[#2D3748] transition-colors group-hover:text-[#005A9C]">{company.name}</h3>
+                  <p className="text-[10px] font-bold text-[#8E99AF] uppercase tracking-widest mb-0.5">
+                    Company Name
+                  </p>
+                  <h3 className="text-3xl font-bold text-[#2D3748] transition-colors group-hover:text-[#005A9C]">
+                    {company.name}
+                  </h3>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${company.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {company.isActive ? 'Active Entity' : 'Inactive Entity'}
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${company.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                    >
+                      {company.isActive ? "Active Entity" : "Inactive Entity"}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoBox label="Email Address" value={company.email} icon={Mail} />
-                <InfoBox label="Phone Number" value={company.phone} icon={Phone} />
+                <InfoBox
+                  label="Email Address"
+                  value={company.email}
+                  icon={Mail}
+                />
+                <InfoBox
+                  label="Phone Number"
+                  value={company.phone}
+                  icon={Phone}
+                />
 
-                <InfoBox label="GST Number" value={company.gstNumber} icon={CreditCard} />
-                <InfoBox label="Region" value={company.address?.country} icon={Globe} />
-
-
+                <InfoBox
+                  label="GST Number"
+                  value={company.gstNumber}
+                  icon={CreditCard}
+                />
+                <InfoBox
+                  label="Region"
+                  value={company.address?.country}
+                  icon={Globe}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -205,7 +291,11 @@ const CompanyDetails: React.FC = () => {
                   value={formatDate(company.createdAt)}
                   icon={Calendar}
                 />
-                <InfoBox label="Registered Office Address" value={`${company.address?.houseBuilding}, ${company.address?.streetArea}, ${company.address?.cityTown}, ${company.address?.state} - ${company.address?.pincode}`} icon={MapPin} />
+                <InfoBox
+                  label="Registered Office Address"
+                  value={`${company.address?.houseBuilding}, ${company.address?.streetArea}, ${company.address?.cityTown}, ${company.address?.state} - ${company.address?.pincode}`}
+                  icon={MapPin}
+                />
               </div>
             </div>
           </div>
@@ -215,21 +305,35 @@ const CompanyDetails: React.FC = () => {
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
               <div className="flex items-center gap-3 mb-6 border-b border-gray-50 pb-4">
                 <Landmark size={18} className="text-emerald-500" />
-                <h2 className="text-lg font-bold text-[#1B2559]">Banking Information</h2>
+                <h2 className="text-lg font-bold text-[#1B2559]">
+                  Banking Information
+                </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                  <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">Bank Name</p>
-                  <p className="text-sm font-bold text-slate-700">{company.bankDetails.bankName || "N/A"}</p>
+                  <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">
+                    Bank Name
+                  </p>
+                  <p className="text-sm font-bold text-slate-700">
+                    {company.bankDetails.bankName || "N/A"}
+                  </p>
                 </div>
                 <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                  <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">Account Number</p>
-                  <p className="text-sm font-bold text-slate-700 font-mono tracking-wider">{company.bankDetails.accountNo || "N/A"}</p>
+                  <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">
+                    Account Number
+                  </p>
+                  <p className="text-sm font-bold text-slate-700 font-mono tracking-wider">
+                    {company.bankDetails.accountNo || "N/A"}
+                  </p>
                 </div>
                 <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                  <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">IFSC / Branch</p>
-                  <p className="text-sm font-bold text-slate-700">{company.bankDetails.branchIfsc || "N/A"}</p>
+                  <p className="text-[9px] font-bold text-emerald-600 uppercase mb-1">
+                    IFSC / Branch
+                  </p>
+                  <p className="text-sm font-bold text-slate-700">
+                    {company.bankDetails.branchIfsc || "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -237,7 +341,7 @@ const CompanyDetails: React.FC = () => {
 
           {/* BANKING CARD */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-5 transition-shadow hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6 border-b border-gray-50 pb-4">
+            {/* <div className="flex items-center gap-3 mb-6 border-b border-gray-50 pb-4">
               <Info size={18} className="text-cyan-600" />
               <h2 className="text-lg font-bold text-[#1B2559]">
                 Performa Invoice Details
@@ -246,33 +350,24 @@ const CompanyDetails: React.FC = () => {
 
             <div className="overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
               <table className="min-w-full text-sm text-left">
-
-                {/* HEADER */}
                 <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
                   <tr>
                     <th className="px-4 py-3">Proforma Invoice Id</th>
                     <th className="px-4 py-3">Buyers Reference</th>
                     <th className="px-4 py-3">Grand Total</th>
-                    <th className="px-4 py-3 text-center">Action</th> {/* NEW */}
+                    <th className="px-4 py-3 text-center">Action</th>{" "}
                   </tr>
                 </thead>
 
-                {/* BODY */}
                 <tbody className="divide-y">
                   {companyInvoices.map((v, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition">
-
                       <td className="px-4 py-3">{v._id}</td>
 
-                      <td className="px-4 py-3 font-medium">
-                        {v.buyersRef}
-                      </td>
+                      <td className="px-4 py-3 font-medium">{v.buyersRef}</td>
 
-                      <td className="px-4 py-3">
-                        {v.totalAmount}
-                      </td>
+                      <td className="px-4 py-3">{v.totalAmount}</td>
 
-                      {/* ACTION COLUMN */}
                       <td className="px-4 py-3 text-center">
                         <Button
                           variant="outline"
@@ -281,32 +376,167 @@ const CompanyDetails: React.FC = () => {
                           onClick={() =>
                             handlePiPdfAction(
                               v._id,
-                            
-                              "view"
+
+                              "view",
                             )
                           }
                           disabled={piPdfLoading === v._id}
                         >
                           <Eye
-                            className={`h-5 w-5 ${piPdfLoading === v._id
+                            className={`h-5 w-5 ${
+                              piPdfLoading === v._id
                                 ? "text-gray-400 animate-pulse"
                                 : "text-slate-600"
-                              } cursor-pointer`}
+                            } cursor-pointer`}
                           />
                         </Button>
                       </td>
-
                     </tr>
                   ))}
                 </tbody>
-
               </table>
+            </div> */}
+
+            <div className="flex items-center justify-between mb-6 border-b border-gray-50 pb-4">
+              <div className="flex gap-6">
+                <button
+                  onClick={() => setActiveTab("pi")}
+                  className={`flex items-center gap-2 pb-4 px-2 font-bold text-sm transition-all cursor-pointer ${
+                    activeTab === "pi"
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <FileText size={18} /> Proforma Invoices
+                </button>
+                <button
+                  onClick={() => setActiveTab("dealer")}
+                  className={`flex items-center gap-2 pb-4 px-2 font-bold text-sm transition-all cursor-pointer ${
+                    activeTab === "dealer"
+                      ? "text-blue-600 border-b-2 border-blue-600"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <ReceiptText size={18} /> Dealer Invoices
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto bg-blue-50/50 rounded-3xl p-6 md:p-8">
+              {activeTab === "pi" ? (
+                /* --- PROFORMA INVOICE TABLE --- */
+                <table className="min-w-full text-sm text-left">
+                  <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
+                    <tr>
+                      <th className="px-4 py-3">PI Number</th>
+                      <th className="px-4 py-3">Buyers Reference</th>
+                      <th className="px-4 py-3">Grand Total</th>
+                      <th className="px-4 py-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {companyInvoices.map((v, i) => (
+                      <tr key={i} className="hover:bg-gray-50 transition">
+                        <td className="px-4 py-3 font-mono">
+                          {v._id.slice(-8).toUpperCase()}
+                        </td>
+                        <td className="px-4 py-3 font-medium">
+                          {v.buyersRef || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-blue-700 font-bold">
+                          {v.totalAmount.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePiPdfAction(v._id, "view")}
+                            disabled={piPdfLoading === v._id}
+                          >
+                            <Eye
+                              className={`h-5 w-5 ${piPdfLoading === v._id ? "animate-pulse" : "text-slate-600"}`}
+                            />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                /* --- DEALER INVOICE TABLE --- */
+                <table className="min-w-full text-sm text-left">
+                  <thead className="bg-emerald-50 text-emerald-600 uppercase text-xs">
+                    <tr>
+                      <th className="px-4 py-3">Chassis Number</th>
+                      <th className="px-4 py-3">Dealer</th>
+                      <th className="px-4 py-3">Date Uploaded</th>
+                      <th className="px-4 py-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  {/* --- INSIDE THE DEALER INVOICE TABLE BODY */}
+                  <tbody className="divide-y">
+                    {dealerInvoices.length > 0 ? (
+                      dealerInvoices.map((inv, i) => (
+                        <tr key={i} className="hover:bg-gray-50 transition">
+                          {/* 1. Corrected Field: chassisNumber */}
+                          <td className="px-4 py-3 font-bold text-slate-700">
+                            {inv.chassisNumber || "N/A"}
+                          </td>
+
+                          {/* 2. Corrected Field: assignedDealerSnapshot.name */}
+                          <td className="px-4 py-3">
+                            {inv.assignedDealerSnapshot?.name || "N/A"}
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500">
+                            {formatDate(inv.createdAt)}
+                          </td>
+
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-emerald-200 hover:bg-emerald-50 cursor-pointer"
+                              onClick={() => {
+                                // 3. Corrected Path: inv.documents.dealerInvoice
+                                if (inv.documents?.dealerInvoice) {
+                                  viewDealerInvoice(
+                                    inv.documents.dealerInvoice,
+                                  );
+                                } else {
+                                  toast.error("Invoice file path not found");
+                                }
+                              }}
+                            >
+                              <Download className="h-4 w-4 text-emerald-600 mr-2" />
+                              View Invoice
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="text-center py-20 text-gray-400"
+                        >
+                          <ReceiptText
+                            size={40}
+                            className="mx-auto mb-2 opacity-20"
+                          />
+                          <p>
+                            No dealer invoices uploaded for this company's
+                            vehicles.
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
-
-
-
       </div>
     </div>
   );
