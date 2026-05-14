@@ -5,7 +5,6 @@ import {
   Eye,
   FileText,
   Loader2,
-  Package2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -253,7 +252,6 @@ export default function InvoiceFormPage() {
   const [successData, setSuccessData] = useState<{
     invoiceId: string;
     invoiceNumber: string;
-    packingListUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -344,7 +342,6 @@ export default function InvoiceFormPage() {
       setSuccessData({
         invoiceId: response.invoiceId,
         invoiceNumber: form.invoiceNumber,
-        packingListUrl: response.packingListUrl,
       });
       setExistingInvoice({
         _id: response.invoiceId,
@@ -352,7 +349,7 @@ export default function InvoiceFormPage() {
         generatedAt: new Date().toISOString(),
         vehicleId,
         type: invoiceType,
-        hasPackingList: invoiceType === "USD",
+        hasPackingList: false,
         manualFields: form,
       });
     } catch (error: any) {
@@ -622,7 +619,7 @@ export default function InvoiceFormPage() {
               {showCommercialFields
                 ? "Commercial invoice needs exact certification vehicle details, so fields like year, first registration, inspection certificate, and type of vehicle stay editable."
                 : showPackingSupportFields
-                  ? "USD invoice also drives the packing list, so only export-format and packing fields are shown here."
+                  ? "USD invoice uses export-format fields only. Packing list is generated separately."
                   : "Only fields used in the invoice format are shown here."}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -922,21 +919,6 @@ export default function InvoiceFormPage() {
               Download PDF
             </Button>
 
-            {successData?.packingListUrl && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() =>
-                  invoiceApi.downloadFile(
-                    invoiceApi.getPackingListViewUrl(successData.invoiceId),
-                    `${successData.invoiceNumber}-packing.pdf`,
-                  )
-                }
-              >
-                <Package2 className="h-4 w-4" />
-                Download Packing List
-              </Button>
-            )}
           </div>
 
           <DialogFooter className="mt-2">

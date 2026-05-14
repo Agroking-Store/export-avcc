@@ -1188,7 +1188,7 @@ const PIDetails = () => {
                           {vehicle.invoices.PACKING_LIST ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-blue-700">
-                                Auto
+                                {vehicle.invoices.PACKING_LIST!.invoiceNumber}
                               </span>
                               <Button
                                 variant="outline"
