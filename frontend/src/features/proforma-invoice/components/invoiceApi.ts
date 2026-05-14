@@ -68,6 +68,22 @@ export const invoiceApi = {
     return res.data;
   },
 
+  async generatePackingList(payload: {
+    piId: string;
+    vehicleIds: string[];
+    manualFields?: Record<string, any>;
+    replaceExisting?: boolean;
+  }) {
+    const res = await axios.post<{
+      success: boolean;
+      invoiceId: string;
+      packingListUrl: string;
+    }>(`${apiConfig.baseURL}/packing-list/generate`, payload, {
+      headers: getAuthHeaders(),
+    });
+    return res.data;
+  },
+
   getInvoiceViewUrl(invoiceId: string, download = false) {
     return appendToken(
       `${apiConfig.baseURL}/invoices/${invoiceId}/download${download ? "?download=true" : ""}`,

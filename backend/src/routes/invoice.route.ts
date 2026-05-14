@@ -6,6 +6,7 @@ import {
   generateInvoice,
   getInvoicesByPI,
   getPIInvoiceContext,
+  generatePackingList,
 } from "../controllers/invoice.controller";
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get("/invoices/:invoiceId/download-packing", downloadPackingList);
 router.get("/invoices/:invoiceId/download", downloadInvoice);
 router.get("/invoices/:piId", getInvoicesByPI);
 router.delete("/invoices/:invoiceId", deleteInvoice);
+router.post("/packing-list/generate", generatePackingList);
 
 export default router;

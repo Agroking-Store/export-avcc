@@ -56,7 +56,7 @@ const CARD_CONFIG: Array<{
   {
     key: "PACKING_LIST",
     title: "Packing List",
-    description: "Auto-generated together with the USD invoice",
+    description: "Generate independently for selected vehicles",
     accent: "from-violet-500 to-fuchsia-500",
     iconBg: "bg-violet-50",
     iconColor: "text-violet-700",
@@ -87,7 +87,7 @@ const getLatestInvoice = (
 
 const getChipLabel = (type: InvoiceType | "PACKING_LIST", count: number) => {
   if (type === "PACKING_LIST")
-    return count > 0 ? `${count} available` : "Auto with USD";
+    return count > 0 ? `${count} available` : "Independent";
   return count > 0 ? `${count} generated` : "Not generated";
 };
 
@@ -104,22 +104,11 @@ export default function InvoiceTypeModal({
 
   if (!context) return null;
 
-  // const vehiclesMissingData = context.vehicles.filter(
-  //   (v) => !v.engineNo || !v.chassisNo,
-  // );
-
-  // const isDataIncomplete = vehiclesMissingData.length > 0;
-
   const vehiclesMissingData = context.vehicles.filter(
     (v) => !v.engineNo || !v.engineNo.trim(),
   );
 
   const isDataIncomplete = vehiclesMissingData.length > 0;
-
-  // const handleGenerate = (type: InvoiceType) => {
-  //   onOpenChange(false);
-  //   navigate(`/invoices/generate/${context._id}/${type}`);
-  // };
 
   const handleGenerate = (type: InvoiceType) => {
     if (isDataIncomplete) {
@@ -139,7 +128,6 @@ export default function InvoiceTypeModal({
         style={{ width: "min(1200px, calc(100vw - 48px))", maxWidth: "none" }}
         className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl"
       >
-        {/* ── Header ── */}
         <DialogHeader className="border-b border-slate-100 bg-slate-50/70 px-6 py-4">
           <div className="flex items-center justify-between gap-6">
             <div className="min-w-0">
@@ -151,7 +139,7 @@ export default function InvoiceTypeModal({
                 Generate Tax Invoice
               </DialogTitle>
               <DialogDescription className="mt-0.5 text-xs text-slate-500">
-                Pick a document type — INR, USD &amp; Commercial can each be
+                Pick a document type — INR, USD & Commercial can each be
                 generated separately per PI.
               </DialogDescription>
             </div>
@@ -188,7 +176,6 @@ export default function InvoiceTypeModal({
           </div>
         )}
 
-        {/* ── Cards — forced 4 columns ── */}
         <div
           className="p-4"
           style={{
@@ -207,11 +194,9 @@ export default function InvoiceTypeModal({
                 key={card.key}
                 className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
               >
-                {/* Accent bar */}
                 <div className={`h-1 w-full bg-gradient-to-r ${card.accent}`} />
 
                 <div className="flex flex-1 flex-col gap-3 p-4">
-                  {/* Icon + status chip */}
                   <div className="flex items-center justify-between gap-2">
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${card.iconBg} ${card.iconColor}`}
@@ -235,7 +220,6 @@ export default function InvoiceTypeModal({
                     </span>
                   </div>
 
-                  {/* Title + description */}
                   <div>
                     <h3 className="text-[15px] font-bold leading-snug text-slate-900">
                       {card.title}
@@ -245,7 +229,6 @@ export default function InvoiceTypeModal({
                     </p>
                   </div>
 
-                  {/* Status box */}
                   <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                       Current Status
@@ -254,27 +237,15 @@ export default function InvoiceTypeModal({
                       {latest
                         ? `Latest: ${latest.invoiceNumber}`
                         : isPacking
-                          ? "Appears after USD invoice generation."
+                          ? "Independent generation"
                           : "No invoice generated yet."}
                     </p>
                   </div>
 
-                  {/* Action buttons */}
                   <div className="mt-auto flex flex-col gap-2">
                     {!isPacking && (
-                      // <Button
-                      //   size="sm"
-                      //   className="h-9 w-full justify-between rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800"
-                      //   onClick={() => handleGenerate(card.key as InvoiceType)}
-                      // >
-                      //   <span>
-                      //     {latest ? "Generate / Edit" : "Start Generation"}
-                      //   </span>
-                      //   <ArrowRight className="h-3.5 w-3.5" />
-                      // </Button>
                       <Button
                         size="sm"
-                        // 3. Visual feedback: Change button style if incomplete
                         className={`h-9 w-full justify-between rounded-lg px-3 text-xs font-semibold text-white transition-all 
                         ${
                           isDataIncomplete
@@ -282,6 +253,20 @@ export default function InvoiceTypeModal({
                             : "bg-slate-900 hover:bg-slate-800 cursor-pointer"
                         }`}
                         onClick={() => handleGenerate(card.key as InvoiceType)}
+                      >
+                        <span>Start Generation</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+
+                    {isPacking && (
+                      <Button
+                        size="sm"
+                        className="h-9 w-full justify-between rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800"
+                        onClick={() => {
+                          onOpenChange(false);
+                          navigate(`/packing-list/generate/${context._id}`);
+                        }}
                       >
                         <span>Start Generation</span>
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -347,11 +332,9 @@ export default function InvoiceTypeModal({
           })}
         </div>
 
-        {/* ── Footer ── */}
         <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-6 py-3">
           <p className="text-xs text-slate-400">
-            Packing List is view/download only — stays linked to the USD
-            invoice.
+            Packing List can now be generated independently.
           </p>
           <Button
             variant="outline"
