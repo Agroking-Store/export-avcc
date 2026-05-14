@@ -104,8 +104,14 @@ export default function InvoiceTypeModal({
 
   if (!context) return null;
 
+  // const vehiclesMissingData = context.vehicles.filter(
+  //   (v) => !v.engineNo || !v.chassisNo,
+  // );
+
+  // const isDataIncomplete = vehiclesMissingData.length > 0;
+
   const vehiclesMissingData = context.vehicles.filter(
-    (v) => !v.engineNo || !v.chassisNo,
+    (v) => !v.engineNo || !v.engineNo.trim(),
   );
 
   const isDataIncomplete = vehiclesMissingData.length > 0;
@@ -118,7 +124,7 @@ export default function InvoiceTypeModal({
   const handleGenerate = (type: InvoiceType) => {
     if (isDataIncomplete) {
       toast.error(
-        `Cannot generate ${type} Invoice. ${vehiclesMissingData.length} vehicle(s) are missing Engine or Chassis numbers.`,
+        `Cannot generate ${type} Invoice. ${vehiclesMissingData.length} vehicle(s) are missing Engine numbers.`,
       );
       return;
     }
@@ -175,8 +181,8 @@ export default function InvoiceTypeModal({
           <div className="mx-4 mt-4 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <p className="text-xs font-medium">
-              Important: Some vehicles in this PI do not have Engine or Chassis
-              numbers. You must update the PI with these details before
+              Important: Some vehicles in this PI do not have Engine Number. You
+              must update the engine number in the vehicle details before
               generating Tax Invoices.
             </p>
           </div>

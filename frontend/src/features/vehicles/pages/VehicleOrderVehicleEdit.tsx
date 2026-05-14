@@ -26,6 +26,8 @@ import {
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 import { useAuth } from "../../../hooks/useAuth";
+import axios from "axios";
+import { apiConfig } from "@/config/apiConfig";
 
 const VehicleOrderVehicleEdit = () => {
   const { id, vehicleIndex } = useParams<{
@@ -114,6 +116,101 @@ const VehicleOrderVehicleEdit = () => {
     load();
   }, [id, vehicleIndex]);
 
+  // const handleSubmit = async (event: FormEvent) => {
+  //   event.preventDefault();
+
+  //   if (!booking) return;
+  //   if (!chassisNumber.trim()) {
+  //     toast.error("Chassis number is required");
+  //     return;
+  //   }
+
+  //   const eng = engineNumber.trim().toUpperCase();
+  //   const chassis = chassisNumber.trim().toUpperCase();
+
+  //   if (eng !== "" && !validateEngine(eng)) {
+  //     toast.error("Engine number must be 6-20 alphanumeric characters");
+  //     return;
+  //   }
+  //   if (!validateChassis(chassis)) {
+  //     toast.error("Chassis number must be exactly 17 alphanumeric characters");
+  //     return;
+  //   }
+
+  //   // const duplicateEngine = allBookings.find(
+  //   //   (b) => b._id !== booking._id && b.engineNumber?.toUpperCase() === eng,
+  //   // );
+  //   let duplicateEngine = null;
+  //   if (eng !== "") {
+  //     duplicateEngine = allBookings.find(
+  //       (b) => b._id !== booking._id && b.engineNumber?.toUpperCase() === eng,
+  //     );
+  //   }
+
+  //   const duplicateChassis = allBookings.find(
+  //     (b) =>
+  //       b._id !== booking._id && b.chassisNumber?.toUpperCase() === chassis,
+  //   );
+
+  //   if (duplicateEngine) {
+  //     toast.error(`Engine number already used by another vehicle`);
+  //     return;
+  //   }
+  //   if (duplicateChassis) {
+  //     toast.error(`Chassis number already used by another vehicle`);
+  //     return;
+  //   }
+
+  //   try {
+  //     setSaving(true);
+  //     const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
+  //       engineNumber: eng,
+  //       chassisNumber: chassis,
+  //       deliveryDate: deliveryDate || undefined,
+  //       engineCapacity: engineCapacity || undefined,
+  //       fuelType: fuelType || undefined,
+  //       countryOfOrigin: countryOfOrigin || undefined,
+  //       yom: yom || undefined,
+  //       hsnCode: hsnCode || undefined,
+  //     });
+
+  //     try {
+  //       const searchRes = await axios.get(
+  //         `${apiConfig.baseURL}/proforma-invoices?search=${chassis}`,
+  //       );
+  //       const relatedPIs = searchRes.data?.data || [];
+
+  //       for (const pi of relatedPIs) {
+  //         const vehicleIndex = pi.vehicleDetails?.findIndex(
+  //           (v: any) => v.chassisNo?.toUpperCase() === chassis,
+  //         );
+
+  //         if (vehicleIndex !== -1) {
+  //           await axios.patch(
+  //             `${apiConfig.baseURL}/proforma-invoices/${pi._id}/vehicles/${vehicleIndex}`,
+  //             { engineNo: eng },
+  //           );
+  //         }
+  //       }
+  //       toast.success("Engine number synced to all related PIs");
+  //     } catch (syncErr) {
+  //       console.warn("Could not sync to some PIs (non-critical):", syncErr);
+  //     }
+
+  //     setBooking(updated);
+  //     toast.success(
+  //       updated.status === "chassis_received"
+  //         ? "Engine and chassis numbers saved. Vehicle is now in transit."
+  //         : "Vehicle details updated",
+  //     );
+  //     navigate(`/vehicles/orders`);
+  //   } catch (error: any) {
+  //     toast.error(error.response?.data?.message || "Failed to update vehicle");
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -135,27 +232,32 @@ const VehicleOrderVehicleEdit = () => {
       return;
     }
 
-    const duplicateEngine = allBookings.find(
-      (b) => b._id !== booking._id && b.engineNumber?.toUpperCase() === eng,
-    );
     const duplicateChassis = allBookings.find(
       (b) =>
         b._id !== booking._id && b.chassisNumber?.toUpperCase() === chassis,
     );
 
-    if (duplicateEngine) {
-      toast.error(`Engine number already used by another vehicle`);
+    let duplicateEngine = null;
+    if (eng !== "") {
+      duplicateEngine = allBookings.find(
+        (b) => b._id !== booking._id && b.engineNumber?.toUpperCase() === eng,
+      );
+    }
+
+    if (duplicateChassis) {
+      toast.error("Chassis number already used by another vehicle");
       return;
     }
-    if (duplicateChassis) {
-      toast.error(`Chassis number already used by another vehicle`);
+    if (duplicateEngine) {
+      toast.error("Engine number already used by another vehicle");
       return;
     }
 
     try {
       setSaving(true);
+
       const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
-        engineNumber: eng,
+        engineNumber: eng || undefined,
         chassisNumber: chassis,
         deliveryDate: deliveryDate || undefined,
         engineCapacity: engineCapacity || undefined,
@@ -165,12 +267,69 @@ const VehicleOrderVehicleEdit = () => {
         hsnCode: hsnCode || undefined,
       });
 
+      if (eng !== "") {
+        try {
+          const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("accessToken");
+
+          if (!token) {
+            toast.warning("No auth token found for sync");
+            return;
+          }
+
+          // Fetch all Proforma Invoices
+          const piRes = await axios.get(
+            `${apiConfig.baseURL}/proforma-invoices`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+
+          const allPIs = piRes.data?.data || [];
+
+          let syncedCount = 0;
+
+          for (const pi of allPIs) {
+            const vehicleIndex = pi.vehicleDetails?.findIndex((v: any) => {
+              return (
+                v.chassisNo && v.chassisNo.toUpperCase().trim() === chassis
+              );
+            });
+
+            if (vehicleIndex !== -1) {
+              await axios.patch(
+                `${apiConfig.baseURL}/proforma-invoices/${pi._id}/vehicles/${vehicleIndex}`,
+                { engineNo: eng },
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                },
+              );
+              syncedCount++;
+              console.log(`Synced engine number to PI: ${pi.piNumber}`);
+            }
+          }
+
+          if (syncedCount > 0) {
+            toast.success(`Engine number synced to ${syncedCount} PI(s)`);
+          } else {
+            toast.warning(
+              "Vehicle saved, but no PI found with this chassis number",
+            );
+          }
+        } catch (syncErr: any) {
+          console.error(
+            "PI sync failed:",
+            syncErr.response?.data || syncErr.message,
+          );
+          toast.warning(
+            "Vehicle saved, but sync to PI failed. Please refresh PI page.",
+          );
+        }
+      }
+
       setBooking(updated);
-      toast.success(
-        updated.status === "chassis_received"
-          ? "Engine and chassis numbers saved. Vehicle is now in transit."
-          : "Vehicle details updated",
-      );
+      toast.success("Vehicle details updated successfully");
       navigate(`/vehicles/orders`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update vehicle");
