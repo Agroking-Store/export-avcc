@@ -51,6 +51,19 @@ const formatDisplayDate = (value?: string | Date | null) => {
     return "";
   }
 
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split("-");
+      return `${day}/${month}/${year}`;
+    }
+  }
+
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -423,7 +436,7 @@ const getMissingFields = (
   type: InvoiceDocumentType,
   manualFields: Record<string, any>,
 ) => {
-  const common = ["invoiceNumber", "invoiceDate"];
+  const common = ["invoiceNumber", "invoiceDate", "lcNumber", "lcDate"];
   const requiredByType: Record<InvoiceDocumentType, string[]> = {
     INR: ["placeOfSupply", "termsOfPayment", "customExchangeRate"],
     USD: [
@@ -511,8 +524,8 @@ const buildTemplateData = ({
     buyerAddress: pi.buyerAddress,
     buyerCity: (pi.buyerCity || "").toUpperCase(),
     buyerCountry: pi.buyerCountry,
-    lcNumber: pi.lcNumber,
-    lcDate: pi.lcDate,
+    lcNumber: manualFields.lcNumber || pi.lcNumber,
+    lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
     portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
     portOfDischarge: pi.portOfDischarge,
     placeOfDelivery: pi.placeOfDelivery,
