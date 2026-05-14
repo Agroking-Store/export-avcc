@@ -371,3 +371,28 @@ export const getHBLFile = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+export const updateVehicleInPI = async (req: Request, res: Response) => {
+  try {
+    const { piId, index } = req.params;
+    const { engineNo } = req.body;
+
+    const pi = await ProformaInvoice.findById(piId);
+    if (!pi) return res.status(404).json({ message: "PI not found" });
+
+    const idx = parseInt(index as string);
+    if (isNaN(idx) || !pi.vehicleDetails[idx]) {
+      return res.status(404).json({ message: "Vehicle not found in PI" });
+    }
+
+    pi.vehicleDetails[idx].engineNo = engineNo?.trim().toUpperCase() || "";
+
+    await pi.save();
+    res.json({ success: true, message: "Engine number updated in PI" });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -92,8 +92,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
 
   return (
     <>
-
-    {/* BUYER / CLIENT */}
+      {/* BUYER / CLIENT */}
       <div>
         <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -253,29 +252,29 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               Choose Booked Vehicle (Adds Vehicle Row)
             </label>
             <SearchableCombobox
-                data={ordersWithDisplay}
-                disabled={false}
-                value={selectedOrder?._id || ""}
-                onValueChange={(value) => {
-                  const selected = ordersWithDisplay.find(
-                    (item) => item._id === value
-                  );
-                  if (selected) handleSelectOrder(selected);
-                }}
+              data={ordersWithDisplay}
+              disabled={false}
+              value={selectedOrder?._id || ""}
+              onValueChange={(value) => {
+                const selected = ordersWithDisplay.find(
+                  (item) => item._id === value,
+                );
+                if (selected) handleSelectOrder(selected);
+              }}
               onSearchChange={setOrderSearch}
               displayField="displayName"
               valueField="_id"
               placeholder={
-  form.client_id
-    ? "Search booked vehicle..."
-    : "Select client first"
-}
+                form.client_id
+                  ? "Search booked vehicle..."
+                  : "Select client first"
+              }
               searchPlaceholder="Search by Order No or Client..."
               emptyMessage={
-  form.client_id
-    ? "No booked vehicles found."
-    : "Please select client first."
-}
+                form.client_id
+                  ? "No booked vehicles found."
+                  : "Please select client first."
+              }
               header={
                 <div className="grid grid-cols-[40px_110px_1fr_100px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
                   <div>S.No</div>
@@ -478,6 +477,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                         handleVehicleChange(index, "engineNo", e.target.value)
                       }
                       className={`${inputClass} font-mono`}
+                      placeholder="Mandatory for Tax Invoice"
                     />
                   </div>
                   <div>
@@ -592,9 +592,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             <label className={labelClass}>PI Number (Auto Generated)</label>
             <input
               value={form.piNumber}
-              onChange={(e) =>
-                handlePiNumberChange(e.target.value)
-              }
+              onChange={(e) => handlePiNumberChange(e.target.value)}
               readOnly
               className={`${inputClass} bg-gray-50 cursor-not-allowed`}
               placeholder="Auto Generated"

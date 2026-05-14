@@ -15,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { invoiceApi } from "./invoiceApi";
 import type { InvoiceType, PIInvoiceContext } from "./invoice.types";
@@ -102,7 +104,30 @@ export default function InvoiceTypeModal({
 
   if (!context) return null;
 
+  // const vehiclesMissingData = context.vehicles.filter(
+  //   (v) => !v.engineNo || !v.chassisNo,
+  // );
+
+  // const isDataIncomplete = vehiclesMissingData.length > 0;
+
+  const vehiclesMissingData = context.vehicles.filter(
+    (v) => !v.engineNo || !v.engineNo.trim(),
+  );
+
+  const isDataIncomplete = vehiclesMissingData.length > 0;
+
+  // const handleGenerate = (type: InvoiceType) => {
+  //   onOpenChange(false);
+  //   navigate(`/invoices/generate/${context._id}/${type}`);
+  // };
+
   const handleGenerate = (type: InvoiceType) => {
+    if (isDataIncomplete) {
+      toast.error(
+        `Cannot generate ${type} Invoice. ${vehiclesMissingData.length} vehicle(s) are missing Engine numbers.`,
+      );
+      return;
+    }
     onOpenChange(false);
     navigate(`/invoices/generate/${context._id}/${type}`);
   };
@@ -152,6 +177,17 @@ export default function InvoiceTypeModal({
           </div>
         </DialogHeader>
 
+        {isDataIncomplete && (
+          <div className="mx-4 mt-4 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <p className="text-xs font-medium">
+              Important: Some vehicles in this PI do not have Engine Number. You
+              must update the engine number in the vehicle details before
+              generating Tax Invoices.
+            </p>
+          </div>
+        )}
+
         {/* ── Cards — forced 4 columns ── */}
         <div
           className="p-4"
@@ -172,9 +208,7 @@ export default function InvoiceTypeModal({
                 className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
               >
                 {/* Accent bar */}
-                <div
-                  className={`h-1 w-full bg-gradient-to-r ${card.accent}`}
-                />
+                <div className={`h-1 w-full bg-gradient-to-r ${card.accent}`} />
 
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   {/* Icon + status chip */}
@@ -228,14 +262,28 @@ export default function InvoiceTypeModal({
                   {/* Action buttons */}
                   <div className="mt-auto flex flex-col gap-2">
                     {!isPacking && (
+                      // <Button
+                      //   size="sm"
+                      //   className="h-9 w-full justify-between rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800"
+                      //   onClick={() => handleGenerate(card.key as InvoiceType)}
+                      // >
+                      //   <span>
+                      //     {latest ? "Generate / Edit" : "Start Generation"}
+                      //   </span>
+                      //   <ArrowRight className="h-3.5 w-3.5" />
+                      // </Button>
                       <Button
                         size="sm"
-                        className="h-9 w-full justify-between rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800"
+                        // 3. Visual feedback: Change button style if incomplete
+                        className={`h-9 w-full justify-between rounded-lg px-3 text-xs font-semibold text-white transition-all 
+                        ${
+                          isDataIncomplete
+                            ? "bg-slate-300 cursor-not-allowed grayscale"
+                            : "bg-slate-900 hover:bg-slate-800 cursor-pointer"
+                        }`}
                         onClick={() => handleGenerate(card.key as InvoiceType)}
                       >
-                        <span>
-                          {latest ? "Generate / Edit" : "Start Generation"}
-                        </span>
+                        <span>Start Generation</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     )}

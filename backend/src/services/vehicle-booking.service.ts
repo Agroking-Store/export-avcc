@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
-import { VehicleBooking, VehicleBookingStatus } from "../models/VehicleBooking.model";
+import {
+  VehicleBooking,
+  VehicleBookingStatus,
+} from "../models/VehicleBooking.model";
 import { Client } from "../models/Client.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
 
@@ -42,7 +45,10 @@ export const getBookingsByOrderId = async (orderId: string) => {
 /**
  * Get or create a booking for a specific vehicle unit in an order
  */
-export const getOrCreateBooking = async (orderId: string, vehicleIndex: number) => {
+export const getOrCreateBooking = async (
+  orderId: string,
+  vehicleIndex: number,
+) => {
   const order = await VehicleOrder.findById(orderId);
   if (!order) throw new Error("Vehicle order not found");
 
@@ -136,10 +142,7 @@ export const rejectBooking = async (bookingId: string, reason: string) => {
 /**
  * Confirm payment with amount only
  */
-export const confirmPayment = async (
-  bookingId: string,
-  amount: number,
-) => {
+export const confirmPayment = async (bookingId: string, amount: number) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
@@ -181,7 +184,18 @@ export const updateChassisEngine = async (
   const chassisNum = data.chassisNumber?.trim().toUpperCase();
   const engineNum = data.engineNumber?.trim().toUpperCase();
 
-  if (engineNum !== undefined) {
+  // if (engineNum !== undefined) {
+  //   if (!/^[A-Z0-9]{6,20}$/.test(engineNum)) {
+  //     throw new Error("Engine number must be 6-20 alphanumeric characters");
+  //   }
+  //   const dupEngine = await VehicleBooking.findOne({
+  //     _id: { $ne: bookingId },
+  //     engineNumber: { $regex: new RegExp(`^${engineNum}$`, "i") },
+  //   });
+  //   if (dupEngine) throw new Error("Engine number already exists for another vehicle");
+  // }
+
+  if (engineNum) {
     if (!/^[A-Z0-9]{6,20}$/.test(engineNum)) {
       throw new Error("Engine number must be 6-20 alphanumeric characters");
     }
@@ -189,18 +203,22 @@ export const updateChassisEngine = async (
       _id: { $ne: bookingId },
       engineNumber: { $regex: new RegExp(`^${engineNum}$`, "i") },
     });
-    if (dupEngine) throw new Error("Engine number already exists for another vehicle");
+    if (dupEngine)
+      throw new Error("Engine number already exists for another vehicle");
   }
 
   if (chassisNum !== undefined) {
     if (!/^[A-Z0-9]{17}$/.test(chassisNum)) {
-      throw new Error("Chassis number must be exactly 17 alphanumeric characters");
+      throw new Error(
+        "Chassis number must be exactly 17 alphanumeric characters",
+      );
     }
     const dupChassis = await VehicleBooking.findOne({
       _id: { $ne: bookingId },
       chassisNumber: { $regex: new RegExp(`^${chassisNum}$`, "i") },
     });
-    if (dupChassis) throw new Error("Chassis number already exists for another vehicle");
+    if (dupChassis)
+      throw new Error("Chassis number already exists for another vehicle");
   }
 
   if (chassisNum !== undefined) {
@@ -210,7 +228,9 @@ export const updateChassisEngine = async (
     booking.engineNumber = engineNum;
   }
   if (data.deliveryDate !== undefined) {
-    booking.deliveryDate = data.deliveryDate ? new Date(data.deliveryDate) : undefined;
+    booking.deliveryDate = data.deliveryDate
+      ? new Date(data.deliveryDate)
+      : undefined;
   }
   if (data.engineCapacity !== undefined) {
     booking.engineCapacity = data.engineCapacity.trim();
@@ -232,6 +252,7 @@ export const updateChassisEngine = async (
   if (
     booking.chassisNumber &&
     booking.engineNumber &&
+    booking.engineNumber.trim() !== "" &&
     booking.status === "payment_done"
   ) {
     booking.status = "chassis_received";
@@ -251,7 +272,9 @@ export const updateBookingStatus = async (
   if (!booking) throw new Error("Booking not found");
 
   if (status === "delivered" && !booking.assignedClientId) {
-    throw new Error("Please allot a client before marking this vehicle as delivered.");
+    throw new Error(
+      "Please allot a client before marking this vehicle as delivered.",
+    );
   }
 
   booking.status = status;
@@ -382,8 +405,12 @@ export const getAllVehicleBookingsService = async (query: any) => {
 
   if (search) {
     match.$or = [
-      { "orderId.vehicleSnapshot.brandName": { $regex: search, $options: "i" } },
-      { "orderId.vehicleSnapshot.modelName": { $regex: search, $options: "i" } },
+      {
+        "orderId.vehicleSnapshot.brandName": { $regex: search, $options: "i" },
+      },
+      {
+        "orderId.vehicleSnapshot.modelName": { $regex: search, $options: "i" },
+      },
       { "orderId.vehicleSnapshot.variant": { $regex: search, $options: "i" } },
       { "orderId.orderNumber": { $regex: search, $options: "i" } },
       { engineNumber: { $regex: search, $options: "i" } },
@@ -440,7 +467,8 @@ export const getReminderDueBookings = async (
   const order = await VehicleOrder.findById(orderId);
   if (!order) throw new Error("Vehicle order not found");
 
-  const hours = Number.isFinite(intervalHours) && intervalHours > 0 ? intervalHours : 2;
+  const hours =
+    Number.isFinite(intervalHours) && intervalHours > 0 ? intervalHours : 2;
   const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
 
   const due = await VehicleBooking.find({

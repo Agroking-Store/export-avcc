@@ -124,6 +124,7 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       default: "",
       trim: true,
+      index: { unique: true, sparse: true },
     },
     chassisNumber: {
       type: String,
