@@ -44,7 +44,7 @@ const invoiceSchema = new Schema<IInvoice>(
     },
     type: {
       type: String,
-      enum: ["INR", "USD", "COMMERCIAL"],
+      enum: ["INR", "USD", "COMMERCIAL", "PACKING_LIST"],
       required: true,
       index: true,
     },
@@ -72,7 +72,7 @@ const invoiceSchema = new Schema<IInvoice>(
     },
     invoicePdf: {
       type: Buffer,
-      required: true,
+      required: false,
     },
     packingListPdf: {
       type: Buffer,

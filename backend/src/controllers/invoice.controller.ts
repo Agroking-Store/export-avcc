@@ -995,3 +995,98 @@ export const deleteInvoice = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const generatePackingList = async (req: Request, res: Response) => {
+  try {
+    const {
+      piId,
+      vehicleIds = [],
+      manualFields = {},
+      replaceExisting = false,
+    } = req.body;
+
+    if (!piId || !Array.isArray(vehicleIds) || vehicleIds.length === 0) {
+      return jsonError(res, 400, {
+        error: "MISSING_FIELDS",
+        message: "piId and at least one vehicleId are required",
+      });
+    }
+
+    const context = await buildPIInvoiceContext(piId);
+    if (!context) {
+      return jsonError(res, 404, { message: "PI not found" });
+    }
+
+    const selectedVehicles = context.vehicles.filter((v: any) =>
+      vehicleIds.includes(v.vehicleId),
+    );
+
+    if (selectedVehicles.length === 0) {
+      return jsonError(res, 400, { message: "No valid vehicles selected" });
+    }
+
+    const baseVehicle = selectedVehicles[0];
+
+    const { templateData } = buildTemplateData({
+      pi: context,
+      vehicle: baseVehicle,
+      type: "USD",
+      manualFields,
+    });
+
+    (templateData as any).selectedVehicles = selectedVehicles;
+    (templateData as any).totalVehicles = selectedVehicles.length;
+
+    const invoiceNumber =
+      manualFields.invoiceNumber || context.suggestedInvoiceNumber;
+
+    const packingListPdfBuffer = await renderInvoicePDF({
+      templateName: "packingList",
+      data: templateData,
+      invoiceNumber,
+    });
+
+    const payload = {
+      piId,
+      vehicleId: "MULTI",
+      vehicleLineIndex: -1,
+      type: "PACKING_LIST",
+      invoiceNumber,
+      invoiceDate: new Date(manualFields.invoiceDate || Date.now()),
+      manualFields,
+      invoicePdf: Buffer.from([]), // Empty buffer is now allowed
+      packingListPdf: packingListPdfBuffer,
+      generatedAt: new Date(),
+      active: true,
+      dataSnapshot: {
+        pi: context,
+        vehicles: selectedVehicles,
+      },
+    };
+
+    let record: any;
+
+    if (replaceExisting) {
+      record = await Invoice.findOneAndUpdate(
+        { piId, type: "PACKING_LIST", active: true },
+        payload,
+        { new: true, upsert: true },
+      );
+    } else {
+      record = await Invoice.create(payload);
+    }
+
+    return res.json({
+      success: true,
+      invoiceId: record._id,
+      packingListUrl: `/api/v1/invoices/${record._id}/download-packing`,
+    });
+  } catch (error: any) {
+    console.error("Packing List Error:", error);
+    return jsonError(res, 500, {
+      error: "PACKING_LIST_FAILED",
+      message: "Failed to generate packing list",
+      detail: error.message,
+    });
+  }
+};

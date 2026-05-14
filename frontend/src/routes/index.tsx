@@ -25,10 +25,12 @@ import VehicleSelectionPage from "../features/proforma-invoice/pages/VehicleSele
 import InvoiceFormPage from "../features/proforma-invoice/pages/InvoiceFormPage";
 
 import { useAppSelector } from "../app/hooks";
+import GeneratePackingList from "@/features/proforma-invoice/pages/GeneratePackingList";
 const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
   const role = user?.role?.toLowerCase() || "";
-  const redirectPath = role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+  const redirectPath =
+    role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
   return <Navigate to={redirectPath} replace />;
 };
 
@@ -76,9 +78,15 @@ const AppRoutes: React.FC = () => {
             path="/invoices/generate/:piId/:type"
             element={<VehicleSelectionPage />}
           />
+
           <Route
             path="/invoices/generate/:piId/:type/:vehicleId"
             element={<InvoiceFormPage />}
+          />
+
+          <Route
+            path="/packing-list/generate/:piId"
+            element={<GeneratePackingList />}
           />
 
           <Route
@@ -124,11 +132,7 @@ const AppRoutes: React.FC = () => {
           <Route
             path="/proforma-invoice/*"
             element={
-              canAccessPI ? (
-                <PIModule />
-              ) : (
-                <Navigate to="/dashboard" replace />
-              )
+              canAccessPI ? <PIModule /> : <Navigate to="/dashboard" replace />
             }
           />
 
@@ -141,7 +145,10 @@ const AppRoutes: React.FC = () => {
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<div className="p-6">404 - Page Not Found</div>} />
+      <Route
+        path="*"
+        element={<div className="p-6">404 - Page Not Found</div>}
+      />
     </Routes>
   );
 };
