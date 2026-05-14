@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { invoiceApi } from "../components/invoiceApi";
-import type {
-  PIInvoiceContext,
-  PIInvoiceVehicle,
-} from "../components/invoice.types";
+import type { PIInvoiceContext } from "../components/invoice.types";
 
 export default function GeneratePackingList() {
   const { piId } = useParams();
@@ -75,56 +73,90 @@ export default function GeneratePackingList() {
   };
 
   if (loading || !context)
-    return <div className="p-10 text-center">Loading...</div>;
+    return <div className="flex h-[70vh] items-center justify-center">Loading...</div>;
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <h1 className="text-2xl font-bold">Generate Packing List</h1>
-      <p className="text-slate-500">
-        Select vehicles from PI: {context.piNumber}
-      </p>
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Packing List Generation
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">
+            Generate Packing List
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Select vehicles from PI: {context.piNumber}
+          </p>
+        </div>
 
-      <div className="mt-6 rounded-2xl border p-6">
+        <Button
+          variant="outline"
+          onClick={() => navigate(-1)}
+          className="h-10 px-4 rounded-2xl"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex justify-between">
-          <h2 className="font-semibold">Vehicles in this PI</h2>
+          <h2 className="text-lg font-bold text-slate-900">
+            Vehicles in this PI
+          </h2>
           <span className="text-sm text-slate-500">
             {selectedVehicles.length} selected
           </span>
         </div>
 
         <div className="space-y-3">
-          {context.vehicles.map((vehicle) => (
-            <div
-              key={vehicle.vehicleId}
-              className="flex items-center justify-between rounded-xl border p-4 hover:bg-slate-50"
-            >
-              <div className="flex items-center gap-4">
-                <Checkbox
-                  checked={selectedVehicles.includes(vehicle.vehicleId)}
-                  onCheckedChange={() => toggleVehicle(vehicle.vehicleId)}
-                />
-                <div>
-                  <p className="font-medium">{vehicle.displayModel}</p>
-                  <p className="text-sm text-slate-500">
-                    Chassis: {vehicle.chassisNo} | Engine: {vehicle.engineNo}
-                  </p>
+          {context.vehicles.map((vehicle) => {
+            const checked = selectedVehicles.includes(vehicle.vehicleId);
+
+            return (
+              <div
+                key={vehicle.vehicleId}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={() => toggleVehicle(vehicle.vehicleId)}
+                  />
+
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {vehicle.displayModel}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Chassis: {vehicle.chassisNo} | Engine: {vehicle.engineNo}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right text-sm text-slate-600">
+                  {vehicle.totalUSD.toFixed(2)} USD
                 </div>
               </div>
-              <div className="text-right text-sm">
-                {vehicle.totalUSD.toFixed(2)} USD
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      <div className="mt-6 flex justify-end gap-3">
-        <Button variant="outline" onClick={() => navigate(-1)}>
+      <div className="flex justify-end gap-3">
+        <Button
+          variant="outline"
+          onClick={() => navigate(-1)}
+          className="rounded-2xl"
+        >
           Cancel
         </Button>
+
         <Button
           onClick={handleGenerate}
           disabled={submitting || selectedVehicles.length === 0}
+          className="bg-blue-600 text-white hover:bg-blue-700 rounded-2xl"
         >
           {submitting ? "Generating..." : "Generate Packing List"}
         </Button>
