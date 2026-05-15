@@ -32,6 +32,8 @@ const DefaultRedirect: React.FC = () => {
   const redirectPath =
     role === "sourcing_team"
       ? "/vehicles/dashboard"
+      : role === "client"
+        ? "/vehicles/orders"
       : role === "accountant"
         ? "/proforma-invoice/dashboard"
         : "/dashboard";
@@ -47,7 +49,7 @@ const AppRoutes: React.FC = () => {
   const isSourcingTeam = role === "sourcing_team";
   const isClient = role === "client";
 
-  const canAccessVehicles = isAdmin || isSourcingTeam;
+  const canAccessVehicles = isAdmin || isSourcingTeam || isClient;
   const canAccessPI = isAdmin || isAccountant;
   const canAccessClients = isAdmin;
   const canAccessOrders = isAdmin;

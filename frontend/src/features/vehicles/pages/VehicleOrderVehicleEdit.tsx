@@ -36,7 +36,7 @@ const VehicleOrderVehicleEdit = () => {
     vehicleIndex: string;
   }>();
   const navigate = useNavigate();
-  const { isSourcingTeam } = useAuth();
+  const { isSourcingTeam, isClient } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -396,6 +396,14 @@ const VehicleOrderVehicleEdit = () => {
     return (
       <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
         Vehicle booking details not found.
+      </div>
+    );
+  }
+
+  if (isClient) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        Client access is view only for vehicle orders.
       </div>
     );
   }

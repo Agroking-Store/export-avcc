@@ -64,9 +64,14 @@ let menuItems =
   role === "client"
     ? [
         {
-          name: "DASHBOARD",
+          name: "Dashboard",
           icon: <LayoutDashboard size={20} />,
           path: "/dashboard",
+        },
+        {
+          name: "Required Vehicles",
+          icon: <FileCheck size={20} />,
+          path: "/vehicles/orders",
         },
       ]
     : role === "accountant"

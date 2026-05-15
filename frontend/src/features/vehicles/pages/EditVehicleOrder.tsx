@@ -32,7 +32,7 @@ import { useAuth } from "../../../hooks/useAuth";
 const EditVehicleOrder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isSourcingTeam } = useAuth();
+  const { isSourcingTeam, isClient } = useAuth();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
@@ -44,7 +44,7 @@ const EditVehicleOrder = () => {
   const [vehicleOpen, setVehicleOpen] = useState(false);
 
   useEffect(() => {
-    if (isSourcingTeam || !id) return;
+    if (isSourcingTeam || isClient || !id) return;
     const loadData = async () => {
       try {
         setOptionsLoading(true);
@@ -65,7 +65,7 @@ const EditVehicleOrder = () => {
       }
     };
     loadData();
-  }, [id, isSourcingTeam]);
+  }, [id, isClient, isSourcingTeam]);
 
   const selectedVehicle = useMemo(
     () => vehicles.find((item) => item._id === form.vehicleId),
@@ -110,7 +110,7 @@ const EditVehicleOrder = () => {
     ? `${selectedVehicle.brandName} ${selectedVehicle.modelName} - ${selectedVehicle.variant} (${selectedVehicle.color})`
     : "";
 
-  if (isSourcingTeam) {
+  if (isSourcingTeam || isClient) {
     return (
       <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
         You are not authorized to edit orders.

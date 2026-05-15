@@ -84,10 +84,15 @@ const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
 
 import { useAuth } from "../../../hooks/useAuth";
 
+interface ClientOrdersResponse {
+  vehicleOrders?: VehicleBookingItem[];
+}
+
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSourcingTeam } = useAuth();
+  const { isSourcingTeam, isClient } = useAuth();
+  const canManageBookings = !isSourcingTeam && !isClient;
 
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -131,6 +136,53 @@ const VehicleOrdersList = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      if (isClient) {
+        const response = await api.get<ClientOrdersResponse>("/clients/me");
+        const clientBookings = Array.isArray(response.data?.vehicleOrders)
+          ? response.data.vehicleOrders
+          : [];
+        const normalizedSearch = search.trim().toLowerCase();
+        const filteredBookings = clientBookings.filter((booking) => {
+          const statusMatches =
+            statusValue === "All" || booking.status === statusValue;
+
+          if (!statusMatches) {
+            return false;
+          }
+
+          if (!normalizedSearch) {
+            return true;
+          }
+
+          const orderData = (booking as any).orderId;
+          const vehicleSnapshot =
+            typeof orderData === "object" && orderData !== null
+              ? orderData.vehicleSnapshot
+              : null;
+          const searchValue = [
+            vehicleSnapshot?.brandName,
+            vehicleSnapshot?.modelName,
+            vehicleSnapshot?.variant,
+            vehicleSnapshot?.color,
+            booking.assignedDealerSnapshot?.name,
+            STATUS_META[booking.status]?.label,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          return searchValue.includes(normalizedSearch);
+        });
+        const nextTotal = filteredBookings.length;
+        const nextTotalPages = Math.max(1, Math.ceil(nextTotal / limit));
+        const startIndex = (currentPage - 1) * limit;
+
+        setBookings(filteredBookings.slice(startIndex, startIndex + limit));
+        setTotal(nextTotal);
+        setTotalPages(nextTotalPages);
+        return;
+      }
+
       const res = await vehicleBookingApi.getAllBookings({
         search,
         status: statusValue === "All" ? undefined : statusValue,
@@ -150,7 +202,7 @@ const VehicleOrdersList = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [search, statusLabel, currentPage]);
+  }, [currentPage, isClient, search, statusLabel]);
 
   // Toast reminder for pending engine/chassis numbers
   useEffect(() => {
@@ -188,6 +240,9 @@ const VehicleOrdersList = () => {
   }, [location.state, location.pathname, navigate]);
 
   useEffect(() => {
+    if (isClient) {
+      return;
+    }
     const fetchClients = async () => {
       try {
         const response = await api.get("/clients", {
@@ -200,9 +255,12 @@ const VehicleOrdersList = () => {
       }
     };
     fetchClients();
-  }, []);
+  }, [isClient]);
 
   useEffect(() => {
+    if (isClient) {
+      return;
+    }
     const fetchDealers = async () => {
       try {
         const response = await dealerApi.getAll();
@@ -213,7 +271,7 @@ const VehicleOrdersList = () => {
       }
     };
     fetchDealers();
-  }, []);
+  }, [isClient]);
 
   const syncBooking = (updated: VehicleBookingItem) => {
     setBookings((current) =>
@@ -408,24 +466,33 @@ const VehicleOrdersList = () => {
     [bookings],
   );
 
+  const pageTitle = isClient ? "My Required Vehicles" : "Required Vehicles";
+  const pageDescription = isClient
+    ? "View the vehicle orders assigned to your account"
+    : "Track and manage required vehicles unit-wise";
+  const totalLabel = total === 1 ? "Vehicle" : "Vehicles";
+  const searchPlaceholder = isClient
+    ? "Search your vehicle..."
+    : "Search vehicle...";
+
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
       <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
         <div className="px-8 py-6 flex justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
-              Required Vehicles
+              {pageTitle}
             </h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-              Track and manage required vehicles unit-wise
+              {pageDescription}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
-              {bookings.length} Vehicles
+              {total} {totalLabel}
             </span>
-            {!isSourcingTeam && (
+            {canManageBookings && (
               <button
                 onClick={() => navigate("/vehicles/orders/add")}
                 className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
@@ -466,7 +533,7 @@ const VehicleOrdersList = () => {
             />
             <input
               type="text"
-              placeholder="Search vehicle..."
+              placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 pr-4 py-2.5 w-72 text-sm bg-slate-50/30 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
@@ -520,7 +587,7 @@ const VehicleOrdersList = () => {
                     Status
                   </th>
                   <th className="border-b border-slate-200 px-6 py-4 align-middle">
-                    Actions
+                    {isClient ? "View" : "Actions"}
                   </th>
                 </tr>
               </thead>
@@ -540,7 +607,9 @@ const VehicleOrdersList = () => {
                       colSpan={4}
                       className="text-center py-20 text-slate-400 italic"
                     >
-                      No required vehicles found
+                      {isClient
+                        ? "No assigned vehicles found"
+                        : "No required vehicles found"}
                     </td>
                   </tr>
                 ) : (
@@ -622,100 +691,104 @@ const VehicleOrdersList = () => {
                           </div>
                         </td>
 
-                        {/* Actions — evenly spaced with dividers */}
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
-                          <div className="flex items-center justify-center gap-2">
-
-                            {/* Dealer */}
-                            <div className="flex flex-col items-center gap-1 min-w-[130px]">
-                              {booking.assignedDealerId && (
-                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
-                                  Dealer
-                                </span>
-                              )}
-                              <button
-                                onClick={() => openDealerModal(booking)}
-                                className={`cursor-pointer inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
-                                  booking.assignedDealerId
-                                    ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
-                                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                }`}
-                                title={booking.assignedDealerId ? "Dealer Allotted" : "Allot Dealer"}
-                              >
-                                <Store size={14} className="shrink-0" />
-                                <span className="truncate max-w-[90px]">
-                                  {booking.assignedDealerId ? booking.assignedDealerSnapshot?.name : "Allot Dealer"}
-                                </span>
-                              </button>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="h-8 w-px bg-slate-200 shrink-0" />
-
-                            {/* Primary Action */}
-                            <div className="shrink-0">
-                              {renderPrimaryAction(booking)}
-                            </div>
-
-                            {/* Divider */}
-                            <div className="h-8 w-px bg-slate-200 shrink-0" />
-
-                            {/* Client */}
-                            <div className="flex flex-col items-center gap-1 min-w-[130px]">
-                              {booking.assignedClientId && (
-                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
-                                  Allotted to
-                                </span>
-                              )}
-                              <button
-                                onClick={() => !isSourcingTeam && openClientModal(booking)}
-                                disabled={isSourcingTeam}
-                                className={`inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
-                                  isSourcingTeam
-                                    ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-                                    : booking.assignedClientId
-                                      ? "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                      : "cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                }`}
-                                title={
-                                  isSourcingTeam
-                                    ? "Only Admin can allot client"
-                                    : booking.assignedClientId ? "Client Allotted" : "Allot Client"
-                                }
-                              >
-                                <Check size={14} className="shrink-0" />
-                                <span className="truncate max-w-[90px]">
-                                  {booking.assignedClientId ? booking.assignedClientSnapshot?.name : "Allot Client"}
-                                </span>
-                              </button>
-                            </div>
-
-                            {/* Divider */}
-                            <div className="h-8 w-px bg-slate-200 shrink-0" />
-
-                            {/* Icon actions */}
-                            <div className="flex items-center gap-1.5 shrink-0">
+                          {isClient ? (
+                            <div className="flex items-center justify-center">
                               <button
                                 onClick={() =>
                                   navigate(`/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`)
                                 }
-                                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:scale-110 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm active:scale-95"
-                                title="View Vehicle"
+                                className="cursor-pointer inline-flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
                               >
-                                <Eye size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(`/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`)
-                                }
-                                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
-                                title="Edit Vehicle"
-                              >
-                                <FilePenLine size={16} />
+                                <Eye size={14} />
+                                View Details
                               </button>
                             </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="flex flex-col items-center gap-1 min-w-[130px]">
+                                {booking.assignedDealerId && (
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                                    Dealer
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => openDealerModal(booking)}
+                                  className={`cursor-pointer inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
+                                    booking.assignedDealerId
+                                      ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                                      : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                  }`}
+                                  title={booking.assignedDealerId ? "Dealer Allotted" : "Allot Dealer"}
+                                >
+                                  <Store size={14} className="shrink-0" />
+                                  <span className="truncate max-w-[90px]">
+                                    {booking.assignedDealerId ? booking.assignedDealerSnapshot?.name : "Allot Dealer"}
+                                  </span>
+                                </button>
+                              </div>
 
-                          </div>
+                              <div className="h-8 w-px bg-slate-200 shrink-0" />
+
+                              <div className="shrink-0">
+                                {renderPrimaryAction(booking)}
+                              </div>
+
+                              <div className="h-8 w-px bg-slate-200 shrink-0" />
+
+                              <div className="flex flex-col items-center gap-1 min-w-[130px]">
+                                {booking.assignedClientId && (
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                                    Allotted to
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => !isSourcingTeam && openClientModal(booking)}
+                                  disabled={isSourcingTeam}
+                                  className={`inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
+                                    isSourcingTeam
+                                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
+                                      : booking.assignedClientId
+                                        ? "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                        : "cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                  }`}
+                                  title={
+                                    isSourcingTeam
+                                      ? "Only Admin can allot client"
+                                      : booking.assignedClientId ? "Client Allotted" : "Allot Client"
+                                  }
+                                >
+                                  <Check size={14} className="shrink-0" />
+                                  <span className="truncate max-w-[90px]">
+                                    {booking.assignedClientId ? booking.assignedClientSnapshot?.name : "Allot Client"}
+                                  </span>
+                                </button>
+                              </div>
+
+                              <div className="h-8 w-px bg-slate-200 shrink-0" />
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={() =>
+                                    navigate(`/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`)
+                                  }
+                                  className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:scale-110 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm active:scale-95"
+                                  title="View Vehicle"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(`/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`)
+                                  }
+                                  className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
+                                  title="Edit Vehicle"
+                                >
+                                  <FilePenLine size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -768,21 +841,25 @@ const VehicleOrdersList = () => {
         onSync={syncBooking}
       />
 
-      <ClientAllotModal
-        isOpen={clientModalOpen}
-        onClose={closeClientModal}
-        booking={activeBooking}
-        clients={clients}
-        onSync={syncBooking}
-      />
+      {!isClient && (
+        <ClientAllotModal
+          isOpen={clientModalOpen}
+          onClose={closeClientModal}
+          booking={activeBooking}
+          clients={clients}
+          onSync={syncBooking}
+        />
+      )}
 
-      <DealerAllotModal
-        isOpen={dealerModalOpen}
-        onClose={closeDealerModal}
-        booking={activeBooking}
-        dealers={dealers}
-        onSync={syncBooking}
-      />
+      {!isClient && (
+        <DealerAllotModal
+          isOpen={dealerModalOpen}
+          onClose={closeDealerModal}
+          booking={activeBooking}
+          dealers={dealers}
+          onSync={syncBooking}
+        />
+      )}
     </div>
   );
 };

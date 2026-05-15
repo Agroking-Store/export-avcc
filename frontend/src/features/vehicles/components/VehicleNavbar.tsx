@@ -1,30 +1,40 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, List, ClipboardList } from "lucide-react";
-
-const tabs = [
-  {
-    key: "dashboard",
-    label: "Dashboard",
-    path: "/vehicles/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    key: "list",
-    label: "Vehicle List",
-    path: "/vehicles/list",
-    icon: List,
-  },
-  {
-    key: "orders",
-    label: "Required Vehicles",
-    path: "/vehicles/orders",
-    icon: ClipboardList,
-  },
-];
+import { useAuth } from "../../../hooks/useAuth";
 
 const VehicleNavbar: React.FC = () => {
   const location = useLocation();
+  const { isClient } = useAuth();
+  const tabs = isClient
+    ? [
+        {
+          key: "orders",
+          label: "Required Vehicles",
+          path: "/vehicles/orders",
+          icon: ClipboardList,
+        },
+      ]
+    : [
+        {
+          key: "dashboard",
+          label: "Dashboard",
+          path: "/vehicles/dashboard",
+          icon: LayoutDashboard,
+        },
+        {
+          key: "list",
+          label: "Vehicle List",
+          path: "/vehicles/list",
+          icon: List,
+        },
+        {
+          key: "orders",
+          label: "Required Vehicles",
+          path: "/vehicles/orders",
+          icon: ClipboardList,
+        },
+      ];
 
   return (
     <div className="flex items-center gap-1.5 p-1 bg-slate-50/50 rounded-[18px] w-fit">

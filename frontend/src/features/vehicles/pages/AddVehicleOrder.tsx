@@ -44,7 +44,7 @@ const emptyOrder = (): OrderEntry => ({
 
 const AddVehicleOrder = () => {
   const navigate = useNavigate();
-  const { isSourcingTeam } = useAuth();
+  const { isSourcingTeam, isClient } = useAuth();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
@@ -52,7 +52,7 @@ const AddVehicleOrder = () => {
   const [vehicleOpenMap, setVehicleOpenMap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
-    if (isSourcingTeam) return;
+    if (isSourcingTeam || isClient) return;
     const loadOptions = async () => {
       try {
         setOptionsLoading(true);
@@ -65,7 +65,7 @@ const AddVehicleOrder = () => {
       }
     };
     loadOptions();
-  }, [isSourcingTeam]);
+  }, [isClient, isSourcingTeam]);
 
   const handleInputChange = useCallback((index: number, field: keyof OrderEntry, value: any) => {
     setOrders((prev) =>
@@ -148,7 +148,7 @@ const AddVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  if (isSourcingTeam) {
+  if (isSourcingTeam || isClient) {
     return (
       <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
         You are not authorized to add required vehicles.
