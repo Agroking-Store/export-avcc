@@ -30,6 +30,7 @@ import axios from "axios";
 import { apiConfig } from "@/config/apiConfig";
 
 const VehicleOrderVehicleEdit = () => {
+  const currentYear = new Date().getFullYear();
   const { id, vehicleIndex } = useParams<{
     id: string;
     vehicleIndex: string;
@@ -251,6 +252,17 @@ const VehicleOrderVehicleEdit = () => {
     if (duplicateEngine) {
       toast.error("Engine number already used by another vehicle");
       return;
+    }
+    if (yom.trim()) {
+      const yomNumber = Number(yom);
+      if (
+        !Number.isInteger(yomNumber) ||
+        yomNumber < 1900 ||
+        yomNumber > currentYear
+      ) {
+        toast.error(`Year of Manufacture must be between 1900 and ${currentYear}`);
+        return;
+      }
     }
 
     try {
@@ -567,12 +579,14 @@ const VehicleOrderVehicleEdit = () => {
               Year of Manufacture (YOM)
             </label>
             <input
-              type="text"
+              type="number"
               value={yom}
               onChange={(event) => setYom(event.target.value)}
               className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               placeholder="e.g. 2024"
               maxLength={4}
+              min={1900}
+              max={currentYear}
             />
           </div>
 

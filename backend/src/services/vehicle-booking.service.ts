@@ -178,6 +178,7 @@ export const updateChassisEngine = async (
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
+  const currentYear = new Date().getFullYear();
 
   // Client can be allotted at any moment; no restriction on engine/chassis entry
 
@@ -242,7 +243,20 @@ export const updateChassisEngine = async (
     booking.countryOfOrigin = data.countryOfOrigin.trim();
   }
   if (data.yom !== undefined) {
-    booking.yom = data.yom.trim();
+    const yom = data.yom.trim();
+    if (yom) {
+      const yomNumber = Number(yom);
+      if (
+        !Number.isInteger(yomNumber) ||
+        yomNumber < 1900 ||
+        yomNumber > currentYear
+      ) {
+        throw new Error(
+          `Year of Manufacture must be between 1900 and ${currentYear}`,
+        );
+      }
+    }
+    booking.yom = yom;
   }
   if (data.hsnCode !== undefined) {
     booking.hsnCode = data.hsnCode.trim();

@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { validate } from "../middleware/validate.middleware";
+const currentYear = new Date().getFullYear();
 
 const vehicleSchema = Joi.object({
   hsnCode: Joi.string().required(),
@@ -26,7 +27,7 @@ const vehicleSchema = Joi.object({
   engineCapacity: Joi.string().optional(),
   fuelType: Joi.string().optional(),
   countryOfOrigin: Joi.string().optional(),
-  yom: Joi.number().min(1900).optional(),
+  yom: Joi.number().min(1900).max(currentYear).optional(),
   fobAmount: Joi.number().min(0).optional(),
   freight: Joi.number().min(0).optional(),
   quantity: Joi.number().min(1).max(100).default(1),

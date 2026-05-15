@@ -137,6 +137,45 @@ const formatCurrency = (value: number, currency: "USD" | "INR") => {
   });
 };
 
+const roundCurrency = (value: number) => Number(value.toFixed(2));
+
+const deriveExchangeRate = (vehicle: any, manualFields: Record<string, any>) => {
+  const manualExchangeRate = Number(manualFields.customExchangeRate || 0);
+
+  if (manualExchangeRate > 0) {
+    return manualExchangeRate;
+  }
+
+  const totalUSD = Number(vehicle.totalUSD || 0);
+  const exShowroomINR = Number(vehicle.exShowroomINR || 0);
+
+  if (totalUSD > 0 && exShowroomINR > 0) {
+    return roundCurrency(exShowroomINR / totalUSD);
+  }
+
+  return 0;
+};
+
+const calculateInrInvoiceAmounts = ({
+  totalUSD,
+  exchangeRate,
+  igstRate,
+}: {
+  totalUSD: number;
+  exchangeRate: number;
+  igstRate: number;
+}) => {
+  const exShowroomINR = roundCurrency(totalUSD * exchangeRate);
+  const igstAmountINR = roundCurrency((exShowroomINR * igstRate) / 100);
+  const totalINR = roundCurrency(exShowroomINR + igstAmountINR);
+
+  return {
+    exShowroomINR,
+    igstAmountINR,
+    totalINR,
+  };
+};
+
 const sanitizeFileName = (value: string) =>
   value.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_");
 
@@ -510,12 +549,14 @@ const buildTemplateData = ({
 }) => {
   const invoiceDate = formatDisplayDate(manualFields.invoiceDate);
   const totalUSD = Number(vehicle.totalUSD || 0);
-  const exShowroomINR = Number(
-    vehicle.exShowroomINR || manualFields.exShowroomINR || 0,
-  );
   const igstRate = Number(vehicle.igstRate || manualFields.igstRate || 18);
-  const igstAmountINR = Number(((exShowroomINR * igstRate) / 100).toFixed(2));
-  const totalINR = Number((exShowroomINR + igstAmountINR).toFixed(2));
+  const exchangeRate = deriveExchangeRate(vehicle, manualFields);
+  const { exShowroomINR, igstAmountINR, totalINR } =
+    calculateInrInvoiceAmounts({
+      totalUSD,
+      exchangeRate,
+      igstRate,
+    });
   const amountWordsUSD = numberToWordsUSD(totalUSD);
   const amountWordsINR = numberToWordsINR(totalINR);
   const descriptionLines = buildVehicleDescription(vehicle, type);
@@ -557,7 +598,7 @@ const buildTemplateData = ({
       exShowroomINR: formatCurrency(exShowroomINR, "INR"),
       igstAmountINR: formatCurrency(igstAmountINR, "INR"),
       totalINR: formatCurrency(totalINR, "INR"),
-      customExchangeRate: manualFields.customExchangeRate,
+      customExchangeRate: exchangeRate ? exchangeRate.toFixed(2) : "",
     },
     scheme: {
       drawbackScheme: manualFields.drawbackScheme || "RODTEP",
@@ -617,13 +658,6 @@ const applyVehicleOverrides = (
     ) {
       merged[field] = manualFields[field];
     }
-  }
-
-  if (
-    manualFields.exShowroomINR !== undefined &&
-    String(manualFields.exShowroomINR).trim() !== ""
-  ) {
-    merged.exShowroomINR = Number(manualFields.exShowroomINR || 0);
   }
 
   if (
