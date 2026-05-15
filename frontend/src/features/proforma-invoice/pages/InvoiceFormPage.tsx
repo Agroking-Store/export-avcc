@@ -43,6 +43,8 @@ const formatUsdWords = (amount: number) =>
     maximumFractionDigits: 2,
   })}`;
 
+const roundCurrency = (value: number) => Number(value.toFixed(2));
+
 const pad = (value: number) => String(value).padStart(2, "0");
 
 const toDateInputValue = (value?: string | Date | null) => {
@@ -70,6 +72,34 @@ const toDateInputValue = (value?: string | Date | null) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate(),
   )}`;
+};
+
+const deriveExchangeRateFromVehicle = (vehicle: PIInvoiceVehicle) => {
+  if (vehicle.totalUSD > 0 && vehicle.exShowroomINR > 0) {
+    return roundCurrency(vehicle.exShowroomINR / vehicle.totalUSD);
+  }
+
+  return undefined;
+};
+
+const calculateInrInvoiceAmounts = ({
+  totalUSD,
+  exchangeRate,
+  igstRate,
+}: {
+  totalUSD: number;
+  exchangeRate: number;
+  igstRate: number;
+}) => {
+  const assessableINR = roundCurrency(totalUSD * exchangeRate);
+  const igstAmount = roundCurrency((assessableINR * igstRate) / 100);
+  const totalINR = roundCurrency(assessableINR + igstAmount);
+
+  return {
+    assessableINR,
+    igstAmount,
+    totalINR,
+  };
 };
 
 const toIndianWords = (num: number): string => {
@@ -163,8 +193,9 @@ const buildInitialForm = (
     endUseCode: manual.endUseCode || "",
     typeOfVehicle: manual.typeOfVehicle || "SUV",
     placeOfSupply: manual.placeOfSupply || "Maharashtra - 27",
-    customExchangeRate: manual.customExchangeRate,
-    exShowroomINR: manual.exShowroomINR || String(vehicle.exShowroomINR || ""),
+    customExchangeRate:
+      manual.customExchangeRate ||
+      (deriveExchangeRateFromVehicle(vehicle)?.toFixed(2) ?? ""),
     igstRate: manual.igstRate || String(vehicle.igstRate || 18),
     make: manual.make || vehicle.make || "",
     model: manual.model || vehicle.model || "",
@@ -295,14 +326,20 @@ export default function InvoiceFormPage() {
   }, [invoiceType, navigate, piId, vehicleId]);
 
   const computed = useMemo(() => {
-    const exShowroomINR = Number(form?.exShowroomINR || 0);
-    const igstRate = Number(form?.igstRate || vehicle?.igstRate || 18);
-    const igstAmount = Number(((exShowroomINR * igstRate) / 100).toFixed(2));
-    const totalINR = Number((exShowroomINR + igstAmount).toFixed(2));
     const totalUSD = Number(vehicle?.totalUSD || 0);
+    const exchangeRate = Number(form?.customExchangeRate || 0);
+    const igstRate = Number(form?.igstRate || vehicle?.igstRate || 18);
+    const { assessableINR, igstAmount, totalINR } = calculateInrInvoiceAmounts({
+      totalUSD,
+      exchangeRate,
+      igstRate,
+    });
 
     return {
       totalUSD,
+      exchangeRate,
+      assessableINR,
+      igstRate,
       igstAmount,
       totalINR,
       amountWords:
@@ -311,7 +348,7 @@ export default function InvoiceFormPage() {
           : formatUsdWords(totalUSD),
     };
   }, [
-    form?.exShowroomINR,
+    form?.customExchangeRate,
     form?.igstRate,
     invoiceType,
     vehicle?.igstRate,
@@ -458,7 +495,7 @@ export default function InvoiceFormPage() {
                 ? "USD invoice follows the export invoice format with drawback, RODTEP, and buyer-order references."
                 : invoiceType === "COMMERCIAL"
                   ? "Commercial invoice follows the bank / LC format, including consignee bank wording and commercial declaration vehicle details."
-                  : "INR tax invoice follows the GST export format with custom exchange rate and IGST values."}
+                  : "INR tax invoice auto-calculates INR from USD total and exchange rate, then adds IGST."}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <EditableField
@@ -620,7 +657,7 @@ export default function InvoiceFormPage() {
                 ? "Commercial invoice needs exact certification vehicle details, so fields like year, first registration, inspection certificate, and type of vehicle stay editable."
                 : showPackingSupportFields
                   ? "USD invoice uses export-format fields only. Packing list is generated separately."
-                  : "Only fields used in the invoice format are shown here."}
+                  : "Only fields used in the invoice format are shown here. INR assessable value is calculated automatically from USD total and exchange rate."}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {showCommercialFields && (
@@ -753,12 +790,9 @@ export default function InvoiceFormPage() {
               )}
               {showInrFields && (
                 <>
-                  <EditableField
-                    label="Ex Showroom INR"
-                    name="exShowroomINR"
-                    value={form.exShowroomINR}
-                    onChange={handleFieldChange}
-                    placeholder="0.00"
+                  <ReadOnlyField
+                    label="Assessable INR (USD x Rate)"
+                    value={computed.assessableINR.toFixed(2)}
                   />
                   <EditableField
                     label="IGST Rate %"
@@ -796,6 +830,22 @@ export default function InvoiceFormPage() {
                   {computed.totalUSD.toFixed(2)}
                 </span>
               </div>
+              {showInrFields && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Exchange Rate</span>
+                    <span className="font-semibold text-slate-900">
+                      {computed.exchangeRate.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Assessable INR</span>
+                    <span className="font-semibold text-slate-900">
+                      {computed.assessableINR.toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">IGST Amount</span>
                 <span className="font-semibold text-slate-900">
@@ -814,6 +864,11 @@ export default function InvoiceFormPage() {
                 </span>
                 <p className="mt-2">{computed.amountWords}</p>
               </div>
+              {showInrFields && (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-700">
+                  Formula: `Assessable INR = USD Total x Exchange Rate`; `IGST = Assessable INR x IGST%`; `Invoice Total = Assessable INR + IGST`
+                </div>
+              )}
             </div>
 
             <Button
