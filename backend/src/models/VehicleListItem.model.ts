@@ -5,7 +5,9 @@ export interface IVehicleListItem extends Document {
   modelName: string;
   variant: string;
   color: string;
-  hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
+  hsnCode?: string;
   quantity: number;
   fobAmount: number;
   freight: number;
@@ -36,9 +38,18 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
       required: [true, "Color is required"],
       trim: true,
     },
+    commercialHsnCode: {
+      type: String,
+      required: [true, "Commercial HSN Code is required"],
+      trim: true,
+    },
+    exportHsnCode: {
+      type: String,
+      required: [true, "Export HSN Code is required"],
+      trim: true,
+    },
     hsnCode: {
       type: String,
-      required: [true, "HSN Code is required"],
       trim: true,
     },
     quantity: {

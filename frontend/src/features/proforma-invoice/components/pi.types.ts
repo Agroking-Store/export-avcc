@@ -9,6 +9,8 @@ export type VehicleLineItem = {
   quantity: number;
   fob: number | "";
   freight: number | "";
+  commercialHsn: string;
+  exportHsn: string;
   hsn: string;
   yom: string;
   fuelType: string;

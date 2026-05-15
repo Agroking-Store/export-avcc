@@ -182,6 +182,25 @@ const sanitizeFileName = (value: string) =>
 const normalizeWhitespace = (value: string) =>
   value.replace(/\s+/g, " ").trim();
 
+const getFirstFilled = (...values: Array<unknown>) => {
+  for (const value of values) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (typeof value === "string") {
+      if (value.trim()) {
+        return value.trim();
+      }
+      continue;
+    }
+
+    return value;
+  }
+
+  return "";
+};
+
 const splitModelAndVariant = (modelLabel: string, variantLabel: string) => {
   const normalizedModel = normalizeWhitespace(modelLabel || "");
   const normalizedVariant = normalizeWhitespace(variantLabel || "");
@@ -278,7 +297,8 @@ const populatePI = async (piId: string) => {
       populate: [
         {
           path: "vehicleId",
-          select: "brandName modelName variant color hsnCode fobAmount freight",
+          select:
+            "brandName modelName variant color commercialHsnCode exportHsnCode hsnCode fobAmount freight",
         },
         {
           path: "orderId",
@@ -324,12 +344,30 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
   const modelName = splitLine.model || rawModelName;
   const variant = splitLine.variant || rawVariant;
   const colour = line.color || vehicleRef?.color || orderVehicle?.color || "";
-  const hsnCode =
-    line.hsn ||
-    booking?.hsnCode ||
-    vehicleRef?.hsnCode ||
-    orderVehicle?.hsnCode ||
-    "";
+  const commercialHsnCode = String(
+    getFirstFilled(
+      line.commercialHsn,
+      line.hsn,
+      booking?.commercialHsnCode,
+      booking?.hsnCode,
+      vehicleRef?.commercialHsnCode,
+      vehicleRef?.hsnCode,
+      orderVehicle?.commercialHsnCode,
+      orderVehicle?.hsnCode,
+    ),
+  );
+  const exportHsnCode = String(
+    getFirstFilled(
+      line.exportHsn,
+      booking?.exportHsnCode,
+      booking?.hsnCode,
+      vehicleRef?.exportHsnCode,
+      vehicleRef?.hsnCode,
+      orderVehicle?.exportHsnCode,
+      orderVehicle?.hsnCode,
+      commercialHsnCode,
+    ),
+  );
   const fobUSD = Number(line.fob || vehicleRef?.fobAmount || 0);
   const freightUSD = Number(line.freight || vehicleRef?.freight || 0);
   const exShowroomINR = Number(line.exShowroomINR || 0);
@@ -358,7 +396,9 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
     monthYearFirstReg: formatMonthYearRegistration(
       line.monthYearFirstReg || booking?.deliveryDate || "",
     ),
-    hsnCode,
+    commercialHsnCode,
+    exportHsnCode,
+    hsnCode: exportHsnCode || commercialHsnCode,
     dbkSrNo: line.dbkSrNo || "",
     exportInspCertNo: line.exportInspCertNo || "",
     exportInspCertDate: formatDisplayDate(line.exportInspCertDate || ""),
@@ -557,9 +597,16 @@ const buildTemplateData = ({
       exchangeRate,
       igstRate,
     });
+  const resolvedHsnCode =
+    type === "COMMERCIAL"
+      ? vehicle.commercialHsnCode || vehicle.hsnCode || ""
+      : vehicle.exportHsnCode || vehicle.hsnCode || "";
   const amountWordsUSD = numberToWordsUSD(totalUSD);
   const amountWordsINR = numberToWordsINR(totalINR);
-  const descriptionLines = buildVehicleDescription(vehicle, type);
+  const descriptionLines = buildVehicleDescription(
+    { ...vehicle, hsnCode: resolvedHsnCode },
+    type,
+  );
 
   const base = {
     exporter: EXPORTER,
@@ -585,7 +632,7 @@ const buildTemplateData = ({
     containerNo: manualFields.containerNo || "",
     stateOfOrigin: EXPORTER.stateCode,
     districtOfOrigin: EXPORTER.districtOfOrigin,
-    vehicle,
+    vehicle: { ...vehicle, hsnCode: resolvedHsnCode },
     descriptionLines,
     totalQty: vehicle.quantity || 1,
     remarksUSD: manualFields.termsOfDelivery || "",
@@ -641,6 +688,8 @@ const applyVehicleOverrides = (
     "yearOfManufacture",
     "monthYearFirstReg",
     "hsnCode",
+    "commercialHsnCode",
+    "exportHsnCode",
     "dbkSrNo",
     "exportInspCertNo",
     "exportInspCertDate",

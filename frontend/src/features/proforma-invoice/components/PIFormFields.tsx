@@ -501,11 +501,25 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>HSN / SAC</label>
+                    <label className={labelClass}>Commercial HSN</label>
                     <input
-                      value={v.hsn}
+                      value={v.commercialHsn || v.hsn || ""}
                       onChange={(e) =>
-                        handleVehicleChange(index, "hsn", e.target.value)
+                        handleVehicleChange(
+                          index,
+                          "commercialHsn",
+                          e.target.value,
+                        )
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Export HSN</label>
+                    <input
+                      value={v.exportHsn || v.hsn || ""}
+                      onChange={(e) =>
+                        handleVehicleChange(index, "exportHsn", e.target.value)
                       }
                       className={inputClass}
                     />

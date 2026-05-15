@@ -38,6 +38,8 @@ export interface VehicleBookingItem {
   fuelType?: string;
   countryOfOrigin?: string;
   yom?: string;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   hsnCode?: string;
   lastReminderAt?: string;
   reminderCount?: number;
@@ -122,7 +124,8 @@ export const vehicleBookingApi = {
       fuelType?: string;
       countryOfOrigin?: string;
       yom?: string;
-      hsnCode?: string;
+      commercialHsnCode?: string;
+      exportHsnCode?: string;
     },
   ) => {
     const response = await api.patch(

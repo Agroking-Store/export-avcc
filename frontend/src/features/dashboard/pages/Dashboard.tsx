@@ -69,6 +69,26 @@ interface DashboardCollections {
   vehicleBookings: VehicleBookingItem[]; proformaInvoices: ProformaInvoiceItem[];
   users: UserItem[];
 }
+interface ClientDashboardProfile {
+  client: {
+    _id: string;
+    name: string;
+    email: string;
+    phone: string;
+    companyName: string;
+    address?: {
+      houseBuilding?: string;
+      streetArea?: string;
+      cityTown?: string;
+      state?: string;
+      pincode?: string;
+      country?: string;
+    };
+  };
+  vehicleOrders: VehicleBookingItem[];
+  totalVehicleOrders: number;
+  lastBooking: string | null;
+}
 
 const EMPTY: DashboardCollections = { clients: [], companies: [], dealers: [], vehicleBookings: [], proformaInvoices: [], users: [] };
 
@@ -103,6 +123,19 @@ const getVehicleName = (b: VehicleBookingItem) => {
   }
   return "Vehicle";
 };
+const formatClientAddress = (address?: ClientDashboardProfile["client"]["address"]) =>
+  [
+    address?.houseBuilding,
+    address?.streetArea,
+    address?.cityTown,
+    address?.state,
+    address?.pincode,
+    address?.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
+const toUpperDisplay = (value?: string | null) =>
+  value && value.trim() ? value.toUpperCase() : "—";
 
 /* ─── Animated counter ───────────────────────────────────── */
 const AnimatedNumber: React.FC<{ value: number; prefix?: string; suffix?: string }> = ({ value, prefix = "", suffix = "" }) => {
@@ -192,8 +225,9 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 /* ═══════════════════════ Dashboard ════════════════════════ */
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isClient, user } = useAuth();
   const [data, setData]     = useState<DashboardCollections>(EMPTY);
+  const [clientProfile, setClientProfile] = useState<ClientDashboardProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [partialError, setPartialError] = useState<string | null>(null);
   const [momentumMonths, setMomentumMonths] = useState<3 | 6>(6);
@@ -203,6 +237,25 @@ const Dashboard: React.FC = () => {
     let alive = true;
     (async () => {
       setLoading(true);
+      if (isClient) {
+        try {
+          const response = await api.get("/clients/me");
+          if (!alive) return;
+          setClientProfile(response.data);
+          setPartialError(null);
+        } catch (error: any) {
+          if (!alive) return;
+          setPartialError(
+            error.response?.data?.message || "Unable to load client dashboard.",
+          );
+        } finally {
+          if (!alive) return;
+          setLoading(false);
+          setTimeout(() => setMounted(true), 60);
+        }
+        return;
+      }
+
       const reqs = [
         { key: "clients",          req: api.get("/clients",           { params: { page: 1, limit: 2000 } }) },
         { key: "companies",        req: api.get("/companies",         { params: { page: 1, limit: 2000, status: "all" } }) },
@@ -225,7 +278,24 @@ const Dashboard: React.FC = () => {
       setTimeout(() => setMounted(true), 60);
     })();
     return () => { alive = false; };
-  }, [isAdmin]);
+  }, [isAdmin, isClient]);
+
+  const clientStats = useMemo(() => {
+    const orders = clientProfile?.vehicleOrders || [];
+    return {
+      total: clientProfile?.totalVehicleOrders || 0,
+      delivered: orders.filter((item) => item.status === "delivered").length,
+      inTransit: orders.filter((item) =>
+        ["approved", "payment_done", "chassis_received"].includes(item.status),
+      ).length,
+      documentationPending: orders.filter(
+        (item) =>
+          !item.isCRTMUploaded ||
+          !item.isBVUploaded ||
+          !item.isDealerInvoiceUploaded,
+      ).length,
+    };
+  }, [clientProfile]);
 
   const m = useMemo(() => {
     const activePiStatuses: PIStatus[] = ["pending_approval", "approved", "sent_to_buyer"];
@@ -294,6 +364,117 @@ const Dashboard: React.FC = () => {
             <div className="absolute inset-2 rounded-full border-2 border-transparent border-t-sky-400 animate-spin" style={{ animationDirection: "reverse", animationDuration: "0.75s" }} />
           </div>
           <p className="text-[11px] font-bold text-blue-400 uppercase tracking-[0.25em]">Loading Dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isClient) {
+    const companyName =
+      clientProfile?.client.companyName || user?.name || "CLIENT";
+    const addressLabel = formatClientAddress(clientProfile?.client.address);
+    const recentOrders = (clientProfile?.vehicleOrders || []).slice(0, 5);
+
+    return (
+      <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)" }}>
+        <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle,#bfdbfe 1px,transparent 1px)", backgroundSize: "30px 30px", opacity: 0.28 }} />
+        <div className="relative max-w-6xl mx-auto px-6 py-8 space-y-6">
+          <div className="relative overflow-hidden rounded-[32px] bg-slate-900 p-8 text-white shadow-2xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.45),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(14,165,233,0.28),_transparent_30%)]" />
+            <div className="absolute inset-0 opacity-70">
+              <ParticleCanvas />
+            </div>
+            <div className="relative">
+              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-blue-200">
+                CLIENT DASHBOARD
+              </p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight uppercase">
+                WELCOME {companyName}
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm text-blue-100 uppercase tracking-[0.12em]">
+                THIS DASHBOARD ONLY SHOWS INFORMATION RELATED TO YOUR COMPANY ACCOUNT.
+              </p>
+            </div>
+          </div>
+
+          {partialError && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 uppercase">
+              {partialError}
+            </div>
+          )}
+
+          <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="rounded-2xl bg-white p-6" style={{ border: "1px solid rgba(147,197,253,0.45)", boxShadow: "0 2px 16px rgba(37,99,235,0.07)" }}>
+              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">COMPANY SNAPSHOT</p>
+              <h2 className="text-[18px] font-bold text-slate-900 uppercase">YOUR DETAILS</h2>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <InfoCard label="NAME" value={toUpperDisplay(clientProfile?.client.name || user?.name)} />
+                <InfoCard label="COMPANY NAME" value={toUpperDisplay(clientProfile?.client.companyName)} />
+                <InfoCard label="MOBILE NUMBER" value={toUpperDisplay(clientProfile?.client.phone || user?.phone)} />
+                <InfoCard label="MAIL ID" value={toUpperDisplay(clientProfile?.client.email || user?.email)} />
+                <InfoCard label="COMPANY ADDRESS" value={toUpperDisplay(addressLabel)} wide />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-white p-6" style={{ border: "1px solid rgba(147,197,253,0.45)", boxShadow: "0 2px 16px rgba(37,99,235,0.07)" }}>
+              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">OVERVIEW</p>
+              <h2 className="text-[18px] font-bold text-slate-900 uppercase">RELATED ACTIVITY</h2>
+              <div className="mt-5 space-y-3">
+                <MetricRow label="TOTAL VEHICLE ORDERS" value={clientStats.total} />
+                <MetricRow label="DELIVERED VEHICLES" value={clientStats.delivered} />
+                <MetricRow label="IN PROGRESS" value={clientStats.inTransit} />
+                <MetricRow label="DOCS PENDING" value={clientStats.documentationPending} />
+                <MetricRow
+                  label="LAST BOOKING"
+                  value={clientProfile?.lastBooking ? fmtDate(clientProfile.lastBooking).toUpperCase() : "—"}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6" style={{ border: "1px solid rgba(147,197,253,0.45)", boxShadow: "0 2px 16px rgba(37,99,235,0.07)" }}>
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">RECENT</p>
+                <h2 className="text-[18px] font-bold text-slate-900 uppercase">YOUR RECENT VEHICLE ORDERS</h2>
+              </div>
+              <button
+                onClick={() => navigate("/profile")}
+                className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-600 hover:bg-blue-100 transition-colors uppercase"
+              >
+                VIEW PROFILE
+              </button>
+            </div>
+            {recentOrders.length === 0 ? (
+              <EmptyState text="NO CLIENT-LINKED VEHICLE ORDERS FOUND YET" />
+            ) : (
+              <div className="space-y-2.5">
+                {recentOrders.map((order) => (
+                  <div
+                    key={order._id}
+                    className="flex flex-col gap-3 rounded-xl border border-blue-50 bg-blue-50/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-slate-900 truncate uppercase">
+                        {getVehicleName(order)}
+                      </p>
+                      <p className="text-[11px] text-slate-400 truncate mt-1 uppercase">
+                        {order.assignedDealerSnapshot?.name || "DEALER NOT ASSIGNED YET"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-block text-[10px] font-bold rounded-full px-2.5 py-0.5 border uppercase ${bookingStatusCls(order.status)}`}>
+                        {order.status.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-400 uppercase">
+                        {fmtDate(order.updatedAt || order.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -844,6 +1025,40 @@ const EmptyState = ({ text }: { text: string }) => (
   <div className="rounded-xl py-8 text-center text-[12px] font-medium"
     style={{ border: "1.5px dashed rgba(147,197,253,0.6)", background: "rgba(239,246,255,0.5)", color: "#93c5fd" }}>
     {text}
+  </div>
+);
+
+const InfoCard = ({
+  label,
+  value,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) => (
+  <div
+    className={`rounded-2xl border border-blue-100 bg-blue-50/60 p-4 ${
+      wide ? "sm:col-span-2" : ""
+    }`}
+  >
+    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-400">
+      {label}
+    </p>
+    <p className="mt-2 text-sm font-semibold text-slate-900 break-words">{value}</p>
+  </div>
+);
+
+const MetricRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) => (
+  <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+    <span className="text-[12px] font-medium text-slate-600">{label}</span>
+    <span className="text-[14px] font-bold text-slate-900">{value}</span>
   </div>
 );
 

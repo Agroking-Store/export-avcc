@@ -24,7 +24,8 @@ const EditVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
-    hsnCode: "",
+    commercialHsnCode: "",
+    exportHsnCode: "",
     fobAmount: "",
     freight: "",
   });
@@ -39,7 +40,9 @@ const EditVehicle = () => {
           modelName: data.modelName || "",
           variant: data.variant || "",
           color: data.color || "",
-          hsnCode: data.hsnCode || "",
+          commercialHsnCode:
+            data.commercialHsnCode || data.hsnCode || "",
+          exportHsnCode: data.exportHsnCode || data.hsnCode || "",
           fobAmount: data.fobAmount !== undefined ? String(data.fobAmount) : "",
           freight: data.freight !== undefined ? String(data.freight) : "",
         });
@@ -134,8 +137,12 @@ const EditVehicle = () => {
               <input name="color" value={form.color} onChange={handleChange} className={inputStyle} placeholder="White Pearl" />
             </div>
             <div>
-              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span></label>
-              <input name="hsnCode" value={form.hsnCode} onChange={handleChange} className={inputStyle} placeholder="8703.23.01" />
+              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="commercialHsnCode" value={form.commercialHsnCode} onChange={handleChange} className={inputStyle} placeholder="For PI / LC / Commercial Invoice" />
+            </div>
+            <div>
+              <label className={labelStyle}><Tag size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="exportHsnCode" value={form.exportHsnCode} onChange={handleChange} className={inputStyle} placeholder="For Dealer Invoice / INR / USD / Packing List" />
             </div>
           </div>
         </div>

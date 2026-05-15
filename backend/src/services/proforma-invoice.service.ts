@@ -347,7 +347,12 @@ export const getOrderDetailWithTrackingService = async (orderId: string) => {
       engineNo: unitEngine,
       color:
         foundBookingVehicle?.color || order.vehicleSnapshot?.color || "N/A",
-      hsn: foundBookingVehicle?.hsnCode || "N/A",
+      hsn:
+        foundBookingVehicle?.commercialHsnCode ||
+        foundBookingVehicle?.hsnCode ||
+        order.vehicleSnapshot?.commercialHsnCode ||
+        order.vehicleSnapshot?.hsnCode ||
+        "N/A",
       yom: foundBookingVehicle?.yom ? String(foundBookingVehicle.yom) : "N/A",
       fuelType: foundBookingVehicle?.fuelType || "N/A",
       countryOfOrigin: foundBookingVehicle?.countryOfOrigin || "N/A",

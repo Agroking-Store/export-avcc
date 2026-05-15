@@ -206,6 +206,8 @@ const CreatePI = () => {
             pi.vehicleDetails?.length > 0
               ? pi.vehicleDetails.map((v: any) => ({
                   ...v,
+                  commercialHsn: v.commercialHsn || v.hsn || "",
+                  exportHsn: v.exportHsn || v.hsn || "",
                   vehicle_id: v.vehicle_id?._id || v.vehicle_id || "",
                   selected: true,
                 }))
@@ -351,7 +353,10 @@ const CreatePI = () => {
 
       quantity: 1,
 
-      hsn: booking.hsnCode || "",
+      commercialHsn:
+        booking.commercialHsnCode || booking.hsnCode || "",
+      exportHsn: booking.exportHsnCode || booking.hsnCode || "",
+      hsn: booking.commercialHsnCode || booking.hsnCode || "",
 
       fob: vehicle.fobAmount || 0,
       freight: vehicle.freight || 0,

@@ -144,8 +144,13 @@ const VehicleOrderVehicleView = () => {
     },
     {
       icon: Hash,
-      label: "HSN Code",
-      value: booking.hsnCode || "-",
+      label: "Commercial HSN",
+      value: booking.commercialHsnCode || booking.hsnCode || "-",
+    },
+    {
+      icon: Hash,
+      label: "Export HSN",
+      value: booking.exportHsnCode || booking.hsnCode || "-",
     },
     {
       icon: Fuel,

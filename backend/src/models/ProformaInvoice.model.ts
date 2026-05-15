@@ -133,6 +133,8 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
         quantity: { type: Number, required: true },
         fob: { type: Number, default: 0 },
         freight: { type: Number, default: 0 },
+        commercialHsn: { type: String },
+        exportHsn: { type: String },
         hsn: { type: String },
         yom: { type: String },
         fuelType: { type: String },

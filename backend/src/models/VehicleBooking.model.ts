@@ -50,6 +50,8 @@ export interface IVehicleBooking extends Document {
   fuelType?: string;
   countryOfOrigin?: string;
   yom?: string;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   hsnCode?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -157,6 +159,8 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
     fuelType: { type: String, default: "", trim: true },
     countryOfOrigin: { type: String, default: "", trim: true },
     yom: { type: String, default: "", trim: true },
+    commercialHsnCode: { type: String, default: "", trim: true },
+    exportHsnCode: { type: String, default: "", trim: true },
     hsnCode: { type: String, default: "", trim: true },
   },
   {

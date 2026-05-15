@@ -20,6 +20,8 @@ const vehicleDetailSchema = Joi.object({
   fob: Joi.number().min(0).required().allow(""),
   freight: Joi.number().min(0).required().allow(""),
   unitPrice: Joi.number().min(0).optional(), // Sent from frontend, but we recalculate
+  commercialHsn: Joi.string().allow("").optional(),
+  exportHsn: Joi.string().allow("").optional(),
   hsn: Joi.string().allow("").optional(),
   yom: Joi.string().allow("").optional(),
   fuelType: Joi.string().allow("").optional(),

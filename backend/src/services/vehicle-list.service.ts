@@ -7,7 +7,8 @@ interface CreateVehicleListItemDto {
   modelName: string;
   variant: string;
   color: string;
-  hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
   quantity?: number;
   fobAmount?: number;
   freight?: number;
@@ -18,7 +19,8 @@ interface UpdateVehicleListItemDto {
   modelName?: string;
   variant?: string;
   color?: string;
-  hsnCode?: string;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   quantity?: number;
   fobAmount?: number;
   freight?: number;
@@ -29,6 +31,7 @@ export const createVehicleListItemService = async (
 ) => {
   const item = new VehicleListItem({
     ...data,
+    hsnCode: data.exportHsnCode,
     quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
   });
 
@@ -42,6 +45,7 @@ export const createVehicleListItemsService = async (
     items.map((data) =>
       new VehicleListItem({
         ...data,
+        hsnCode: data.exportHsnCode,
         quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
       }).save(),
     ),
@@ -120,7 +124,13 @@ export const updateVehicleListItemService = async (
   if (updateData.modelName !== undefined) item.modelName = updateData.modelName;
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
-  if (updateData.hsnCode !== undefined) item.hsnCode = updateData.hsnCode;
+  if (updateData.commercialHsnCode !== undefined) {
+    item.commercialHsnCode = updateData.commercialHsnCode;
+  }
+  if (updateData.exportHsnCode !== undefined) {
+    item.exportHsnCode = updateData.exportHsnCode;
+    item.hsnCode = updateData.exportHsnCode;
+  }
   if (updateData.quantity !== undefined)
     item.quantity = Number(updateData.quantity);
   if (updateData.fobAmount !== undefined)

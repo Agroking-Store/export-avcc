@@ -134,7 +134,10 @@ const UserManagementList = () => {
                     <Select
                       value={user.role}
                       onValueChange={(val) =>
-                        handleRoleChange(user._id, val as UserRole)
+                        handleRoleChange(
+                          user._id || user.id || "",
+                          val as UserRole,
+                        )
                       }
                     >
                       <SelectTrigger className="w-44 rounded-xl border-slate-200 font-bold text-slate-700">

@@ -30,6 +30,7 @@ const LoginForm: React.FC = () => {
       const role = result?.user?.role?.toLowerCase();
       if (role === "accountant") navigate("/proforma-invoice/dashboard");
       else if (role === "sourcing_team") navigate("/vehicles/dashboard");
+      else if (role === "client") navigate("/dashboard");
       else navigate("/dashboard");
     } catch {
       setError("Invalid email or password");

@@ -8,7 +8,8 @@ export type UserRole =
   | "dealer";
 
 export interface User {
-  _id: string;
+  _id?: string;
+  id?: string;
   name: string;
   email: string;
   role: UserRole;

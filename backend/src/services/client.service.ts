@@ -104,6 +104,31 @@ export const getClientByIdService = async (id: string) => {
   };
 };
 
+export const getClientByEmailService = async (email: string) => {
+  const client = await Client.findOne({ email: email.toLowerCase().trim() });
+
+  if (!client) {
+    throw new Error("Client not found");
+  }
+
+  const vehicleOrders = await VehicleBooking.find({
+    assignedClientId: client._id,
+  })
+    .populate("orderId")
+    .populate("vehicleId")
+    .sort({ createdAt: -1 });
+
+  return {
+    client,
+    vehicleOrders,
+    totalVehicleOrders: vehicleOrders.length,
+    lastBooking:
+      vehicleOrders.length > 0
+        ? vehicleOrders[0].createdAt
+        : null,
+  };
+};
+
 export const updateClientService = async (
   id: string,
   data: UpdateClientDto,

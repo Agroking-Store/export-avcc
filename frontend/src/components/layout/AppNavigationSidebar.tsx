@@ -22,7 +22,7 @@ import { useAuth } from "../../hooks/useAuth";
 
 const AppNavigationSidebar: React.FC = () => {
   const location = useLocation();
-  const { user, isSourcingTeam } = useAuth();
+  const { user, isSourcingTeam, isClient } = useAuth();
 
   const role = user?.role?.toLowerCase();
 
@@ -61,7 +61,15 @@ const defaultMenuItems = [
 ];
 
 let menuItems =
-  role === "accountant"
+  role === "client"
+    ? [
+        {
+          name: "DASHBOARD",
+          icon: <LayoutDashboard size={20} />,
+          path: "/dashboard",
+        },
+      ]
+    : role === "accountant"
     ? [
         {
           name: "Dashboard",
@@ -85,7 +93,9 @@ if (role === "admin") {
 }
 
 const visibleMenuItems =
-  isSourcingTeam
+  isClient
+    ? menuItems
+    : isSourcingTeam
     ? menuItems.filter(
         (item) =>
           item.name === "Vehicles"

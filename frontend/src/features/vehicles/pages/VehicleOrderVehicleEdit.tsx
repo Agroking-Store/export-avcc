@@ -49,7 +49,8 @@ const VehicleOrderVehicleEdit = () => {
   const [fuelType, setFuelType] = useState("");
   const [countryOfOrigin, setCountryOfOrigin] = useState("");
   const [yom, setYom] = useState("");
-  const [hsnCode, setHsnCode] = useState("");
+  const [commercialHsnCode, setCommercialHsnCode] = useState("");
+  const [exportHsnCode, setExportHsnCode] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [fuelInputValue, setFuelInputValue] = useState("");
   const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
@@ -102,8 +103,19 @@ const VehicleOrderVehicleEdit = () => {
         setFuelType(currentBooking?.fuelType || "");
         setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
         setYom(currentBooking?.yom || "");
-        setHsnCode(
-          currentBooking?.hsnCode || orderRes?.vehicleSnapshot?.hsnCode || "",
+        setCommercialHsnCode(
+          currentBooking?.commercialHsnCode ||
+            orderRes?.vehicleSnapshot?.commercialHsnCode ||
+            currentBooking?.hsnCode ||
+            orderRes?.vehicleSnapshot?.hsnCode ||
+            "",
+        );
+        setExportHsnCode(
+          currentBooking?.exportHsnCode ||
+            orderRes?.vehicleSnapshot?.exportHsnCode ||
+            currentBooking?.hsnCode ||
+            orderRes?.vehicleSnapshot?.hsnCode ||
+            "",
         );
       } catch (error: any) {
         toast.error(
@@ -276,7 +288,8 @@ const VehicleOrderVehicleEdit = () => {
         fuelType: fuelType || undefined,
         countryOfOrigin: countryOfOrigin || undefined,
         yom: yom || undefined,
-        hsnCode: hsnCode || undefined,
+        commercialHsnCode: commercialHsnCode || undefined,
+        exportHsnCode: exportHsnCode || undefined,
       });
 
       if (eng !== "") {
@@ -470,14 +483,32 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Hash size={14} className="text-indigo-500" />
-              HSN Code
+              Commercial HSN
             </label>
             <input
               type="text"
-              value={hsnCode}
-              onChange={(event) => setHsnCode(event.target.value.toUpperCase())}
+              value={commercialHsnCode}
+              onChange={(event) =>
+                setCommercialHsnCode(event.target.value.toUpperCase())
+              }
               className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              placeholder="e.g. 8703.21.69"
+              placeholder="FOR PI / LC / COMMERCIAL INVOICE"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Hash size={14} className="text-sky-500" />
+              Export HSN
+            </label>
+            <input
+              type="text"
+              value={exportHsnCode}
+              onChange={(event) =>
+                setExportHsnCode(event.target.value.toUpperCase())
+              }
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="FOR DEALER INVOICE / INR / USD / PACKING LIST"
             />
           </div>
 
