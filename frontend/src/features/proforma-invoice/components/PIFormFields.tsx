@@ -10,14 +10,14 @@ interface PIFormFieldsProps {
   form: PIForm;
   setForm: React.Dispatch<React.SetStateAction<PIForm>>;
   errors: Record<string, string>;
-  clients: any[]; // Keep clients
-  companies: any[]; // Renamed from dealers
+  clients: any[];
+  companies: any[];
   ordersWithDisplay: any[];
   selectedOrder: any | null;
   setClientSearch: React.Dispatch<React.SetStateAction<string>>;
-  setCompanySearch: React.Dispatch<React.SetStateAction<string>>; // Renamed from setDealerSearch
+  setCompanySearch: React.Dispatch<React.SetStateAction<string>>;
   setOrderSearch: React.Dispatch<React.SetStateAction<string>>;
-  handlePiNumberChange: (value: string) => void; // New prop for piNumber changes
+  handlePiNumberChange: (value: string) => void;
   handleSelectOrder: (booking: any) => void;
   handleVehicleChange: (
     index: number,
@@ -25,7 +25,7 @@ interface PIFormFieldsProps {
     value: any,
   ) => void;
   handleClientSelect: (clientId: string) => void;
-  handleCompanySelect: (companyId: string) => void; // Renamed from handleDealerSelect
+  handleCompanySelect: (companyId: string) => void;
   handleClientSnapshotChange: (field: string, value: any) => void;
   handleCompanySnapshotChange: (field: string, value: any) => void;
   expandedRows: Record<number, boolean>;
@@ -41,17 +41,17 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   setForm,
   errors,
   clients,
-  companies, // Changed from dealers
+  companies,
   ordersWithDisplay,
   selectedOrder,
   setClientSearch,
-  setCompanySearch, // Changed from setDealerSearch
+  setCompanySearch,
   setOrderSearch,
-  handlePiNumberChange, // Destructure the new prop
+  handlePiNumberChange,
   handleSelectOrder,
   handleVehicleChange,
   handleClientSelect,
-  handleCompanySelect, // Changed from handleDealerSelect
+  handleCompanySelect,
   handleClientSnapshotChange,
   handleCompanySnapshotChange,
   expandedRows,
@@ -59,7 +59,6 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   totalAmount,
   numberToWords,
   getRate,
-
   getAmount,
 }) => {
   const inputClass =
@@ -71,14 +70,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   const sectionTitleClass = "text-xl font-medium text-gray-900 mb-6";
   const divider = <hr className="border-gray-200 my-10" />;
 
-  // Find the selected client and company from the provided arrays
-  // These are now used for initial population if snapshots are empty, or as fallback
   const initialSelectedClient = clients.find((c) => c._id === form.client_id);
   const initialSelectedCompany = companies.find(
     (c) => c._id === form.company_id,
   );
 
-  // Use snapshot for display if available, otherwise fallback to initial selected
   const displayClient = form.clientSnapshot || initialSelectedClient;
   const displayCompany = form.companySnapshot || initialSelectedCompany;
   const isClientAutofilled = !!form.client_id;
@@ -89,7 +85,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
       {/* BUYER / CLIENT */}
       <div>
         <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* FIX: added mb-6 so Country field has gap before next section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className={labelClass}>Client Company Name *</label>
             <SearchableCombobox
@@ -128,8 +125,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>Company Name</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Company Name</label>
             <input
               value={displayClient?.companyName || ""}
               readOnly={isClientAutofilled}
@@ -140,8 +136,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Contact Name</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Contact Name</label>
             <input
               value={displayClient?.name || ""}
               readOnly={isClientAutofilled}
@@ -152,8 +147,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>House/Building</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>House/Building</label>
             <input
               value={displayClient?.address?.houseBuilding || ""}
               readOnly={isClientAutofilled}
@@ -167,8 +161,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Street/Locality/Area</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Street/Locality/Area</label>
             <input
               value={displayClient?.address?.streetArea || ""}
               readOnly={isClientAutofilled}
@@ -179,8 +172,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>City/Town</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>City/Town</label>
             <input
               value={displayClient?.address?.cityTown || ""}
               readOnly={isClientAutofilled}
@@ -191,8 +183,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>State</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>State</label>
             <input
               value={displayClient?.address?.state || ""}
               readOnly={isClientAutofilled}
@@ -203,8 +194,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Email</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Email</label>
             <input
               value={displayClient?.email || ""}
               readOnly={isClientAutofilled}
@@ -215,8 +205,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Pincode / ZIP</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Pincode / ZIP</label>
             <input
               value={displayClient?.address?.pincode || ""}
               readOnly={isClientAutofilled}
@@ -227,8 +216,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Country</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Country</label>
             <input
               value={displayClient?.address?.country || ""}
               readOnly={isClientAutofilled}
@@ -240,8 +228,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
           </div>
         </div>
       </div>
-      {/* LINK ORDER */}
-      <div>
+
+      {/* LINK ORDER — FIX: added mt-6 so heading doesn't stick to Country field */}
+      <div className="mt-6">
         <h3 className={sectionTitleClass}>Fetch Booked Vehicle</h3>
         <div className="max-w-4xl">
           <div>
@@ -688,11 +677,11 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
           <div>
             <label className={labelClass}>Exporter (Company)</label>
             <SearchableCombobox
-              data={companies} // Use companies data
-              value={form.company_id} // Use company_id
-              onValueChange={handleCompanySelect} // Use handleCompanySelect
-              onSearchChange={setCompanySearch} // Use setCompanySearch
-              displayField="name" // Display company name
+              data={companies}
+              value={form.company_id}
+              onValueChange={handleCompanySelect}
+              onSearchChange={setCompanySearch}
+              displayField="name"
               valueField="_id"
               placeholder="Select a company..."
               searchPlaceholder="Search companies..."
@@ -706,17 +695,16 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     <span className="font-medium truncate">{item.name}</span>
                   </div>
                   <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                    {item.phone || "-"} {/* Use phone from Company type */}
+                    {item.phone || "-"}
                   </span>
                 </div>
               )}
             />
           </div>
           <div>
-            <label className={labelClass}>Company Name</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Company Name</label>
             <input
-              value={displayCompany?.name || ""} // Use displayCompany
+              value={displayCompany?.name || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("name", e.target.value)
@@ -725,10 +713,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>GST Number</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>GST Number</label>
             <input
-              value={displayCompany?.gstNumber || ""} // Use displayCompany
+              value={displayCompany?.gstNumber || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("gstNumber", e.target.value)
@@ -737,10 +724,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>House/Building</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>House/Building</label>
             <input
-              value={displayCompany?.address?.houseBuilding || ""} // Use displayCompany
+              value={displayCompany?.address?.houseBuilding || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
@@ -752,10 +738,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Street/Locality/Area</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Street/Locality/Area</label>
             <input
-              value={displayCompany?.address?.streetArea || ""} // Use displayCompany
+              value={displayCompany?.address?.streetArea || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
@@ -767,10 +752,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>City/Town</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>City/Town</label>
             <input
-              value={displayCompany?.address?.cityTown || ""} // Use displayCompany
+              value={displayCompany?.address?.cityTown || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.cityTown", e.target.value)
@@ -779,10 +763,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>State</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>State</label>
             <input
-              value={displayCompany?.address?.state || ""} // Use displayCompany
+              value={displayCompany?.address?.state || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.state", e.target.value)
@@ -791,10 +774,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Pincode / ZIP</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Pincode / ZIP</label>
             <input
-              value={displayCompany?.address?.pincode || ""} // Use displayCompany
+              value={displayCompany?.address?.pincode || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.pincode", e.target.value)
@@ -803,10 +785,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Email</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Email</label>
             <input
-              value={displayCompany?.email || ""} // Use displayCompany
+              value={displayCompany?.email || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("email", e.target.value)
@@ -815,10 +796,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Country</label>{" "}
-            {/* Read-only display */}
+            <label className={labelClass}>Country</label>
             <input
-              value={displayCompany?.address?.country || ""} // Use displayCompany
+              value={displayCompany?.address?.country || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange("address.country", e.target.value)
@@ -838,7 +818,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <input
               placeholder="Bank Name"
-              value={displayCompany?.bankDetails?.bankName || ""} // Use displayCompany
+              value={displayCompany?.bankDetails?.bankName || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
@@ -850,7 +830,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
             <input
               placeholder="Account No"
-              value={displayCompany?.bankDetails?.accountNo || ""} // Use displayCompany
+              value={displayCompany?.bankDetails?.accountNo || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
@@ -862,7 +842,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
             <input
               placeholder="Branch / IFSC"
-              value={displayCompany?.bankDetails?.branchIfsc || ""} // Use displayCompany
+              value={displayCompany?.bankDetails?.branchIfsc || ""}
               readOnly={isCompanyAutofilled}
               onChange={(e) =>
                 handleCompanySnapshotChange(
