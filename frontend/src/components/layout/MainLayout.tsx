@@ -25,9 +25,9 @@ const MainLayout: React.FC = () => {
             <AppNavigationSidebar />{" "}
             {/* Pass your application's navigation sidebar as children */}
           </Sidebar>
-          <SidebarInset>
+          <SidebarInset className="min-h-0 overflow-hidden">
             <Header />
-            <div className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6">
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-transparent p-6">
               <Outlet />
             </div>
           </SidebarInset>

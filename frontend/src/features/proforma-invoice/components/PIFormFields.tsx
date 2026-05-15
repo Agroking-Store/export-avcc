@@ -4,7 +4,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
-import { VehicleLineItem, PIForm } from "./pi.types";
+import { PIForm, VehicleLineItem } from "./pi.types";
 
 interface PIFormFieldsProps {
   form: PIForm;
@@ -22,7 +22,6 @@ interface PIFormFieldsProps {
   handleVehicleChange: (
     index: number,
     field: keyof VehicleLineItem,
-
     value: any,
   ) => void;
   handleClientSelect: (clientId: string) => void;
@@ -67,12 +66,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
     "w-full h-12 px-4 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all text-base shadow-sm";
   const lockedInputClass =
     "w-full h-12 px-4 rounded-md border border-gray-200 bg-gray-50 text-gray-600 placeholder-gray-400 shadow-sm cursor-not-allowed";
-  const getInputClass = (errKey?: string) =>
-    `w-full h-12 px-4 bg-white border ${
-      errKey && errors[errKey]
-        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-        : "border-gray-300 focus:border-blue-600 focus:ring-blue-600"
-    } rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 transition-all text-base shadow-sm`;
+  const readOnlyTextClass = `${lockedInputClass} text-right font-mono`;
   const labelClass = "block text-sm font-medium text-gray-700 mb-2";
   const sectionTitleClass = "text-xl font-medium text-gray-900 mb-6";
   const divider = <hr className="border-gray-200 my-10" />;
@@ -97,16 +91,16 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
         <h3 className={sectionTitleClass}>Buyer / Client Data</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className={labelClass}>Buyer (Client) *</label>
+            <label className={labelClass}>Client Company Name *</label>
             <SearchableCombobox
               data={clients}
               value={form.client_id}
               onValueChange={handleClientSelect}
               onSearchChange={setClientSearch}
-              displayField="name"
+              displayField="displayCompanyName"
               valueField="_id"
-              placeholder="Select a client..."
-              searchPlaceholder="Search clients..."
+              placeholder="Select a client company..."
+              searchPlaceholder="Search client companies..."
               emptyMessage="No clients found."
               error={!!errors.client_id}
               renderItem={(item, index) => (
@@ -115,11 +109,14 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     <span className="w-5 text-xs text-gray-400 font-mono">
                       {index + 1}.
                     </span>
-                    <span className="font-medium truncate">{item.name}</span>
+                    <span className="font-medium truncate">
+                      {item.companyName || item.name || "-"}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-500 whitespace-nowrap text-right">
-                    {item.phone || "-"}
-                  </span>
+                  <div className="text-xs text-gray-500 whitespace-nowrap text-right">
+                    <div>{item.name || "-"}</div>
+                    <div>{item.phone || "-"}</div>
+                  </div>
                 </div>
               )}
             />
@@ -246,7 +243,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
       {/* LINK ORDER */}
       <div>
         <h3 className={sectionTitleClass}>Fetch Booked Vehicle</h3>
-        <div className="max-w-md">
+        <div className="max-w-4xl">
           <div>
             <label className={labelClass}>
               Choose Booked Vehicle (Adds Vehicle Row)
@@ -312,6 +309,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
       <div>
         <div className="flex justify-between items-center mb-6">
           <h3 className={sectionTitleClass + " mb-0!"}>Vehicle Line Items</h3>
+          <span className="text-sm text-gray-500">
+            Auto-filled from booked vehicle and view only
+          </span>
         </div>
 
         <div className="border border-gray-200 rounded-md overflow-hidden bg-white">
@@ -362,10 +362,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     <input
                       placeholder="Vehicle Model"
                       value={v.model}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "model", e.target.value)
-                      }
-                      className={getInputClass(`v_${index}_model`)}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                 </div>
@@ -377,16 +375,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     type="number"
                     min="1"
                     value={v.quantity}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "quantity",
-                        Number(e.target.value),
-                      )
-                    }
-                    className={`${getInputClass(
-                      `v_${index}_quantity`,
-                    )} text-center`}
+                    readOnly
+                    className={`${lockedInputClass} text-center`}
                   />
                 </div>
                 <div className="col-span-1 lg:col-span-2">
@@ -397,14 +387,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     type="number"
                     min="0"
                     value={v.fob}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "fob",
-                        e.target.value ? Number(e.target.value) : "",
-                      )
-                    }
-                    className={`${inputClass} text-right font-mono`}
+                    readOnly
+                    className={readOnlyTextClass}
                   />
                 </div>
                 <div className="col-span-1 lg:col-span-1">
@@ -415,14 +399,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     type="number"
                     min="0"
                     value={v.freight}
-                    onChange={(e) =>
-                      handleVehicleChange(
-                        index,
-                        "freight",
-                        e.target.value ? Number(e.target.value) : "",
-                      )
-                    }
-                    className={`${inputClass} text-right font-mono`}
+                    readOnly
+                    className={readOnlyTextClass}
                   />
                 </div>
                 <div className="col-span-1 lg:col-span-1 text-right font-mono text-gray-600">
@@ -465,20 +443,16 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     <label className={labelClass}>Exterior Color</label>
                     <input
                       value={v.color}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "color", e.target.value)
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Engine No</label>
                     <input
                       value={v.engineNo}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "engineNo", e.target.value)
-                      }
-                      className={`${inputClass} font-mono`}
+                      readOnly
+                      className={`${lockedInputClass} font-mono`}
                       placeholder="Mandatory for Tax Invoice"
                     />
                   </div>
@@ -486,82 +460,56 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     <label className={labelClass}>Chassis No (VIN)</label>
                     <input
                       value={v.chassisNo}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "chassisNo", e.target.value)
-                      }
-                      className={`${inputClass} font-mono`}
+                      readOnly
+                      className={`${lockedInputClass} font-mono`}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Year of Manufacture</label>
                     <input
                       value={v.yom}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "yom", e.target.value)
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Commercial HSN</label>
                     <input
                       value={v.commercialHsn || v.hsn || ""}
-                      onChange={(e) =>
-                        handleVehicleChange(
-                          index,
-                          "commercialHsn",
-                          e.target.value,
-                        )
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Export HSN</label>
                     <input
                       value={v.exportHsn || v.hsn || ""}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "exportHsn", e.target.value)
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Fuel Type</label>
                     <input
                       value={v.fuelType}
-                      onChange={(e) =>
-                        handleVehicleChange(index, "fuelType", e.target.value)
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Country of Origin</label>
                     <input
                       value={v.countryOfOrigin}
-                      onChange={(e) =>
-                        handleVehicleChange(
-                          index,
-                          "countryOfOrigin",
-                          e.target.value,
-                        )
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                     />
                   </div>
                   <div>
                     <label className={labelClass}>Engine Capacity</label>
                     <input
                       value={v.engineCapacity}
-                      onChange={(e) =>
-                        handleVehicleChange(
-                          index,
-                          "engineCapacity",
-                          e.target.value,
-                        )
-                      }
-                      className={inputClass}
+                      readOnly
+                      className={lockedInputClass}
                       placeholder="e.g. 2000cc"
                     />
                   </div>
