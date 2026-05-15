@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import axios from "axios";
 import { apiConfig } from "../../config/apiConfig";
+import { invoiceApi } from "@/features/proforma-invoice/components/invoiceApi";
 
 // Module icons map
 const moduleIcons: { [key: string]: JSX.Element } = {
@@ -72,6 +73,14 @@ const formatBreadcrumbLabel = (segment: string, resolvedLabel?: string) => {
   return pretty;
 };
 
+const prettyInvoiceType = (segment: string) => {
+  const normalized = segment.toUpperCase();
+  if (normalized === "COMMERCIAL") return "Commercial";
+  if (normalized === "USD") return "USD";
+  if (normalized === "INR") return "INR";
+  return formatBreadcrumbLabel(segment);
+};
+
 /**
  * Resolves a MongoDB ObjectId to a human-readable label by checking the
  * preceding path segment to determine which API to call.
@@ -88,7 +97,27 @@ const resolveIdLabel = async (
   try {
     let label = "";
 
-    if (segments.includes("vehicles") || parent === "view") {
+    if (
+      (segments[0] === "invoices" && segments[1] === "generate" && idx === 2) ||
+      (segments[0] === "packing-list" && segments[1] === "generate" && idx === 2) ||
+      (segments[0] === "proforma-invoice" &&
+        (idx === 1 || parent === "edit" || parent === "create-tax-invoice"))
+    ) {
+      const context = await invoiceApi.getPIContext(id);
+      label = context.piNumber || `PI ${id.slice(-6)}`;
+    } else if (
+      segments[0] === "invoices" &&
+      segments[1] === "generate" &&
+      idx === 4 &&
+      segments[2]
+    ) {
+      const context = await invoiceApi.getPIContext(segments[2]);
+      const vehicle = context.vehicles.find((item) => item.vehicleId === id);
+      label =
+        vehicle?.displayModel ||
+        vehicle?.chassisNo ||
+        `Vehicle ${id.slice(-6)}`;
+    } else if (segments.includes("vehicles") || parent === "view") {
       // /vehicles/view/:orderId or nested vehicle routes
       const res = await axios.get(`${apiConfig.baseURL}/orders/${id}`);
       const data = res.data.order || res.data;
@@ -161,10 +190,105 @@ const Header: React.FC = () => {
     navigate("/login");
   };
 
+  const buildBreadcrumbEntries = (pathname: string) => {
+    const segments = pathname.split("/").filter(Boolean);
+
+    if (
+      segments[0] === "invoices" &&
+      segments[1] === "generate" &&
+      segments[2] &&
+      segments[3]
+    ) {
+      const piId = segments[2];
+      const type = segments[3];
+      const vehicleId = segments[4];
+      const piLabel =
+        resolvedLabels[piId] || idLabelCache[piId] || `PI ${piId.slice(-6)}`;
+      const typeLabel = `${prettyInvoiceType(type)} Invoice`;
+
+      return [
+        {
+          label: "Proforma Invoice",
+          to: "/proforma-invoice/list",
+          icon: moduleIcons["proforma-invoice"],
+        },
+        {
+          label: piLabel,
+          to: `/proforma-invoice/${piId}`,
+          icon: moduleIcons["proforma-invoice"],
+        },
+        vehicleId
+          ? {
+              label: `Select Vehicle for ${typeLabel}`,
+              to: `/invoices/generate/${piId}/${type}`,
+              icon: <Car size={16} />,
+            }
+          : {
+              label: `Select Vehicle for ${typeLabel}`,
+              icon: <Car size={16} />,
+            },
+        vehicleId
+          ? {
+              label:
+                resolvedLabels[vehicleId] ||
+                idLabelCache[vehicleId] ||
+                "Fill Details",
+              icon: <FileText size={16} />,
+            }
+          : null,
+      ].filter(Boolean) as Array<{
+        label: string;
+        to?: string;
+        icon?: JSX.Element;
+      }>;
+    }
+
+    if (
+      segments[0] === "packing-list" &&
+      segments[1] === "generate" &&
+      segments[2]
+    ) {
+      const piId = segments[2];
+      const piLabel =
+        resolvedLabels[piId] || idLabelCache[piId] || `PI ${piId.slice(-6)}`;
+
+      return [
+        {
+          label: "Proforma Invoice",
+          to: "/proforma-invoice/list",
+          icon: moduleIcons["proforma-invoice"],
+        },
+        {
+          label: piLabel,
+          to: `/proforma-invoice/${piId}`,
+          icon: moduleIcons["proforma-invoice"],
+        },
+        {
+          label: "Generate Packing List",
+          icon: <Truck size={16} />,
+        },
+      ];
+    }
+
+    return segments.map((segment, index) => {
+      const currentPath = `/${segments.slice(0, index + 1).join("/")}`;
+      const isMongoSegment = isMongoId(segment);
+
+      return {
+        label: formatBreadcrumbLabel(
+          segment,
+          resolvedLabels[segment] || idLabelCache[segment]
+        ),
+        to: index === segments.length - 1 ? undefined : currentPath,
+        icon: isMongoSegment ? undefined : moduleIcons[segment] || <Folders size={16} />,
+      };
+    });
+  };
+
   const generateBreadcrumbs = (pathname: string) => {
     const pathSegments = pathname.split("/").filter((segment) => segment !== "");
-    let currentPath = "";
     const breadcrumbItems: JSX.Element[] = [];
+    const entries = buildBreadcrumbEntries(pathname);
 
     // Always start with Main Menu
     breadcrumbItems.push(
@@ -188,34 +312,25 @@ const Header: React.FC = () => {
       </React.Fragment>
     );
 
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
-      const isLast = index === pathSegments.length - 1;
-
-      const displayName = formatBreadcrumbLabel(
-        segment,
-        resolvedLabels[segment] || idLabelCache[segment]
-      );
-
-      const icon = moduleIcons[segment] || <Folders size={16} />;
-      const showIcon = !isMongoId(segment);
+    entries.forEach((entry, index) => {
+      const isLast = index === entries.length - 1;
 
       breadcrumbItems.push(
-        <React.Fragment key={currentPath}>
+        <React.Fragment key={`${entry.to || entry.label}-${index}`}>
           <BreadcrumbItem>
-            {isLast ? (
+            {isLast || !entry.to ? (
               <BreadcrumbPage className="max-w-[220px] truncate px-2 py-1 rounded-md font-semibold text-gray-900 dark:text-white cursor-default flex items-center gap-1">
-                {showIcon && icon}
-                {displayName}
+                {entry.icon}
+                {entry.label}
               </BreadcrumbPage>
             ) : (
               <BreadcrumbLink asChild>
                 <Link
-                  to={currentPath}
+                  to={entry.to}
                   className="max-w-[220px] truncate flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
                 >
-                  {showIcon && icon}
-                  {displayName}
+                  {entry.icon}
+                  {entry.label}
                 </Link>
               </BreadcrumbLink>
             )}
