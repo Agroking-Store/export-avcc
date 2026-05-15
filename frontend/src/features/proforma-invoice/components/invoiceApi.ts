@@ -61,7 +61,6 @@ export const invoiceApi = {
       success: boolean;
       invoiceId: string;
       downloadUrl: string;
-      packingListUrl?: string;
     }>(`${apiConfig.baseURL}/invoices/generate`, payload, {
       headers: getAuthHeaders(),
     });

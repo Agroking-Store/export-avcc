@@ -5,7 +5,6 @@ import {
   Eye,
   FileText,
   Loader2,
-  Package2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -43,6 +42,35 @@ const formatUsdWords = (amount: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+const toDateInputValue = (value?: string | Date | null) => {
+  if (!value) return "";
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      const [day, month, year] = trimmed.split("/");
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}`;
+};
 
 const toIndianWords = (num: number): string => {
   const ones = [
@@ -120,7 +148,11 @@ const buildInitialForm = (
       manual.invoiceNumber ||
       existingInvoice?.invoiceNumber ||
       context.suggestedInvoiceNumber,
-    invoiceDate: manual.invoiceDate || new Date().toISOString().slice(0, 10),
+    invoiceDate:
+      toDateInputValue(manual.invoiceDate) ||
+      new Date().toISOString().slice(0, 10),
+    lcNumber: manual.lcNumber || context.lcNumber || "",
+    lcDate: toDateInputValue(manual.lcDate || context.lcDate),
     containerNo: manual.containerNo || "",
     buyerOrderDate: manual.buyerOrderDate || "",
     otherReference: manual.otherReference || context.piNumber || "",
@@ -220,7 +252,6 @@ export default function InvoiceFormPage() {
   const [successData, setSuccessData] = useState<{
     invoiceId: string;
     invoiceNumber: string;
-    packingListUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -311,7 +342,6 @@ export default function InvoiceFormPage() {
       setSuccessData({
         invoiceId: response.invoiceId,
         invoiceNumber: form.invoiceNumber,
-        packingListUrl: response.packingListUrl,
       });
       setExistingInvoice({
         _id: response.invoiceId,
@@ -319,7 +349,7 @@ export default function InvoiceFormPage() {
         generatedAt: new Date().toISOString(),
         vehicleId,
         type: invoiceType,
-        hasPackingList: invoiceType === "USD",
+        hasPackingList: false,
         manualFields: form,
       });
     } catch (error: any) {
@@ -400,8 +430,6 @@ export default function InvoiceFormPage() {
                 label="Buyer Address"
                 value={context.buyerAddress}
               />
-              <ReadOnlyField label="LC Number" value={context.lcNumber} />
-              <ReadOnlyField label="LC Date" value={context.lcDate} />
               <ReadOnlyField
                 label="Port of Loading"
                 value={context.portOfLoading}
@@ -445,6 +473,22 @@ export default function InvoiceFormPage() {
                 label="Invoice Date"
                 name="invoiceDate"
                 value={form.invoiceDate}
+                onChange={handleFieldChange}
+                type="date"
+                required
+              />
+              <EditableField
+                label="LC Number"
+                name="lcNumber"
+                value={form.lcNumber}
+                onChange={handleFieldChange}
+                required
+                placeholder="Enter LC number"
+              />
+              <EditableField
+                label="LC Date"
+                name="lcDate"
+                value={form.lcDate}
                 onChange={handleFieldChange}
                 type="date"
                 required
@@ -575,7 +619,7 @@ export default function InvoiceFormPage() {
               {showCommercialFields
                 ? "Commercial invoice needs exact certification vehicle details, so fields like year, first registration, inspection certificate, and type of vehicle stay editable."
                 : showPackingSupportFields
-                  ? "USD invoice also drives the packing list, so only export-format and packing fields are shown here."
+                  ? "USD invoice uses export-format fields only. Packing list is generated separately."
                   : "Only fields used in the invoice format are shown here."}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -875,21 +919,6 @@ export default function InvoiceFormPage() {
               Download PDF
             </Button>
 
-            {successData?.packingListUrl && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() =>
-                  invoiceApi.downloadFile(
-                    invoiceApi.getPackingListViewUrl(successData.invoiceId),
-                    `${successData.invoiceNumber}-packing.pdf`,
-                  )
-                }
-              >
-                <Package2 className="h-4 w-4" />
-                Download Packing List
-              </Button>
-            )}
           </div>
 
           <DialogFooter className="mt-2">

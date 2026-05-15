@@ -68,7 +68,8 @@ const getTypeCount = (
   type: InvoiceType | "PACKING_LIST",
 ) => {
   if (type === "PACKING_LIST") {
-    return context.existingInvoices.filter((i) => !!i.hasPackingList).length;
+    return context.existingInvoices.filter((i) => i.type === "PACKING_LIST")
+      .length;
   }
   return context.existingInvoices.filter((i) => i.type === type).length;
 };
@@ -81,7 +82,8 @@ const getLatestInvoice = (
     (a, b) =>
       new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime(),
   );
-  if (type === "PACKING_LIST") return ordered.find((i) => !!i.hasPackingList);
+  if (type === "PACKING_LIST")
+    return ordered.find((i) => i.type === "PACKING_LIST");
   return ordered.find((i) => i.type === type);
 };
 

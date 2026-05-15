@@ -51,6 +51,19 @@ const formatDisplayDate = (value?: string | Date | null) => {
     return "";
   }
 
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split("-");
+      return `${day}/${month}/${year}`;
+    }
+  }
+
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -338,7 +351,7 @@ const buildPIInvoiceContext = async (piId: string) => {
   const invoices = await Invoice.find({ piId, active: true })
     .sort({ generatedAt: -1 })
     .select(
-      "_id vehicleId type invoiceNumber generatedAt manualFields packingListPdf",
+      "_id vehicleId type invoiceNumber generatedAt manualFields packingListPdf dataSnapshot",
     )
     .lean();
 
@@ -348,11 +361,7 @@ const buildPIInvoiceContext = async (piId: string) => {
 
   const invoiceLookup = invoices.reduce<Record<string, Record<string, any>>>(
     (acc, invoice: any) => {
-      if (!acc[invoice.vehicleId]) {
-        acc[invoice.vehicleId] = {};
-      }
-
-      acc[invoice.vehicleId][invoice.type] = {
+      const invoiceSummary = {
         _id: invoice._id,
         vehicleId: invoice.vehicleId,
         type: invoice.type,
@@ -362,16 +371,29 @@ const buildPIInvoiceContext = async (piId: string) => {
         hasPackingList: !!invoice.packingListPdf,
       };
 
-      if (invoice.packingListPdf) {
-        acc[invoice.vehicleId].PACKING_LIST = {
-          _id: invoice._id,
-          vehicleId: invoice.vehicleId,
-          invoiceNumber: invoice.invoiceNumber,
-          generatedAt: invoice.generatedAt,
-          manualFields: invoice.manualFields || {},
-          hasPackingList: true,
-          type: "PACKING_LIST",
-        };
+      if (invoice.type === "PACKING_LIST") {
+        const selectedVehicleIds = Array.isArray(invoice.dataSnapshot?.vehicles)
+          ? invoice.dataSnapshot.vehicles
+              .map((vehicle: any) => vehicle?.vehicleId)
+              .filter(Boolean)
+          : [];
+
+        for (const selectedVehicleId of selectedVehicleIds) {
+          if (!acc[selectedVehicleId]) {
+            acc[selectedVehicleId] = {};
+          }
+
+          acc[selectedVehicleId].PACKING_LIST = {
+            ...invoiceSummary,
+            vehicleId: selectedVehicleId,
+          };
+        }
+      } else {
+        if (!acc[invoice.vehicleId]) {
+          acc[invoice.vehicleId] = {};
+        }
+
+        acc[invoice.vehicleId][invoice.type] = invoiceSummary;
       }
 
       return acc;
@@ -423,7 +445,7 @@ const getMissingFields = (
   type: InvoiceDocumentType,
   manualFields: Record<string, any>,
 ) => {
-  const common = ["invoiceNumber", "invoiceDate"];
+  const common = ["invoiceNumber", "invoiceDate", "lcNumber", "lcDate"];
   const requiredByType: Record<InvoiceDocumentType, string[]> = {
     INR: ["placeOfSupply", "termsOfPayment", "customExchangeRate"],
     USD: [
@@ -511,8 +533,8 @@ const buildTemplateData = ({
     buyerAddress: pi.buyerAddress,
     buyerCity: (pi.buyerCity || "").toUpperCase(),
     buyerCountry: pi.buyerCountry,
-    lcNumber: pi.lcNumber,
-    lcDate: pi.lcDate,
+    lcNumber: manualFields.lcNumber || pi.lcNumber,
+    lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
     portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
     portOfDischarge: pi.portOfDischarge,
     placeOfDelivery: pi.placeOfDelivery,
@@ -638,7 +660,10 @@ const restoreMissingPdfBuffers = async (invoice: any) => {
 
   let changed = false;
 
-  if (!invoice.invoicePdf || invoice.invoicePdf.length === 0) {
+  if (
+    invoice.type !== "PACKING_LIST" &&
+    (!invoice.invoicePdf || invoice.invoicePdf.length === 0)
+  ) {
     invoice.invoicePdf = await renderInvoicePDF({
       templateName: getTemplateNameForInvoiceType(invoice.type),
       data: templateData,
@@ -648,7 +673,7 @@ const restoreMissingPdfBuffers = async (invoice: any) => {
   }
 
   if (
-    invoice.type === "USD" &&
+    invoice.type === "PACKING_LIST" &&
     (!invoice.packingListPdf || invoice.packingListPdf.length === 0)
   ) {
     invoice.packingListPdf = await renderInvoicePDF({
@@ -819,7 +844,6 @@ export const generateInvoice = async (req: Request, res: Response) => {
     const sanitizedInvoiceNumber = sanitizeFileName(manualFields.invoiceNumber);
 
     let invoicePdfBuffer: Buffer;
-    let packingListPdfBuffer: Buffer | undefined;
 
     if (type === "INR") {
       invoicePdfBuffer = await renderInvoicePDF({
@@ -830,11 +854,6 @@ export const generateInvoice = async (req: Request, res: Response) => {
     } else if (type === "USD") {
       invoicePdfBuffer = await renderInvoicePDF({
         templateName: "usdInvoice",
-        data: templateData,
-        invoiceNumber: manualFields.invoiceNumber,
-      });
-      packingListPdfBuffer = await renderInvoicePDF({
-        templateName: "packingList",
         data: templateData,
         invoiceNumber: manualFields.invoiceNumber,
       });
@@ -860,7 +879,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
       manualFields,
       computedFields,
       invoicePdf: invoicePdfBuffer,
-      packingListPdf: packingListPdfBuffer,
+      packingListPdf: null,
       generatedAt: new Date(),
       active: true,
       dataSnapshot: {
@@ -883,10 +902,6 @@ export const generateInvoice = async (req: Request, res: Response) => {
       success: true,
       invoiceId: invoiceRecord._id,
       downloadUrl: `/api/v1/invoices/${invoiceRecord._id}/download`,
-      packingListUrl:
-        type === "USD"
-          ? `/api/v1/invoices/${invoiceRecord._id}/download-packing`
-          : undefined,
     });
   } catch (error: any) {
     return jsonError(res, 500, {

@@ -69,6 +69,8 @@ export interface PIInvoiceContext {
 export interface InvoiceManualFields {
   invoiceNumber: string;
   invoiceDate: string;
+  lcNumber: string;
+  lcDate: string;
   containerNo: string;
   buyerOrderDate?: string;
   otherReference?: string;
