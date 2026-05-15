@@ -151,7 +151,7 @@ const VehicleBookingDocumentModal = ({
                   <FileInput label="Form 20" field="form20" />
                   <FileInput label="Form 21" field="form21" />
                   <FileInput label="Form 22" field="form22" />
-                  <FileInput label="Temp Reg (TP)" field="tempRegCert" />
+                  <FileInput label="CRTM" field="tempRegCert" />
                 </div>
                 <button
                   disabled={loading}

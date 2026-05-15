@@ -16,6 +16,7 @@ export type VehicleLineItem = {
   fuelType: string;
   countryOfOrigin: string;
   engineCapacity: string;
+  igstRate?: number;
   selected?: boolean;
 };
 

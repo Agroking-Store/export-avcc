@@ -474,6 +474,10 @@ const VehicleOrdersList = () => {
   const searchPlaceholder = isClient
     ? "Search your vehicle..."
     : "Search vehicle...";
+  const getAssignedClientLabel = (booking: VehicleBookingItem) =>
+    booking.assignedClientSnapshot?.companyName ||
+    booking.assignedClientSnapshot?.name ||
+    "Allot Client";
 
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
@@ -760,7 +764,9 @@ const VehicleOrdersList = () => {
                                 >
                                   <Check size={14} className="shrink-0" />
                                   <span className="truncate max-w-[90px]">
-                                    {booking.assignedClientId ? booking.assignedClientSnapshot?.name : "Allot Client"}
+                                    {booking.assignedClientId
+                                      ? getAssignedClientLabel(booking)
+                                      : "Allot Client"}
                                   </span>
                                 </button>
                               </div>

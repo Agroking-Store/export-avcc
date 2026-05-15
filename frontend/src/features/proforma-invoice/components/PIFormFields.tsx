@@ -269,30 +269,32 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                   ? "Search booked vehicle..."
                   : "Select client first"
               }
-              searchPlaceholder="Search by Order No or Client..."
+              searchPlaceholder="Search by Vehicle ID, name or chassis..."
               emptyMessage={
                 form.client_id
                   ? "No booked vehicles found."
                   : "Please select client first."
               }
               header={
-                <div className="grid grid-cols-[40px_110px_1fr_100px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
+                <div className="grid grid-cols-[40px_110px_1fr_120px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
                   <div>S.No</div>
-                  <div>Order No</div>
-                  <div>Client Name</div>
+                  <div>Vehicle ID</div>
+                  <div>Vehicle Name</div>
                   <div className="text-right">Chassis</div>
                 </div>
               }
               renderItem={(item) => (
-                <div className="grid grid-cols-[40px_110px_1fr_100px] gap-2 w-full items-center py-0.5">
+                <div className="grid grid-cols-[40px_110px_1fr_120px] gap-2 w-full items-center py-0.5">
                   <span className="text-xs text-gray-400 font-mono">
                     {item.serialNumber}.
                   </span>
                   <span className="font-bold text-blue-600 truncate">
-                    {item.orderId?.orderNumber || "-"}
+                    {item.vehicleDisplayId || "-"}
                   </span>
                   <span className="truncate text-gray-700 font-medium">
-                    {item.vehicleId?.modelName || "-"}
+                    {[item.vehicleId?.brandName, item.vehicleId?.modelName, item.vehicleId?.variant]
+                      .filter(Boolean)
+                      .join(" ") || "-"}
                   </span>
                   <span className="text-[11px] text-gray-500 text-right whitespace-nowrap">
                     {item.chassisNumber || "-"}
@@ -613,7 +615,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             />
           </div>
           <div>
-            <label className={labelClass}>Validity Date</label>
+            <label className={labelClass}>Date</label>
             <DatePicker
               date={
                 form.validityDate

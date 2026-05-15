@@ -23,6 +23,7 @@ interface VehicleForm {
   exportHsnCode: string;
   fobAmount: string;
   freight: string;
+  igstRate: "5" | "18" | "40";
 }
 
 const emptyVehicle = (): VehicleForm => ({
@@ -34,6 +35,7 @@ const emptyVehicle = (): VehicleForm => ({
   exportHsnCode: "",
   fobAmount: "",
   freight: "",
+  igstRate: "18",
 });
 
 import { useAuth } from "../../../hooks/useAuth";
@@ -120,6 +122,7 @@ const AddVehicle = () => {
         exportHsnCode: v.exportHsnCode.trim(),
         fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
         freight: v.freight !== "" ? parseFloat(v.freight) : 0,
+        igstRate: Number(v.igstRate),
       }));
 
       await vehicleManagementApi.createVehiclesBulk(payload);
@@ -243,6 +246,27 @@ const AddVehicle = () => {
                     className={inputStyle}
                     placeholder="White Pearl"
                   />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Hash size={14} className="text-violet-500" /> GST Rate <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <select
+                    value={vehicle.igstRate}
+                    onChange={(e) =>
+                      handleChange(
+                        index,
+                        "igstRate",
+                        e.target.value as VehicleForm["igstRate"],
+                      )
+                    }
+                    className={`${inputStyle} cursor-pointer`}
+                  >
+                    <option value="5">5%</option>
+                    <option value="18">18%</option>
+                    <option value="40">40%</option>
+                  </select>
                 </div>
 
                 <div>

@@ -28,6 +28,7 @@ const EditVehicle = () => {
     exportHsnCode: "",
     fobAmount: "",
     freight: "",
+    igstRate: "18",
   });
 
   useEffect(() => {
@@ -45,6 +46,7 @@ const EditVehicle = () => {
           exportHsnCode: data.exportHsnCode || data.hsnCode || "",
           fobAmount: data.fobAmount !== undefined ? String(data.fobAmount) : "",
           freight: data.freight !== undefined ? String(data.freight) : "",
+          igstRate: String(data.igstRate ?? 18),
         });
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle");
@@ -72,6 +74,7 @@ const EditVehicle = () => {
         ...form,
         fobAmount: form.fobAmount !== "" ? parseFloat(form.fobAmount) : 0,
         freight: form.freight !== "" ? parseFloat(form.freight) : 0,
+        igstRate: Number(form.igstRate),
       });
       navigate("/vehicles/list", {
         state: { success: "Vehicle updated successfully" },
@@ -135,6 +138,19 @@ const EditVehicle = () => {
             <div>
               <label className={labelStyle}><Palette size={14} className="text-rose-400" /> Color <span className="text-red-500 ml-0.5">*</span></label>
               <input name="color" value={form.color} onChange={handleChange} className={inputStyle} placeholder="White Pearl" />
+            </div>
+            <div>
+              <label className={labelStyle}><Tag size={14} className="text-violet-500" /> GST Rate <span className="text-red-500 ml-0.5">*</span></label>
+              <select
+                name="igstRate"
+                value={form.igstRate}
+                onChange={(e) => setForm((prev) => ({ ...prev, igstRate: e.target.value }))}
+                className={`${inputStyle} cursor-pointer`}
+              >
+                <option value="5">5%</option>
+                <option value="18">18%</option>
+                <option value="40">40%</option>
+              </select>
             </div>
             <div>
               <label className={labelStyle}><Tag size={14} className="text-amber-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span></label>

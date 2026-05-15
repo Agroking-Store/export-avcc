@@ -4,11 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   Phone,
   Mail,
-  Building2,
   MapPin,
   ArrowLeft,
   ClipboardList,
   Hash,
+  Landmark,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "@/config/apiConfig";
@@ -148,6 +149,24 @@ const DealerDetails = () => {
                   icon={Hash}
                 />
                 <InfoBox label="Address" value={dealer.address} icon={MapPin} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <InfoBox
+                  label="Bank Name"
+                  value={dealer.bankDetails?.bankName}
+                  icon={Landmark}
+                />
+                <InfoBox
+                  label="Account Number"
+                  value={dealer.bankDetails?.accountNo}
+                  icon={CreditCard}
+                />
+                <InfoBox
+                  label="Branch / IFSC"
+                  value={dealer.bankDetails?.branchIfsc}
+                  icon={Hash}
+                />
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ export interface IVehicleListItem extends Document {
   quantity: number;
   fobAmount: number;
   freight: number;
+  igstRate: 5 | 18 | 40;
   status: "Available" | "Out of Stock";
   createdAt: Date;
   updatedAt: Date;
@@ -69,6 +70,11 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
       required: false,
       default: 0,
       min: [0, "Freight cannot be negative"],
+    },
+    igstRate: {
+      type: Number,
+      enum: [5, 18, 40],
+      default: 18,
     },
     status: {
       type: String,

@@ -24,6 +24,7 @@ export interface IProformaInvoice extends Document {
     fuelType?: string;
     countryOfOrigin?: string;
     engineCapacity?: string;
+    igstRate?: number;
   }[];
 
   totalAmount: number;
@@ -140,6 +141,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
         fuelType: { type: String },
         countryOfOrigin: { type: String },
         engineCapacity: { type: String },
+        igstRate: { type: Number, enum: [5, 18, 40], default: 18 },
       },
     ],
 

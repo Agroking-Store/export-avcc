@@ -365,6 +365,7 @@ const CreatePI = () => {
       fuelType: booking.fuelType || "",
       countryOfOrigin: booking.countryOfOrigin || "",
       engineCapacity: booking.engineCapacity || "",
+      igstRate: vehicle.igstRate || 18,
 
       selected: true,
     };
@@ -488,9 +489,11 @@ const CreatePI = () => {
   const bookingsWithDisplay = bookings.map((b, index) => ({
     ...b,
     serialNumber: index + 1,
+    vehicleDisplayId: `VEH-${String((b.vehicleIndex ?? index) + 1).padStart(3, "0")}`,
     displayName:
-      `${b.orderId?.orderNumber || "-"} | ` +
-      `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} | ` +
+      `VEH-${String((b.vehicleIndex ?? index) + 1).padStart(3, "0")} | ` +
+      `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} ${b.vehicleId?.variant || ""}`.trim() +
+      ` | ` +
       `${b.chassisNumber || "No Chassis"}`,
   }));
 

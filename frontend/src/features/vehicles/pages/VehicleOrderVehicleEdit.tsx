@@ -29,6 +29,44 @@ import { useAuth } from "../../../hooks/useAuth";
 import axios from "axios";
 import { apiConfig } from "@/config/apiConfig";
 
+const formatDateToDdMmYyyy = (value?: string) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}${month}${year}`;
+};
+
+const formatDdMmYyyyToIso = (value?: string) => {
+  if (!value || !/^\d{8}$/.test(value)) {
+    return "";
+  }
+
+  const day = value.slice(0, 2);
+  const month = value.slice(2, 4);
+  const year = value.slice(4, 8);
+  const isoValue = `${year}-${month}-${day}`;
+  const parsed = new Date(`${isoValue}T00:00:00`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return isoValue;
+};
+
+const formatDdMmYyyyToDate = (value?: string) => {
+  const isoValue = formatDdMmYyyyToIso(value);
+  return isoValue ? new Date(`${isoValue}T00:00:00`) : undefined;
+};
+
 const VehicleOrderVehicleEdit = () => {
   const currentYear = new Date().getFullYear();
   const { id, vehicleIndex } = useParams<{
@@ -96,7 +134,7 @@ const VehicleOrderVehicleEdit = () => {
         setChassisNumber(currentBooking?.chassisNumber || "");
         setDeliveryDate(
           currentBooking?.deliveryDate
-            ? currentBooking.deliveryDate.split("T")[0]
+            ? formatDateToDdMmYyyy(currentBooking.deliveryDate)
             : "",
         );
         setEngineCapacity(currentBooking?.engineCapacity || "");
@@ -279,11 +317,20 @@ const VehicleOrderVehicleEdit = () => {
 
     try {
       setSaving(true);
+      const formattedDeliveryDate =
+        deliveryDate.trim() === ""
+          ? undefined
+          : formatDdMmYyyyToIso(deliveryDate.trim());
+
+      if (deliveryDate.trim() && !formattedDeliveryDate) {
+        toast.error("Delivery date must be in DDMMYYYY format");
+        return;
+      }
 
       const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
         engineNumber: eng || undefined,
         chassisNumber: chassis,
-        deliveryDate: deliveryDate || undefined,
+        deliveryDate: formattedDeliveryDate,
         engineCapacity: engineCapacity || undefined,
         fuelType: fuelType || undefined,
         countryOfOrigin: countryOfOrigin || undefined,
@@ -646,7 +693,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Calendar size={16} />
-              Date of Delivery
+              Date of Delivery (DDMMYYYY)
             </label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -660,11 +707,7 @@ const VehicleOrderVehicleEdit = () => {
                       deliveryDate ? "text-slate-700" : "text-slate-400"
                     }
                   >
-                    {!engineNumber.trim() || !chassisNumber.trim()
-                      ? "Select Date Of Delivery"
-                      : deliveryDate
-                        ? new Date(deliveryDate).toLocaleDateString()
-                        : "Select date..."}
+                    {deliveryDate || "DDMMYYYY"}
                   </span>
                   <CalendarIcon size={16} className="text-slate-400" />
                 </button>
@@ -673,13 +716,13 @@ const VehicleOrderVehicleEdit = () => {
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={deliveryDate ? new Date(deliveryDate) : undefined}
+                  selected={formatDdMmYyyyToDate(deliveryDate)}
                   onSelect={(date) => {
                     if (date) {
-                      const yyyy = date.getFullYear();
-                      const mm = String(date.getMonth() + 1).padStart(2, "0");
                       const dd = String(date.getDate()).padStart(2, "0");
-                      setDeliveryDate(`${yyyy}-${mm}-${dd}`);
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const yyyy = date.getFullYear();
+                      setDeliveryDate(`${dd}${mm}${yyyy}`);
                     } else {
                       setDeliveryDate("");
                     }

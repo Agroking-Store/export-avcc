@@ -7,6 +7,8 @@ import {
   Mail,
   MapPin,
   Hash,
+  Landmark,
+  CreditCard,
   ArrowLeft,
   X,
   Save,
@@ -23,13 +25,27 @@ const EditDealer = () => {
     email: "",
     address: "",
     gstNumber: "",
+    bankDetails: {
+      bankName: "",
+      accountNo: "",
+      branchIfsc: "",
+    },
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     axios
       .get(`${API_URL}/dealers/${id}`)
-      .then((res) => setForm(res.data.data))
+      .then((res) =>
+        setForm({
+          ...res.data.data,
+          bankDetails: {
+            bankName: res.data.data?.bankDetails?.bankName || "",
+            accountNo: res.data.data?.bankDetails?.accountNo || "",
+            branchIfsc: res.data.data?.bankDetails?.branchIfsc || "",
+          },
+        }),
+      )
       .catch((error: any) =>
         toast.error(error.response?.data?.message || "Failed to load dealer"),
       );
@@ -59,6 +75,18 @@ const EditDealer = () => {
 
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
+  const handleBankDetailChange = (
+    field: "bankName" | "accountNo" | "branchIfsc",
+    value: string,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      bankDetails: {
+        ...prev.bankDetails,
+        [field]: value,
+      },
+    }));
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10 animate-in fade-in duration-500">
@@ -163,6 +191,53 @@ const EditDealer = () => {
                 rows={3}
                 className={`${inputStyle} resize-none`}
                 placeholder="Full dealer address"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+              Bank Details
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className={labelStyle}>
+                <Landmark size={14} className="text-emerald-500" /> Bank Name
+              </label>
+              <input
+                value={form.bankDetails.bankName}
+                onChange={(e) => handleBankDetailChange("bankName", e.target.value)}
+                className={inputStyle}
+                placeholder="HDFC Bank"
+              />
+            </div>
+            <div>
+              <label className={labelStyle}>
+                <CreditCard size={14} className="text-blue-500" /> Account Number
+              </label>
+              <input
+                value={form.bankDetails.accountNo}
+                onChange={(e) => handleBankDetailChange("accountNo", e.target.value)}
+                className={inputStyle}
+                placeholder="1234567890"
+              />
+            </div>
+            <div>
+              <label className={labelStyle}>
+                <Hash size={14} className="text-violet-500" /> Branch / IFSC
+              </label>
+              <input
+                value={form.bankDetails.branchIfsc}
+                onChange={(e) =>
+                  handleBankDetailChange("branchIfsc", e.target.value.toUpperCase())
+                }
+                className={inputStyle}
+                placeholder="HDFC0001234"
               />
             </div>
           </div>

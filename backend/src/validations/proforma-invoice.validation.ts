@@ -27,6 +27,7 @@ const vehicleDetailSchema = Joi.object({
   fuelType: Joi.string().allow("").optional(),
   countryOfOrigin: Joi.string().allow("").optional(),
   engineCapacity: Joi.string().allow("").optional(),
+  igstRate: Joi.number().valid(5, 18, 40).optional(),
 });
 
 const clientSnapshotSchema = Joi.object({

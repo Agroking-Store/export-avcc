@@ -12,6 +12,7 @@ export interface VehicleListItem {
   quantity: number;
   fobAmount?: number;
   freight?: number;
+  igstRate?: 5 | 18 | 40;
   status: "Available" | "Out of Stock";
   createdAt: string;
 }
@@ -68,6 +69,7 @@ export const vehicleManagementApi = {
     quantity?: number;
     fobAmount?: number;
     freight?: number;
+    igstRate?: number;
   }) => {
     const response = await api.post("/vehicle-list", payload);
     return response.data;
@@ -84,6 +86,7 @@ export const vehicleManagementApi = {
       quantity?: number;
       fobAmount?: number;
       freight?: number;
+      igstRate?: number;
     }>,
   ) => {
     const response = await api.post("/vehicle-list/bulk", { vehicles });
@@ -107,6 +110,7 @@ export const vehicleManagementApi = {
       quantity: number;
       fobAmount: number;
       freight: number;
+      igstRate: number;
     }>,
   ) => {
     const response = await api.put(`/vehicle-list/${id}`, payload);
