@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import CreatableSelect from "react-select/creatable";
 
 const VehicleOrderVehicleBooking = () => {
+  const currentYear = new Date().getFullYear();
   const { id: orderId } = useParams() as { id: string };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -75,7 +76,7 @@ const VehicleOrderVehicleBooking = () => {
     engineCapacity: "",
     fuelType: "",
     countryOfOrigin: "",
-    yom: new Date().getFullYear(),
+    yom: currentYear,
     fobAmount: 0,
     freight: 0,
   });
@@ -140,6 +141,9 @@ const VehicleOrderVehicleBooking = () => {
     }
     if (!bookingAmount || bookingAmount <= 0) {
       newErrors.bookingAmount = 'Booking amount is required and must be greater than 0';
+    }
+    if (vehicle.yom && (vehicle.yom < 1900 || vehicle.yom > currentYear)) {
+      newErrors.yom = `YOM must be between 1900 and ${currentYear}`;
     }
 
     setErrors(newErrors);
@@ -505,8 +509,11 @@ const VehicleOrderVehicleBooking = () => {
                 onChange={(e) =>
                   handleInputChange("yom", parseInt(e.target.value) || 0)
                 }
-                className={inputStyle("")}
+                className={inputStyle("yom")}
+                min={1900}
+                max={currentYear}
               />
+              {errors.yom && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.yom}</p>}
             </div>
             <div className="md:col-span-2">
               <label className={labelStyle}>
