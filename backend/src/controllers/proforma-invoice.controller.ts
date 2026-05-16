@@ -325,9 +325,12 @@ export const getLCFile = async (req: Request, res: Response) => {
 
 export const getBookedVehicleOrders = async (req: Request, res: Response) => {
   try {
-    const { clientId } = req.query;
+    const { clientId, search } = req.query;
 
-    const data = await getBookedVehicleOrdersService(clientId as string);
+    const data = await getBookedVehicleOrdersService(
+      clientId as string,
+      search as string,
+    );
 
     res.json(data);
   } catch (error: any) {
