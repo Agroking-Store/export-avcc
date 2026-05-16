@@ -3,6 +3,7 @@ import {
   createClientService,
   getClientsService,
   getClientByIdService,
+  getClientByEmailService,
   updateClientService,
   getLatestClientsService,
 } from "../services/client.service";
@@ -33,6 +34,21 @@ export const getClients = async (req: Request, res: Response) => {
 export const getClientById = async (req: Request, res: Response) => {
   try {
     const client = await getClientByIdService(req.params.id as string);
+    res.json(client);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const getCurrentClient = async (req: Request, res: Response) => {
+  try {
+    const userEmail = (req as any).user?.email;
+
+    if (!userEmail) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const client = await getClientByEmailService(userEmail);
     res.json(client);
   } catch (error: any) {
     res.status(404).json({ message: error.message });

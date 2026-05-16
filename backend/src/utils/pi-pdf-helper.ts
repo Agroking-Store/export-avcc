@@ -44,7 +44,7 @@ export const preparePIDataForService = (pi: any) => {
     return {
       slNo: index + 1,
       description: v.model || "N/A",
-      hsn: v.hsn || "",
+      hsn: v.commercialHsn || v.hsn || "",
       qty: v.quantity,
       rate: unitPrice.toFixed(2),
       per: "No",
@@ -57,7 +57,7 @@ export const preparePIDataForService = (pi: any) => {
         fuelType: v.fuelType,
         countryOfOrigin: v.countryOfOrigin,
         engineCapacity: v.engineCapacity ? `${v.engineCapacity}cc` : "",
-        hsn: v.hsn,
+        hsn: v.commercialHsn || v.hsn,
         fob: (Number(v.fob) || 0).toFixed(2),
         freight: (Number(v.freight) || 0).toFixed(2),
       },

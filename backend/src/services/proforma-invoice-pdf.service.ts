@@ -58,7 +58,7 @@ const buildTemplateData = (pi: any): Record<string, any> => {
         engineCapacity:  v.engineCapacity || v.cc || "",
         fuelType:        v.fuelType || v.fuel || "",
         countryOfOrigin: v.countryOfOrigin || v.origin || "India",
-        hsn:             v.hsnCode || v.hsn || "",
+        hsn:             v.commercialHsnCode || v.hsnCode || v.commercialHsn || v.hsn || "",
         yom:             v.yom || v.year || "",
         fob:             v.fob ? Number(v.fob).toFixed(2) : "",
         freight:         v.freight ? Number(v.freight).toFixed(2) : "",

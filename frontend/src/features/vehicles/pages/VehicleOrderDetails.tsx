@@ -551,6 +551,11 @@ const VehicleOrderDetails = () => {
     );
   }
 
+  const getAssignedClientLabel = (booking: VehicleBookingItem | null) =>
+    booking?.assignedClientSnapshot?.companyName ||
+    booking?.assignedClientSnapshot?.name ||
+    "Allot Client";
+
   return (
     <>
       <div className="space-y-6">
@@ -776,17 +781,17 @@ const VehicleOrderDetails = () => {
                                     ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                                     : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                                 }`}
-                                title={
-                                  booking.assignedClientId
-                                    ? "Client Allotted"
-                                    : "Allot Client"
-                                }
-                              >
-                                <Check size={16} />
-                                {booking.assignedClientId
-                                  ? booking.assignedClientSnapshot?.name
-                                  : "Allot Client"}
-                              </button>
+                        title={
+                          booking.assignedClientId
+                            ? "Client Allotted"
+                            : "Allot Client"
+                        }
+                      >
+                        <Check size={16} />
+                        {booking.assignedClientId
+                          ? getAssignedClientLabel(booking)
+                          : "Allot Client"}
+                      </button>
                             </div>
                             <button
                               onClick={() =>
@@ -1035,9 +1040,7 @@ const VehicleOrderDetails = () => {
                         {selectedClientId
                           ? (() => {
                               const client = clients.find((c) => c._id === selectedClientId);
-                              return client
-                                ? `${client.name} ${client.companyName ? `- ${client.companyName}` : ""}`
-                                : "Choose client...";
+                              return client?.companyName || client?.name || "Choose client...";
                             })()
                           : "Choose client..."}
                       </span>
@@ -1051,7 +1054,8 @@ const VehicleOrderDetails = () => {
                         <CommandEmpty>No client found.</CommandEmpty>
                         <CommandGroup>
                           {clients.map((client) => {
-                            const clientLabel = `${client.name} ${client.companyName ? `- ${client.companyName}` : ""}`;
+                            const clientLabel =
+                              client.companyName || client.name || "Client";
                             return (
                               <CommandItem
                                 key={client._id}
@@ -1080,12 +1084,10 @@ const VehicleOrderDetails = () => {
                 </Popover>
               </div>
 
-              {activeBooking.assignedClientSnapshot?.name && (
+              {(activeBooking.assignedClientSnapshot?.companyName ||
+                activeBooking.assignedClientSnapshot?.name) && (
                 <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-                  Current allotment: {activeBooking.assignedClientSnapshot.name}
-                  {activeBooking.assignedClientSnapshot.companyName
-                    ? ` - ${activeBooking.assignedClientSnapshot.companyName}`
-                    : ""}
+                  Current allotment: {getAssignedClientLabel(activeBooking)}
                 </div>
               )}
 

@@ -153,7 +153,12 @@ export const getProformaInvoiceData = async (req: Request, res: Response) => {
           fuelType: v.fuelType || b?.fuelType || "",
           countryOfOrigin: v.countryOfOrigin || b?.countryOfOrigin || "",
           engineCapacity: v.engineCapacity || b?.engineCapacity || "",
-          hsn: v.hsn || b?.hsnCode || "",
+          hsn:
+            v.commercialHsn ||
+            v.hsn ||
+            b?.commercialHsnCode ||
+            b?.hsnCode ||
+            "",
           engineNo: v.engineNo || b?.engineNumber || "",
           chassisNo: v.chassisNo || b?.chassisNumber || "",
         };

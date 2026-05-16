@@ -17,7 +17,12 @@ router.get("/", authenticate, getVehicleOrders);
 router.get("/:id", authenticate, getVehicleOrderById);
 
 // Write routes: admin only
-router.post("/", authenticate, authorize(ROLES.ADMIN), createVehicleOrder);
+router.post(
+  "/",
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.DEALER, ROLES.CLIENT),
+  createVehicleOrder,
+);
 router.put("/:id", authenticate, authorize(ROLES.ADMIN), updateVehicleOrder);
 router.delete("/:id", authenticate, authorize(ROLES.ADMIN), deleteVehicleOrder);
 

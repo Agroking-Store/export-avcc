@@ -3,7 +3,9 @@ import { validate } from "../middleware/validate.middleware";
 const currentYear = new Date().getFullYear();
 
 const vehicleSchema = Joi.object({
-  hsnCode: Joi.string().required(),
+  commercialHsnCode: Joi.string().allow("").optional(),
+  exportHsnCode: Joi.string().allow("").optional(),
+  hsnCode: Joi.string().optional(),
   name: Joi.string().required(),
   color: Joi.string().required(),
   chassisNo: Joi.string().required(),
@@ -32,6 +34,19 @@ const vehicleSchema = Joi.object({
   freight: Joi.number().min(0).optional(),
   quantity: Joi.number().min(1).max(100).default(1),
   srNo: Joi.string().optional().allow(""),
+}).custom((value, helpers) => {
+  const commercialHsn = String(value.commercialHsnCode || "").trim();
+  const exportHsn = String(value.exportHsnCode || "").trim();
+  const legacyHsn = String(value.hsnCode || "").trim();
+
+  if (!commercialHsn && !exportHsn && !legacyHsn) {
+    return helpers.error("any.invalid");
+  }
+
+  return value;
+}, "HSN fallback validation").messages({
+  "any.invalid":
+    "Commercial HSN and Export HSN are required, or provide legacy HSN Code",
 });
 
 const bookingSchema = Joi.object({

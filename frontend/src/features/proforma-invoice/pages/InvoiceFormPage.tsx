@@ -207,7 +207,11 @@ const buildInitialForm = (
       manual.yearOfManufacture || vehicle.yearOfManufacture || "",
     monthYearFirstReg:
       manual.monthYearFirstReg || vehicle.monthYearFirstReg || "",
-    hsnCode: manual.hsnCode || vehicle.hsnCode || "",
+    hsnCode:
+      manual.hsnCode ||
+      (invoiceType === "COMMERCIAL"
+        ? vehicle.commercialHsnCode || vehicle.hsnCode || ""
+        : vehicle.exportHsnCode || vehicle.hsnCode || ""),
     dbkSrNo: manual.dbkSrNo || vehicle.dbkSrNo || "",
     exportInspCertNo: manual.exportInspCertNo || vehicle.exportInspCertNo || "",
     exportInspCertDate:
@@ -716,11 +720,11 @@ export default function InvoiceFormPage() {
                     placeholder="Petrol"
                   />
                   <EditableField
-                    label="HSN Code"
+                    label="Export HSN"
                     name="hsnCode"
                     value={form.hsnCode}
                     onChange={handleFieldChange}
-                    placeholder="8703.40.35"
+                    placeholder="FOR DEALER INVOICE / INR / USD / PACKING LIST"
                   />
                   <EditableField
                     label="DBK Sr No"

@@ -9,11 +9,14 @@ export type VehicleLineItem = {
   quantity: number;
   fob: number | "";
   freight: number | "";
+  commercialHsn: string;
+  exportHsn: string;
   hsn: string;
   yom: string;
   fuelType: string;
   countryOfOrigin: string;
   engineCapacity: string;
+  igstRate?: number;
   selected?: boolean;
 };
 

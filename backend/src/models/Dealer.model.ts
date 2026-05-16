@@ -7,6 +7,11 @@ const dealerSchema = new mongoose.Schema({
   email: { type: String },
   address: { type: String },
   gstNumber: { type: String },
+  bankDetails: {
+    bankName: { type: String, trim: true },
+    accountNo: { type: String, trim: true },
+    branchIfsc: { type: String, trim: true },
+  },
 }, { timestamps: true });
 
 export default mongoose.model("Dealer", dealerSchema);

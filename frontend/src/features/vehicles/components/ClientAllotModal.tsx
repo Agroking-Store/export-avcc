@@ -42,6 +42,9 @@ const ClientAllotModal = ({ isOpen, onClose, booking, clients, onSync }: Props) 
 
   if (!isOpen || !booking) return null;
 
+  const getClientDisplayName = (client?: Partial<IClient> | null) =>
+    client?.companyName || client?.name || "Choose client...";
+
   const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
   const vehicleName = vehicleSnapshot
     ? `${vehicleSnapshot.brandName || ""} ${vehicleSnapshot.modelName || ""}`.trim()
@@ -109,9 +112,7 @@ const ClientAllotModal = ({ isOpen, onClose, booking, clients, onSync }: Props) 
                           const client = clients.find(
                             (c) => c._id === selectedClientId,
                           );
-                          return client
-                            ? `${client.name}${client.companyName ? ` - ${client.companyName}` : ""}`
-                            : "Choose client...";
+                          return getClientDisplayName(client);
                         })()
                       : "Choose client..."}
                   </span>
@@ -131,7 +132,7 @@ const ClientAllotModal = ({ isOpen, onClose, booking, clients, onSync }: Props) 
                     <CommandEmpty>No client found.</CommandEmpty>
                     <CommandGroup>
                       {clients.map((client) => {
-                        const clientLabel = `${client.name}${client.companyName ? ` - ${client.companyName}` : ""}`;
+                        const clientLabel = getClientDisplayName(client);
                         return (
                           <CommandItem
                             key={client._id}
@@ -160,12 +161,12 @@ const ClientAllotModal = ({ isOpen, onClose, booking, clients, onSync }: Props) 
             </Popover>
           </div>
 
-          {booking.assignedClientSnapshot?.name && (
+          {(booking.assignedClientSnapshot?.companyName ||
+            booking.assignedClientSnapshot?.name) && (
             <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-              Current allotment: {booking.assignedClientSnapshot.name}
-              {booking.assignedClientSnapshot.companyName
-                ? ` - ${booking.assignedClientSnapshot.companyName}`
-                : ""}
+              Current allotment:{" "}
+              {booking.assignedClientSnapshot.companyName ||
+                booking.assignedClientSnapshot.name}
             </div>
           )}
 

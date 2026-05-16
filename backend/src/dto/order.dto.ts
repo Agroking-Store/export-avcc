@@ -3,6 +3,8 @@ export interface VehicleDto {
   color: string;
   quantity: number;
   srNo?: number | null;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;
@@ -29,6 +31,8 @@ export interface IVehicleItem {
   quantity: number;
   srNo?: string;
   expandedIndex: number;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;

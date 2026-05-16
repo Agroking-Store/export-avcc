@@ -5,10 +5,13 @@ export interface IVehicleListItem extends Document {
   modelName: string;
   variant: string;
   color: string;
-  hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
+  hsnCode?: string;
   quantity: number;
   fobAmount: number;
   freight: number;
+  igstRate: 5 | 18 | 40;
   status: "Available" | "Out of Stock";
   createdAt: Date;
   updatedAt: Date;
@@ -36,9 +39,18 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
       required: [true, "Color is required"],
       trim: true,
     },
+    commercialHsnCode: {
+      type: String,
+      required: [true, "Commercial HSN Code is required"],
+      trim: true,
+    },
+    exportHsnCode: {
+      type: String,
+      required: [true, "Export HSN Code is required"],
+      trim: true,
+    },
     hsnCode: {
       type: String,
-      required: [true, "HSN Code is required"],
       trim: true,
     },
     quantity: {
@@ -58,6 +70,11 @@ const vehicleListItemSchema = new Schema<IVehicleListItem>(
       required: false,
       default: 0,
       min: [0, "Freight cannot be negative"],
+    },
+    igstRate: {
+      type: Number,
+      enum: [5, 18, 40],
+      default: 18,
     },
     status: {
       type: String,

@@ -29,6 +29,44 @@ import { useAuth } from "../../../hooks/useAuth";
 import axios from "axios";
 import { apiConfig } from "@/config/apiConfig";
 
+const formatDateToDdMmYyyy = (value?: string) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}${month}${year}`;
+};
+
+const formatDdMmYyyyToIso = (value?: string) => {
+  if (!value || !/^\d{8}$/.test(value)) {
+    return "";
+  }
+
+  const day = value.slice(0, 2);
+  const month = value.slice(2, 4);
+  const year = value.slice(4, 8);
+  const isoValue = `${year}-${month}-${day}`;
+  const parsed = new Date(`${isoValue}T00:00:00`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return isoValue;
+};
+
+const formatDdMmYyyyToDate = (value?: string) => {
+  const isoValue = formatDdMmYyyyToIso(value);
+  return isoValue ? new Date(`${isoValue}T00:00:00`) : undefined;
+};
+
 const VehicleOrderVehicleEdit = () => {
   const currentYear = new Date().getFullYear();
   const { id, vehicleIndex } = useParams<{
@@ -36,7 +74,7 @@ const VehicleOrderVehicleEdit = () => {
     vehicleIndex: string;
   }>();
   const navigate = useNavigate();
-  const { isSourcingTeam } = useAuth();
+  const { isSourcingTeam, isClient } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,7 +87,8 @@ const VehicleOrderVehicleEdit = () => {
   const [fuelType, setFuelType] = useState("");
   const [countryOfOrigin, setCountryOfOrigin] = useState("");
   const [yom, setYom] = useState("");
-  const [hsnCode, setHsnCode] = useState("");
+  const [commercialHsnCode, setCommercialHsnCode] = useState("");
+  const [exportHsnCode, setExportHsnCode] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [fuelInputValue, setFuelInputValue] = useState("");
   const [allBookings, setAllBookings] = useState<VehicleBookingItem[]>([]);
@@ -95,15 +134,26 @@ const VehicleOrderVehicleEdit = () => {
         setChassisNumber(currentBooking?.chassisNumber || "");
         setDeliveryDate(
           currentBooking?.deliveryDate
-            ? currentBooking.deliveryDate.split("T")[0]
+            ? formatDateToDdMmYyyy(currentBooking.deliveryDate)
             : "",
         );
         setEngineCapacity(currentBooking?.engineCapacity || "");
         setFuelType(currentBooking?.fuelType || "");
         setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
         setYom(currentBooking?.yom || "");
-        setHsnCode(
-          currentBooking?.hsnCode || orderRes?.vehicleSnapshot?.hsnCode || "",
+        setCommercialHsnCode(
+          currentBooking?.commercialHsnCode ||
+            orderRes?.vehicleSnapshot?.commercialHsnCode ||
+            currentBooking?.hsnCode ||
+            orderRes?.vehicleSnapshot?.hsnCode ||
+            "",
+        );
+        setExportHsnCode(
+          currentBooking?.exportHsnCode ||
+            orderRes?.vehicleSnapshot?.exportHsnCode ||
+            currentBooking?.hsnCode ||
+            orderRes?.vehicleSnapshot?.hsnCode ||
+            "",
         );
       } catch (error: any) {
         toast.error(
@@ -267,16 +317,26 @@ const VehicleOrderVehicleEdit = () => {
 
     try {
       setSaving(true);
+      const formattedDeliveryDate =
+        deliveryDate.trim() === ""
+          ? undefined
+          : formatDdMmYyyyToIso(deliveryDate.trim().replace(/\//g, ""));
+
+      if (deliveryDate.trim() && !formattedDeliveryDate) {
+        toast.error("Delivery date must be in DDMMYYYY format");
+        return;
+      }
 
       const updated = await vehicleBookingApi.updateChassisEngine(booking._id, {
         engineNumber: eng || undefined,
         chassisNumber: chassis,
-        deliveryDate: deliveryDate || undefined,
+        deliveryDate: formattedDeliveryDate,
         engineCapacity: engineCapacity || undefined,
         fuelType: fuelType || undefined,
         countryOfOrigin: countryOfOrigin || undefined,
         yom: yom || undefined,
-        hsnCode: hsnCode || undefined,
+        commercialHsnCode: commercialHsnCode || undefined,
+        exportHsnCode: exportHsnCode || undefined,
       });
 
       if (eng !== "") {
@@ -387,6 +447,14 @@ const VehicleOrderVehicleEdit = () => {
     );
   }
 
+  if (isClient) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        Client access is view only for vehicle orders.
+      </div>
+    );
+  }
+
   if (isSourcingTeam && booking.status !== "payment_done") {
     return (
       <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
@@ -470,14 +538,32 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Hash size={14} className="text-indigo-500" />
-              HSN Code
+              Commercial HSN
             </label>
             <input
               type="text"
-              value={hsnCode}
-              onChange={(event) => setHsnCode(event.target.value.toUpperCase())}
+              value={commercialHsnCode}
+              onChange={(event) =>
+                setCommercialHsnCode(event.target.value.toUpperCase())
+              }
               className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              placeholder="e.g. 8703.21.69"
+              placeholder="FOR PI / LC / COMMERCIAL INVOICE"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
+              <Hash size={14} className="text-sky-500" />
+              Export HSN
+            </label>
+            <input
+              type="text"
+              value={exportHsnCode}
+              onChange={(event) =>
+                setExportHsnCode(event.target.value.toUpperCase())
+              }
+              className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm font-mono text-[#4A5568] placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              placeholder="FOR DEALER INVOICE / INR / USD / PACKING LIST"
             />
           </div>
 
@@ -607,7 +693,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Calendar size={16} />
-              Date of Delivery
+              Date of Delivery (DD/MM/YYYY)
             </label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -621,11 +707,7 @@ const VehicleOrderVehicleEdit = () => {
                       deliveryDate ? "text-slate-700" : "text-slate-400"
                     }
                   >
-                    {!engineNumber.trim() || !chassisNumber.trim()
-                      ? "Select Date Of Delivery"
-                      : deliveryDate
-                        ? new Date(deliveryDate).toLocaleDateString()
-                        : "Select date..."}
+                    {deliveryDate || "DD/MM/YYYY"}
                   </span>
                   <CalendarIcon size={16} className="text-slate-400" />
                 </button>
@@ -634,13 +716,14 @@ const VehicleOrderVehicleEdit = () => {
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={deliveryDate ? new Date(deliveryDate) : undefined}
+                  selected={formatDdMmYyyyToDate(deliveryDate)}
                   onSelect={(date) => {
                     if (date) {
-                      const yyyy = date.getFullYear();
-                      const mm = String(date.getMonth() + 1).padStart(2, "0");
                       const dd = String(date.getDate()).padStart(2, "0");
-                      setDeliveryDate(`${yyyy}-${mm}-${dd}`);
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const yyyy = date.getFullYear();
+                      // UI should remain DD/MM/YYYY but backend expects DDMMYYYY (handled in submit conversion)
+                      setDeliveryDate(`${dd}/${mm}/${yyyy}`);
                     } else {
                       setDeliveryDate("");
                     }

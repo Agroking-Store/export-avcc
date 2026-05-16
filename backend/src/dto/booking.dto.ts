@@ -3,7 +3,9 @@ export interface CreateBookingDto {
   date: string;
   bookingAmount: number;
   vehicles: Array<{
-    hsnCode: string;
+    commercialHsnCode: string;
+    exportHsnCode: string;
+    hsnCode?: string;
     name: string;
     color: string;
     chassisNo: string;
@@ -26,7 +28,9 @@ export interface UpdateBookingDto {
   date?: string;
   bookingAmount?: number;
   vehicles?: Array<{
-    hsnCode: string;
+    commercialHsnCode: string;
+    exportHsnCode: string;
+    hsnCode?: string;
     name: string;
     color: string;
     chassisNo: string;

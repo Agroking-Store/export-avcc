@@ -1,6 +1,7 @@
 import { Car } from "lucide-react";
 import VehicleNavbar from "../components/VehicleNavbar";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 
 // Pages
 import Vehicles from "./Vehicles";
@@ -14,8 +15,14 @@ import EditVehicleOrder from "./EditVehicleOrder";
 import VehicleOrderVehicleEdit from "./VehicleOrderVehicleEdit";
 import VehicleOrderVehicleView from "./VehicleOrderVehicleView";
 
-
 const VehiclesModule = () => {
+  const { isClient } = useAuth();
+  const defaultRoute = isClient ? "orders" : "dashboard";
+  const title = isClient ? "Required Vehicles" : "Vehicles";
+  const description = isClient
+    ? "Track only the vehicle orders assigned to your account"
+    : "Manage vehicle inventory and export orders";
+
   return (
     <div className="min-h-screen w-full bg-[#f8faff] dark:bg-gray-950 p-6">
       <div className="max-w-7xl mx-auto">
@@ -30,10 +37,10 @@ const VehiclesModule = () => {
 
           <div>
             <h1 className="text-2xl font-bold text-[#0f172a] dark:text-white tracking-tight leading-tight">
-              Vehicles
+              {title}
             </h1>
             <p className="text-sm text-slate-500 dark:text-blue-200/70 mt-0.5">
-              Manage vehicle inventory and export orders
+              {description}
             </p>
           </div>
         </div>
@@ -46,19 +53,43 @@ const VehiclesModule = () => {
         {/* CONTENT AREA */}
         <div className="mt-5">
           <Routes>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Vehicles />} />
-            <Route path="list" element={<VehicleList />} />
-            <Route path="add" element={<AddVehicle />} />
-            <Route path="list/:id" element={<VehicleItemDetails />} />
-            <Route path="edit/:id" element={<EditVehicle />} />
+            <Route index element={<Navigate to={defaultRoute} replace />} />
+            <Route
+              path="dashboard"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <Vehicles />}
+            />
+            <Route
+              path="list"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <VehicleList />}
+            />
+            <Route
+              path="add"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <AddVehicle />}
+            />
+            <Route
+              path="list/:id"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <VehicleItemDetails />}
+            />
+            <Route
+              path="edit/:id"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <EditVehicle />}
+            />
             <Route path="orders" element={<VehicleOrdersList />} />
-            <Route path="orders/add" element={<AddVehicleOrder />} />
-            <Route path="orders/edit/:id" element={<EditVehicleOrder />} />
-            <Route path="orders/:id/unit-edit/:vehicleIndex" element={<VehicleOrderVehicleEdit />} />
+            <Route
+              path="orders/add"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <AddVehicleOrder />}
+            />
+            <Route
+              path="orders/edit/:id"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <EditVehicleOrder />}
+            />
+            <Route
+              path="orders/:id/unit-edit/:vehicleIndex"
+              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <VehicleOrderVehicleEdit />}
+            />
             <Route path="orders/:id/unit-view/:vehicleIndex" element={<VehicleOrderVehicleView />} />
 
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
+            <Route path="*" element={<Navigate to={defaultRoute} replace />} />
           </Routes>
         </div>
       </div>

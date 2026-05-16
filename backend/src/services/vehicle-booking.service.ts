@@ -173,7 +173,8 @@ export const updateChassisEngine = async (
     fuelType?: string;
     countryOfOrigin?: string;
     yom?: string;
-    hsnCode?: string;
+    commercialHsnCode?: string;
+    exportHsnCode?: string;
   },
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
@@ -258,8 +259,12 @@ export const updateChassisEngine = async (
     }
     booking.yom = yom;
   }
-  if (data.hsnCode !== undefined) {
-    booking.hsnCode = data.hsnCode.trim();
+  if (data.commercialHsnCode !== undefined) {
+    booking.commercialHsnCode = data.commercialHsnCode.trim();
+  }
+  if (data.exportHsnCode !== undefined) {
+    booking.exportHsnCode = data.exportHsnCode.trim();
+    booking.hsnCode = data.exportHsnCode.trim();
   }
 
   // Auto-advance status if both are filled and status is payment_done

@@ -115,9 +115,7 @@ const DealerAllotModal = ({ isOpen, onClose, booking, dealers, onSync }: Props) 
                           const dealer = dealers.find(
                             (d) => d._id === selectedDealerId,
                           );
-                          return dealer
-                            ? `${dealer.name}${dealer.gstNumber ? ` - ${dealer.gstNumber}` : ""}`
-                            : "Choose dealer...";
+                          return dealer ? dealer.name : "Choose dealer...";
                         })()
                       : "Choose dealer..."}
                   </span>
@@ -137,7 +135,7 @@ const DealerAllotModal = ({ isOpen, onClose, booking, dealers, onSync }: Props) 
                     <CommandEmpty>No dealer found.</CommandEmpty>
                     <CommandGroup>
                       {dealers.map((dealer) => {
-                        const dealerLabel = `${dealer.name}${dealer.gstNumber ? ` - ${dealer.gstNumber}` : ""}`;
+                        const dealerLabel = dealer.name;
                         return (
                           <CommandItem
                             key={dealer._id}
@@ -169,9 +167,6 @@ const DealerAllotModal = ({ isOpen, onClose, booking, dealers, onSync }: Props) 
           {booking.assignedDealerSnapshot?.name && (
             <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
               Current allotment: {booking.assignedDealerSnapshot.name}
-              {booking.assignedDealerSnapshot.gstNumber
-                ? ` - ${booking.assignedDealerSnapshot.gstNumber}`
-                : ""}
             </div>
           )}
 

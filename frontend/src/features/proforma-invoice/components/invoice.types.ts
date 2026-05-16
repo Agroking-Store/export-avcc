@@ -26,6 +26,8 @@ export interface PIInvoiceVehicle {
   fuelType: string;
   yearOfManufacture: string;
   monthYearFirstReg: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
   hsnCode: string;
   dbkSrNo: string;
   exportInspCertNo: string;

@@ -28,6 +28,16 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
+const BOOKING_STATUS_LABELS: Record<string, string> = {
+  pending: "Quotation Pending",
+  quotation_uploaded: "Awaiting Approval",
+  approved: "Approved",
+  rejected: "Rejected",
+  payment_done: "Awaiting Chassis/Engine No.",
+  chassis_received: "In Transit",
+  delivered: "Delivered",
+};
+
 const CreatePI = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -206,6 +216,8 @@ const CreatePI = () => {
             pi.vehicleDetails?.length > 0
               ? pi.vehicleDetails.map((v: any) => ({
                   ...v,
+                  commercialHsn: v.commercialHsn || v.hsn || "",
+                  exportHsn: v.exportHsn || v.hsn || "",
                   vehicle_id: v.vehicle_id?._id || v.vehicle_id || "",
                   selected: true,
                 }))
@@ -335,6 +347,8 @@ const CreatePI = () => {
     setSelectedBooking(booking);
 
     const vehicle = booking.vehicleId || {};
+    const bookingColor =
+      booking.orderId?.vehicleSnapshot?.color || vehicle.color || "";
 
     const newVehicle = {
       booking_id: booking._id,
@@ -344,14 +358,17 @@ const CreatePI = () => {
       model:
         `${vehicle.brandName || ""} ${vehicle.modelName || ""} ${vehicle.variant || ""}`.trim(),
 
-      color: vehicle.color || "",
+      color: bookingColor,
 
       engineNo: booking.engineNumber || "",
       chassisNo: booking.chassisNumber || "",
 
       quantity: 1,
 
-      hsn: booking.hsnCode || "",
+      commercialHsn:
+        booking.commercialHsnCode || booking.hsnCode || "",
+      exportHsn: booking.exportHsnCode || booking.hsnCode || "",
+      hsn: booking.commercialHsnCode || booking.hsnCode || "",
 
       fob: vehicle.fobAmount || 0,
       freight: vehicle.freight || 0,
@@ -360,6 +377,7 @@ const CreatePI = () => {
       fuelType: booking.fuelType || "",
       countryOfOrigin: booking.countryOfOrigin || "",
       engineCapacity: booking.engineCapacity || "",
+      igstRate: vehicle.igstRate || 18,
 
       selected: true,
     };
@@ -480,13 +498,41 @@ const CreatePI = () => {
   //   }
   // };
 
-  const bookingsWithDisplay = bookings.map((b, index) => ({
-    ...b,
-    serialNumber: index + 1,
-    displayName:
-      `${b.orderId?.orderNumber || "-"} | ` +
-      `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} | ` +
-      `${b.chassisNumber || "No Chassis"}`,
+  const bookingsWithDisplay = bookings.map((b, index) => {
+    const vehicleSequence = bookings.length - index;
+    const vehicleDisplayId = `VEH-${String(vehicleSequence).padStart(3, "0")}`;
+    const vehicleName =
+      [
+        b.vehicleId?.brandName || b.orderId?.vehicleSnapshot?.brandName,
+        b.vehicleId?.modelName || b.orderId?.vehicleSnapshot?.modelName,
+        b.vehicleId?.variant || b.orderId?.vehicleSnapshot?.variant,
+      ]
+        .filter(Boolean)
+        .join(" ") || "-";
+    const color =
+      b.orderId?.vehicleSnapshot?.color || b.vehicleId?.color || "-";
+    const statusLabel = BOOKING_STATUS_LABELS[b.status] || b.status || "-";
+
+    return {
+      ...b,
+      serialNumber: index + 1,
+      vehicleDisplayId,
+      vehicleName,
+      color,
+      statusLabel,
+      displayName: [
+        vehicleDisplayId,
+        vehicleName,
+        b.chassisNumber || "No Chassis",
+        color,
+        statusLabel,
+      ].join(" | "),
+    };
+  });
+
+  const clientsWithDisplay = clients.map((client) => ({
+    ...client,
+    displayCompanyName: client.companyName || client.name || "",
   }));
 
   return (
@@ -538,7 +584,7 @@ const CreatePI = () => {
             form={form}
             setForm={setForm}
             errors={errors}
-            clients={clients} // Keep clients
+            clients={clientsWithDisplay}
             companies={companies} // Renamed from dealers
             ordersWithDisplay={bookingsWithDisplay}
             selectedOrder={selectedBooking}

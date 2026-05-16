@@ -24,9 +24,11 @@ const EditVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
-    hsnCode: "",
+    commercialHsnCode: "",
+    exportHsnCode: "",
     fobAmount: "",
     freight: "",
+    igstRate: "18",
   });
 
   useEffect(() => {
@@ -39,9 +41,12 @@ const EditVehicle = () => {
           modelName: data.modelName || "",
           variant: data.variant || "",
           color: data.color || "",
-          hsnCode: data.hsnCode || "",
+          commercialHsnCode:
+            data.commercialHsnCode || data.hsnCode || "",
+          exportHsnCode: data.exportHsnCode || data.hsnCode || "",
           fobAmount: data.fobAmount !== undefined ? String(data.fobAmount) : "",
           freight: data.freight !== undefined ? String(data.freight) : "",
+          igstRate: String(data.igstRate ?? 18),
         });
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to load vehicle");
@@ -69,6 +74,7 @@ const EditVehicle = () => {
         ...form,
         fobAmount: form.fobAmount !== "" ? parseFloat(form.fobAmount) : 0,
         freight: form.freight !== "" ? parseFloat(form.freight) : 0,
+        igstRate: Number(form.igstRate),
       });
       navigate("/vehicles/list", {
         state: { success: "Vehicle updated successfully" },
@@ -134,8 +140,25 @@ const EditVehicle = () => {
               <input name="color" value={form.color} onChange={handleChange} className={inputStyle} placeholder="White Pearl" />
             </div>
             <div>
-              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span></label>
-              <input name="hsnCode" value={form.hsnCode} onChange={handleChange} className={inputStyle} placeholder="8703.23.01" />
+              <label className={labelStyle}><Tag size={14} className="text-violet-500" /> GST Rate <span className="text-red-500 ml-0.5">*</span></label>
+              <select
+                name="igstRate"
+                value={form.igstRate}
+                onChange={(e) => setForm((prev) => ({ ...prev, igstRate: e.target.value }))}
+                className={`${inputStyle} cursor-pointer`}
+              >
+                <option value="5">5%</option>
+                <option value="18">18%</option>
+                <option value="40">40%</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="commercialHsnCode" value={form.commercialHsnCode} onChange={handleChange} className={inputStyle} placeholder="For PI / LC / Commercial Invoice" />
+            </div>
+            <div>
+              <label className={labelStyle}><Tag size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span></label>
+              <input name="exportHsnCode" value={form.exportHsnCode} onChange={handleChange} className={inputStyle} placeholder="For Dealer Invoice / INR / USD / Packing List" />
             </div>
           </div>
         </div>

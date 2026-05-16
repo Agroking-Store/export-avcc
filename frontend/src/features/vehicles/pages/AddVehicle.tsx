@@ -19,9 +19,11 @@ interface VehicleForm {
   modelName: string;
   variant: string;
   color: string;
-  hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
   fobAmount: string;
   freight: string;
+  igstRate: "5" | "18" | "40";
 }
 
 const emptyVehicle = (): VehicleForm => ({
@@ -29,9 +31,11 @@ const emptyVehicle = (): VehicleForm => ({
   modelName: "",
   variant: "",
   color: "",
-  hsnCode: "",
+  commercialHsnCode: "",
+  exportHsnCode: "",
   fobAmount: "",
   freight: "",
+  igstRate: "18",
 });
 
 import { useAuth } from "../../../hooks/useAuth";
@@ -78,7 +82,14 @@ const AddVehicle = () => {
   const validate = (): boolean => {
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i];
-      if (!v.brandName.trim() || !v.modelName.trim() || !v.variant.trim() || !v.color.trim() || !v.hsnCode.trim()) {
+      if (
+        !v.brandName.trim() ||
+        !v.modelName.trim() ||
+        !v.variant.trim() ||
+        !v.color.trim() ||
+        !v.commercialHsnCode.trim() ||
+        !v.exportHsnCode.trim()
+      ) {
         toast.error(`All vehicle fields are required for entry ${i + 1}`);
         return false;
       }
@@ -107,9 +118,11 @@ const AddVehicle = () => {
         modelName: v.modelName.trim(),
         variant: v.variant.trim(),
         color: v.color.trim(),
-        hsnCode: v.hsnCode.trim(),
+        commercialHsnCode: v.commercialHsnCode.trim(),
+        exportHsnCode: v.exportHsnCode.trim(),
         fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
         freight: v.freight !== "" ? parseFloat(v.freight) : 0,
+        igstRate: Number(v.igstRate),
       }));
 
       await vehicleManagementApi.createVehiclesBulk(payload);
@@ -237,13 +250,50 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-amber-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span>
+                    <Hash size={14} className="text-violet-500" /> GST Rate <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <select
+                    value={vehicle.igstRate}
+                    onChange={(e) =>
+                      handleChange(
+                        index,
+                        "igstRate",
+                        e.target.value as VehicleForm["igstRate"],
+                      )
+                    }
+                    className={`${inputStyle} cursor-pointer`}
+                  >
+                    <option value="5">5%</option>
+                    <option value="18">18%</option>
+                    <option value="40">40%</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Hash size={14} className="text-amber-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
-                    value={vehicle.hsnCode}
-                    onChange={(e) => handleChange(index, "hsnCode", e.target.value)}
+                    value={vehicle.commercialHsnCode}
+                    onChange={(e) =>
+                      handleChange(index, "commercialHsnCode", e.target.value)
+                    }
                     className={inputStyle}
-                    placeholder="8703.23.01"
+                    placeholder="For PI / LC / Commercial Invoice"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Hash size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <input
+                    value={vehicle.exportHsnCode}
+                    onChange={(e) =>
+                      handleChange(index, "exportHsnCode", e.target.value)
+                    }
+                    className={inputStyle}
+                    placeholder="For Dealer Invoice / INR / USD / Packing List"
                   />
                 </div>
               </div>

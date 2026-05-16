@@ -67,7 +67,8 @@ const VehicleOrderVehicleBooking = () => {
   const vehicleVariant = searchParams.get("variant") || "";
 
   const [vehicle, setVehicle] = useState({
-    hsnCode: "",
+    commercialHsnCode: "",
+    exportHsnCode: "",
     vehicleName,
     exteriorColour: vehicleColor,
     chassisNo: "",
@@ -94,10 +95,21 @@ const VehicleOrderVehicleBooking = () => {
       vehicleManagementApi
         .getVehicleOrderById(orderId)
         .then((order) => {
-          if (order?.vehicleSnapshot?.hsnCode) {
+          if (
+            order?.vehicleSnapshot?.commercialHsnCode ||
+            order?.vehicleSnapshot?.exportHsnCode ||
+            order?.vehicleSnapshot?.hsnCode
+          ) {
             setVehicle((prev) => ({
               ...prev,
-              hsnCode: order.vehicleSnapshot.hsnCode,
+              commercialHsnCode:
+                order.vehicleSnapshot.commercialHsnCode ||
+                order.vehicleSnapshot.hsnCode ||
+                "",
+              exportHsnCode:
+                order.vehicleSnapshot.exportHsnCode ||
+                order.vehicleSnapshot.hsnCode ||
+                "",
             }));
           }
         })
@@ -126,7 +138,12 @@ const VehicleOrderVehicleBooking = () => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!selectedDealer) newErrors.dealerId = 'Dealer is required';
-    if (!vehicle.hsnCode?.trim()) newErrors.hsnCode = 'HSN Code is required';
+    if (!vehicle.commercialHsnCode?.trim()) {
+      newErrors.commercialHsnCode = 'Commercial HSN is required';
+    }
+    if (!vehicle.exportHsnCode?.trim()) {
+      newErrors.exportHsnCode = 'Export HSN is required';
+    }
     if (!vehicle.vehicleName?.trim()) newErrors.vehicleName = 'Vehicle name is required';
     if (!vehicle.exteriorColour?.trim()) newErrors.exteriorColour = 'Color is required';
     if (!vehicle.chassisNo?.trim()) {
@@ -163,7 +180,9 @@ const VehicleOrderVehicleBooking = () => {
         orderId,
         vehicles: [
           {
-            hsnCode: vehicle.hsnCode,
+            commercialHsnCode: vehicle.commercialHsnCode,
+            exportHsnCode: vehicle.exportHsnCode,
+            hsnCode: vehicle.exportHsnCode,
             name: vehicle.vehicleName,
             color: vehicle.exteriorColour,
             chassisNo: vehicle.chassisNo,
@@ -350,17 +369,34 @@ const VehicleOrderVehicleBooking = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> HSN Code <span className="text-red-500 ml-0.5">*</span>
+                <Hash size={14} className="text-emerald-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 type="text"
-                value={vehicle.hsnCode}
-                onChange={(e) => handleInputChange("hsnCode", e.target.value)}
-                className={inputStyle("hsnCode")}
-                placeholder="8703.23.01"
+                value={vehicle.commercialHsnCode}
+                onChange={(e) =>
+                  handleInputChange("commercialHsnCode", e.target.value)
+                }
+                className={inputStyle("commercialHsnCode")}
+                placeholder="FOR PI / LC / COMMERCIAL INVOICE"
               />
-              <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Example: 8703.23.01 (8-digit code)</p>
-              {errors.hsnCode && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.hsnCode}</p>}
+              {errors.commercialHsnCode && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.commercialHsnCode}</p>}
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                <Hash size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span>
+              </label>
+              <input
+                type="text"
+                value={vehicle.exportHsnCode}
+                onChange={(e) =>
+                  handleInputChange("exportHsnCode", e.target.value)
+                }
+                className={inputStyle("exportHsnCode")}
+                placeholder="FOR DEALER INVOICE / INR / USD / PACKING LIST"
+              />
+              {errors.exportHsnCode && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.exportHsnCode}</p>}
             </div>
 
             <div>

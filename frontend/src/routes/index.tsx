@@ -30,7 +30,13 @@ const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
   const role = user?.role?.toLowerCase() || "";
   const redirectPath =
-    role === "sourcing_team" ? "/vehicles/dashboard" : "/dashboard";
+    role === "sourcing_team"
+      ? "/vehicles/dashboard"
+      : role === "client"
+        ? "/vehicles/orders"
+      : role === "accountant"
+        ? "/proforma-invoice/dashboard"
+        : "/dashboard";
   return <Navigate to={redirectPath} replace />;
 };
 
@@ -41,9 +47,15 @@ const AppRoutes: React.FC = () => {
   const isAdmin = role === "admin";
   const isAccountant = role === "accountant";
   const isSourcingTeam = role === "sourcing_team";
+  const isClient = role === "client";
 
-  const canAccessVehicles = isAdmin || isSourcingTeam;
+  const canAccessVehicles = isAdmin || isSourcingTeam || isClient;
   const canAccessPI = isAdmin || isAccountant;
+  const canAccessClients = isAdmin;
+  const canAccessOrders = isAdmin;
+  const canAccessDealers = isAdmin;
+  const canAccessCompanies = isAdmin;
+  const canAccessInvoiceGeneration = canAccessPI;
 
   return (
     <Routes>
@@ -61,59 +73,101 @@ const AppRoutes: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
 
           {/* Vehicles */}
-          <Route path="/vehicles/*" element={<VehiclesModule />} />
+          <Route
+            path="/vehicles/*"
+            element={
+              canAccessVehicles ? (
+                <VehiclesModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
 
           {/* Clients */}
-          <Route path="/clients/*" element={<ClientsModule />} />
+          <Route
+            path="/clients/*"
+            element={
+              canAccessClients ? (
+                <ClientsModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
 
           {/* Orders - Main module route (general order management) */}
-          <Route path="/orders/*" element={<OrdersModule />} />
+          <Route
+            path="/orders/*"
+            element={
+              canAccessOrders ? (
+                <OrdersModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
 
           {/* Dealers */}
-          <Route path="/dealers/*" element={<DealersModule />} />
+          <Route
+            path="/dealers/*"
+            element={
+              canAccessDealers ? (
+                <DealersModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
 
           {/* Proforma Invoice */}
-          <Route path="/proforma-invoice/*" element={<PIModule />} />
+          <Route
+            path="/proforma-invoice/*"
+            element={
+              canAccessPI ? <PIModule /> : <Navigate to="/dashboard" replace />
+            }
+          />
           <Route
             path="/invoices/generate/:piId/:type"
-            element={<VehicleSelectionPage />}
+            element={
+              canAccessInvoiceGeneration ? (
+                <VehicleSelectionPage />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
           />
 
           <Route
             path="/invoices/generate/:piId/:type/:vehicleId"
-            element={<InvoiceFormPage />}
+            element={
+              canAccessInvoiceGeneration ? (
+                <InvoiceFormPage />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
           />
 
           <Route
             path="/packing-list/generate/:piId"
-            element={<GeneratePackingList />}
-          />
-
-          <Route
-            path="/clients/*"
             element={
-              isAdmin ? <ClientsModule /> : <Navigate to="/dashboard" replace />
-            }
-          />
-
-          <Route
-            path="/orders/*"
-            element={
-              isAdmin ? <OrdersModule /> : <Navigate to="/dashboard" replace />
-            }
-          />
-
-          <Route
-            path="/dealers/*"
-            element={
-              isAdmin ? <DealersModule /> : <Navigate to="/dashboard" replace />
+              canAccessInvoiceGeneration ? (
+                <GeneratePackingList />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
             }
           />
 
           <Route
             path="/companies/*"
             element={
-              isAdmin ? <CompanyModule /> : <Navigate to="/dashboard" replace />
+              canAccessCompanies ? (
+                <CompanyModule />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
             }
           />
 
@@ -125,14 +179,6 @@ const AppRoutes: React.FC = () => {
               ) : (
                 <Navigate to="/dashboard" replace />
               )
-            }
-          />
-
-          {/* Admin + Accountant */}
-          <Route
-            path="/proforma-invoice/*"
-            element={
-              canAccessPI ? <PIModule /> : <Navigate to="/dashboard" replace />
             }
           />
 

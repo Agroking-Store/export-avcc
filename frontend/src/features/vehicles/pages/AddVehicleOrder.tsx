@@ -44,7 +44,7 @@ const emptyOrder = (): OrderEntry => ({
 
 const AddVehicleOrder = () => {
   const navigate = useNavigate();
-  const { isSourcingTeam } = useAuth();
+  const { isSourcingTeam, isClient } = useAuth();
   const [loading, setLoading] = useState(false);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
@@ -161,7 +161,11 @@ const AddVehicleOrder = () => {
       <div className="flex justify-between items-center mb-10">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Add Required Vehicle</h1>
-          <p className="text-sm text-gray-500 mt-1">Select one or more vehicles from the vehicle list</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {isClient
+              ? "Your required vehicles will be added under your client account"
+              : "Select one or more vehicles from the vehicle list"}
+          </p>
         </div>
         <button
           onClick={() => navigate("/vehicles/orders")}

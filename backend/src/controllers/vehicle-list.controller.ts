@@ -16,13 +16,22 @@ export const createVehicleListItem = async (req: Request, res: Response) => {
       modelName,
       variant,
       color,
-      hsnCode,
+      commercialHsnCode,
+      exportHsnCode,
       quantity,
       fobAmount,
       freight,
+      igstRate,
     } = req.body;
 
-    if (!brandName || !modelName || !variant || !color || !hsnCode) {
+    if (
+      !brandName ||
+      !modelName ||
+      !variant ||
+      !color ||
+      !commercialHsnCode ||
+      !exportHsnCode
+    ) {
       throw new Error("All vehicle fields are required");
     }
 
@@ -31,10 +40,12 @@ export const createVehicleListItem = async (req: Request, res: Response) => {
       modelName,
       variant,
       color,
-      hsnCode,
+      commercialHsnCode,
+      exportHsnCode,
       quantity: quantity !== undefined ? Number(quantity) : 1,
       fobAmount: fobAmount !== undefined ? Number(fobAmount) : undefined,
       freight: freight !== undefined ? Number(freight) : undefined,
+      igstRate: igstRate !== undefined ? Number(igstRate) : 18,
     });
 
     res.status(201).json(item);
@@ -87,7 +98,8 @@ export const createVehicleListItems = async (req: Request, res: Response) => {
         !v.modelName ||
         !v.variant ||
         !v.color ||
-        !v.hsnCode
+        !v.commercialHsnCode ||
+        !v.exportHsnCode
       ) {
         throw new Error("All vehicle fields are required for each entry");
       }
@@ -99,10 +111,12 @@ export const createVehicleListItems = async (req: Request, res: Response) => {
         modelName: v.modelName.trim(),
         variant: v.variant.trim(),
         color: v.color.trim(),
-        hsnCode: v.hsnCode.trim(),
+        commercialHsnCode: v.commercialHsnCode.trim(),
+        exportHsnCode: v.exportHsnCode.trim(),
         quantity: v.quantity !== undefined ? Number(v.quantity) : 1,
         fobAmount: v.fobAmount !== undefined ? Number(v.fobAmount) : undefined,
         freight: v.freight !== undefined ? Number(v.freight) : undefined,
+        igstRate: v.igstRate !== undefined ? Number(v.igstRate) : 18,
       })),
     );
 
@@ -124,6 +138,8 @@ export const updateVehicleListItem = async (req: Request, res: Response) => {
           : undefined,
       freight:
         req.body.freight !== undefined ? Number(req.body.freight) : undefined,
+      igstRate:
+        req.body.igstRate !== undefined ? Number(req.body.igstRate) : undefined,
     });
     res.json(item);
   } catch (error: any) {

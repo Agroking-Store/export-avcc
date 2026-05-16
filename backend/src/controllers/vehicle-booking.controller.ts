@@ -111,7 +111,17 @@ export const confirmPaymentHandler = async (req: Request, res: Response) => {
 
 export const updateChassisEngineHandler = async (req: Request, res: Response) => {
   try {
-    const { chassisNumber, engineNumber, deliveryDate, engineCapacity, fuelType, countryOfOrigin, yom, hsnCode } = req.body;
+    const {
+      chassisNumber,
+      engineNumber,
+      deliveryDate,
+      engineCapacity,
+      fuelType,
+      countryOfOrigin,
+      yom,
+      commercialHsnCode,
+      exportHsnCode,
+    } = req.body;
     const userRole = (req as any).user?.role;
     const bookingId = req.params.id as string;
 
@@ -131,7 +141,8 @@ export const updateChassisEngineHandler = async (req: Request, res: Response) =>
       fuelType,
       countryOfOrigin,
       yom,
-      hsnCode,
+      commercialHsnCode,
+      exportHsnCode,
     });
     res.json(booking);
   } catch (error: any) {

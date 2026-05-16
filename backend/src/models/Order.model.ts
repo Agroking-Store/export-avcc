@@ -4,6 +4,8 @@ interface IVehicleColor {
   vehicleId?: string;
   color: string;
   expandedIndex: number;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;
@@ -23,6 +25,8 @@ export interface IVehicleItem {
   quantity: number;
   srNo?: string;
   expandedIndex: number;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   hsnCode?: string;
   vehicleName?: string;
   exteriorColour?: string;
@@ -68,6 +72,8 @@ const vehicleItemSchema = new Schema<IVehicleItem>({
 const vehicleColorSchema = new Schema<IVehicleColor>({
   expandedIndex: { type: Number, required: true },
   color: { type: String, required: true },
+  commercialHsnCode: { type: String },
+  exportHsnCode: { type: String },
   hsnCode: { type: String },
   vehicleName: { type: String },
   exteriorColour: { type: String },

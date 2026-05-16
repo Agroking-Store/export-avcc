@@ -6,17 +6,36 @@ import {
   updateVehicleOrderService,
   deleteVehicleOrderService,
 } from "../services/vehicle-order.service";
+import { ROLES } from "../config/constants";
+import { getClientByEmailService } from "../services/client.service";
 
 export const createVehicleOrder = async (req: Request, res: Response) => {
   try {
     const { clientId, vehicleId, orderDate, quantity } = req.body;
+    const userRole = (req as any).user?.role;
+    const userEmail = (req as any).user?.email;
 
     if (!vehicleId || !quantity) {
       throw new Error("Vehicle and quantity are required");
     }
 
+    let resolvedClientId = clientId || undefined;
+
+    if (userRole === ROLES.CLIENT) {
+      if (!userEmail) {
+        throw new Error("Unauthorized");
+      }
+
+      const currentClient = await getClientByEmailService(userEmail);
+      resolvedClientId = currentClient?.client?._id?.toString();
+
+      if (!resolvedClientId) {
+        throw new Error("Client profile not found for logged in user");
+      }
+    }
+
     const order = await createVehicleOrderService({
-      clientId: clientId || undefined,
+      clientId: resolvedClientId,
       vehicleId,
       orderDate: orderDate || undefined,
       quantity: Number(quantity),

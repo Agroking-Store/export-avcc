@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -244,28 +245,64 @@ const CreateCompany: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label className={labelStyle}><MapPin size={14} className="text-blue-500"/> House / Building</label>
-              <input name="address.houseBuilding" value={address.houseBuilding} onChange={handleChange} className={inputStyle} />
+              <input
+                name="address.houseBuilding"
+                value={address.houseBuilding}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="e.g. 12, Shanti Nagar"
+              />
             </div>
             <div>
               <label className={labelStyle}><MapPin size={14} className="text-blue-500"/> Street / Area</label>
-              <input name="address.streetArea" value={address.streetArea} onChange={handleChange} className={inputStyle} />
+              <input
+                name="address.streetArea"
+                value={address.streetArea}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="e.g. Residency Road"
+              />
             </div>
             <div>
               <label className={labelStyle}><Globe size={14} className="text-indigo-500"/> City</label>
-              <input name="address.cityTown" value={address.cityTown} onChange={handleChange} className={inputStyle} />
+              <input
+                name="address.cityTown"
+                value={address.cityTown}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="e.g. Mumbai"
+              />
             </div>
             <div>
               <label className={labelStyle}><Globe size={14} className="text-indigo-500"/> State</label>
-              <input name="address.state" value={address.state} onChange={handleChange} className={inputStyle} />
+              <input
+                name="address.state"
+                value={address.state}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="e.g. Maharashtra"
+              />
               {errors.address_state && <p className={errorStyle}><AlertCircle size={10}/> {errors.address_state}</p>}
             </div>
             <div>
               <label className={labelStyle}><MapPin size={14} className="text-blue-500" /> Pincode</label>
-              <input name="address.pincode" value={address.pincode} onChange={handleChange} className={inputStyle} />
+              <input
+                name="address.pincode"
+                value={address.pincode}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="e.g. 400001"
+              />
             </div>
             <div>
               <label className={labelStyle}><Globe size={14} className="text-indigo-500"/> Country *</label>
-              <input name="address.country" value={address.country} onChange={handleChange} className={inputStyle} />
+              <input
+                name="address.country"
+                value={address.country}
+                onChange={handleChange}
+                className={inputStyle}
+                placeholder="e.g. India"
+              />
               {errors.address_country && <p className={errorStyle}><AlertCircle size={10}/> {errors.address_country}</p>}
             </div>
           </div>
@@ -281,17 +318,35 @@ const CreateCompany: React.FC = () => {
           <div className="p-6 bg-[#F8F9FB] rounded-[1.5rem] border border-[#F1F3F6] grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className={labelStyle}><Landmark size={14} className="text-emerald-500" /> Bank Name</label>
-              <input name="bankDetails.bankName" value={bankDetails.bankName} onChange={handleChange} className={inputStyle + " bg-white"} />
+              <input
+                name="bankDetails.bankName"
+                value={bankDetails.bankName}
+                onChange={handleChange}
+                className={inputStyle + " bg-white"}
+                placeholder="e.g. State Bank of India"
+              />
               {errors.bankDetails_bankName && <p className={errorStyle}>{errors.bankDetails_bankName}</p>}
             </div>
             <div>
               <label className={labelStyle}><CreditCard size={14} className="text-emerald-500" /> Account No</label>
-              <input name="bankDetails.accountNo" value={bankDetails.accountNo} onChange={handleChange} className={inputStyle + " bg-white"} />
+              <input
+                name="bankDetails.accountNo"
+                value={bankDetails.accountNo}
+                onChange={handleChange}
+                className={inputStyle + " bg-white"}
+                placeholder="e.g. 1234567890"
+              />
               {errors.bankDetails_accountNo && <p className={errorStyle}>{errors.bankDetails_accountNo}</p>}
             </div>
             <div>
               <label className={labelStyle}><Activity size={14} className="text-emerald-500" /> Branch / IFSC</label>
-              <input name="bankDetails.branchIfsc" value={bankDetails.branchIfsc} onChange={handleChange} className={inputStyle + " bg-white"} />
+              <input
+                name="bankDetails.branchIfsc"
+                value={bankDetails.branchIfsc}
+                onChange={handleChange}
+                className={inputStyle + " bg-white"}
+                placeholder="e.g. HDFC0001234"
+              />
               {errors.bankDetails_branchIfsc && <p className={errorStyle}>{errors.bankDetails_branchIfsc}</p>}
             </div>
           </div>

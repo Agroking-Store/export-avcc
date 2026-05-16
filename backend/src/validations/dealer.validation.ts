@@ -1,3 +1,22 @@
+const validateDealerBankDetails = (bankDetails: any, isRequired = false) => {
+  if (!bankDetails || typeof bankDetails !== "object") {
+    if (isRequired) {
+      throw new Error("Dealer bank details are required");
+    }
+    return;
+  }
+
+  if (
+    !bankDetails.bankName ||
+    !bankDetails.accountNo ||
+    !bankDetails.branchIfsc
+  ) {
+    throw new Error(
+      "Bank name, account number and branch/IFSC are required",
+    );
+  }
+};
+
 export const validateCreateDealer = (data: any) => {
   if (!data.name || !data.contact || !data.gstNumber) {
     throw new Error("Name, contact and GST number are required");
@@ -6,6 +25,7 @@ export const validateCreateDealer = (data: any) => {
   if (!gstRegex.test(data.gstNumber)) {
     throw new Error("Invalid GST number format");
   }
+  validateDealerBankDetails(data.bankDetails, true);
 };
 
 export const validateUpdateDealer = (data: any) => {
@@ -17,5 +37,8 @@ export const validateUpdateDealer = (data: any) => {
     if (!gstRegex.test(data.gstNumber)) {
       throw new Error("Invalid GST number format");
     }
+  }
+  if (data.bankDetails) {
+    validateDealerBankDetails(data.bankDetails, false);
   }
 };

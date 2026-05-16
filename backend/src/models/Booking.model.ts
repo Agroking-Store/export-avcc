@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IBookingVehicle {
-  hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
+  hsnCode?: string;
   name: string;
   color: string;
   chassisNo: string;
@@ -45,7 +47,9 @@ export interface IBooking extends Document {
 }
 
 const bookingVehicleSchema = new Schema<IBookingVehicle>({
-  hsnCode: { type: String, required: true },
+  commercialHsnCode: { type: String, default: "" },
+  exportHsnCode: { type: String, default: "" },
+  hsnCode: { type: String, default: "" },
   name: { type: String, required: true },
   color: { type: String, required: true },
   chassisNo: { type: String, required: true, unique: true, trim: true },

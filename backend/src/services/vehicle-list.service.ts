@@ -7,10 +7,12 @@ interface CreateVehicleListItemDto {
   modelName: string;
   variant: string;
   color: string;
-  hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
   quantity?: number;
   fobAmount?: number;
   freight?: number;
+  igstRate?: number;
 }
 
 interface UpdateVehicleListItemDto {
@@ -18,10 +20,12 @@ interface UpdateVehicleListItemDto {
   modelName?: string;
   variant?: string;
   color?: string;
-  hsnCode?: string;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   quantity?: number;
   fobAmount?: number;
   freight?: number;
+  igstRate?: number;
 }
 
 export const createVehicleListItemService = async (
@@ -29,6 +33,7 @@ export const createVehicleListItemService = async (
 ) => {
   const item = new VehicleListItem({
     ...data,
+    hsnCode: data.exportHsnCode,
     quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
   });
 
@@ -42,6 +47,7 @@ export const createVehicleListItemsService = async (
     items.map((data) =>
       new VehicleListItem({
         ...data,
+        hsnCode: data.exportHsnCode,
         quantity: data.quantity !== undefined ? Number(data.quantity) : 1,
       }).save(),
     ),
@@ -85,7 +91,7 @@ export const getVehicleOrderFormOptionsService = async () => {
   const [clients, vehicles] = await Promise.all([
     Client.find({}).select("name companyName").sort({ createdAt: -1 }),
     VehicleListItem.find({})
-      .select("brandName modelName variant color quantity status")
+      .select("brandName modelName variant color quantity status igstRate")
       .sort({ createdAt: -1 }),
   ]);
 
@@ -120,13 +126,20 @@ export const updateVehicleListItemService = async (
   if (updateData.modelName !== undefined) item.modelName = updateData.modelName;
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
-  if (updateData.hsnCode !== undefined) item.hsnCode = updateData.hsnCode;
+  if (updateData.commercialHsnCode !== undefined) {
+    item.commercialHsnCode = updateData.commercialHsnCode;
+  }
+  if (updateData.exportHsnCode !== undefined) {
+    item.exportHsnCode = updateData.exportHsnCode;
+    item.hsnCode = updateData.exportHsnCode;
+  }
   if (updateData.quantity !== undefined)
     item.quantity = Number(updateData.quantity);
   if (updateData.fobAmount !== undefined)
     item.fobAmount = Number(updateData.fobAmount);
   if (updateData.freight !== undefined)
     item.freight = Number(updateData.freight);
+  if (updateData.igstRate !== undefined) item.igstRate = updateData.igstRate as 5 | 18 | 40;
 
   item.status = item.quantity > 0 ? "Available" : "Out of Stock";
 

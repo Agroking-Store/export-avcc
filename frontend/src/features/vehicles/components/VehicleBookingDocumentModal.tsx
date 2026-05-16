@@ -82,23 +82,32 @@ const VehicleBookingDocumentModal = ({
       <label className="text-[10px] font-bold text-slate-500 uppercase">
         {label}
       </label>
-      <div className="relative">
+      <div>
         <input
+          id={`vehicle-doc-${field}`}
           type="file"
           disabled={disabled}
           onChange={(e) => handleFileChange(e, field)}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+          className="hidden"
         />
-        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-xs text-slate-600">
-          <Upload size={14} />
-          {files[field] ? (
-            <span className="text-indigo-600 font-medium truncate">
-              {files[field].name}
+        <label
+          htmlFor={`vehicle-doc-${field}`}
+          className={`flex items-center justify-between gap-3 px-3 py-2 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-xs text-slate-600 ${
+            disabled ? "cursor-not-allowed" : "cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50"
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Upload size={14} />
+            <span
+              className={`truncate ${files[field] ? "text-indigo-600 font-medium" : ""}`}
+            >
+              {files[field]?.name || "Choose file..."}
             </span>
-          ) : (
-            "Choose file..."
-          )}
-        </div>
+          </div>
+          <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-semibold uppercase text-slate-500 border border-slate-200">
+            Browse
+          </span>
+        </label>
       </div>
     </div>
   );
@@ -151,7 +160,7 @@ const VehicleBookingDocumentModal = ({
                   <FileInput label="Form 20" field="form20" />
                   <FileInput label="Form 21" field="form21" />
                   <FileInput label="Form 22" field="form22" />
-                  <FileInput label="Temp Reg (TP)" field="tempRegCert" />
+                  <FileInput label="CRTM" field="tempRegCert" />
                 </div>
                 <button
                   disabled={loading}
