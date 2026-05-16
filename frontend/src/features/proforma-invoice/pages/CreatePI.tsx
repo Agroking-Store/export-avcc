@@ -28,6 +28,16 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
+const BOOKING_STATUS_LABELS: Record<string, string> = {
+  pending: "Quotation Pending",
+  quotation_uploaded: "Awaiting Approval",
+  approved: "Approved",
+  rejected: "Rejected",
+  payment_done: "Awaiting Chassis/Engine No.",
+  chassis_received: "In Transit",
+  delivered: "Delivered",
+};
+
 const CreatePI = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -337,6 +347,8 @@ const CreatePI = () => {
     setSelectedBooking(booking);
 
     const vehicle = booking.vehicleId || {};
+    const bookingColor =
+      booking.orderId?.vehicleSnapshot?.color || vehicle.color || "";
 
     const newVehicle = {
       booking_id: booking._id,
@@ -346,7 +358,7 @@ const CreatePI = () => {
       model:
         `${vehicle.brandName || ""} ${vehicle.modelName || ""} ${vehicle.variant || ""}`.trim(),
 
-      color: vehicle.color || "",
+      color: bookingColor,
 
       engineNo: booking.engineNumber || "",
       chassisNo: booking.chassisNumber || "",
@@ -486,16 +498,37 @@ const CreatePI = () => {
   //   }
   // };
 
-  const bookingsWithDisplay = bookings.map((b, index) => ({
-    ...b,
-    serialNumber: index + 1,
-    vehicleDisplayId: `VEH-${String((b.vehicleIndex ?? index) + 1).padStart(3, "0")}`,
-    displayName:
-      `VEH-${String((b.vehicleIndex ?? index) + 1).padStart(3, "0")} | ` +
-      `${b.vehicleId?.brandName || ""} ${b.vehicleId?.modelName || "-"} ${b.vehicleId?.variant || ""}`.trim() +
-      ` | ` +
-      `${b.chassisNumber || "No Chassis"}`,
-  }));
+  const bookingsWithDisplay = bookings.map((b, index) => {
+    const vehicleSequence = bookings.length - index;
+    const vehicleDisplayId = `VEH-${String(vehicleSequence).padStart(3, "0")}`;
+    const vehicleName =
+      [
+        b.vehicleId?.brandName || b.orderId?.vehicleSnapshot?.brandName,
+        b.vehicleId?.modelName || b.orderId?.vehicleSnapshot?.modelName,
+        b.vehicleId?.variant || b.orderId?.vehicleSnapshot?.variant,
+      ]
+        .filter(Boolean)
+        .join(" ") || "-";
+    const color =
+      b.orderId?.vehicleSnapshot?.color || b.vehicleId?.color || "-";
+    const statusLabel = BOOKING_STATUS_LABELS[b.status] || b.status || "-";
+
+    return {
+      ...b,
+      serialNumber: index + 1,
+      vehicleDisplayId,
+      vehicleName,
+      color,
+      statusLabel,
+      displayName: [
+        vehicleDisplayId,
+        vehicleName,
+        b.chassisNumber || "No Chassis",
+        color,
+        statusLabel,
+      ].join(" | "),
+    };
+  });
 
   const clientsWithDisplay = clients.map((client) => ({
     ...client,

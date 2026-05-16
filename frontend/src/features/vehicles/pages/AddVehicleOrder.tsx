@@ -52,7 +52,7 @@ const AddVehicleOrder = () => {
   const [vehicleOpenMap, setVehicleOpenMap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
-    if (isSourcingTeam || isClient) return;
+    if (isSourcingTeam) return;
     const loadOptions = async () => {
       try {
         setOptionsLoading(true);
@@ -65,7 +65,7 @@ const AddVehicleOrder = () => {
       }
     };
     loadOptions();
-  }, [isClient, isSourcingTeam]);
+  }, [isSourcingTeam]);
 
   const handleInputChange = useCallback((index: number, field: keyof OrderEntry, value: any) => {
     setOrders((prev) =>
@@ -148,7 +148,7 @@ const AddVehicleOrder = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  if (isSourcingTeam || isClient) {
+  if (isSourcingTeam) {
     return (
       <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
         You are not authorized to add required vehicles.
@@ -161,7 +161,11 @@ const AddVehicleOrder = () => {
       <div className="flex justify-between items-center mb-10">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Add Required Vehicle</h1>
-          <p className="text-sm text-gray-500 mt-1">Select one or more vehicles from the vehicle list</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {isClient
+              ? "Your required vehicles will be added under your client account"
+              : "Select one or more vehicles from the vehicle list"}
+          </p>
         </div>
         <button
           onClick={() => navigate("/vehicles/orders")}

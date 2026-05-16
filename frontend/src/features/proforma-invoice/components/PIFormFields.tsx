@@ -255,22 +255,24 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                   ? "Search booked vehicle..."
                   : "Select client first"
               }
-              searchPlaceholder="Search by Vehicle ID, name or chassis..."
+              searchPlaceholder="Search by Vehicle ID, name, chassis, color or status..."
               emptyMessage={
                 form.client_id
                   ? "No booked vehicles found."
                   : "Please select client first."
               }
               header={
-                <div className="grid grid-cols-[40px_110px_1fr_120px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
+                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_140px_110px_150px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
                   <div>S.No</div>
                   <div>Vehicle ID</div>
                   <div>Vehicle Name</div>
-                  <div className="text-right">Chassis</div>
+                  <div>Chassis</div>
+                  <div>Color</div>
+                  <div>Status</div>
                 </div>
               }
               renderItem={(item) => (
-                <div className="grid grid-cols-[40px_110px_1fr_120px] gap-2 w-full items-center py-0.5">
+                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_140px_110px_150px] gap-2 w-full items-center py-0.5">
                   <span className="text-xs text-gray-400 font-mono">
                     {item.serialNumber}.
                   </span>
@@ -278,12 +280,16 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     {item.vehicleDisplayId || "-"}
                   </span>
                   <span className="truncate text-gray-700 font-medium">
-                    {[item.vehicleId?.brandName, item.vehicleId?.modelName, item.vehicleId?.variant]
-                      .filter(Boolean)
-                      .join(" ") || "-"}
+                    {item.vehicleName || "-"}
                   </span>
-                  <span className="text-[11px] text-gray-500 text-right whitespace-nowrap">
+                  <span className="text-[11px] text-gray-500 whitespace-nowrap">
                     {item.chassisNumber || "-"}
+                  </span>
+                  <span className="text-[11px] text-gray-600 truncate">
+                    {item.color || "-"}
+                  </span>
+                  <span className="text-[11px] text-gray-600 truncate">
+                    {item.statusLabel || "-"}
                   </span>
                 </div>
               )}
@@ -542,17 +548,16 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
         <h3 className={sectionTitleClass}>Document Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelClass}>PI Number (Auto Generated)</label>
+            <label className={labelClass}>PI Number / Voucher No.</label>
             <input
               value={form.piNumber}
               onChange={(e) => handlePiNumberChange(e.target.value)}
-              readOnly
-              className={`${inputClass} bg-gray-50 cursor-not-allowed`}
-              placeholder="Auto Generated"
+              className={inputClass}
+              placeholder="Enter PI number"
             />
           </div>
           <div>
-            <label className={labelClass}>Date</label>
+            <label className={labelClass}>Dated</label>
             <DatePicker
               date={
                 form.validityDate
@@ -570,7 +575,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <div>
-            <label className={labelClass}>Payment Terms</label>
+            <label className={labelClass}>Mode / Terms of Payment</label>
             <input
               value={form.paymentTerms}
               onChange={(e) =>

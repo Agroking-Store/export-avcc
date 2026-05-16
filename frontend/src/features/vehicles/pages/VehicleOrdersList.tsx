@@ -27,6 +27,7 @@ import QuotationModal from "../components/QuotationModal";
 import PaymentModal from "../components/PaymentModal";
 import ClientAllotModal from "../components/ClientAllotModal";
 import DealerAllotModal from "../components/DealerAllotModal";
+import { useAuth } from "../../../hooks/useAuth";
 
 const STATUS_META: Record<
   VehicleBookingStatus,
@@ -82,8 +83,6 @@ const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
   Delivered: "delivered",
 };
 
-import { useAuth } from "../../../hooks/useAuth";
-
 interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
 }
@@ -91,8 +90,8 @@ interface ClientOrdersResponse {
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSourcingTeam, isClient } = useAuth();
-  const canManageBookings = !isSourcingTeam && !isClient;
+  const { isSourcingTeam, isClient, isAdmin, isDealer } = useAuth();
+  const canManageBookings = isAdmin || isDealer || isClient;
 
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);

@@ -1,5 +1,7 @@
 import { AddressDetails, PIForm, VehicleLineItem } from "./pi.types";
 
+const getTodayIsoDate = () => new Date().toISOString().split("T")[0];
+
 export const defaultAddress: AddressDetails = {
   houseBuilding: "",
   streetArea: "",
@@ -14,11 +16,11 @@ export const defaultPIForm: PIForm = {
   client_id: "",
   company_id: "",
   paymentTerms: "",
-  validityDate: "",
+  validityDate: getTodayIsoDate(),
   termsOfDelivery: "",
-  incoterm: "",
-  portOfLoading: "",
-  portOfDischarge: "",
+  incoterm: "CFR",
+  portOfLoading: "Any Port in India",
+  portOfDischarge: "Any Port in Sri Lanka",
   buyersRef: "",
   otherRef: "",
   dispatchedThrough: "",

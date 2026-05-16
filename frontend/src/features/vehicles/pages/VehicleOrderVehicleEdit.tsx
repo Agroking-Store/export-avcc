@@ -320,7 +320,7 @@ const VehicleOrderVehicleEdit = () => {
       const formattedDeliveryDate =
         deliveryDate.trim() === ""
           ? undefined
-          : formatDdMmYyyyToIso(deliveryDate.trim().replaceAll("/", ""));
+          : formatDdMmYyyyToIso(deliveryDate.trim().replace(/\//g, ""));
 
       if (deliveryDate.trim() && !formattedDeliveryDate) {
         toast.error("Delivery date must be in DDMMYYYY format");
