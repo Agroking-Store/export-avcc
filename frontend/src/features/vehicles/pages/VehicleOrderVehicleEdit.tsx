@@ -320,7 +320,7 @@ const VehicleOrderVehicleEdit = () => {
       const formattedDeliveryDate =
         deliveryDate.trim() === ""
           ? undefined
-          : formatDdMmYyyyToIso(deliveryDate.trim());
+          : formatDdMmYyyyToIso(deliveryDate.trim().replaceAll("/", ""));
 
       if (deliveryDate.trim() && !formattedDeliveryDate) {
         toast.error("Delivery date must be in DDMMYYYY format");
@@ -693,7 +693,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Calendar size={16} />
-              Date of Delivery (DDMMYYYY)
+              Date of Delivery (DD/MM/YYYY)
             </label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -707,7 +707,7 @@ const VehicleOrderVehicleEdit = () => {
                       deliveryDate ? "text-slate-700" : "text-slate-400"
                     }
                   >
-                    {deliveryDate || "DDMMYYYY"}
+                    {deliveryDate || "DD/MM/YYYY"}
                   </span>
                   <CalendarIcon size={16} className="text-slate-400" />
                 </button>
@@ -722,7 +722,8 @@ const VehicleOrderVehicleEdit = () => {
                       const dd = String(date.getDate()).padStart(2, "0");
                       const mm = String(date.getMonth() + 1).padStart(2, "0");
                       const yyyy = date.getFullYear();
-                      setDeliveryDate(`${dd}${mm}${yyyy}`);
+                      // UI should remain DD/MM/YYYY but backend expects DDMMYYYY (handled in submit conversion)
+                      setDeliveryDate(`${dd}/${mm}/${yyyy}`);
                     } else {
                       setDeliveryDate("");
                     }
