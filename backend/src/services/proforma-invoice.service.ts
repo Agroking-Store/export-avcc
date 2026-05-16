@@ -126,7 +126,10 @@ export const getSuggestedNextPiNumberService = async (companyId: string) => {
   return await generateNextPiNumber(companyId);
 };
 
-export const getBookedVehicleOrdersService = async (clientId: string) => {
+export const getBookedVehicleOrdersService = async (
+  clientId: string,
+  search: string = "",
+) => {
   if (!clientId) {
     throw new Error("Client ID required");
   }
@@ -148,9 +151,62 @@ export const getBookedVehicleOrdersService = async (clientId: string) => {
   })
     .populate("vehicleId")
     .populate("orderId")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
-  return bookings;
+  const allBookingIds = await VehicleBooking.find({}, { _id: 1 })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const totalBookings = allBookingIds.length;
+  const bookingDisplayIdMap = new Map<string, string>();
+
+  allBookingIds.forEach((booking, index) => {
+    bookingDisplayIdMap.set(
+      booking._id.toString(),
+      `VEH-${String(totalBookings - index).padStart(3, "0")}`,
+    );
+  });
+
+  const bookingsWithDisplayId = bookings.map((booking: any) => {
+    const vehicle = booking.vehicleId || {};
+    const order = booking.orderId || {};
+    const vehicleSnapshot = order.vehicleSnapshot || {};
+
+    return {
+      ...booking,
+      vehicleDisplayId:
+        bookingDisplayIdMap.get(booking._id.toString()) ||
+        `VEH-${String(booking.vehicleIndex || 0).padStart(3, "0")}`,
+      vehicleName: [
+        vehicle.brandName || vehicleSnapshot.brandName,
+        vehicle.modelName || vehicleSnapshot.modelName,
+        vehicle.variant || vehicleSnapshot.variant,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      color: vehicleSnapshot.color || vehicle.color || "",
+    };
+  });
+
+  const normalizedSearch = search.trim().toLowerCase();
+  if (!normalizedSearch) {
+    return bookingsWithDisplayId;
+  }
+
+  return bookingsWithDisplayId.filter((booking) =>
+    [
+      booking.vehicleDisplayId,
+      booking.vehicleName,
+      booking.chassisNumber,
+      booking.color,
+      booking.status,
+    ]
+      .filter(Boolean)
+      .some((value) =>
+        String(value).toLowerCase().includes(normalizedSearch),
+      ),
+  );
 };
 
 // Helper to get financial year from a date

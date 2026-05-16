@@ -499,8 +499,9 @@ const CreatePI = () => {
   // };
 
   const bookingsWithDisplay = bookings.map((b, index) => {
-    const vehicleSequence = bookings.length - index;
-    const vehicleDisplayId = `VEH-${String(vehicleSequence).padStart(3, "0")}`;
+    const vehicleDisplayId =
+      b.vehicleDisplayId ||
+      `VEH-${String(b.vehicleIndex || bookings.length - index).padStart(3, "0")}`;
     const vehicleName =
       [
         b.vehicleId?.brandName || b.orderId?.vehicleSnapshot?.brandName,
