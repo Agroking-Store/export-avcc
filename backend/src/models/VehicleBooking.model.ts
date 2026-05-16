@@ -122,11 +122,17 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       default: "",
     },
+    // engineNumber: {
+    //   type: String,
+    //   default: "",
+    //   trim: true,
+    //   index: { unique: true, sparse: true },
+    // },
     engineNumber: {
       type: String,
-      default: "",
       trim: true,
       index: { unique: true, sparse: true },
+      set: (v: string | undefined) => (v === "" ? undefined : v),
     },
     chassisNumber: {
       type: String,
