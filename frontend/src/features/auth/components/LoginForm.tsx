@@ -18,7 +18,9 @@ const LoginForm: React.FC = () => {
   const [error, setError] = useState<string>("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value =
+      e.target.name === "email" ? e.target.value.toLowerCase() : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
     setError("");
   };
 
@@ -26,11 +28,13 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const result = await dispatch(login(formData)).unwrap();
+      const result = await dispatch(
+        login({ ...formData, email: formData.email.toLowerCase().trim() }),
+      ).unwrap();
       const role = result?.user?.role?.toLowerCase();
       if (role === "accountant") navigate("/proforma-invoice/dashboard");
       else if (role === "sourcing_team") navigate("/vehicles/dashboard");
-      else if (role === "client") navigate("/vehicles/orders");
+      else if (role === "client") navigate("/dashboard");
       else navigate("/dashboard");
     } catch {
       setError("Invalid email or password");

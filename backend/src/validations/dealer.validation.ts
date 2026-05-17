@@ -17,9 +17,20 @@ const validateDealerBankDetails = (bankDetails: any, isRequired = false) => {
   }
 };
 
+const isValidPhone = (value: string) => /^[0-9]{10,15}$/.test(value.replace(/\D/g, ""));
+
 export const validateCreateDealer = (data: any) => {
-  if (!data.name || !data.contact || !data.gstNumber) {
-    throw new Error("Name, contact and GST number are required");
+  if (!data.name || !data.contact || !data.email || !data.password || !data.gstNumber) {
+    throw new Error("Name, contact, email, password and GST number are required");
+  }
+  if (!isValidPhone(data.contact)) {
+    throw new Error("Contact must be 10-15 digits");
+  }
+  if (!/^\S+@\S+\.\S+$/.test(data.email)) {
+    throw new Error("Invalid email format");
+  }
+  if (data.password.length < 6) {
+    throw new Error("Password must be at least 6 characters");
   }
   const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
   if (!gstRegex.test(data.gstNumber)) {

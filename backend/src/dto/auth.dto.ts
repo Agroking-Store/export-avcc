@@ -1,4 +1,8 @@
-import { UserRole } from "../types/common.types";
+import type { UserRole } from "../types/common.types";
+import type {
+  ClientProfileInput,
+  DealerProfileInput,
+} from "../services/profile-sync.service";
 
 export interface RegisterDTO {
   name: string;
@@ -6,6 +10,8 @@ export interface RegisterDTO {
   password: string;
   role?: UserRole;
   phone?: string;
+  clientProfile?: ClientProfileInput;
+  dealerProfile?: DealerProfileInput;
 }
 
 export interface LoginDTO {

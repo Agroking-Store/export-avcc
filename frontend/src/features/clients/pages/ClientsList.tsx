@@ -10,8 +10,7 @@ import {
   Eye,
   FilePenLine,
 } from "lucide-react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 const ClientsList = () => {
   const navigate = useNavigate();
@@ -47,13 +46,12 @@ const ClientsList = () => {
   useEffect(() => {
     if (location.state?.success) {
       toast.success(location.state.success);
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, location.pathname, navigate]);
 
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
         {/* TOP SECTION: TITLE & ADD BUTTON */}
         <div className="px-8 py-6 flex justify-between items-center">

@@ -1,26 +1,38 @@
 import { Client } from "../models/Client.model";
 import { CreateClientDto, UpdateClientDto } from "../dto/client.dto";
 import { VehicleBooking } from "../models/VehicleBooking.model";
+import { ROLES } from "../config/constants";
+import {
+  createUserAccountForProfile,
+  getNextClientCode,
+  normalizePhone,
+} from "./profile-sync.service";
 
 export const createClientService = async (data: CreateClientDto) => {
-  const existing = await Client.findOne({ phone: data.phone });
+  const email = data.email.toLowerCase().trim();
+  const phone = normalizePhone(data.phone);
+  const existing = await Client.findOne({
+    $or: [{ phone }, { email }],
+  });
   if (existing) {
-    throw new Error("Client already exists with this phone");
+    throw new Error("Client already exists with this phone or email");
   }
 
-  const lastClient = await Client.findOne().sort({ createdAt: -1 });
+  await createUserAccountForProfile({
+    name: data.name,
+    email,
+    password: data.password,
+    phone,
+    role: ROLES.CLIENT,
+  });
 
-  let nextNumber = 1;
-
-  if (lastClient && lastClient.clientCode) {
-    const lastNumber = parseInt(lastClient.clientCode.split("-")[1]);
-    nextNumber = lastNumber + 1;
-  }
-
-  const clientCode = `CL-${String(nextNumber).padStart(3, "0")}`;
+  const clientCode = await getNextClientCode();
+  const { password, ...clientData } = data;
 
   const client = new Client({
-    ...data,
+    ...clientData,
+    phone,
+    email,
     clientCode,
   });
 
@@ -93,13 +105,36 @@ export const getClientByIdService = async (id: string) => {
     .populate("vehicleId")
     .sort({ createdAt: -1 });
 
+  const allBookingIds = await VehicleBooking.find({}, { _id: 1 })
+    .sort({ createdAt: -1 })
+    .lean();
+  const totalBookings = allBookingIds.length;
+  const bookingDisplayIdMap = new Map<string, string>();
+
+  allBookingIds.forEach((booking, index) => {
+    bookingDisplayIdMap.set(
+      booking._id.toString(),
+      `VEH-${String(totalBookings - index).padStart(3, "0")}`,
+    );
+  });
+
+  const vehicleOrdersWithDisplayId = vehicleOrders.map((order: any) => {
+    const plainOrder = order.toObject ? order.toObject() : order;
+    return {
+      ...plainOrder,
+      vehicleDisplayId:
+        bookingDisplayIdMap.get(plainOrder._id.toString()) ||
+        `VEH-${String(plainOrder.vehicleIndex || 0).padStart(3, "0")}`,
+    };
+  });
+
   return {
     client,
-    vehicleOrders,
-    totalVehicleOrders: vehicleOrders.length,
+    vehicleOrders: vehicleOrdersWithDisplayId,
+    totalVehicleOrders: vehicleOrdersWithDisplayId.length,
     lastBooking:
-      vehicleOrders.length > 0
-        ? vehicleOrders[0].createdAt
+      vehicleOrdersWithDisplayId.length > 0
+        ? vehicleOrdersWithDisplayId[0].createdAt
         : null,
   };
 };
@@ -118,13 +153,36 @@ export const getClientByEmailService = async (email: string) => {
     .populate("vehicleId")
     .sort({ createdAt: -1 });
 
+  const allBookingIds = await VehicleBooking.find({}, { _id: 1 })
+    .sort({ createdAt: -1 })
+    .lean();
+  const totalBookings = allBookingIds.length;
+  const bookingDisplayIdMap = new Map<string, string>();
+
+  allBookingIds.forEach((booking, index) => {
+    bookingDisplayIdMap.set(
+      booking._id.toString(),
+      `VEH-${String(totalBookings - index).padStart(3, "0")}`,
+    );
+  });
+
+  const vehicleOrdersWithDisplayId = vehicleOrders.map((order: any) => {
+    const plainOrder = order.toObject ? order.toObject() : order;
+    return {
+      ...plainOrder,
+      vehicleDisplayId:
+        bookingDisplayIdMap.get(plainOrder._id.toString()) ||
+        `VEH-${String(plainOrder.vehicleIndex || 0).padStart(3, "0")}`,
+    };
+  });
+
   return {
     client,
-    vehicleOrders,
-    totalVehicleOrders: vehicleOrders.length,
+    vehicleOrders: vehicleOrdersWithDisplayId,
+    totalVehicleOrders: vehicleOrdersWithDisplayId.length,
     lastBooking:
-      vehicleOrders.length > 0
-        ? vehicleOrders[0].createdAt
+      vehicleOrdersWithDisplayId.length > 0
+        ? vehicleOrdersWithDisplayId[0].createdAt
         : null,
   };
 };

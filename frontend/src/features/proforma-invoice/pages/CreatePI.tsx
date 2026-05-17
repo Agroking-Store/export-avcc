@@ -291,13 +291,6 @@ const CreatePI = () => {
     setBookingSearch("");
   };
 
-  // Handle direct change to piNumber field
-  const handlePiNumberChange = (value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      piNumber: value,
-    }));
-  };
   // Helper function to update nested state properties
   const updateNestedProperty = (obj: any, path: string, value: any): any => {
     const parts = path.split(".");
@@ -498,7 +491,9 @@ const CreatePI = () => {
   //   }
   // };
 
-  const bookingsWithDisplay = bookings.map((b, index) => {
+  const bookingsWithDisplay = bookings
+    .filter((b) => !!String(b.chassisNumber || "").trim())
+    .map((b, index) => {
     const vehicleDisplayId =
       b.vehicleDisplayId ||
       `VEH-${String(b.vehicleIndex || bookings.length - index).padStart(3, "0")}`;
@@ -514,22 +509,22 @@ const CreatePI = () => {
       b.orderId?.vehicleSnapshot?.color || b.vehicleId?.color || "-";
     const statusLabel = BOOKING_STATUS_LABELS[b.status] || b.status || "-";
 
-    return {
-      ...b,
-      serialNumber: index + 1,
-      vehicleDisplayId,
-      vehicleName,
-      color,
-      statusLabel,
-      displayName: [
+      return {
+        ...b,
+        serialNumber: index + 1,
         vehicleDisplayId,
         vehicleName,
-        b.chassisNumber || "No Chassis",
         color,
         statusLabel,
-      ].join(" | "),
-    };
-  });
+        displayName: [
+          vehicleDisplayId,
+          vehicleName,
+          b.chassisNumber,
+          color,
+          statusLabel,
+        ].join(" | "),
+      };
+    });
 
   const clientsWithDisplay = clients.map((client) => ({
     ...client,
@@ -592,7 +587,6 @@ const CreatePI = () => {
             setClientSearch={setClientSearch}
             setCompanySearch={setCompanySearch} // Renamed from setDealerSearch
             setOrderSearch={setBookingSearch}
-            handlePiNumberChange={handlePiNumberChange} // Pass the new handler
             handleSelectOrder={handleSelectBooking}
             handleVehicleChange={handleVehicleChange}
             handleClientSelect={handleClientSelect} // Keep handleClientSelect

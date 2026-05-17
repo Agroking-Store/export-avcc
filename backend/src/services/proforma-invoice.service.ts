@@ -144,6 +144,7 @@ export const getBookedVehicleOrdersService = async (
 
   const bookings = await VehicleBooking.find({
     assignedClientId: clientId,
+    chassisNumber: { $exists: true, $nin: ["", null] },
     status: {
       $in: ["approved", "payment_done", "chassis_received", "delivered"],
     },
@@ -240,6 +241,22 @@ const getCompanyShortCode = (companyName: string): string => {
 
 // CREATE PI
 export const createPIService = async (data: any) => {
+  const vehicleBookingIds = (data.vehicleBookingIds || []).filter(Boolean);
+  if (vehicleBookingIds.length > 0) {
+    const missingChassisCount = await VehicleBooking.countDocuments({
+      _id: { $in: vehicleBookingIds },
+      $or: [
+        { chassisNumber: { $exists: false } },
+        { chassisNumber: "" },
+        { chassisNumber: null },
+      ],
+    });
+
+    if (missingChassisCount > 0) {
+      throw new Error("PI can only be generated for vehicles with chassis number.");
+    }
+  }
+
   const totalAmount = (data.vehicleDetails || []).reduce(
     (sum: number, v: any) =>
       sum +
@@ -251,11 +268,7 @@ export const createPIService = async (data: any) => {
   data.totalAmount = totalAmount;
   data.amountInWords = numberToWords(totalAmount);
 
-  let finalPiNumber = data.piNumber;
-
-  if (!finalPiNumber || finalPiNumber.trim() === "") {
-    finalPiNumber = await generateNextPiNumber(data.company_id);
-  }
+  const finalPiNumber = await generateNextPiNumber(data.company_id);
 
   const pi = new ProformaInvoice({ ...data, piNumber: finalPiNumber });
   const savedPI = await pi.save();

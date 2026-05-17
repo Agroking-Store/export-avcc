@@ -64,9 +64,11 @@ api.interceptors.response.use(
     }
 
     // Handle other errors
-    const errorMessage =
-      (error.response?.data as any)?.message || "An error occurred";
-    toast.error(errorMessage);
+    if (!(originalRequest as any)?.skipGlobalErrorToast) {
+      const errorMessage =
+        (error.response?.data as any)?.message || "An error occurred";
+      toast.error(errorMessage);
+    }
 
     return Promise.reject(error);
   },

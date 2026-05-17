@@ -1,4 +1,4 @@
-import { User } from "./common.types";
+import type { User } from "./common.types";
 
 export interface LoginCredentials {
   email: string;
@@ -10,6 +10,27 @@ export interface RegisterData {
   email: string;
   password: string;
   phone?: string;
+  role?: User["role"];
+  clientProfile?: {
+    companyName: string;
+    address: {
+      houseBuilding?: string;
+      streetArea?: string;
+      cityTown?: string;
+      state?: string;
+      pincode?: string;
+      country: string;
+    };
+  };
+  dealerProfile?: {
+    address?: string;
+    gstNumber: string;
+    bankDetails: {
+      bankName: string;
+      accountNo: string;
+      branchIfsc: string;
+    };
+  };
 }
 
 export interface AuthResponse {

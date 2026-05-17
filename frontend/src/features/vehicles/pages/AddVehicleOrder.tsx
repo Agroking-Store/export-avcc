@@ -131,7 +131,10 @@ const AddVehicleOrder = () => {
         state: { success: `${orders.length} required vehicle(s) added successfully` },
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to add required vehicles");
+      toast.error(
+        error.response?.data?.message ||
+          "Required vehicle create failed. Please check the selected vehicle and quantity.",
+      );
     } finally {
       setLoading(false);
     }

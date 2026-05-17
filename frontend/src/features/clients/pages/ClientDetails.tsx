@@ -150,7 +150,7 @@ const ClientDetails = () => {
                 <table className="w-full">
                   <thead className="bg-[#F8F9FB] text-[#A3AED0] uppercase text-[9px] font-bold tracking-widest">
                     <tr>
-                      <th className="px-5 py-4 text-left">Order No</th>
+                      <th className="px-5 py-4 text-left">Vehicle ID</th>
                       <th className="px-5 py-4 text-left">Vehicle </th>
                       <th className="px-5 py-4 text-left">Chassis </th>
                       <th className="px-5 py-4 text-left">Status </th>
@@ -164,7 +164,7 @@ const ClientDetails = () => {
                         className="hover:bg-indigo-50/30 transition-all"
                       >
                         <td className="px-5 py-4 font-bold text-indigo-500 text-sm">
-                          {order.orderId?.orderNumber || "-"}
+                          {order.vehicleDisplayId || "-"}
                         </td>
                   
                         <td className="px-5 py-4 text-sm font-semibold text-gray-700">

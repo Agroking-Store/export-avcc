@@ -133,7 +133,9 @@ export const vehicleManagementApi = {
     orderDate?: string;
     quantity: number;
   }) => {
-    const response = await api.post("/vehicle-orders", payload);
+    const response = await api.post("/vehicle-orders", payload, {
+      skipGlobalErrorToast: true,
+    } as any);
     return response.data;
   },
 

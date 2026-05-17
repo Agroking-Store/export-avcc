@@ -13,22 +13,34 @@ const clientAddressDetailsSchema = Joi.object({
   }),
 });
 
+const phoneSchema = Joi.string()
+  .trim()
+  .custom((value, helpers) => {
+    const digits = value.replace(/\D/g, "");
+    if (!/^[0-9]{10,15}$/.test(digits)) {
+      return helpers.error("string.pattern.base");
+    }
+    return value;
+  })
+  .messages({
+    "string.pattern.base": "Phone must be 10-15 digits",
+  });
+
 const createClientSchema = Joi.object<CreateClientDto>({
   name: Joi.string().trim().min(2).required().messages({
     "string.empty": "Name is required",
     "string.min": "Name must be at least 2 characters",
   }),
-  phone: Joi.string()
-    .trim()
-    .pattern(/^[0-9]{10,15}$/)
-    .required()
-    .messages({
-      "string.pattern.base": "Phone must be 10-15 digits",
-      "any.required": "Phone is required",
-    }),
+  phone: phoneSchema.required().messages({
+    "any.required": "Phone is required",
+  }),
   email: Joi.string().trim().email().required().messages({
     "string.email": "Invalid email format",
     "any.required": "Email is required",
+  }),
+  password: Joi.string().min(6).required().messages({
+    "string.min": "Password must be at least 6 characters",
+    "any.required": "Password is required",
   }),
   companyName: Joi.string().trim().required().messages({
     "any.required": "Company name is required",
@@ -38,12 +50,7 @@ const createClientSchema = Joi.object<CreateClientDto>({
 
 const updateClientSchema = Joi.object<UpdateClientDto>({
   name: Joi.string().trim().min(2),
-  phone: Joi.string()
-    .trim()
-    .pattern(/^[0-9]{10,15}$/)
-    .messages({
-      "string.pattern.base": "Phone must be 10-15 digits",
-    }),
+  phone: phoneSchema,
   email: Joi.string().trim().email(),
   companyName: Joi.string().trim(),
   address: clientAddressDetailsSchema,

@@ -77,7 +77,7 @@ const VehiclesModule = () => {
             <Route path="orders" element={<VehicleOrdersList />} />
             <Route
               path="orders/add"
-              element={isClient ? <Navigate to="/vehicles/orders" replace /> : <AddVehicleOrder />}
+              element={<AddVehicleOrder />}
             />
             <Route
               path="orders/edit/:id"

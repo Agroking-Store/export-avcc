@@ -136,6 +136,8 @@ const formatClientAddress = (address?: ClientDashboardProfile["client"]["address
     .join(", ");
 const toUpperDisplay = (value?: string | null) =>
   value && value.trim() ? value.toUpperCase() : "—";
+const toLowerDisplay = (value?: string | null) =>
+  value && value.trim() ? value.toLowerCase() : "—";
 
 /* ─── Animated counter ───────────────────────────────────── */
 const AnimatedNumber: React.FC<{ value: number; prefix?: string; suffix?: string }> = ({ value, prefix = "", suffix = "" }) => {
@@ -411,7 +413,7 @@ const Dashboard: React.FC = () => {
                 <InfoCard label="NAME" value={toUpperDisplay(clientProfile?.client.name || user?.name)} />
                 <InfoCard label="COMPANY NAME" value={toUpperDisplay(clientProfile?.client.companyName)} />
                 <InfoCard label="MOBILE NUMBER" value={toUpperDisplay(clientProfile?.client.phone || user?.phone)} />
-                <InfoCard label="MAIL ID" value={toUpperDisplay(clientProfile?.client.email || user?.email)} />
+                <InfoCard label="MAIL ID" value={toLowerDisplay(clientProfile?.client.email || user?.email)} />
                 <InfoCard label="COMPANY ADDRESS" value={toUpperDisplay(addressLabel)} wide />
               </div>
             </div>

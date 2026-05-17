@@ -17,7 +17,6 @@ interface PIFormFieldsProps {
   setClientSearch: React.Dispatch<React.SetStateAction<string>>;
   setCompanySearch: React.Dispatch<React.SetStateAction<string>>;
   setOrderSearch: React.Dispatch<React.SetStateAction<string>>;
-  handlePiNumberChange: (value: string) => void;
   handleSelectOrder: (booking: any) => void;
   handleVehicleChange: (
     index: number,
@@ -47,7 +46,6 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   setClientSearch,
   setCompanySearch,
   setOrderSearch,
-  handlePiNumberChange,
   handleSelectOrder,
   handleVehicleChange,
   handleClientSelect,
@@ -258,7 +256,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               searchPlaceholder="Search by Vehicle ID, name, chassis, color or status..."
               emptyMessage={
                 form.client_id
-                  ? "No booked vehicles found."
+                  ? "No booked vehicles with chassis number found."
                   : "Please select client first."
               }
               header={
@@ -551,9 +549,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
             <label className={labelClass}>PI Number / Voucher No.</label>
             <input
               value={form.piNumber}
-              onChange={(e) => handlePiNumberChange(e.target.value)}
-              className={inputClass}
-              placeholder="Enter PI number"
+              readOnly
+              className={lockedInputClass}
+              placeholder="Auto generated after company selection"
             />
           </div>
           <div>

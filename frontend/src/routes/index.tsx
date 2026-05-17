@@ -32,8 +32,6 @@ const DefaultRedirect: React.FC = () => {
   const redirectPath =
     role === "sourcing_team"
       ? "/vehicles/dashboard"
-      : role === "client"
-        ? "/vehicles/orders"
       : role === "accountant"
         ? "/proforma-invoice/dashboard"
         : "/dashboard";
