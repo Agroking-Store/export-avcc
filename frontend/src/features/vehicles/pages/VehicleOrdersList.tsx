@@ -601,7 +601,7 @@ const VehicleOrdersList = () => {
               </colgroup>
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                  <th className="border-b border-slate-200 px-7 py-4 align-middle">
                     Vehicle ID
                   </th>
                   <th className="border-b border-slate-200 px-5 py-4 align-middle text-left">
