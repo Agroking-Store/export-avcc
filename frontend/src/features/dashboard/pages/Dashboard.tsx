@@ -285,6 +285,13 @@ const Dashboard: React.FC = () => {
 
   const clientStats = useMemo(() => {
     const orders = clientProfile?.vehicleOrders || [];
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
     return {
       total: clientProfile?.totalVehicleOrders || 0,
       delivered: orders.filter((item) => item.status === "delivered").length,
@@ -297,6 +304,18 @@ const Dashboard: React.FC = () => {
           !item.isBVUploaded ||
           !item.isDealerInvoiceUploaded,
       ).length,
+      pendingOrders: orders.filter((item) => item.status !== "delivered").length,
+      shippedTillToday: orders.filter((item) => {
+        if (item.status !== "delivered") return false;
+        if (!item.deliveryDate) return false;
+        const d = new Date(item.deliveryDate);
+        return d >= startOfToday && d <= endOfToday;
+      }).length,
+
+      // NOTE: /clients/me currently doesn't return PI/LC lists.
+      // Keep these dynamic placeholders for future backend support.
+      piPending: 0,
+      lcPending: 0,
     };
   }, [clientProfile]);
 
@@ -426,7 +445,14 @@ const Dashboard: React.FC = () => {
                 <MetricRow label="TOTAL VEHICLE ORDERS" value={clientStats.total} />
                 <MetricRow label="DELIVERED VEHICLES" value={clientStats.delivered} />
                 <MetricRow label="IN PROGRESS" value={clientStats.inTransit} />
+                <MetricRow label="PENDING ORDERS" value={clientStats.pendingOrders} />
+
+                <MetricRow label="PI PENDING" value={clientStats.piPending} />
+                <MetricRow label="LC PENDING" value={clientStats.lcPending} />
+
                 <MetricRow label="DOCS PENDING" value={clientStats.documentationPending} />
+                <MetricRow label="SHIPPED TILL TODAY" value={clientStats.shippedTillToday} />
+
                 <MetricRow
                   label="LAST BOOKING"
                   value={clientProfile?.lastBooking ? fmtDate(clientProfile.lastBooking).toUpperCase() : "—"}
