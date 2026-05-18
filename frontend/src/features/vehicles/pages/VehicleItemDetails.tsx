@@ -9,6 +9,7 @@ import {
   Package,
   Shapes,
   Barcode,
+  Percent,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -26,8 +27,8 @@ const VehicleItemDetails = () => {
   const [vehicle, setVehicle] = useState<VehicleListItem | null>(null);
   const [loading, setLoading] = useState(false);
 
-  
-  
+
+
 
   useEffect(() => {
     const loadVehicle = async () => {
@@ -118,6 +119,11 @@ const VehicleItemDetails = () => {
                 <InfoBox label="FOB Amount (USD)" value={vehicle.fobAmount ? `$${Number(vehicle.fobAmount).toLocaleString()}` : "$0"} icon={DollarSign} />
                 <InfoBox label="Freight (USD)" value={vehicle.freight ? `$${Number(vehicle.freight).toLocaleString()}` : "$0"} icon={DollarSign} />
                 <InfoBox label="HSN Code" value={vehicle.hsnCode} icon={Barcode} />
+                <InfoBox
+                  label="IGST Rate"
+                  value={vehicle.igstRate ? `${vehicle.igstRate}` : "0%"}
+                  icon={Percent}
+                />
               </div>
             </div>
           </div>
