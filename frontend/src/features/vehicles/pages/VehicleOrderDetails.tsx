@@ -44,6 +44,7 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import QuotationModal from "../components/QuotationModal";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 const REMINDER_CHECK_MINUTES = 2;
@@ -57,8 +58,12 @@ const STATUS_META: Record<
     label: "Quotation Pending",
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
+  quotation_details_pending: {
+    label: "Costing Details Pending",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+  },
   quotation_uploaded: {
-    label: "Awaiting Approval",
+    label: "Waiting for Approval",
     badge: "bg-amber-100 text-amber-700 border-amber-200",
   },
   approved: {
@@ -266,7 +271,7 @@ const VehicleOrderDetails = () => {
         tone: "bg-slate-100 text-slate-800",
       },
       {
-        label: "Awaiting Approval",
+        label: "Waiting for Approval",
         value: units.filter(({ booking }) => booking?.status === "quotation_uploaded")
           .length,
         tone: "bg-amber-100 text-amber-800",
@@ -476,14 +481,21 @@ const VehicleOrderDetails = () => {
             Upload Quotation
           </button>
         );
+      case "quotation_details_pending":
       case "quotation_uploaded":
         return (
           <button
             onClick={() => openQuotationModal(booking)}
-            className={`${primaryActionClass} bg-amber-500 hover:bg-amber-600`}
+            className={`${primaryActionClass} ${
+              booking.status === "quotation_details_pending"
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-amber-500 hover:bg-amber-600"
+            }`}
           >
             <FileText size={14} />
-            Review Quotation
+            {booking.status === "quotation_details_pending"
+              ? "Add Costing"
+              : "Review Quotation"}
           </button>
         );
       case "approved":
@@ -823,7 +835,15 @@ const VehicleOrderDetails = () => {
         </div>
       </div>
 
-      {quotationModalOpen && activeBooking && (
+      <QuotationModal
+        isOpen={quotationModalOpen}
+        onClose={closeQuotationModal}
+        booking={activeBooking}
+        onSync={syncBooking}
+      />
+
+      {false &&
+        ((activeBooking: VehicleBookingItem) => (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl">
             <div className="mb-6 flex items-start justify-between">
@@ -954,7 +974,7 @@ const VehicleOrderDetails = () => {
             </div>
           </div>
         </div>
-      )}
+        ))(activeBooking as VehicleBookingItem)}
 
       {paymentModalOpen && activeBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">

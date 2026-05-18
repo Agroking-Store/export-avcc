@@ -9,6 +9,7 @@ import {
   getBookingsByOrder,
   initBooking,
   uploadQuotationHandler,
+  saveQuotationDetailsHandler,
   approveHandler,
   rejectHandler,
   confirmPaymentHandler,
@@ -113,6 +114,7 @@ router.post(
 // Admin + Sourcing Team: dealer assignment, quotation upload, chassis-engine update
 router.patch("/:id/assign-dealer", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), assignDealerHandler);
 router.post("/:id/quotation", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), quotationUpload.single("quotation"), uploadQuotationHandler);
+router.patch("/:id/quotation-details", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), saveQuotationDetailsHandler);
 router.patch("/:id/chassis-engine", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), updateChassisEngineHandler);
 
 export default router;

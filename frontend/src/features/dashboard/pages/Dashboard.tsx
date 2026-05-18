@@ -39,7 +39,7 @@ import { useAuth } from "../../../hooks/useAuth";
 
 /* ─────────────────────── types ──────────────────────────── */
 type VehicleBookingStatus =
-  | "pending" | "quotation_uploaded" | "approved"
+  | "pending" | "quotation_details_pending" | "quotation_uploaded" | "approved"
   | "rejected" | "payment_done" | "chassis_received" | "delivered";
 type PIStatus =
   | "draft" | "pending_approval" | "approved"
@@ -94,7 +94,8 @@ const EMPTY: DashboardCollections = { clients: [], companies: [], dealers: [], v
 
 const BOOKING_FLOW: Array<{ status: VehicleBookingStatus; label: string; color: string }> = [
   { status: "pending",            label: "Quotation Pending", color: "#93c5fd" },
-  { status: "quotation_uploaded", label: "Awaiting Approval", color: "#fbbf24" },
+  { status: "quotation_details_pending", label: "Costing Pending", color: "#60a5fa" },
+  { status: "quotation_uploaded", label: "Waiting for Approval", color: "#fbbf24" },
   { status: "approved",           label: "Approved",          color: "#34d399" },
   { status: "rejected",           label: "Rejected",          color: "#f87171" },
   { status: "payment_done",       label: "Awaiting Numbers",  color: "#60a5fa" },
@@ -161,7 +162,7 @@ const AnimatedNumber: React.FC<{ value: number; prefix?: string; suffix?: string
 
 /* ─── Status pill ────────────────────────────────────────── */
 const piStatusCls = (s: PIStatus) => ({ draft: "bg-slate-50 text-slate-600 border-slate-200", pending_approval: "bg-amber-50 text-amber-700 border-amber-200", approved: "bg-emerald-50 text-emerald-700 border-emerald-200", sent_to_buyer: "bg-blue-50 text-blue-700 border-blue-200", lc_received: "bg-indigo-50 text-indigo-700 border-indigo-200", expired: "bg-rose-50 text-rose-700 border-rose-200" }[s] ?? "bg-slate-50 text-slate-500 border-slate-200");
-const bookingStatusCls = (s: VehicleBookingStatus) => ({ pending: "bg-slate-50 text-slate-600 border-slate-200", quotation_uploaded: "bg-amber-50 text-amber-700 border-amber-200", approved: "bg-emerald-50 text-emerald-700 border-emerald-200", rejected: "bg-rose-50 text-rose-700 border-rose-200", payment_done: "bg-blue-50 text-blue-700 border-blue-200", chassis_received: "bg-indigo-50 text-indigo-700 border-indigo-200", delivered: "bg-green-50 text-green-700 border-green-200" }[s] ?? "bg-slate-50 text-slate-500 border-slate-200");
+const bookingStatusCls = (s: VehicleBookingStatus) => ({ pending: "bg-slate-50 text-slate-600 border-slate-200", quotation_details_pending: "bg-blue-50 text-blue-700 border-blue-200", quotation_uploaded: "bg-amber-50 text-amber-700 border-amber-200", approved: "bg-emerald-50 text-emerald-700 border-emerald-200", rejected: "bg-rose-50 text-rose-700 border-rose-200", payment_done: "bg-blue-50 text-blue-700 border-blue-200", chassis_received: "bg-indigo-50 text-indigo-700 border-indigo-200", delivered: "bg-green-50 text-green-700 border-green-200" }[s] ?? "bg-slate-50 text-slate-500 border-slate-200");
 
 /* ─── Floating particle canvas ────────────────────────────── */
 const ParticleCanvas: React.FC = () => {
@@ -317,7 +318,7 @@ const Dashboard: React.FC = () => {
   }, [data]);
 
   const bookingCounts = useMemo(() => {
-    const c: Record<VehicleBookingStatus, number> = { pending: 0, quotation_uploaded: 0, approved: 0, rejected: 0, payment_done: 0, chassis_received: 0, delivered: 0 };
+    const c: Record<VehicleBookingStatus, number> = { pending: 0, quotation_details_pending: 0, quotation_uploaded: 0, approved: 0, rejected: 0, payment_done: 0, chassis_received: 0, delivered: 0 };
     data.vehicleBookings.forEach((b) => { c[b.status]++; });
     return c;
   }, [data.vehicleBookings]);

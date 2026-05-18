@@ -6,6 +6,7 @@ import {
   getBookingsByOrderId,
   getOrCreateBooking,
   uploadQuotation,
+  saveQuotationDetails,
   approveBooking,
   rejectBooking,
   confirmPayment,
@@ -73,6 +74,18 @@ export const uploadQuotationHandler = async (req: Request, res: Response) => {
       }
     }
 
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const saveQuotationDetailsHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const booking = await saveQuotationDetails(req.params.id as string, req.body);
+    res.json(booking);
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };

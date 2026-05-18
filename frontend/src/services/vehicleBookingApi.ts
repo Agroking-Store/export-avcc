@@ -2,6 +2,7 @@ import api from "./api";
 
 export type VehicleBookingStatus =
   | "pending"
+  | "quotation_details_pending"
   | "quotation_uploaded"
   | "approved"
   | "rejected"
@@ -28,6 +29,9 @@ export interface VehicleBookingItem {
   };
   status: VehicleBookingStatus;
   quotationFile?: string;
+  quotationDetails?: QuotationDetailsPayload & {
+    savedAt?: string;
+  };
   rejectionReason?: string;
   paymentAmount?: number;
   paymentReference?: string;
@@ -56,6 +60,31 @@ export interface VehicleBookingItem {
   isDealerInvoiceUploaded?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface QuotationDetailsPayload {
+  dealershipName: string;
+  brand: string;
+  carModelName: string;
+  driveLink?: string;
+  netCost: {
+    basicValue?: number | string;
+    handlingCharges?: number | string;
+    crtm?: number | string;
+    insurance?: number | string;
+    cashComponent?: number | string;
+    bureauVeritas?: number | string;
+    shippingCost?: number | string;
+    total?: number | string;
+  };
+  taxAmount: {
+    carGst?: number | string;
+    bureauVeritasGst?: number | string;
+    shippingGst?: number | string;
+    tcs?: number | string;
+    total?: number | string;
+  };
+  grandTotal?: number | string;
 }
 
 export const vehicleBookingApi = {
@@ -88,6 +117,17 @@ export const vehicleBookingApi = {
       {
         headers: { "Content-Type": "multipart/form-data" },
       },
+    );
+    return response.data as VehicleBookingItem;
+  },
+
+  saveQuotationDetails: async (
+    bookingId: string,
+    payload: QuotationDetailsPayload,
+  ) => {
+    const response = await api.patch(
+      `/vehicle-bookings/${bookingId}/quotation-details`,
+      payload,
     );
     return response.data as VehicleBookingItem;
   },

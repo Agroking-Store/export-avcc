@@ -110,21 +110,28 @@ export const getOrCreateBooking = async (
 };
 
 /**
- * Upload quotation file and set status
+ * Upload quotation file and wait for costing details before approval
  */
 export const uploadQuotation = async (bookingId: string, filePath: string) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
-  if (!["pending", "rejected", "quotation_uploaded"].includes(booking.status)) {
+  if (
+    ![
+      "pending",
+      "rejected",
+      "quotation_details_pending",
+      "quotation_uploaded",
+    ].includes(booking.status)
+  ) {
     throw new Error(
-      "Quotation can only be uploaded when status is pending, rejected, or awaiting approval",
+      "Quotation can only be uploaded before approval starts",
     );
   }
 
   const previousQuotation = booking.quotationFile;
   booking.quotationFile = filePath;
-  booking.status = "quotation_uploaded";
+  booking.status = "quotation_details_pending";
   booking.rejectionReason = "";
 
   const updatedBooking = await booking.save();
@@ -143,6 +150,79 @@ export const uploadQuotation = async (bookingId: string, filePath: string) => {
   return updatedBooking;
 };
 
+const toCleanNumber = (value: unknown) => {
+  if (value === "" || value === undefined || value === null) return 0;
+  const parsed = Number(String(value).replace(/,/g, ""));
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error("Quotation costing amounts must be valid positive numbers");
+  }
+  return parsed;
+};
+
+const toCleanString = (value: unknown) => String(value || "").trim();
+
+export const saveQuotationDetails = async (bookingId: string, data: any) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  if (!booking.quotationFile) {
+    throw new Error("Please upload quotation before saving costing details");
+  }
+
+  if (
+    !["quotation_details_pending", "quotation_uploaded", "rejected"].includes(
+      booking.status,
+    )
+  ) {
+    throw new Error("Quotation details can only be saved before approval");
+  }
+
+  const requiredFields = [
+    ["dealershipName", "Dealership name"],
+    ["brand", "Brand"],
+    ["carModelName", "Car model name"],
+  ] as const;
+
+  for (const [key, label] of requiredFields) {
+    if (!toCleanString(data?.[key])) {
+      throw new Error(`${label} is required`);
+    }
+  }
+
+  const netCost = data?.netCost || {};
+  const taxAmount = data?.taxAmount || {};
+
+  booking.quotationDetails = {
+    dealershipName: toCleanString(data.dealershipName),
+    brand: toCleanString(data.brand),
+    carModelName: toCleanString(data.carModelName),
+    driveLink: toCleanString(data.driveLink),
+    netCost: {
+      basicValue: toCleanNumber(netCost.basicValue),
+      handlingCharges: toCleanNumber(netCost.handlingCharges),
+      crtm: toCleanNumber(netCost.crtm),
+      insurance: toCleanNumber(netCost.insurance),
+      cashComponent: toCleanNumber(netCost.cashComponent),
+      bureauVeritas: toCleanNumber(netCost.bureauVeritas),
+      shippingCost: toCleanNumber(netCost.shippingCost),
+      total: toCleanNumber(netCost.total),
+    },
+    taxAmount: {
+      carGst: toCleanNumber(taxAmount.carGst),
+      bureauVeritasGst: toCleanNumber(taxAmount.bureauVeritasGst),
+      shippingGst: toCleanNumber(taxAmount.shippingGst),
+      tcs: toCleanNumber(taxAmount.tcs),
+      total: toCleanNumber(taxAmount.total),
+    },
+    grandTotal: toCleanNumber(data?.grandTotal),
+    savedAt: new Date(),
+  };
+  booking.status = "quotation_uploaded";
+  booking.rejectionReason = "";
+
+  return await booking.save();
+};
+
 /**
  * Approve a booking (quotation must be uploaded)
  */
@@ -151,7 +231,11 @@ export const approveBooking = async (bookingId: string) => {
   if (!booking) throw new Error("Booking not found");
 
   if (booking.status !== "quotation_uploaded") {
-    throw new Error("Can only approve when quotation is uploaded");
+    throw new Error("Can only approve after quotation details are saved");
+  }
+
+  if (!booking.quotationDetails?.savedAt) {
+    throw new Error("Please save quotation details before approval");
   }
 
   booking.status = "approved";
@@ -166,7 +250,7 @@ export const rejectBooking = async (bookingId: string, reason: string) => {
   if (!booking) throw new Error("Booking not found");
 
   if (booking.status !== "quotation_uploaded") {
-    throw new Error("Can only reject when quotation is uploaded");
+    throw new Error("Can only reject after quotation details are saved");
   }
 
   if (!reason || !reason.trim()) {
