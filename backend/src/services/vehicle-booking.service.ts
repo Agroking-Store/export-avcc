@@ -196,12 +196,16 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
     dealershipName: toCleanString(data.dealershipName),
     brand: toCleanString(data.brand),
     carModelName: toCleanString(data.carModelName),
-    driveLink: toCleanString(data.driveLink),
+    // carColour replaces driveLink
+    carColour: toCleanString(data.carColour),
+    exShowroomPrice: toCleanNumber(data.exShowroomPrice),
+    gstRate: toCleanNumber(data.gstRate),
     netCost: {
       basicValue: toCleanNumber(netCost.basicValue),
       handlingCharges: toCleanNumber(netCost.handlingCharges),
       crtm: toCleanNumber(netCost.crtm),
       insurance: toCleanNumber(netCost.insurance),
+      registrationCost: toCleanNumber(netCost.registrationCost),
       cashComponent: toCleanNumber(netCost.cashComponent),
       bureauVeritas: toCleanNumber(netCost.bureauVeritas),
       shippingCost: toCleanNumber(netCost.shippingCost),
@@ -211,6 +215,7 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
       carGst: toCleanNumber(taxAmount.carGst),
       bureauVeritasGst: toCleanNumber(taxAmount.bureauVeritasGst),
       shippingGst: toCleanNumber(taxAmount.shippingGst),
+      insuranceGst: toCleanNumber(taxAmount.insuranceGst),
       tcs: toCleanNumber(taxAmount.tcs),
       total: toCleanNumber(taxAmount.total),
     },
@@ -274,18 +279,14 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
   }
 
   if (!amount || amount <= 0) {
-    throw new Error("Payment amount must be greater than 0");
+    throw new Error("Payment amount must be greater than zero");
   }
 
   booking.paymentAmount = amount;
-  booking.paymentReference = "";
   booking.status = "payment_done";
   return await booking.save();
 };
 
-/**
- * Update chassis and engine numbers
- */
 export const updateChassisEngine = async (
   bookingId: string,
   data: {
@@ -302,55 +303,12 @@ export const updateChassisEngine = async (
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
-  const currentYear = new Date().getFullYear();
 
-  // Client can be allotted at any moment; no restriction on engine/chassis entry
-
-  const chassisNum = data.chassisNumber?.trim().toUpperCase();
-  const engineNum = data.engineNumber?.trim().toUpperCase();
-
-  // if (engineNum !== undefined) {
-  //   if (!/^[A-Z0-9]{6,20}$/.test(engineNum)) {
-  //     throw new Error("Engine number must be 6-20 alphanumeric characters");
-  //   }
-  //   const dupEngine = await VehicleBooking.findOne({
-  //     _id: { $ne: bookingId },
-  //     engineNumber: { $regex: new RegExp(`^${engineNum}$`, "i") },
-  //   });
-  //   if (dupEngine) throw new Error("Engine number already exists for another vehicle");
-  // }
-
-  if (engineNum) {
-    if (!/^[A-Z0-9]{6,20}$/.test(engineNum)) {
-      throw new Error("Engine number must be 6-20 alphanumeric characters");
-    }
-    const dupEngine = await VehicleBooking.findOne({
-      _id: { $ne: bookingId },
-      engineNumber: { $regex: new RegExp(`^${engineNum}$`, "i") },
-    });
-    if (dupEngine)
-      throw new Error("Engine number already exists for another vehicle");
+  if (data.chassisNumber !== undefined) {
+    booking.chassisNumber = data.chassisNumber.trim();
   }
-
-  if (chassisNum !== undefined) {
-    if (!/^[A-Z0-9]{17}$/.test(chassisNum)) {
-      throw new Error(
-        "Chassis number must be exactly 17 alphanumeric characters",
-      );
-    }
-    const dupChassis = await VehicleBooking.findOne({
-      _id: { $ne: bookingId },
-      chassisNumber: { $regex: new RegExp(`^${chassisNum}$`, "i") },
-    });
-    if (dupChassis)
-      throw new Error("Chassis number already exists for another vehicle");
-  }
-
-  if (chassisNum !== undefined) {
-    booking.chassisNumber = chassisNum;
-  }
-  if (engineNum !== undefined) {
-    booking.engineNumber = engineNum;
+  if (data.engineNumber !== undefined) {
+    booking.engineNumber = data.engineNumber.trim() || undefined;
   }
   if (data.deliveryDate !== undefined) {
     booking.deliveryDate = data.deliveryDate
@@ -368,6 +326,7 @@ export const updateChassisEngine = async (
   }
   if (data.yom !== undefined) {
     const yom = data.yom.trim();
+    const currentYear = new Date().getFullYear();
     if (yom) {
       const yomNumber = Number(yom);
       if (
@@ -602,6 +561,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
     totalPages: Math.ceil(total / Number(limit)),
   };
 };
+
 export const getReminderDueBookings = async (
   orderId: string,
   intervalHours: number,
