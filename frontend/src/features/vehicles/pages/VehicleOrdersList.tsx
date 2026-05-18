@@ -34,7 +34,7 @@ const STATUS_META: Record<
   { label: string; badge: string }
 > = {
   pending: {
-    label: "Quotation Pending",
+    label: "Pending",
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
   quotation_details_pending: {
