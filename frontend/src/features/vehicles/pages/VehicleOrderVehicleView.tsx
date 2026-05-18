@@ -33,7 +33,8 @@ const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 
 const STATUS_LABELS: Record<VehicleBookingStatus, string> = {
   pending: "Quotation Pending",
-  quotation_uploaded: "Awaiting Approval",
+  quotation_details_pending: "Costing Details Pending",
+  quotation_uploaded: "Waiting for Approval",
   approved: "Approved",
   rejected: "Rejected",
   payment_done: "Awaiting Chassis/Engine No.",

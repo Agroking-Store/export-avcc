@@ -50,6 +50,8 @@ const DealerVehicleBooking = () => {
   const [vehicles, setVehicles] = useState<any[]>([
     {
       hsnCode: '',
+      commercialHsnCode: '',
+      exportHsnCode: '',
       vehicleName: vehicleName,
       exteriorColour: vehicleColor,
       chassisNo: '',
@@ -97,7 +99,8 @@ const DealerVehicleBooking = () => {
 
     if (!selectedDealer) newErrors.dealerId = 'Dealer is required';
     if (!bookingDate) newErrors.date = 'Booking date is required';
-    if (!vehicle.hsnCode?.trim()) newErrors['vehicles.hsnCode'] = 'HSN Code is required';
+    if (!vehicle.commercialHsnCode?.trim()) newErrors['vehicles.commercialHsnCode'] = 'Commercial HSN is required';
+    if (!vehicle.exportHsnCode?.trim()) newErrors['vehicles.exportHsnCode'] = 'Export HSN is required';
     if (!vehicle.vehicleName?.trim()) newErrors['vehicles.vehicleName'] = 'Vehicle name is required';
     if (!vehicle.exteriorColour?.trim()) newErrors['vehicles.exteriorColour'] = 'Color is required';
     if (!vehicle.chassisNo?.trim()) {
@@ -131,7 +134,9 @@ const DealerVehicleBooking = () => {
         bookingAmount,
         orderId: orderId,
         vehicles: [{
-          hsnCode: vehicles[0].hsnCode,
+          commercialHsnCode: vehicles[0].commercialHsnCode,
+          exportHsnCode: vehicles[0].exportHsnCode,
+          hsnCode: vehicles[0].exportHsnCode,
           name: vehicles[0].vehicleName,
           color: vehicles[0].exteriorColour,
           chassisNo: vehicles[0].chassisNo,
@@ -320,17 +325,30 @@ setTimeout(() => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> HSN Code
+                <Hash size={14} className="text-emerald-500" /> Commercial HSN
               </label>
               <input
                 type="text"
-                value={vehicles[0].hsnCode}
-                onChange={(e) => handleInputChange('vehicles.hsnCode', e.target.value)}
-                className={inputStyle('vehicles.hsnCode')}
-                placeholder="8703.23.01"
+                value={vehicles[0].commercialHsnCode}
+                onChange={(e) => handleInputChange('vehicles.commercialHsnCode', e.target.value)}
+                className={inputStyle('vehicles.commercialHsnCode')}
+                placeholder="For PI / LC / Commercial Invoice"
               />
-              <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Example: 8703.23.01 (8-digit code)</p>
-              {errors['vehicles.hsnCode'] && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors['vehicles.hsnCode']}</p>}
+              {errors['vehicles.commercialHsnCode'] && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors['vehicles.commercialHsnCode']}</p>}
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                <Hash size={14} className="text-sky-500" /> Export HSN
+              </label>
+              <input
+                type="text"
+                value={vehicles[0].exportHsnCode}
+                onChange={(e) => handleInputChange('vehicles.exportHsnCode', e.target.value)}
+                className={inputStyle('vehicles.exportHsnCode')}
+                placeholder="For Dealer Invoice / Packing List"
+              />
+              {errors['vehicles.exportHsnCode'] && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors['vehicles.exportHsnCode']}</p>}
             </div>
 
             <div>

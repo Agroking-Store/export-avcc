@@ -37,8 +37,12 @@ const STATUS_META: Record<
     label: "Quotation Pending",
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
+  quotation_details_pending: {
+    label: "Costing Details Pending",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+  },
   quotation_uploaded: {
-    label: "Awaiting Approval",
+    label: "Waiting for Approval",
     badge: "bg-amber-100 text-amber-700 border-amber-200",
   },
   approved: {
@@ -66,7 +70,8 @@ const STATUS_META: Record<
 const statusOptions = [
   "All",
   "Quotation Pending",
-  "Awaiting Approval",
+  "Costing Details Pending",
+  "Waiting for Approval",
   "Approved",
   "Awaiting Chassis/Engine No.",
   "In Transit",
@@ -76,7 +81,8 @@ const statusOptions = [
 const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
   All: "All",
   "Quotation Pending": "pending",
-  "Awaiting Approval": "quotation_uploaded",
+  "Costing Details Pending": "quotation_details_pending",
+  "Waiting for Approval": "quotation_uploaded",
   Approved: "approved",
   "Awaiting Chassis/Engine No.": "payment_done",
   "In Transit": "chassis_received",
@@ -99,7 +105,8 @@ const VehicleOrdersList = () => {
   // rawToStatusLabel maps VehicleBookingStatus → dropdown label
   const rawToStatusLabel: Record<string, string> = {
     pending:           "Quotation Pending",
-    quotation_uploaded:"Awaiting Approval",
+    quotation_details_pending:"Costing Details Pending",
+    quotation_uploaded:"Waiting for Approval",
     approved:          "Approved",
     payment_done:      "Awaiting Chassis/Engine No.",
     chassis_received:  "In Transit",
@@ -373,15 +380,24 @@ const VehicleOrdersList = () => {
             Upload Quotation
           </button>
         );
+      case "quotation_details_pending":
       case "quotation_uploaded":
         return (
           <button
             onClick={() => booking.assignedDealerId ? openQuotationModal(booking) : toast.error("Please allot a dealer first")}
-            className={`${primaryActionClass} ${booking.assignedDealerId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-slate-400 opacity-60 cursor-not-allowed'}`}
+            className={`${primaryActionClass} ${
+              booking.assignedDealerId
+                ? booking.status === "quotation_details_pending"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-amber-500 hover:bg-amber-600"
+                : "bg-slate-400 opacity-60 cursor-not-allowed"
+            }`}
             title={booking.assignedDealerId ? "Review Quotation" : "Allot dealer to review quotation"}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Review Quotation
+            {booking.status === "quotation_details_pending"
+              ? "Add Costing"
+              : "Review Quotation"}
           </button>
         );
       case "approved":
@@ -447,7 +463,12 @@ const VehicleOrdersList = () => {
         tone: "bg-slate-100 text-slate-800",
       },
       {
-        label: "Awaiting Approval",
+        label: "Costing Pending",
+        value: bookings.filter((b) => b.status === "quotation_details_pending").length,
+        tone: "bg-blue-100 text-blue-800",
+      },
+      {
+        label: "Waiting for Approval",
         value: bookings.filter((b) => b.status === "quotation_uploaded").length,
         tone: "bg-amber-100 text-amber-800",
       },

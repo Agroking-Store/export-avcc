@@ -24,6 +24,8 @@ interface VehicleData {
   name: string;
   color: string;
   hsnCode?: string;
+  commercialHsnCode?: string;
+  exportHsnCode?: string;
   chassisNo?: string;
   engineNo?: string;
   engineCapacity?: string;
@@ -279,8 +281,13 @@ const DealerVehicleView = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InfoBox
-                  label="HSN Code"
-                  value={vehicle?.hsnCode}
+                  label="Commercial HSN"
+                  value={vehicle?.commercialHsnCode || vehicle?.hsnCode}
+                  icon={Hash}
+                />
+                <InfoBox
+                  label="Export HSN"
+                  value={vehicle?.exportHsnCode || vehicle?.hsnCode}
                   icon={Hash}
                 />
                 <InfoBox
