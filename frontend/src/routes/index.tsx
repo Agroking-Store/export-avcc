@@ -51,7 +51,7 @@ const AppRoutes: React.FC = () => {
   const canAccessPI = isAdmin || isAccountant;
   const canAccessClients = isAdmin;
   const canAccessOrders = isAdmin;
-  const canAccessDealers = isAdmin;
+  const canAccessDealers = isAdmin || isSourcingTeam;
   const canAccessCompanies = isAdmin;
   const canAccessInvoiceGeneration = canAccessPI;
 
