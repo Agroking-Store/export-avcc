@@ -1,16 +1,20 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, List, ClipboardList } from "lucide-react";
+
+// Client and admin share the same Vehicles navbar UI; permission/data differences are handled by backend.
+
 import { useAuth } from "../../../hooks/useAuth";
 
 const VehicleNavbar: React.FC = () => {
   const location = useLocation();
   const { isClient } = useAuth();
+
   const tabs = isClient
     ? [
         {
           key: "orders",
-          label: "Required Vehicles",
+          label: "Vehicle List",
           path: "/vehicles/orders",
           icon: ClipboardList,
         },
@@ -35,6 +39,7 @@ const VehicleNavbar: React.FC = () => {
           icon: ClipboardList,
         },
       ];
+
 
   return (
     <div className="flex items-center gap-1.5 p-1 bg-slate-50/50 rounded-[18px] w-fit">

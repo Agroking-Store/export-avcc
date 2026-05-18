@@ -69,9 +69,9 @@ let menuItems =
           path: "/dashboard",
         },
         {
-          name: "Required Vehicles",
-          icon: <FileCheck size={20} />,
-          path: "/vehicles/orders",
+          name: "Vehicles",
+          icon: <Car size={20} />,
+          path: "/vehicles",
         },
       ]
     : role === "accountant"
@@ -88,6 +88,7 @@ let menuItems =
         },
       ]
     : [...defaultMenuItems];
+
 
 if (role === "admin") {
   menuItems.push({

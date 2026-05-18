@@ -18,10 +18,9 @@ import VehicleOrderVehicleView from "./VehicleOrderVehicleView";
 const VehiclesModule = () => {
   const { isClient } = useAuth();
   const defaultRoute = isClient ? "orders" : "dashboard";
-  const title = isClient ? "Required Vehicles" : "Vehicles";
-  const description = isClient
-    ? "Track only the vehicle orders assigned to your account"
-    : "Manage vehicle inventory and export orders";
+  const title = "Vehicles";
+  const description = "Manage vehicle inventory and export orders";
+
 
   return (
     <div className="min-h-screen w-full bg-[#f8faff] dark:bg-gray-950 p-6">
