@@ -300,8 +300,8 @@ const Vehicles: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <QuickActionTile title="Required Vehicles" desc="View and manage all vehicle bookings" icon={<ClipboardListIcon />} onClick={() => navigate("/vehicles/orders")} />
-        <QuickActionTile title="Vehicle List" desc="Browse available vehicle inventory" icon={<Car size={22} />} onClick={() => navigate("/vehicles/list")} />
+        <QuickActionTile title="Vehicle List" desc="View and manage all vehicle bookings" icon={<ClipboardListIcon />} onClick={() => navigate("/vehicles/orders")} />
+        <QuickActionTile title="Vehicle Database" desc="Browse available vehicle inventory" icon={<Car size={22} />} onClick={() => navigate("/vehicles/list")} />
         {isAdmin && (
           <QuickActionTile title="Add Vehicle Order" desc="Create a new required vehicle order" icon={<PlusIcon />} onClick={() => navigate("/vehicles/orders/add")} />
         )}

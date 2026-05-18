@@ -486,10 +486,10 @@ const VehicleOrdersList = () => {
     [bookings],
   );
 
-  const pageTitle = isClient ? "My Required Vehicles" : "Required Vehicles";
+  const pageTitle = isClient ? "My Vehicle List" : "Vehicles List";
   const pageDescription = isClient
     ? "View the vehicle orders assigned to your account"
-    : "Track and manage required vehicles unit-wise";
+    : "Track and manage vehicle list unit-wise";
   const totalLabel = total === 1 ? "Vehicle" : "Vehicles";
   const searchPlaceholder = isClient
     ? "Search your vehicle..."
