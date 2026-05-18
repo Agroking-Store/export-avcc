@@ -78,7 +78,7 @@ export function SearchableCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
             onValueChange={onSearchChange}

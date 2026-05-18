@@ -236,7 +236,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               Choose Booked Vehicle (Adds Vehicle Row)
             </label>
             <SearchableCombobox
-              data={ordersWithDisplay}
+              data={ordersWithDisplay.filter(
+                (item) => item.chassisNumber && item.chassisNumber.trim() !== ""
+              )}
               disabled={false}
               value={selectedOrder?._id || ""}
               onValueChange={(value) => {
@@ -260,17 +262,18 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                   : "Please select client first."
               }
               header={
-                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_140px_110px_150px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
+                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_160px_140px_110px_100px] gap-2 px-10 py-2 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/50">
                   <div>S.No</div>
                   <div>Vehicle ID</div>
                   <div>Vehicle Name</div>
+                  <div>Dealer Name</div>
                   <div>Chassis</div>
                   <div>Color</div>
                   <div>Status</div>
                 </div>
               }
               renderItem={(item) => (
-                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_140px_110px_150px] gap-2 w-full items-center py-0.5">
+                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_160px_140px_110px_100px] gap-2 w-full items-center py-0.5">
                   <span className="text-xs text-gray-400 font-mono">
                     {item.serialNumber}.
                   </span>
@@ -279,6 +282,9 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                   </span>
                   <span className="truncate text-gray-700 font-medium">
                     {item.vehicleName || "-"}
+                  </span>
+                  <span className="truncate text-gray-700 font-medium">
+                    {item.assignedDealerSnapshot.name || "-"}
                   </span>
                   <span className="text-[11px] text-gray-500 whitespace-nowrap">
                     {item.chassisNumber || "-"}
@@ -421,9 +427,8 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                     title="Toggle Advanced Fields"
                   >
                     <ChevronDown
-                      className={`w-5 h-5 transition-transform ${
-                        expandedRows[index] ? "rotate-180" : ""
-                      }`}
+                      className={`w-5 h-5 transition-transform ${expandedRows[index] ? "rotate-180" : ""
+                        }`}
                     />
                   </Button>
                 </div>
