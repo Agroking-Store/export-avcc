@@ -30,7 +30,8 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 
 const BOOKING_STATUS_LABELS: Record<string, string> = {
   pending: "Quotation Pending",
-  quotation_uploaded: "Awaiting Approval",
+  quotation_details_pending: "Costing Details Pending",
+  quotation_uploaded: "Waiting for Approval",
   approved: "Approved",
   rejected: "Rejected",
   payment_done: "Awaiting Chassis/Engine No.",

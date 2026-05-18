@@ -35,8 +35,14 @@ const STATUS_META: Record<
     icon: <Clock size={14} />,
     section: "pending",
   },
+  quotation_details_pending: {
+    label: "Costing Details Pending",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
+    icon: <FileText size={14} />,
+    section: "pending",
+  },
   quotation_uploaded: {
-    label: "Awaiting Approval",
+    label: "Waiting for Approval",
     badge: "bg-amber-100 text-amber-700 border-amber-200",
     icon: <FileText size={14} />,
     section: "pending",
@@ -101,7 +107,7 @@ const Vehicles: React.FC = () => {
   const metrics = useMemo(() => {
     const total = bookings.length;
     const pending = bookings.filter((b) =>
-      ["pending", "quotation_uploaded", "rejected"].includes(b.status)
+      ["pending", "quotation_details_pending", "quotation_uploaded", "rejected"].includes(b.status)
     ).length;
     const inProgress = bookings.filter((b) =>
       ["approved", "payment_done", "chassis_received"].includes(b.status)
@@ -109,6 +115,7 @@ const Vehicles: React.FC = () => {
     const completed = bookings.filter((b) => b.status === "delivered").length;
 
     const pendingQuotations = bookings.filter((b) => b.status === "pending").length;
+    const costingPending = bookings.filter((b) => b.status === "quotation_details_pending").length;
     const awaitingApproval = bookings.filter((b) => b.status === "quotation_uploaded").length;
     const awaitingNumbers = bookings.filter(
       (b) => b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber)
@@ -121,6 +128,7 @@ const Vehicles: React.FC = () => {
       inProgress,
       completed,
       pendingQuotations,
+      costingPending,
       awaitingApproval,
       awaitingNumbers,
       missingClient,
@@ -145,6 +153,7 @@ const Vehicles: React.FC = () => {
   const statusCounts = useMemo(() => {
     const counts: Record<VehicleBookingStatus, number> = {
       pending: 0,
+      quotation_details_pending: 0,
       quotation_uploaded: 0,
       approved: 0,
       rejected: 0,
@@ -204,7 +213,8 @@ const Vehicles: React.FC = () => {
       {/* Actionable Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ActionCard label="Pending Quotations"    value={metrics.pendingQuotations} icon={<FileText size={18} />}    color="text-slate-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "pending"            } })} />
-        <ActionCard label="Awaiting Approval"      value={metrics.awaitingApproval}  icon={<AlertCircle size={18} />} color="text-amber-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "quotation_uploaded" } })} />
+        <ActionCard label="Costing Pending"        value={metrics.costingPending}   icon={<FileText size={18} />}    color="text-blue-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "quotation_details_pending" } })} />
+        <ActionCard label="Waiting for Approval"  value={metrics.awaitingApproval}  icon={<AlertCircle size={18} />} color="text-amber-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "quotation_uploaded" } })} />
         <ActionCard label="Missing Engine/Chassis" value={metrics.awaitingNumbers}   icon={<Wrench size={18} />}      color="text-blue-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "payment_done"        } })} />
         {isAdmin && (
           <ActionCard label="Missing Client Allotment" value={metrics.missingClient} icon={<User size={18} />}        color="text-rose-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "missingClient"       } })} />
@@ -218,6 +228,7 @@ const Vehicles: React.FC = () => {
           {metrics.total > 0 && (
             <>
               <StatusBarSegment count={statusCounts.pending} total={metrics.total} color="bg-slate-400" />
+              <StatusBarSegment count={statusCounts.quotation_details_pending} total={metrics.total} color="bg-blue-400" />
               <StatusBarSegment count={statusCounts.quotation_uploaded} total={metrics.total} color="bg-amber-400" />
               <StatusBarSegment count={statusCounts.approved} total={metrics.total} color="bg-emerald-400" />
               <StatusBarSegment count={statusCounts.rejected} total={metrics.total} color="bg-rose-400" />
@@ -229,7 +240,8 @@ const Vehicles: React.FC = () => {
         </div>
         <div className="mt-4 flex flex-wrap gap-4">
           <LegendDot color="bg-slate-400" label="Quotation Pending" value={statusCounts.pending} />
-          <LegendDot color="bg-amber-400" label="Awaiting Approval" value={statusCounts.quotation_uploaded} />
+          <LegendDot color="bg-blue-400" label="Costing Pending" value={statusCounts.quotation_details_pending} />
+          <LegendDot color="bg-amber-400" label="Waiting for Approval" value={statusCounts.quotation_uploaded} />
           <LegendDot color="bg-emerald-400" label="Approved" value={statusCounts.approved} />
           <LegendDot color="bg-rose-400" label="Rejected" value={statusCounts.rejected} />
           <LegendDot color="bg-blue-400" label="Awaiting Numbers" value={statusCounts.payment_done} />

@@ -40,6 +40,8 @@ interface VehicleForm {
   name: string;
   color: string;
   hsnCode: string;
+  commercialHsnCode: string;
+  exportHsnCode: string;
   chassisNo: string;
   engineNo: string;
   engineCapacity: string;
@@ -117,6 +119,8 @@ const DealerVehicleEdit = () => {
     name: searchParams.get("name") || "",
     color: searchParams.get("color") || "",
     hsnCode: "",
+    commercialHsnCode: "",
+    exportHsnCode: "",
     chassisNo: "",
     engineNo: "",
     engineCapacity: "",
@@ -163,6 +167,18 @@ const DealerVehicleEdit = () => {
           name,
           color,
           hsnCode: bookingVehicle?.hsnCode || v?.hsnCode || "",
+          commercialHsnCode:
+            bookingVehicle?.commercialHsnCode ||
+            v?.commercialHsnCode ||
+            bookingVehicle?.hsnCode ||
+            v?.hsnCode ||
+            "",
+          exportHsnCode:
+            bookingVehicle?.exportHsnCode ||
+            v?.exportHsnCode ||
+            bookingVehicle?.hsnCode ||
+            v?.hsnCode ||
+            "",
           chassisNo: bookingVehicle?.chassisNo || v?.chassisNo || "",
           engineNo: bookingVehicle?.engineNo || v?.engineNo || "",
           engineCapacity:
@@ -189,7 +205,8 @@ const DealerVehicleEdit = () => {
     const required: (keyof VehicleForm)[] = [
       "name",
       "color",
-      "hsnCode",
+      "commercialHsnCode",
+      "exportHsnCode",
       "chassisNo",
       "engineNo",
     ];
@@ -219,6 +236,7 @@ const DealerVehicleEdit = () => {
           {
             ...form,
             chassisNo: form.chassisNo.toUpperCase(),
+            hsnCode: form.exportHsnCode,
             srNo: srNo,
           },
         ],
@@ -299,20 +317,38 @@ const DealerVehicleEdit = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> HSN Code
+                <Hash size={14} className="text-emerald-500" /> Commercial HSN
               </label>
               <input
-                value={form.hsnCode}
-                onChange={(e) => setForm({ ...form, hsnCode: e.target.value })}
-                className={inputStyle("hsnCode")}
-                placeholder="8703.23.01"
+                value={form.commercialHsnCode}
+                onChange={(e) =>
+                  setForm({ ...form, commercialHsnCode: e.target.value })
+                }
+                className={inputStyle("commercialHsnCode")}
+                placeholder="For PI / LC / Commercial Invoice"
               />
-              <p className="text-[10px] text-gray-400 mt-1 ml-1 uppercase">
-                Sample: 8703.23.01
-              </p>
-              {errors.hsnCode && (
+              {errors.commercialHsnCode && (
                 <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
-                  {errors.hsnCode}
+                  {errors.commercialHsnCode}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                <Hash size={14} className="text-sky-500" /> Export HSN
+              </label>
+              <input
+                value={form.exportHsnCode}
+                onChange={(e) =>
+                  setForm({ ...form, exportHsnCode: e.target.value })
+                }
+                className={inputStyle("exportHsnCode")}
+                placeholder="For Dealer Invoice / Packing List"
+              />
+              {errors.exportHsnCode && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">
+                  {errors.exportHsnCode}
                 </p>
               )}
             </div>

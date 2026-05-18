@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export type VehicleBookingStatus =
   | "pending"
+  | "quotation_details_pending"
   | "quotation_uploaded"
   | "approved"
   | "rejected"
@@ -27,6 +28,31 @@ export interface IVehicleBooking extends Document {
   };
   status: VehicleBookingStatus;
   quotationFile?: string;
+  quotationDetails?: {
+    dealershipName?: string;
+    brand?: string;
+    carModelName?: string;
+    driveLink?: string;
+    netCost?: {
+      basicValue?: number;
+      handlingCharges?: number;
+      crtm?: number;
+      insurance?: number;
+      cashComponent?: number;
+      bureauVeritas?: number;
+      shippingCost?: number;
+      total?: number;
+    };
+    taxAmount?: {
+      carGst?: number;
+      bureauVeritasGst?: number;
+      shippingGst?: number;
+      tcs?: number;
+      total?: number;
+    };
+    grandTotal?: number;
+    savedAt?: Date;
+  };
   rejectionReason?: string;
   paymentAmount?: number;
   paymentReference?: string;
@@ -97,6 +123,7 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       enum: [
         "pending",
+        "quotation_details_pending",
         "quotation_uploaded",
         "approved",
         "rejected",
@@ -109,6 +136,31 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
     quotationFile: {
       type: String,
       default: "",
+    },
+    quotationDetails: {
+      dealershipName: { type: String, default: "", trim: true },
+      brand: { type: String, default: "", trim: true },
+      carModelName: { type: String, default: "", trim: true },
+      driveLink: { type: String, default: "", trim: true },
+      netCost: {
+        basicValue: { type: Number, default: 0 },
+        handlingCharges: { type: Number, default: 0 },
+        crtm: { type: Number, default: 0 },
+        insurance: { type: Number, default: 0 },
+        cashComponent: { type: Number, default: 0 },
+        bureauVeritas: { type: Number, default: 0 },
+        shippingCost: { type: Number, default: 0 },
+        total: { type: Number, default: 0 },
+      },
+      taxAmount: {
+        carGst: { type: Number, default: 0 },
+        bureauVeritasGst: { type: Number, default: 0 },
+        shippingGst: { type: Number, default: 0 },
+        tcs: { type: Number, default: 0 },
+        total: { type: Number, default: 0 },
+      },
+      grandTotal: { type: Number, default: 0 },
+      savedAt: { type: Date },
     },
     rejectionReason: {
       type: String,
