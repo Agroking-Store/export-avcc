@@ -24,13 +24,13 @@ const VehicleNavbar: React.FC = () => {
         },
         {
           key: "list",
-          label: "Vehicle List",
+          label: "Vehicle Database",
           path: "/vehicles/list",
           icon: List,
         },
         {
           key: "orders",
-          label: "Required Vehicles",
+          label: "Vehicle List",
           path: "/vehicles/orders",
           icon: ClipboardList,
         },
