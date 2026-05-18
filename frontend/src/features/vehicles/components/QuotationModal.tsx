@@ -117,11 +117,13 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
       const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
       // Fetch igstRate from the vehicle list item snapshot (populated vehicleId or vehicleSnapshot)
       const vehicleItem = (booking as any).vehicleId;
+      // GST rate (%) should come from vehicle list item (igstRate)
       const igstRate =
-        details?.gstRate ||
-        vehicleItem?.igstRate ||
-        vehicleSnapshot?.igstRate ||
+        details?.gstRate ??
+        vehicleItem?.igstRate ??
+        vehicleSnapshot?.igstRate ??
         0;
+
 
       setRejectReason(booking.rejectionReason || "");
       setSelectedFile(null);
