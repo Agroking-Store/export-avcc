@@ -280,18 +280,18 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="flex items-center gap-1 hover:text-gray-900 font-bold text-gray-700 cursor-pointer"
           >
-            Client <ChevronsUpDown className="h-3.5 w-3.5" />
+            Company <ChevronsUpDown className="h-3.5 w-3.5 " />
           </button>
         ),
         cell: ({ row }) => (
           <div>
             <div className="font-medium">
-              {(row.original.client_id as { name?: string })?.name || "N/A"}
+              {(row.original.company_id as { name?: string })?.name || "N/A"}
             </div>
-            <div className="text-xs text-gray-500">
+            {/* <div className="text-xs text-gray-500">
               {(row.original.client_id as { clientCode?: string })
                 ?.clientCode || "N/A"}
-            </div>
+            </div> */}
           </div>
         ),
       },

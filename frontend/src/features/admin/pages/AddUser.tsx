@@ -262,7 +262,6 @@ const AddUser = () => {
             <option value="">Select role</option>
             <option value="admin">Admin</option>
             <option value="dealer">Dealer</option>
-            <option value="client">Client</option>
             <option value="accountant">Accountant</option>
             <option value="sourcing_team">Sourcing Team</option>
           </select>
@@ -331,7 +330,7 @@ const AddUser = () => {
           )}
         </div>
 
-        {formData.role === "client" && (
+        {/* {formData.role === "client" && (
           <>
             <div className="md:col-span-2 border-t border-gray-100 pt-5">
               <div className="flex items-center gap-2 border-l-4 border-emerald-500 pl-3">
@@ -454,7 +453,7 @@ const AddUser = () => {
               />
             </div>
           </>
-        )}
+        )} */}
 
         {formData.role === "dealer" && (
           <>
