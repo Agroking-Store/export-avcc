@@ -1001,7 +1001,7 @@ const PIDetails = () => {
                     {(pi.client_id as any)?.name}
                   </p>
                   */}
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="text-sm  font-medium text-black-900 dark:text-zinc-400">
                     {(pi.client_id as any)?.companyName}
                   </p>
                   {formatAddress(
