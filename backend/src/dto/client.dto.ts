@@ -11,6 +11,7 @@ export interface CreateClientDto {
   name: string;
   phone: string;
   email: string;
+  password: string;
   companyName: string;
   address?: IClientAddressDetailsDto;
 }

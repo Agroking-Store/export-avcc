@@ -16,7 +16,9 @@ export const authApi = {
   },
 
   register: async (data: RegisterData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await api.post("/auth/register", data);
+    const response = await api.post("/auth/register", data, {
+      skipGlobalErrorToast: true,
+    } as any);
     return response.data;
   },
 

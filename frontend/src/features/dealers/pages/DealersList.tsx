@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Eye,
   FilePenLine,
@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 const DealersList = () => {
   const API_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
+  const location = useLocation();
   const [dealers, setDealers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -40,6 +41,13 @@ const DealersList = () => {
   useEffect(() => {
     fetchDealers();
   }, [search, currentPage]);
+
+  useEffect(() => {
+    if (location.state?.success) {
+      toast.success(location.state.success);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">

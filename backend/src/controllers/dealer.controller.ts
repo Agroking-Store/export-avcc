@@ -5,25 +5,13 @@ import {
   validateUpdateDealer,
 } from "../validations/dealer.validation";
 import { VehicleBooking } from "../models/VehicleBooking.model";
-
-const generateDealerId = async (): Promise<string> => {
-  const latest = await Dealer.findOne({ dealerId: { $exists: true } })
-    .sort({ createdAt: -1 })
-    .select("dealerId");
-  if (!latest || !latest.get("dealerId")) return "DL-001";
-  // const num = parseInt(latest.get("dealerId").split("-")[1]) + 1;
-  const dealerIdString = latest?.get("dealerId") as string;
-  const num = dealerIdString ? parseInt(dealerIdString.split("-")[1]) + 1 : 1;
-
-  return `DL-${String(num).padStart(3, "0")}`;
-};
+import { createDealerService } from "../services/dealer.service";
 
 // Create a dealer
 export const createDealer = async (req: Request, res: Response) => {
   try {
     validateCreateDealer(req.body);
-    const dealerId = await generateDealerId();
-    const dealer = await Dealer.create({ ...req.body, dealerId });
+    const dealer = await createDealerService(req.body);
     res.status(201).json({ success: true, data: dealer });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });

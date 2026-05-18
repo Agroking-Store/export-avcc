@@ -1,21 +1,39 @@
 import { Vehicle } from "../models/Vehicle.model";
 import Dealer from "../models/Dealer.model";
 import { VehicleBooking } from "../models/VehicleBooking.model";
+import { ROLES } from "../config/constants";
+import {
+  createUserAccountForProfile,
+  getNextDealerId,
+  normalizePhone,
+} from "./profile-sync.service";
 
 const generateDealerId = async (): Promise<string> => {
-  const latest = await Dealer.findOne()
-    .sort({ createdAt: -1 })
-    .select("dealerId");
-  if (!latest || !latest.get("dealerId")) return "DL-001";
-  // const num = parseInt(latest.get("dealerId").split("-")[1]) + 1;
-  const lastDealerId = latest?.get("dealerId") as string;
-  const num = lastDealerId ? parseInt(lastDealerId.split("-")[1]) + 1 : 1;
-  return `DL-${String(num).padStart(3, "0")}`;
+  return await getNextDealerId();
 };
 
 export const createDealerService = async (data: any) => {
+  const email = data.email.toLowerCase().trim();
+  const contact = normalizePhone(data.contact);
+  const existingDealer = await Dealer.findOne({
+    $or: [{ email }, { contact }],
+  });
+
+  if (existingDealer) {
+    throw new Error("Dealer already exists with this email or contact");
+  }
+
+  await createUserAccountForProfile({
+    name: data.name,
+    email,
+    password: data.password,
+    phone: contact,
+    role: ROLES.DEALER,
+  });
+
   const dealerId = await generateDealerId();
-  const dealer = new Dealer({ ...data, dealerId });
+  const { password, ...dealerData } = data;
+  const dealer = new Dealer({ ...dealerData, contact, email, dealerId });
   return await dealer.save();
 };
 

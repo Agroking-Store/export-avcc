@@ -12,7 +12,10 @@ import {
   MapPin, 
   ArrowLeft, 
   X, 
-  PlusCircle 
+  PlusCircle,
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 const AddClient = () => {
@@ -22,6 +25,8 @@ const AddClient = () => {
     name: "",
     phone: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     companyName: "",
     address: {
       houseBuilding: "",
@@ -34,9 +39,13 @@ const AddClient = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const value =
+      e.target.name === "email" ? e.target.value.toLowerCase() : e.target.value;
+    setForm({ ...form, [e.target.name]: value });
   };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,13 +63,19 @@ const AddClient = () => {
   
     if (!form.phone.trim()) return "Phone is required";
   
-    if (!/^[0-9]{10,15}$/.test(form.phone))
+    if (!/^[0-9]{10,15}$/.test(form.phone.replace(/\D/g, "")))
       return "Phone must be 10 to 15 digits";
   
     if (!form.email.trim()) return "Email is required";
   
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       return "Enter valid email address";
+
+    if (form.password.length < 6)
+      return "Password must be at least 6 characters";
+
+    if (form.password !== form.confirmPassword)
+      return "Passwords do not match";
   
     if (!form.companyName.trim())
       return "Company name is required";
@@ -84,12 +99,20 @@ const AddClient = () => {
 
     try {
       setLoading(true);
-      await axios.post(`${apiConfig.baseURL}/clients/add`, form);
+      const payload = {
+        name: form.name,
+        phone: form.phone.replace(/\D/g, ""),
+        email: form.email.toLowerCase().trim(),
+        password: form.password,
+        companyName: form.companyName,
+        address: form.address,
+      };
+      await axios.post(`${apiConfig.baseURL}/clients/add`, payload);
       navigate("/clients/list", {
-        state: { success: "Client added successfully ✅" },
+        state: { success: "Client profile and login account created successfully" },
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error adding client");
+      toast.error(error.response?.data?.message || "Client create failed. Please check the details and try again.");
     } finally {
       setLoading(false);
     }
@@ -153,6 +176,7 @@ const AddClient = () => {
                 value={form.email}
                 onChange={handleChange}
                 className={inputStyle}
+                type="email"
                 placeholder="client@company.com"
               />
             </div>
@@ -169,6 +193,62 @@ const AddClient = () => {
                 className={inputStyle}
                 placeholder="Global Logistics Solutions Ltd."
               />
+            </div>
+          </div>
+        </div>
+
+        {/* LOGIN CREDENTIALS SECTION */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
+            <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Login Credentials</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className={labelStyle}>
+                <Lock size={14} className="text-emerald-500" /> Password *
+              </label>
+              <div className="relative">
+                <input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={handleChange}
+                  className={`${inputStyle} pr-11`}
+                  placeholder="Minimum 6 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                <Lock size={14} className="text-orange-500" /> Confirm Password *
+              </label>
+              <div className="relative">
+                <input
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  className={`${inputStyle} pr-11`}
+                  placeholder="Re-enter password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
           </div>
         </div>

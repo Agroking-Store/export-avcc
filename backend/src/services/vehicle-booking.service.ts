@@ -31,12 +31,42 @@ export const getBookingsByOrderId = async (orderId: string) => {
         vehicleId: order.vehicleId,
         vehicleIndex,
         status: "pending",
+        ...(order.clientId
+          ? {
+              assignedClientId: order.clientId,
+              assignedClientSnapshot: {
+                name: order.clientSnapshot?.name || "",
+                companyName: order.clientSnapshot?.companyName || "",
+              },
+            }
+          : {}),
       });
     }
   }
 
   if (createOps.length > 0) {
     await VehicleBooking.insertMany(createOps, { ordered: false });
+  }
+
+  if (order.clientId) {
+    await VehicleBooking.updateMany(
+      {
+        orderId,
+        $or: [
+          { assignedClientId: { $exists: false } },
+          { assignedClientId: null },
+        ],
+      },
+      {
+        $set: {
+          assignedClientId: order.clientId,
+          assignedClientSnapshot: {
+            name: order.clientSnapshot?.name || "",
+            companyName: order.clientSnapshot?.companyName || "",
+          },
+        },
+      },
+    );
   }
 
   return await VehicleBooking.find({ orderId }).sort({ vehicleIndex: 1 });
@@ -63,6 +93,15 @@ export const getOrCreateBooking = async (
       vehicleId: order.vehicleId,
       vehicleIndex,
       status: "pending",
+      ...(order.clientId
+        ? {
+            assignedClientId: order.clientId,
+            assignedClientSnapshot: {
+              name: order.clientSnapshot?.name || "",
+              companyName: order.clientSnapshot?.companyName || "",
+            },
+          }
+        : {}),
     });
     await booking.save();
   }

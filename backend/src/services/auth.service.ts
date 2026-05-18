@@ -6,17 +6,43 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 import { AppError } from "../middleware/error.middleware";
+import {
+  createProfileForUserRole,
+  normalizePhone,
+} from "./profile-sync.service";
+import { ROLES } from "../config/constants";
 
 export class AuthService {
   async register(data: RegisterDTO): Promise<AuthResponseDTO> {
+    const email = data.email.toLowerCase().trim();
+    const phone = data.phone ? normalizePhone(data.phone) : undefined;
+
     // Check if user already exists
-    const existingUser = await User.findOne({ email: data.email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       throw new AppError("User with this email already exists", 400);
     }
 
     // Create user
-    const user = await User.create(data);
+    const user = await User.create({
+      name: data.name,
+      email,
+      password: data.password,
+      role: data.role,
+      phone,
+    });
+
+    if (data.role === ROLES.CLIENT || data.role === ROLES.DEALER) {
+      try {
+        await createProfileForUserRole(user, data.role, {
+          clientProfile: data.clientProfile,
+          dealerProfile: data.dealerProfile,
+        });
+      } catch (error) {
+        await User.findByIdAndDelete(user._id);
+        throw error;
+      }
+    }
 
     // Generate tokens
     const payload = {
@@ -48,7 +74,9 @@ export class AuthService {
 
   async login(data: LoginDTO): Promise<AuthResponseDTO> {
     // Find user with password
-    const user = await User.findOne({ email: data.email }).select("+password");
+    const user = await User.findOne({
+      email: data.email.toLowerCase().trim(),
+    }).select("+password");
     if (!user) {
       throw new AppError("Invalid email or password", 401);
     }
