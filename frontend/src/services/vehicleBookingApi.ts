@@ -29,7 +29,36 @@ export interface VehicleBookingItem {
   };
   status: VehicleBookingStatus;
   quotationFile?: string;
-  quotationDetails?: QuotationDetailsPayload & {
+  quotationDetails?: {
+    dealershipName?: string;
+    brand?: string;
+    carModelName?: string;
+    /** Replaces driveLink – colour fetched from vehicleSnapshot */
+    carColour?: string;
+    /** Ex-Showroom price entered by user; drives basicValue & carGst auto-calculation */
+    exShowroomPrice?: number;
+    /** GST rate (%) fetched from vehicle list item (igstRate) */
+    gstRate?: number;
+    netCost?: {
+      basicValue?: number;
+      handlingCharges?: number;
+      crtm?: number;
+      insurance?: number;
+      registrationCost?: number;
+      cashComponent?: number;
+      bureauVeritas?: number;
+      shippingCost?: number;
+      total?: number;
+    };
+    taxAmount?: {
+      carGst?: number;
+      bureauVeritasGst?: number;
+      shippingGst?: number;
+      insuranceGst?: number;
+      tcs?: number;
+      total?: number;
+    };
+    grandTotal?: number;
     savedAt?: string;
   };
   rejectionReason?: string;
@@ -66,12 +95,18 @@ export interface QuotationDetailsPayload {
   dealershipName: string;
   brand: string;
   carModelName: string;
-  driveLink?: string;
+  /** Replaces driveLink – colour fetched from vehicleSnapshot */
+  carColour?: string;
+  /** Ex-Showroom price entered by user */
+  exShowroomPrice?: number;
+  /** GST rate (%) fetched from vehicle list item */
+  gstRate?: number;
   netCost: {
     basicValue?: number | string;
     handlingCharges?: number | string;
     crtm?: number | string;
     insurance?: number | string;
+    registrationCost?: number | string;
     cashComponent?: number | string;
     bureauVeritas?: number | string;
     shippingCost?: number | string;
@@ -81,6 +116,7 @@ export interface QuotationDetailsPayload {
     carGst?: number | string;
     bureauVeritasGst?: number | string;
     shippingGst?: number | string;
+    insuranceGst?: number | string;
     tcs?: number | string;
     total?: number | string;
   };
@@ -147,9 +183,7 @@ export const vehicleBookingApi = {
   confirmPayment: async (bookingId: string, amount: number) => {
     const response = await api.post(
       `/vehicle-bookings/${bookingId}/confirm-payment`,
-      {
-        amount,
-      },
+      { amount },
     );
     return response.data as VehicleBookingItem;
   },
@@ -183,25 +217,25 @@ export const vehicleBookingApi = {
   },
 
   assignClient: async (bookingId: string, clientId: string) => {
-    const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-client`, {
-      clientId,
-    });
+    const response = await api.patch(
+      `/vehicle-bookings/${bookingId}/assign-client`,
+      { clientId },
+    );
     return response.data as VehicleBookingItem;
   },
 
   assignDealer: async (bookingId: string, dealerId: string) => {
-    const response = await api.patch(`/vehicle-bookings/${bookingId}/assign-dealer`, {
-      dealerId,
-    });
+    const response = await api.patch(
+      `/vehicle-bookings/${bookingId}/assign-dealer`,
+      { dealerId },
+    );
     return response.data as VehicleBookingItem;
   },
 
   getDueReminders: async (orderId: string, hours = 2) => {
     const response = await api.get(
       `/vehicle-bookings/order/${orderId}/chassis-reminders`,
-      {
-        params: { hours },
-      },
+      { params: { hours } },
     );
     return response.data as VehicleBookingItem[];
   },

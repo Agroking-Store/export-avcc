@@ -19,6 +19,7 @@ export interface IVehicleOrder extends Document {
     commercialHsnCode: string;
     exportHsnCode: string;
     hsnCode?: string;
+    igstRate?: number;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -68,6 +69,7 @@ const vehicleOrderSchema = new Schema<IVehicleOrder>(
       commercialHsnCode: { type: String, required: true, trim: true },
       exportHsnCode: { type: String, required: true, trim: true },
       hsnCode: { type: String, trim: true },
+      igstRate: { type: Number, default: 18 },
     },
   },
   {
