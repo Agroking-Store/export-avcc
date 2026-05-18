@@ -69,6 +69,7 @@ export const createVehicleOrderService = async (
         vehicle.commercialHsnCode || vehicle.hsnCode || "",
       exportHsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",
       hsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",
+      igstRate: vehicle.igstRate || 18,
     },
   };
 
@@ -186,6 +187,7 @@ export const updateVehicleOrderService = async (
     commercialHsnCode: vehicle.commercialHsnCode || vehicle.hsnCode || "",
     exportHsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",
     hsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",
+    igstRate: vehicle.igstRate || 18,
   };
 
   return await order.save();

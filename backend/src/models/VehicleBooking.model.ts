@@ -32,12 +32,18 @@ export interface IVehicleBooking extends Document {
     dealershipName?: string;
     brand?: string;
     carModelName?: string;
-    driveLink?: string;
+    /** Car colour fetched from vehicleSnapshot (replaces driveLink) */
+    carColour?: string;
+    /** Ex-Showroom price entered by user; used to derive basicValue & carGst */
+    exShowroomPrice?: number;
+    /** GST rate (%) fetched from the vehicle list item */
+    gstRate?: number;
     netCost?: {
       basicValue?: number;
       handlingCharges?: number;
       crtm?: number;
       insurance?: number;
+      registrationCost?: number;
       cashComponent?: number;
       bureauVeritas?: number;
       shippingCost?: number;
@@ -47,6 +53,7 @@ export interface IVehicleBooking extends Document {
       carGst?: number;
       bureauVeritasGst?: number;
       shippingGst?: number;
+      insuranceGst?: number;
       tcs?: number;
       total?: number;
     };
@@ -141,12 +148,18 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       dealershipName: { type: String, default: "", trim: true },
       brand: { type: String, default: "", trim: true },
       carModelName: { type: String, default: "", trim: true },
-      driveLink: { type: String, default: "", trim: true },
+      /** Replaces driveLink – colour fetched from vehicleSnapshot */
+      carColour: { type: String, default: "", trim: true },
+      /** Ex-Showroom price entered by user */
+      exShowroomPrice: { type: Number, default: 0 },
+      /** GST rate (%) fetched from vehicle list item */
+      gstRate: { type: Number, default: 0 },
       netCost: {
         basicValue: { type: Number, default: 0 },
         handlingCharges: { type: Number, default: 0 },
         crtm: { type: Number, default: 0 },
         insurance: { type: Number, default: 0 },
+        registrationCost: { type: Number, default: 0 },
         cashComponent: { type: Number, default: 0 },
         bureauVeritas: { type: Number, default: 0 },
         shippingCost: { type: Number, default: 0 },
@@ -156,6 +169,7 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
         carGst: { type: Number, default: 0 },
         bureauVeritasGst: { type: Number, default: 0 },
         shippingGst: { type: Number, default: 0 },
+        insuranceGst: { type: Number, default: 0 },
         tcs: { type: Number, default: 0 },
         total: { type: Number, default: 0 },
       },
@@ -174,12 +188,6 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       default: "",
     },
-    // engineNumber: {
-    //   type: String,
-    //   default: "",
-    //   trim: true,
-    //   index: { unique: true, sparse: true },
-    // },
     engineNumber: {
       type: String,
       trim: true,

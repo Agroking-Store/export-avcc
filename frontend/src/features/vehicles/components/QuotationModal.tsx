@@ -15,6 +15,7 @@ import {
   VehicleBookingItem,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import { vehicleManagementApi } from "../vehicleManagementApi";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 
@@ -30,11 +31,19 @@ interface Props {
 
 import { useAuth } from "../../../hooks/useAuth";
 
+/** USD exchange rate used for "Total USD @ 89.5" rows */
+const USD_RATE = 89.5;
+
 type CostingForm = {
   dealershipName: string;
   brand: string;
   carModelName: string;
-  driveLink: string;
+  /** Car colour – read-only, fetched from vehicleSnapshot */
+  carColour: string;
+  /** Ex-Showroom price input; drives basicValue & carGst automatically */
+  exShowroomPrice: string;
+  /** GST rate (%) – read-only, fetched from vehicle list item */
+  gstRate: string;
   netCost: Record<keyof QuotationDetailsPayload["netCost"], string>;
   taxAmount: Record<keyof QuotationDetailsPayload["taxAmount"], string>;
 };
@@ -43,12 +52,15 @@ const emptyCostingForm = (): CostingForm => ({
   dealershipName: "",
   brand: "",
   carModelName: "",
-  driveLink: "",
+  carColour: "",
+  exShowroomPrice: "",
+  gstRate: "",
   netCost: {
     basicValue: "",
     handlingCharges: "",
     crtm: "",
     insurance: "",
+    registrationCost: "",
     cashComponent: "",
     bureauVeritas: "",
     shippingCost: "",
@@ -58,6 +70,7 @@ const emptyCostingForm = (): CostingForm => ({
     carGst: "",
     bureauVeritasGst: "",
     shippingGst: "",
+    insuranceGst: "",
     tcs: "",
     total: "",
   },
@@ -74,6 +87,21 @@ const formatAmountForInput = (value?: string | number) =>
     ? ""
     : String(value);
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+/** Given ex-showroom price and GST rate %, return { basicValue, carGst } */
+const deriveFromExShowroom = (
+  exShowroom: number,
+  gstRatePct: number,
+): { basicValue: number; carGst: number } => {
+  if (!exShowroom || !gstRatePct) return { basicValue: 0, carGst: 0 };
+  const carGst = Math.round(exShowroom * (gstRatePct / 100));
+  const basicValue = Math.round(exShowroom - carGst);
+  return { basicValue, carGst };
+};
+
+// ─── component ────────────────────────────────────────────────────────────────
+
 const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -83,47 +111,109 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
   const { isSourcingTeam } = useAuth();
 
   useEffect(() => {
-    if (booking) {
+    const loadDetails = async () => {
+      if (!booking) return;
+
       const details = booking.quotationDetails;
+      // Fetch vehicleSnapshot from populated orderId
       const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
+      // Fetch igstRate from the vehicle list item snapshot (populated vehicleId or vehicleSnapshot)
+      const vehicleItem = (booking as any).vehicleId;
+      
+      // GST rate (%) should come from vehicle list item (igstRate)
+      let igstRate =
+        details?.gstRate ??
+        vehicleItem?.igstRate ??
+        vehicleSnapshot?.igstRate ??
+        0;
+
+      // Robust fallback: if we only have IDs as strings, fetch the vehicle list item directly!
+      if (!igstRate) {
+        try {
+          const vehicleIdStr =
+            typeof booking.vehicleId === "object"
+              ? (booking.vehicleId as any)._id
+              : booking.vehicleId;
+          if (vehicleIdStr) {
+            const vehicle = await vehicleManagementApi.getVehicleById(vehicleIdStr);
+            if (vehicle?.igstRate) {
+              igstRate = vehicle.igstRate;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch vehicle GST fallback:", e);
+        }
+      }
+
       setRejectReason(booking.rejectionReason || "");
       setSelectedFile(null);
+
+      // If we have an exShowroomPrice saved, derive basic/gst; otherwise use saved values
+      const savedExShowroom = details?.exShowroomPrice || 0;
+      const savedGstRate = igstRate;
+      const { basicValue: derivedBasic, carGst: derivedCarGst } =
+        savedExShowroom
+          ? deriveFromExShowroom(savedExShowroom, savedGstRate)
+          : { basicValue: 0, carGst: 0 };
+
+      // Fallback for color/brand/model if snapshot is missing
+      let fetchedVehicle: any = null;
+      if (!vehicleSnapshot && typeof booking.vehicleId === "string") {
+        try {
+          fetchedVehicle = await vehicleManagementApi.getVehicleById(booking.vehicleId);
+        } catch {}
+      }
+
+      const brandName = details?.brand || vehicleSnapshot?.brandName || fetchedVehicle?.brandName || "";
+      const modelName = details?.carModelName || 
+        (vehicleSnapshot
+          ? [vehicleSnapshot.modelName, vehicleSnapshot.variant].filter(Boolean).join(" ")
+          : fetchedVehicle
+            ? [fetchedVehicle.modelName, fetchedVehicle.variant].filter(Boolean).join(" ")
+            : "");
+      const color = details?.carColour || vehicleSnapshot?.color || fetchedVehicle?.color || "";
+
       setCostingForm({
         dealershipName:
           details?.dealershipName || booking.assignedDealerSnapshot?.name || "",
-        brand: details?.brand || vehicleSnapshot?.brandName || "",
-        carModelName:
-          details?.carModelName ||
-          [vehicleSnapshot?.modelName, vehicleSnapshot?.variant]
-            .filter(Boolean)
-            .join(" "),
-        driveLink: details?.driveLink || "",
+        brand: brandName,
+        carModelName: modelName,
+        // carColour – prefer saved value, fallback to vehicleSnapshot colour
+        carColour: color,
+        exShowroomPrice: formatAmountForInput(details?.exShowroomPrice),
+        gstRate: String(savedGstRate || ""),
         netCost: {
-          basicValue: formatAmountForInput(details?.netCost?.basicValue),
-          handlingCharges: formatAmountForInput(
-            details?.netCost?.handlingCharges,
+          basicValue: formatAmountForInput(
+            details?.netCost?.basicValue || (savedExShowroom ? derivedBasic : undefined),
           ),
+          handlingCharges: formatAmountForInput(details?.netCost?.handlingCharges),
           crtm: formatAmountForInput(details?.netCost?.crtm),
           insurance: formatAmountForInput(details?.netCost?.insurance),
+          registrationCost: formatAmountForInput(details?.netCost?.registrationCost),
           cashComponent: formatAmountForInput(details?.netCost?.cashComponent),
           bureauVeritas: formatAmountForInput(details?.netCost?.bureauVeritas),
           shippingCost: formatAmountForInput(details?.netCost?.shippingCost),
           total: formatAmountForInput(details?.netCost?.total),
         },
         taxAmount: {
-          carGst: formatAmountForInput(details?.taxAmount?.carGst),
-          bureauVeritasGst: formatAmountForInput(
-            details?.taxAmount?.bureauVeritasGst,
+          carGst: formatAmountForInput(
+            details?.taxAmount?.carGst || (savedExShowroom ? derivedCarGst : undefined),
           ),
+          bureauVeritasGst: formatAmountForInput(details?.taxAmount?.bureauVeritasGst),
           shippingGst: formatAmountForInput(details?.taxAmount?.shippingGst),
+          insuranceGst: formatAmountForInput(details?.taxAmount?.insuranceGst),
           tcs: formatAmountForInput(details?.taxAmount?.tcs),
           total: formatAmountForInput(details?.taxAmount?.total),
         },
       });
-    }
+    };
+
+    loadDetails();
   }, [booking]);
 
   if (!isOpen || !booking) return null;
+
+  // ── upload handler ──────────────────────────────────────────────────────────
 
   const handleQuotationUpload = async () => {
     if (!booking) return;
@@ -152,6 +242,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
     }
   };
 
+  // ── form field setters ──────────────────────────────────────────────────────
+
   const setCostingField = (field: keyof CostingForm, value: string) => {
     setCostingForm((current) => ({ ...current, [field]: value }));
   };
@@ -170,11 +262,36 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
     }));
   };
 
+  /**
+   * When ex-showroom price changes, auto-calculate basicValue and carGst.
+   */
+  const handleExShowroomChange = (value: string) => {
+    setCostingField("exShowroomPrice", value);
+    const exShowroom = toAmount(value);
+    const gstRate = toAmount(costingForm.gstRate);
+    const { basicValue, carGst } = deriveFromExShowroom(exShowroom, gstRate);
+    setCostingForm((current) => ({
+      ...current,
+      exShowroomPrice: value,
+      netCost: {
+        ...current.netCost,
+        basicValue: basicValue > 0 ? String(basicValue) : "",
+      },
+      taxAmount: {
+        ...current.taxAmount,
+        carGst: carGst > 0 ? String(carGst) : "",
+      },
+    }));
+  };
+
+  // ── totals ──────────────────────────────────────────────────────────────────
+
   const netTotal =
     toAmount(costingForm.netCost.basicValue) +
     toAmount(costingForm.netCost.handlingCharges) +
     toAmount(costingForm.netCost.crtm) +
     toAmount(costingForm.netCost.insurance) +
+    toAmount(costingForm.netCost.registrationCost) +
     toAmount(costingForm.netCost.cashComponent) +
     toAmount(costingForm.netCost.bureauVeritas) +
     toAmount(costingForm.netCost.shippingCost);
@@ -183,9 +300,16 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
     toAmount(costingForm.taxAmount.carGst) +
     toAmount(costingForm.taxAmount.bureauVeritasGst) +
     toAmount(costingForm.taxAmount.shippingGst) +
+    toAmount(costingForm.taxAmount.insuranceGst) +
     toAmount(costingForm.taxAmount.tcs);
 
   const grandTotal = netTotal + taxTotal;
+
+  const netTotalUsd = netTotal > 0 ? (netTotal / USD_RATE).toFixed(5) : "—";
+  const taxTotalUsd = taxTotal > 0 ? (taxTotal / USD_RATE).toFixed(5) : "—";
+  const grandTotalUsd = grandTotal > 0 ? (grandTotal / USD_RATE).toFixed(5) : "—";
+
+  // ── save handler ────────────────────────────────────────────────────────────
 
   const handleSaveQuotationDetails = async () => {
     if (!booking) return;
@@ -208,7 +332,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         dealershipName: costingForm.dealershipName,
         brand: costingForm.brand,
         carModelName: costingForm.carModelName,
-        driveLink: costingForm.driveLink,
+        carColour: costingForm.carColour,
+        exShowroomPrice: toAmount(costingForm.exShowroomPrice),
+        gstRate: toAmount(costingForm.gstRate),
         netCost: {
           ...costingForm.netCost,
           total: netTotal,
@@ -229,6 +355,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
       setQuotationSaving(false);
     }
   };
+
+  // ── approve / reject ────────────────────────────────────────────────────────
 
   const handleApprove = async () => {
     if (!booking) return;
@@ -269,14 +397,23 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
     }
   };
 
+  // ── render ──────────────────────────────────────────────────────────────────
+
   const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
   const vehicleName = vehicleSnapshot
     ? `${vehicleSnapshot.brandName || ""} ${vehicleSnapshot.modelName || ""}`.trim()
     : "Vehicle";
 
+  /** Shared input class */
+  const inputCls =
+    "w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400";
+  const disabledInputCls =
+    "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl">
+        {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -295,7 +432,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         </div>
 
         <div className="space-y-5">
-          {/* Upload zone */}
+          {/* ── Upload zone ── */}
           <div className="rounded-[24px] border border-dashed border-blue-300 bg-blue-50/70 p-6">
             <div className="flex flex-col items-center text-center">
               <div className="mb-3 rounded-full bg-white p-3 text-blue-700 shadow-sm">
@@ -336,7 +473,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
             </div>
           </div>
 
-          {/* View existing quotation */}
+          {/* ── View existing quotation ── */}
           {booking.quotationFile && (
             <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <FileText size={18} className="text-blue-600" />
@@ -355,7 +492,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
             </div>
           )}
 
-          {/* Upload / Replace action */}
+          {/* ── Upload / Replace action ── */}
           <div className="flex flex-wrap gap-3">
             <button
               onClick={handleQuotationUpload}
@@ -367,7 +504,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
             </button>
           </div>
 
-          {/* Approval actions – only shown when quotation is uploaded and awaiting approval */}
+          {/* ── Costing Sheet Details ── */}
           {booking.quotationFile && (
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -381,12 +518,13 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                 </div>
                 {booking.status === "quotation_uploaded" &&
                   booking.quotationDetails?.savedAt && (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Saved
-                  </span>
-                )}
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Saved
+                    </span>
+                  )}
               </div>
 
+              {/* ── Top info fields ── */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-500">
@@ -394,10 +532,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   </label>
                   <input
                     value={costingForm.dealershipName}
-                    onChange={(event) =>
-                      setCostingField("dealershipName", event.target.value)
-                    }
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                    onChange={(e) => setCostingField("dealershipName", e.target.value)}
+                    className={inputCls}
                   />
                 </div>
                 <div>
@@ -406,10 +542,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   </label>
                   <input
                     value={costingForm.brand}
-                    onChange={(event) =>
-                      setCostingField("brand", event.target.value)
-                    }
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                    onChange={(e) => setCostingField("brand", e.target.value)}
+                    className={inputCls}
                   />
                 </div>
                 <div>
@@ -418,99 +552,168 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   </label>
                   <input
                     value={costingForm.carModelName}
-                    onChange={(event) =>
-                      setCostingField("carModelName", event.target.value)
-                    }
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                    onChange={(e) => setCostingField("carModelName", e.target.value)}
+                    className={inputCls}
                   />
                 </div>
+
+                {/* Car Colour – read-only, fetched from vehicleSnapshot */}
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-500">
-                    Drive Link
+                    Car Colour
+                    <span className="ml-1 text-[10px] font-normal text-slate-400">(from vehicle)</span>
                   </label>
                   <input
-                    value={costingForm.driveLink}
-                    onChange={(event) =>
-                      setCostingField("driveLink", event.target.value)
-                    }
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                    value={costingForm.carColour}
+                    readOnly
+                    className={disabledInputCls}
+                  />
+                </div>
+
+                {/* Ex-Showroom Price */}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    Ex-Showroom Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costingForm.exShowroomPrice}
+                    onChange={(e) => handleExShowroomChange(e.target.value)}
+                    placeholder="e.g. 1000000"
+                    className={inputCls}
+                  />
+                  {toAmount(costingForm.exShowroomPrice) > 0 && toAmount(costingForm.gstRate) > 0 && (
+                    <p className="mt-1 text-[10px] text-slate-400">
+                      Basic Value auto-calculated as Ex-Showroom - Car GST ({costingForm.gstRate}%)
+                    </p>
+                  )}
+                </div>
+
+                {/* GST Rate – disabled, fetched from vehicle list item */}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    Applied GST Rate (%)
+                    <span className="ml-1 text-[10px] font-normal text-slate-400">(from vehicle)</span>
+                  </label>
+                  <input
+                    value={costingForm.gstRate ? `${costingForm.gstRate}%` : "—"}
+                    disabled
+                    className={disabledInputCls}
                   />
                 </div>
               </div>
 
+              {/* ── Net Cost & Tax Amount tables ── */}
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                {/* NET COST */}
                 <div className="rounded-2xl border border-slate-200 p-4">
                   <p className="mb-3 text-sm font-semibold text-slate-800">
                     Net Cost
                   </p>
-                  {[
-                    ["basicValue", "Basic Value"],
-                    ["handlingCharges", "Handling Charges"],
-                    ["crtm", "CRTM"],
-                    ["insurance", "Insurance"],
-                    ["cashComponent", "Cash Component"],
-                    ["bureauVeritas", "Bureau Veritas"],
-                    ["shippingCost", "Shipping Cost"],
-                  ].map(([field, label]) => (
-                    <div key={field} className="mb-3">
-                      <label className="mb-1 block text-xs font-medium text-slate-500">
-                        {label}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={(costingForm.netCost as any)[field]}
-                        onChange={(event) =>
-                          setCostingAmount("netCost", field, event.target.value)
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  ))}
-                  <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-                    Total: {netTotal.toLocaleString("en-IN")}
+
+                  {(
+                    [
+                      ["basicValue", "Basic Value"],
+                      ["handlingCharges", "Handling Charges"],
+                      ["crtm", "CRTM"],
+                      ["insurance", "Insurance"],
+                      ["cashComponent", "Cash Component"],
+                      ["bureauVeritas", "Bureau Veritas"],
+                      ["shippingCost", "Shipping Cost"],
+                      ["registrationCost", "Registration Cost"],
+                    ] as [string, string][]
+                  ).map(([field, label]) => {
+                    const isAutoField = field === "basicValue";
+                    return (
+                      <div key={field} className="mb-3">
+                        <label className="mb-1 block text-xs font-medium text-slate-500">
+                          {label}
+                          {isAutoField && toAmount(costingForm.exShowroomPrice) > 0 && (
+                            <span className="ml-1 text-[10px] text-blue-400">(auto)</span>
+                          )}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={(costingForm.netCost as any)[field]}
+                          onChange={(e) =>
+                            setCostingAmount("netCost", field, e.target.value)
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {/* Total row */}
+                  <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
+                    Total: ₹{netTotal.toLocaleString("en-IN")}
+                  </div>
+                  {/* Total USD row */}
+                  <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+                    Total USD @ {USD_RATE}: {netTotalUsd}
                   </div>
                 </div>
 
+                {/* TAX AMOUNT */}
                 <div className="rounded-2xl border border-slate-200 p-4">
                   <p className="mb-3 text-sm font-semibold text-slate-800">
                     Tax Amount
                   </p>
-                  {[
-                    ["carGst", "Car GST"],
-                    ["bureauVeritasGst", "Bureau Veritas GST"],
-                    ["shippingGst", "Shipping GST"],
-                    ["tcs", "TCS 1%"],
-                  ].map(([field, label]) => (
-                    <div key={field} className="mb-3">
-                      <label className="mb-1 block text-xs font-medium text-slate-500">
-                        {label}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={(costingForm.taxAmount as any)[field]}
-                        onChange={(event) =>
-                          setCostingAmount(
-                            "taxAmount",
-                            field,
-                            event.target.value,
-                          )
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  ))}
-                  <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-                    Total: {taxTotal.toLocaleString("en-IN")}
+
+                  {(
+                    [
+                      ["carGst", "Car GST"],
+                      ["bureauVeritasGst", "Bureau Veritas GST"],
+                      ["shippingGst", "Shipping GST"],
+                      ["tcs", "TCS 1%"],
+                      ["insuranceGst", "Insurance GST"],
+                    ] as [string, string][]
+                  ).map(([field, label]) => {
+                    const isAutoField = field === "carGst";
+                    return (
+                      <div key={field} className="mb-3">
+                        <label className="mb-1 block text-xs font-medium text-slate-500">
+                          {label}
+                          {isAutoField && toAmount(costingForm.exShowroomPrice) > 0 && (
+                            <span className="ml-1 text-[10px] text-blue-400">(auto)</span>
+                          )}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={(costingForm.taxAmount as any)[field]}
+                          onChange={(e) =>
+                            setCostingAmount("taxAmount", field, e.target.value)
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {/* Total row */}
+                  <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
+                    Total: ₹{taxTotal.toLocaleString("en-IN")}
+                  </div>
+                  {/* Total USD row */}
+                  <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+                    Total USD @ {USD_RATE}: {taxTotalUsd}
                   </div>
                 </div>
               </div>
 
+              {/* ── Grand Total + Save ── */}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-900">
-                  Grand Total: {grandTotal.toLocaleString("en-IN")}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-blue-900">
+                    Grand Total: ₹{grandTotal.toLocaleString("en-IN")}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Total USD @ {USD_RATE}: {grandTotalUsd}
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={handleSaveQuotationDetails}
@@ -524,6 +727,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
             </div>
           )}
 
+          {/* ── Approval Actions ── */}
           {booking.quotationFile &&
             booking.status === "quotation_uploaded" && !isSourcingTeam && (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -569,4 +773,3 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 };
 
 export default QuotationModal;
-
