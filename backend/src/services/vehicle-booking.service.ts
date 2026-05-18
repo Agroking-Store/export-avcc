@@ -69,7 +69,10 @@ export const getBookingsByOrderId = async (orderId: string) => {
     );
   }
 
-  return await VehicleBooking.find({ orderId }).sort({ vehicleIndex: 1 });
+  return await VehicleBooking.find({ orderId })
+    .populate("vehicleId")
+    .populate("orderId")
+    .sort({ vehicleIndex: 1 });
 };
 
 /**
@@ -106,7 +109,9 @@ export const getOrCreateBooking = async (
     await booking.save();
   }
 
-  return booking;
+  return await VehicleBooking.findById(booking._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**
@@ -147,7 +152,9 @@ export const uploadQuotation = async (bookingId: string, filePath: string) => {
     }
   }
 
-  return updatedBooking;
+  return await VehicleBooking.findById(updatedBooking._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 const toCleanNumber = (value: unknown) => {
@@ -225,7 +232,10 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
   booking.status = "quotation_uploaded";
   booking.rejectionReason = "";
 
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**
@@ -244,7 +254,10 @@ export const approveBooking = async (bookingId: string) => {
   }
 
   booking.status = "approved";
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**
@@ -264,7 +277,10 @@ export const rejectBooking = async (bookingId: string, reason: string) => {
 
   booking.status = "rejected";
   booking.rejectionReason = reason.trim();
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**
@@ -284,7 +300,10 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
 
   booking.paymentAmount = amount;
   booking.status = "payment_done";
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 export const updateChassisEngine = async (
@@ -359,7 +378,10 @@ export const updateChassisEngine = async (
     booking.status = "chassis_received";
   }
 
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**
@@ -379,7 +401,10 @@ export const updateBookingStatus = async (
   }
 
   booking.status = status;
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 export const assignDealerToBooking = async (
@@ -404,7 +429,10 @@ export const assignDealerToBooking = async (
     gstNumber: dealer.get("gstNumber") || "",
   };
 
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 export const assignClientToBooking = async (
@@ -428,14 +456,19 @@ export const assignClientToBooking = async (
     clientCode: client.clientCode,
   };
 
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**
  * Get a single booking by ID
  */
 export const getBookingById = async (bookingId: string) => {
-  const booking = await VehicleBooking.findById(bookingId);
+  const booking = await VehicleBooking.findById(bookingId)
+    .populate("vehicleId")
+    .populate("orderId");
   if (!booking) throw new Error("Booking not found");
   return booking;
 };
@@ -476,7 +509,10 @@ export const uploadBookingDocuments = async (
   booking.isBVUploaded = isBVComplete;
   booking.isDealerInvoiceUploaded = isDealerInvoiceComplete;
 
-  return await booking.save();
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
 };
 
 /**

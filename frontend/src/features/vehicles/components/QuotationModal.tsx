@@ -15,6 +15,7 @@ import {
   VehicleBookingItem,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
+import { vehicleManagementApi } from "../vehicleManagementApi";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
 
@@ -94,9 +95,8 @@ const deriveFromExShowroom = (
   gstRatePct: number,
 ): { basicValue: number; carGst: number } => {
   if (!exShowroom || !gstRatePct) return { basicValue: 0, carGst: 0 };
-  // Ex-showroom = basicValue * (1 + gstRate/100)
-  const basicValue = Math.round(exShowroom / (1 + gstRatePct / 100));
-  const carGst = exShowroom - basicValue;
+  const carGst = Math.round(exShowroom * (gstRatePct / 100));
+  const basicValue = Math.round(exShowroom - carGst);
   return { basicValue, carGst };
 };
 
@@ -111,19 +111,39 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
   const { isSourcingTeam } = useAuth();
 
   useEffect(() => {
-    if (booking) {
+    const loadDetails = async () => {
+      if (!booking) return;
+
       const details = booking.quotationDetails;
       // Fetch vehicleSnapshot from populated orderId
       const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
       // Fetch igstRate from the vehicle list item snapshot (populated vehicleId or vehicleSnapshot)
       const vehicleItem = (booking as any).vehicleId;
+      
       // GST rate (%) should come from vehicle list item (igstRate)
-      const igstRate =
+      let igstRate =
         details?.gstRate ??
         vehicleItem?.igstRate ??
         vehicleSnapshot?.igstRate ??
         0;
 
+      // Robust fallback: if we only have IDs as strings, fetch the vehicle list item directly!
+      if (!igstRate) {
+        try {
+          const vehicleIdStr =
+            typeof booking.vehicleId === "object"
+              ? (booking.vehicleId as any)._id
+              : booking.vehicleId;
+          if (vehicleIdStr) {
+            const vehicle = await vehicleManagementApi.getVehicleById(vehicleIdStr);
+            if (vehicle?.igstRate) {
+              igstRate = vehicle.igstRate;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch vehicle GST fallback:", e);
+        }
+      }
 
       setRejectReason(booking.rejectionReason || "");
       setSelectedFile(null);
@@ -136,18 +156,30 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
           ? deriveFromExShowroom(savedExShowroom, savedGstRate)
           : { basicValue: 0, carGst: 0 };
 
+      // Fallback for color/brand/model if snapshot is missing
+      let fetchedVehicle: any = null;
+      if (!vehicleSnapshot && typeof booking.vehicleId === "string") {
+        try {
+          fetchedVehicle = await vehicleManagementApi.getVehicleById(booking.vehicleId);
+        } catch {}
+      }
+
+      const brandName = details?.brand || vehicleSnapshot?.brandName || fetchedVehicle?.brandName || "";
+      const modelName = details?.carModelName || 
+        (vehicleSnapshot
+          ? [vehicleSnapshot.modelName, vehicleSnapshot.variant].filter(Boolean).join(" ")
+          : fetchedVehicle
+            ? [fetchedVehicle.modelName, fetchedVehicle.variant].filter(Boolean).join(" ")
+            : "");
+      const color = details?.carColour || vehicleSnapshot?.color || fetchedVehicle?.color || "";
+
       setCostingForm({
         dealershipName:
           details?.dealershipName || booking.assignedDealerSnapshot?.name || "",
-        brand: details?.brand || vehicleSnapshot?.brandName || "",
-        carModelName:
-          details?.carModelName ||
-          [vehicleSnapshot?.modelName, vehicleSnapshot?.variant]
-            .filter(Boolean)
-            .join(" "),
+        brand: brandName,
+        carModelName: modelName,
         // carColour – prefer saved value, fallback to vehicleSnapshot colour
-        carColour:
-          details?.carColour || vehicleSnapshot?.color || "",
+        carColour: color,
         exShowroomPrice: formatAmountForInput(details?.exShowroomPrice),
         gstRate: String(savedGstRate || ""),
         netCost: {
@@ -174,7 +206,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
           total: formatAmountForInput(details?.taxAmount?.total),
         },
       });
-    }
+    };
+
+    loadDetails();
   }, [booking]);
 
   if (!isOpen || !booking) return null;
@@ -551,7 +585,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   />
                   {toAmount(costingForm.exShowroomPrice) > 0 && toAmount(costingForm.gstRate) > 0 && (
                     <p className="mt-1 text-[10px] text-slate-400">
-                      Basic Value auto-calculated from ex-showroom ÷ (1 + {costingForm.gstRate}%)
+                      Basic Value auto-calculated as Ex-Showroom - Car GST ({costingForm.gstRate}%)
                     </p>
                   )}
                 </div>
