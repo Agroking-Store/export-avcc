@@ -44,6 +44,7 @@ type CostingForm = {
   exShowroomPrice: string;
   /** GST rate (%) – read-only, fetched from vehicle list item */
   gstRate: string;
+  bookingAmount: string;
   netCost: Record<keyof QuotationDetailsPayload["netCost"], string>;
   taxAmount: Record<keyof QuotationDetailsPayload["taxAmount"], string>;
 };
@@ -55,6 +56,7 @@ const emptyCostingForm = (): CostingForm => ({
   carColour: "",
   exShowroomPrice: "",
   gstRate: "",
+  bookingAmount: "",
   netCost: {
     basicValue: "",
     handlingCharges: "",
@@ -182,6 +184,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         carColour: color,
         exShowroomPrice: formatAmountForInput(details?.exShowroomPrice),
         gstRate: String(savedGstRate || ""),
+        bookingAmount: formatAmountForInput(booking.bookingAmount),
         netCost: {
           basicValue: formatAmountForInput(
             details?.netCost?.basicValue || (savedExShowroom ? derivedBasic : undefined),
@@ -215,18 +218,15 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
   // ── upload handler ──────────────────────────────────────────────────────────
 
-  const handleQuotationUpload = async () => {
-    if (!booking) return;
-    if (!selectedFile) {
-      toast.error("Please choose a quotation file");
-      return;
-    }
+  const handleFileChangeAndUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     try {
       setQuotationSaving(true);
       const updated = await vehicleBookingApi.uploadQuotation(
         booking._id,
-        selectedFile,
+        file,
       );
       onSync(updated);
       toast.success(
@@ -234,11 +234,11 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
           ? "Quotation replaced successfully"
           : "Quotation uploaded successfully. Please save costing details.",
       );
-      setSelectedFile(null);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to upload quotation");
     } finally {
       setQuotationSaving(false);
+      event.target.value = "";
     }
   };
 
@@ -335,6 +335,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         carColour: costingForm.carColour,
         exShowroomPrice: toAmount(costingForm.exShowroomPrice),
         gstRate: toAmount(costingForm.gstRate),
+        bookingAmount: toAmount(costingForm.bookingAmount),
         netCost: {
           ...costingForm.netCost,
           total: netTotal,
@@ -432,76 +433,44 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         </div>
 
         <div className="space-y-5">
-          {/* ── Upload zone ── */}
-          <div className="rounded-[24px] border border-dashed border-blue-300 bg-blue-50/70 p-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-3 rounded-full bg-white p-3 text-blue-700 shadow-sm">
-                <Upload size={20} />
-              </div>
-              <p className="text-base font-semibold text-slate-900">
-                Upload quotation file
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                PDF, JPG, PNG, WebP supported. Replacing a file removes the old one automatically.
-              </p>
-
+          {/* ── Consolidated Quotation File Action Row ── */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+            <div className="flex items-center gap-2">
+              <FileText size={18} className="text-blue-600" />
+              <span className="text-sm font-semibold text-slate-800">
+                {booking.quotationFile ? "Quotation File Uploaded" : "No Quotation File Uploaded"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {booking.quotationFile && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(getQuotationUrl(booking.quotationFile), "_blank")
+                  }
+                  className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  <Eye size={14} />
+                  View Quotation
+                </button>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,image/*"
-                onChange={(event) =>
-                  setSelectedFile(event.target.files?.[0] || null)
-                }
+                onChange={handleFileChangeAndUpload}
                 className="hidden"
               />
-
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+                disabled={quotationSaving}
+                className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50"
               >
-                <Upload size={16} />
-                Choose File
-              </button>
-
-              <p className="mt-3 text-sm font-medium text-slate-700">
-                {selectedFile?.name ||
-                  (booking.quotationFile
-                    ? "Existing quotation already uploaded"
-                    : "No file selected")}
-              </p>
-            </div>
-          </div>
-
-          {/* ── View existing quotation ── */}
-          {booking.quotationFile && (
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-              <FileText size={18} className="text-blue-600" />
-              <p className="text-sm font-medium text-blue-900">
-                Existing quotation available for this unit.
-              </p>
-              <button
-                onClick={() =>
-                  window.open(getQuotationUrl(booking.quotationFile), "_blank")
-                }
-                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-              >
-                <Eye size={14} />
-                View File
+                <Upload size={14} />
+                {booking.quotationFile ? "Replace File" : "Upload File"}
               </button>
             </div>
-          )}
-
-          {/* ── Upload / Replace action ── */}
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={handleQuotationUpload}
-              disabled={quotationSaving || !selectedFile}
-              className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Upload size={16} />
-              {booking.quotationFile ? "Replace File" : "Upload File"}
-            </button>
           </div>
 
           {/* ── Costing Sheet Details ── */}
@@ -586,6 +555,26 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   {toAmount(costingForm.exShowroomPrice) > 0 && toAmount(costingForm.gstRate) > 0 && (
                     <p className="mt-1 text-[10px] text-slate-400">
                       Basic Value auto-calculated as Ex-Showroom - Car GST ({costingForm.gstRate}%)
+                    </p>
+                  )}
+                </div>
+
+                {/* Booking Amount */}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    Booking Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={costingForm.bookingAmount}
+                    onChange={(e) => setCostingField("bookingAmount", e.target.value)}
+                    placeholder="e.g. 50000"
+                    className={inputCls}
+                  />
+                  {toAmount(costingForm.netCost.basicValue) > 0 && toAmount(costingForm.bookingAmount) > 0 && (
+                    <p className="mt-1 text-[10px] text-emerald-600 font-medium">
+                      Remaining to pay: ₹{(toAmount(costingForm.netCost.basicValue) - toAmount(costingForm.bookingAmount)).toLocaleString("en-IN")}
                     </p>
                   )}
                 </div>

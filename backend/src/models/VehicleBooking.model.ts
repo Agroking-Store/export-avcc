@@ -61,8 +61,15 @@ export interface IVehicleBooking extends Document {
     savedAt?: Date;
   };
   rejectionReason?: string;
+  bookingAmount?: number;
   paymentAmount?: number;
   paymentReference?: string;
+  payments: Array<{
+    amount: number;
+    date: Date;
+    reference?: string;
+    remarks?: string;
+  }>;
   engineNumber?: string;
   chassisNumber?: string;
   deliveryDate?: Date;
@@ -180,6 +187,10 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       default: "",
     },
+    bookingAmount: {
+      type: Number,
+      default: 0,
+    },
     paymentAmount: {
       type: Number,
       default: 0,
@@ -187,6 +198,17 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
     paymentReference: {
       type: String,
       default: "",
+    },
+    payments: {
+      type: [
+        {
+          amount: { type: Number, required: true },
+          date: { type: Date, default: Date.now },
+          reference: { type: String, default: "" },
+          remarks: { type: String, default: "" },
+        },
+      ],
+      default: [],
     },
     engineNumber: {
       type: String,

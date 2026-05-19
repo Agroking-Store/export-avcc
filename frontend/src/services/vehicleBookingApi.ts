@@ -62,7 +62,9 @@ export interface VehicleBookingItem {
     savedAt?: string;
   };
   rejectionReason?: string;
+  bookingAmount?: number;
   paymentAmount?: number;
+  payments?: Array<{ amount: number; date: string; reference?: string; remarks?: string }>;
   paymentReference?: string;
   engineNumber?: string;
   chassisNumber?: string;
@@ -121,6 +123,7 @@ export interface QuotationDetailsPayload {
     total?: number | string;
   };
   grandTotal?: number | string;
+  bookingAmount?: number;
 }
 
 export const vehicleBookingApi = {
@@ -238,5 +241,13 @@ export const vehicleBookingApi = {
       { params: { hours } },
     );
     return response.data as VehicleBookingItem[];
+  },
+
+  addPayment: async (
+    bookingId: string,
+    payload: { amount: number; date?: string; reference?: string; remarks?: string }
+  ): Promise<VehicleBookingItem> => {
+    const response = await api.post(`/vehicle-bookings/${bookingId}/payments`, payload);
+    return response.data as VehicleBookingItem;
   },
 };

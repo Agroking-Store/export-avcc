@@ -587,7 +587,7 @@ const VehicleOrdersList = () => {
         </div>
 
         <div className="px-8 pb-8">
-          <div className="rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="rounded-2xl border border-slate-200 overflow-x-auto">
             <table className="min-w-full border-collapse bg-white text-center">
               <colgroup>
                 {/* Vehicle ID */}
@@ -690,10 +690,10 @@ const VehicleOrdersList = () => {
                               </span>
                             )}
                           </div>
-                          <p className="truncate font-semibold text-slate-900">
+                          <p className="truncate max-w-[180px] font-semibold text-slate-900" title={`${brand} ${model}`}>
                             {brand} {model}
                           </p>
-                          <p className="truncate text-sm text-slate-500">
+                          <p className="truncate max-w-[180px] text-sm text-slate-500" title={variant}>
                             {variant}
                           </p>
                         </td>

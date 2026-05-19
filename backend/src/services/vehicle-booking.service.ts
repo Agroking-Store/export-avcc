@@ -199,6 +199,8 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
   const netCost = data?.netCost || {};
   const taxAmount = data?.taxAmount || {};
 
+  booking.bookingAmount = data.bookingAmount !== undefined ? toCleanNumber(data.bookingAmount) : booking.bookingAmount;
+
   booking.quotationDetails = {
     dealershipName: toCleanString(data.dealershipName),
     brand: toCleanString(data.brand),
@@ -300,6 +302,53 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
 
   booking.paymentAmount = amount;
   booking.status = "payment_done";
+  
+  // Push to payments array to track in the ledger
+  booking.payments = booking.payments || [];
+  booking.payments.push({
+    amount,
+    date: new Date(),
+    reference: booking.paymentReference || "Initial Booking Payment",
+    remarks: "Booking Amount Payment",
+  });
+
+  const saved = await booking.save();
+  return await VehicleBooking.findById(saved._id)
+    .populate("vehicleId")
+    .populate("orderId");
+};
+
+/**
+ * Record a generic payment for a booking
+ */
+export const addPayment = async (
+  bookingId: string,
+  paymentData: { amount: number; date?: string | Date; reference?: string; remarks?: string }
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const amount = Number(paymentData.amount);
+  if (!amount || amount <= 0) {
+    throw new Error("Payment amount must be greater than zero");
+  }
+
+  booking.payments = booking.payments || [];
+  booking.payments.push({
+    amount,
+    date: paymentData.date ? new Date(paymentData.date) : new Date(),
+    reference: paymentData.reference ? String(paymentData.reference).trim() : "",
+    remarks: paymentData.remarks ? String(paymentData.remarks).trim() : "",
+  });
+
+  // Increment aggregate paymentAmount
+  booking.paymentAmount = (booking.paymentAmount || 0) + amount;
+
+  // Auto-advance status if booking is approved and this is the first payment
+  if (booking.status === "approved") {
+    booking.status = "payment_done";
+  }
+
   const saved = await booking.save();
   return await VehicleBooking.findById(saved._id)
     .populate("vehicleId")
