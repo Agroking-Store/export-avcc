@@ -932,7 +932,7 @@ const Dashboard: React.FC = () => {
             { title: "Counterparties",    desc: "Companies, dealers, governance",     icon: <Landmark size={20} />,   dest: "/companies/dashboard",        g: ["#0891b2","#0e7490"] },
           ].map((tile) => (
             <button key={tile.title} onClick={() => navigate(tile.dest)}
-              className="group relative overflow-hidden rounded-2xl bg-white p-5 text-left transition-all duration-300 hover:-translate-y-2 active:scale-[0.98]"
+              className="cursor-pointer group relative overflow-hidden rounded-2xl bg-white p-5 text-left transition-all duration-300 hover:-translate-y-2 active:scale-[0.98]"
               style={{ border: "1px solid rgba(147,197,253,0.45)", boxShadow: "0 2px 16px rgba(37,99,235,0.07)" }}
               onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 20px 56px rgba(37,99,235,0.18)")}
               onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 2px 16px rgba(37,99,235,0.07)")}>
