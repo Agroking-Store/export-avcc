@@ -990,15 +990,18 @@ const PIDetails = () => {
                   <p className="text-sm text-zinc-400 italic">Not specified</p>
                 )}
               </div>
+              
               <div className="flex-1 sm:text-right">
                 <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
                   Billed To
                 </h3>
                 <div>
+                  {/*
                   <p className="font-medium text-zinc-900 dark:text-white">
                     {(pi.client_id as any)?.name}
                   </p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  */}
+                  <p className="text-sm  font-medium text-black-900 dark:text-zinc-400">
                     {(pi.client_id as any)?.companyName}
                   </p>
                   {formatAddress(
