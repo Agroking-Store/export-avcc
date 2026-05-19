@@ -106,7 +106,7 @@ const PI_FLOW: Array<{ status: PIStatus; label: string; color: string }> = [
   { status: "draft",            label: "Draft",            color: "#93c5fd" },
   { status: "pending_approval", label: "Pending Approval", color: "#fbbf24" },
   { status: "approved",         label: "Approved",         color: "#34d399" },
-  { status: "sent_to_buyer",    label: "Sent to Buyer",    color: "#60a5fa" },
+  { status: "sent_to_buyer",    label: "Sent to Client",    color: "#60a5fa" },
   { status: "lc_received",      label: "LC Received",      color: "#a78bfa" },
   { status: "expired",          label: "Expired",          color: "#f87171" },
 ];
