@@ -45,9 +45,9 @@ type PIStatus =
   | "draft" | "pending_approval" | "approved"
   | "sent_to_buyer" | "lc_received" | "expired";
 
-interface ClientItem   { _id: string; name: string; isActive?: boolean; address?: { country?: string } }
-interface CompanyItem  { _id: string; name: string; isActive?: boolean; address?: { country?: string } }
-interface DealerItem   { _id: string; name: string; gstNumber?: string }
+interface ClientItem { _id: string; name: string; isActive?: boolean; address?: { country?: string } }
+interface CompanyItem { _id: string; name: string; isActive?: boolean; address?: { country?: string } }
+interface DealerItem { _id: string; name: string; gstNumber?: string }
 interface ExportOrderItem { _id: string; orderId: string; date?: string; createdAt?: string; status: string; vehicles?: Array<{ quantity?: number }> }
 interface VehicleBookingItem {
   _id: string; status: VehicleBookingStatus;
@@ -93,22 +93,22 @@ interface ClientDashboardProfile {
 const EMPTY: DashboardCollections = { clients: [], companies: [], dealers: [], vehicleBookings: [], proformaInvoices: [], users: [] };
 
 const BOOKING_FLOW: Array<{ status: VehicleBookingStatus; label: string; color: string }> = [
-  { status: "pending",            label: "Quotation Pending", color: "#93c5fd" },
+  { status: "pending", label: "Quotation Pending", color: "#93c5fd" },
   { status: "quotation_details_pending", label: "Costing Pending", color: "#60a5fa" },
   { status: "quotation_uploaded", label: "Waiting for Approval", color: "#fbbf24" },
-  { status: "approved",           label: "Approved",          color: "#34d399" },
-  { status: "rejected",           label: "Rejected",          color: "#f87171" },
-  { status: "payment_done",       label: "Awaiting Numbers",  color: "#60a5fa" },
-  { status: "chassis_received",   label: "In Transit",        color: "#a78bfa" },
-  { status: "delivered",          label: "Delivered",         color: "#4ade80" },
+  { status: "approved", label: "Approved", color: "#34d399" },
+  { status: "rejected", label: "Rejected", color: "#f87171" },
+  { status: "payment_done", label: "Awaiting Numbers", color: "#60a5fa" },
+  { status: "chassis_received", label: "In Transit", color: "#a78bfa" },
+  { status: "delivered", label: "Delivered", color: "#4ade80" },
 ];
 const PI_FLOW: Array<{ status: PIStatus; label: string; color: string }> = [
-  { status: "draft",            label: "Draft",            color: "#93c5fd" },
+  { status: "draft", label: "Draft", color: "#93c5fd" },
   { status: "pending_approval", label: "Pending Approval", color: "#fbbf24" },
-  { status: "approved",         label: "Approved",         color: "#34d399" },
-  { status: "sent_to_buyer",    label: "Sent to Client",    color: "#60a5fa" },
-  { status: "lc_received",      label: "LC Received",      color: "#a78bfa" },
-  { status: "expired",          label: "Expired",          color: "#f87171" },
+  { status: "approved", label: "Approved", color: "#34d399" },
+  { status: "sent_to_buyer", label: "Sent to Client", color: "#60a5fa" },
+  { status: "lc_received", label: "LC Received", color: "#a78bfa" },
+  { status: "expired", label: "Expired", color: "#f87171" },
 ];
 
 const MONTH_FMT = new Intl.DateTimeFormat("en-US", { month: "short" });
@@ -229,7 +229,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin, isClient, user } = useAuth();
-  const [data, setData]     = useState<DashboardCollections>(EMPTY);
+  const [data, setData] = useState<DashboardCollections>(EMPTY);
   const [clientProfile, setClientProfile] = useState<ClientDashboardProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [partialError, setPartialError] = useState<string | null>(null);
@@ -260,10 +260,10 @@ const Dashboard: React.FC = () => {
       }
 
       const reqs = [
-        { key: "clients",          req: api.get("/clients",           { params: { page: 1, limit: 2000 } }) },
-        { key: "companies",        req: api.get("/companies",         { params: { page: 1, limit: 2000, status: "all" } }) },
-        { key: "dealers",          req: api.get("/dealers",           { params: { page: 1, limit: 2000 } }) },
-        { key: "vehicleBookings",  req: api.get("/vehicle-bookings",  { params: { page: 1, limit: 2000 } }) },
+        { key: "clients", req: api.get("/clients", { params: { page: 1, limit: 2000 } }) },
+        { key: "companies", req: api.get("/companies", { params: { page: 1, limit: 2000, status: "all" } }) },
+        { key: "dealers", req: api.get("/dealers", { params: { page: 1, limit: 2000 } }) },
+        { key: "vehicleBookings", req: api.get("/vehicle-bookings", { params: { page: 1, limit: 2000 } }) },
         { key: "proformaInvoices", req: api.get("/proforma-invoices", { params: { page: 1, limit: 2000, status: "all" } }) },
         ...(isAdmin ? [{ key: "users", req: api.get("/users") }] : []),
       ];
@@ -321,18 +321,18 @@ const Dashboard: React.FC = () => {
 
   const m = useMemo(() => {
     const activePiStatuses: PIStatus[] = ["pending_approval", "approved", "sent_to_buyer"];
-    const delivered        = data.vehicleBookings.filter((b) => b.status === "delivered").length;
-    const pipelineValue    = data.proformaInvoices.filter((p) => activePiStatuses.includes(p.status)).reduce((t, p) => t + Number(p.totalAmount || 0), 0);
-    const awaitingLc       = data.proformaInvoices.filter((p) => p.status === "sent_to_buyer" || p.status === "approved").length;
-    const expiringPi       = data.proformaInvoices.filter((p) => { const d = daysUntil(p.validityDate); return d !== null && d >= 0 && d <= 7 && !["lc_received","expired"].includes(p.status); }).length;
-    const awaitingNumbers  = data.vehicleBookings.filter((b) => b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber)).length;
-    const missingDealer    = data.vehicleBookings.filter((b) => !b.assignedDealerId).length;
-    const missingClient    = data.vehicleBookings.filter((b) => !b.assignedClientId).length;
-    const docBacklog       = data.vehicleBookings.filter((b) => (b.status === "chassis_received" || b.status === "delivered") && (!b.isCRTMUploaded || !b.isBVUploaded || !b.isDealerInvoiceUploaded)).length;
-    const countries        = new Set([...data.clients.map((c) => c.address?.country), ...data.companies.map((c) => c.address?.country)].filter(Boolean)).size;
+    const delivered = data.vehicleBookings.filter((b) => b.status === "delivered").length;
+    const pipelineValue = data.proformaInvoices.filter((p) => activePiStatuses.includes(p.status)).reduce((t, p) => t + Number(p.totalAmount || 0), 0);
+    const awaitingLc = data.proformaInvoices.filter((p) => p.status === "sent_to_buyer" || p.status === "approved").length;
+    const expiringPi = data.proformaInvoices.filter((p) => { const d = daysUntil(p.validityDate); return d !== null && d >= 0 && d <= 7 && !["lc_received", "expired"].includes(p.status); }).length;
+    const awaitingNumbers = data.vehicleBookings.filter((b) => b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber)).length;
+    const missingDealer = data.vehicleBookings.filter((b) => !b.assignedDealerId).length;
+    const missingClient = data.vehicleBookings.filter((b) => !b.assignedClientId).length;
+    const docBacklog = data.vehicleBookings.filter((b) => (b.status === "chassis_received" || b.status === "delivered") && (!b.isCRTMUploaded || !b.isBVUploaded || !b.isDealerInvoiceUploaded)).length;
+    const countries = new Set([...data.clients.map((c) => c.address?.country), ...data.companies.map((c) => c.address?.country)].filter(Boolean)).size;
     const deliveryCompletion = data.vehicleBookings.length > 0 ? Math.round((delivered / data.vehicleBookings.length) * 100) : 0;
-    const lcCompletion     = data.proformaInvoices.length > 0 ? Math.round((data.proformaInvoices.filter((p) => p.status === "lc_received").length / data.proformaInvoices.length) * 100) : 0;
-    const inFlight         = data.vehicleBookings.filter((b) => ["approved", "payment_done", "chassis_received"].includes(b.status)).length;
+    const lcCompletion = data.proformaInvoices.length > 0 ? Math.round((data.proformaInvoices.filter((p) => p.status === "lc_received").length / data.proformaInvoices.length) * 100) : 0;
+    const inFlight = data.vehicleBookings.filter((b) => ["approved", "payment_done", "chassis_received"].includes(b.status)).length;
     return { delivered, pipelineValue, awaitingLc, expiringPi, awaitingNumbers, missingDealer, missingClient, docBacklog, countries, deliveryCompletion, lcCompletion, inFlight };
   }, [data]);
 
@@ -359,19 +359,19 @@ const Dashboard: React.FC = () => {
     return months;
   }, [data, momentumMonths]);
 
-  const recentPIs      = useMemo(() => [...data.proformaInvoices].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 5), [data.proformaInvoices]);
+  const recentPIs = useMemo(() => [...data.proformaInvoices].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 5), [data.proformaInvoices]);
   const recentBookings = useMemo(() => [...data.vehicleBookings].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()).slice(0, 5), [data.vehicleBookings]);
 
-  const bookingPieData  = useMemo(() => BOOKING_FLOW.map((f) => ({ name: f.label, value: bookingCounts[f.status] || 0, color: f.color })).filter((d) => d.value > 0), [bookingCounts]);
-  const piPieData       = useMemo(() => PI_FLOW.map((f) => ({ name: f.label, value: piCounts[f.status] || 0, color: f.color })).filter((d) => d.value > 0), [piCounts]);
+  const bookingPieData = useMemo(() => BOOKING_FLOW.map((f) => ({ name: f.label, value: bookingCounts[f.status] || 0, color: f.color })).filter((d) => d.value > 0), [bookingCounts]);
+  const piPieData = useMemo(() => PI_FLOW.map((f) => ({ name: f.label, value: piCounts[f.status] || 0, color: f.color })).filter((d) => d.value > 0), [piCounts]);
 
   const watchlist = useMemo(() => [
-    { label: "Bookings missing dealer",           value: m.missingDealer,   urgent: m.missingDealer > 0,   dest: "/vehicles/orders",       icon: <Store size={13} /> },
-    { label: "Bookings missing client",           value: m.missingClient,   urgent: m.missingClient > 0,   dest: "/vehicles/orders",       icon: <Users size={13} /> },
-    { label: "Awaiting chassis / engine numbers", value: m.awaitingNumbers, urgent: m.awaitingNumbers > 0, dest: "/vehicles/orders",       icon: <Gauge size={13} /> },
-    { label: "PIs expiring within 7 days",        value: m.expiringPi,      urgent: m.expiringPi > 0,      dest: "/proforma-invoice/list", icon: <Clock3 size={13} /> },
-    { label: "Documentation backlog",             value: m.docBacklog,      urgent: m.docBacklog > 0,      dest: "/vehicles/orders",       icon: <FileText size={13} /> },
-    { label: "PIs awaiting LC from buyer",        value: m.awaitingLc,      urgent: m.awaitingLc > 0,      dest: "/proforma-invoice/list", icon: <FileCheck2 size={13} /> },
+    { label: "Bookings missing dealer", value: m.missingDealer, urgent: m.missingDealer > 0, dest: "/vehicles/orders", icon: <Store size={13} /> },
+    { label: "Bookings missing client", value: m.missingClient, urgent: m.missingClient > 0, dest: "/vehicles/orders", icon: <Users size={13} /> },
+    { label: "Awaiting chassis / engine numbers", value: m.awaitingNumbers, urgent: m.awaitingNumbers > 0, dest: "/vehicles/orders", icon: <Gauge size={13} /> },
+    { label: "PIs expiring within 7 days", value: m.expiringPi, urgent: m.expiringPi > 0, dest: "/proforma-invoice/list", icon: <Clock3 size={13} /> },
+    { label: "Documentation backlog", value: m.docBacklog, urgent: m.docBacklog > 0, dest: "/vehicles/orders", icon: <FileText size={13} /> },
+    { label: "PIs awaiting LC from buyer", value: m.awaitingLc, urgent: m.awaitingLc > 0, dest: "/proforma-invoice/list", icon: <FileCheck2 size={13} /> },
   ], [m]);
 
   const totalAlerts = watchlist.filter((w) => w.urgent).reduce((t, w) => t + w.value, 0);
@@ -657,13 +657,13 @@ const Dashboard: React.FC = () => {
         ════════════════════════════════════════ */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {[
-            { label: "Business Network",  num: data.clients.length + data.companies.length + data.dealers.length, detail: `${data.clients.length} clients · ${data.companies.length} cos · ${data.dealers.length} dealers`, icon: <Building2 size={18} />, dest: "/clients/dashboard",          g: ["#2563eb","#1d4ed8"], light: "#eff6ff" },
-            { label: "Vehicle Bookings",  num: data.vehicleBookings.length,  detail: `${m.inFlight} in active sourcing & transit`,    icon: <CarFront size={18} />,   dest: "/vehicles/dashboard",         g: ["#6366f1","#4f46e5"], light: "#eef2ff" },
-            { label: "Proforma Invoices", num: data.proformaInvoices.length, detail: `${m.awaitingLc} PIs awaiting buyer LC`,         icon: <FileCheck2 size={18} />, dest: "/proforma-invoice/dashboard", g: ["#0284c7","#0369a1"], light: "#e0f2fe" },
-            
+            { label: "Business Network", num: data.clients.length + data.companies.length + data.dealers.length, detail: `${data.clients.length} clients · ${data.companies.length} cos · ${data.dealers.length} dealers`, icon: <Building2 size={18} />, dest: "/clients/dashboard", g: ["#2563eb", "#1d4ed8"], light: "#eff6ff" },
+            { label: "Vehicle Bookings", num: data.vehicleBookings.length, detail: `${m.inFlight} in active sourcing & transit`, icon: <CarFront size={18} />, dest: "/vehicles/dashboard", g: ["#6366f1", "#4f46e5"], light: "#eef2ff" },
+            { label: "Proforma Invoices", num: data.proformaInvoices.length, detail: `${m.awaitingLc} PIs awaiting buyer LC`, icon: <FileCheck2 size={18} />, dest: "/proforma-invoice/dashboard", g: ["#0284c7", "#0369a1"], light: "#e0f2fe" },
+
           ].map((card) => (
             <button key={card.label} onClick={() => navigate(card.dest)}
-              className="group text-left rounded-2xl bg-white p-5 transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98]"
+              className="cursor-pointer group text-left rounded-2xl bg-white p-5 transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98]"
               style={{ border: "1px solid rgba(147,197,253,0.45)", boxShadow: "0 2px 16px rgba(37,99,235,0.07)" }}
               onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 16px 48px rgba(37,99,235,0.16)")}
               onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 2px 16px rgba(37,99,235,0.07)")}>
@@ -692,7 +692,7 @@ const Dashboard: React.FC = () => {
           <FlowCard
             title="Vehicle Booking Flow"
             subtitle="Unit-wise execution pipeline"
-            accentColors={["#2563eb","#6366f1"]}
+            accentColors={["#2563eb", "#6366f1"]}
             rows={BOOKING_FLOW.map((f) => ({ label: f.label, value: bookingCounts[f.status] || 0, total: data.vehicleBookings.length, color: f.color }))}
             action={{ label: "View all", dest: "/vehicles/orders" }}
             navigate={navigate}
@@ -702,7 +702,7 @@ const Dashboard: React.FC = () => {
           <FlowCard
             title="PI & Payment Flow"
             subtitle="Documentation pipeline status"
-            accentColors={["#0ea5e9","#2563eb"]}
+            accentColors={["#0ea5e9", "#2563eb"]}
             rows={PI_FLOW.map((f) => ({ label: f.label, value: piCounts[f.status] || 0, total: data.proformaInvoices.length, color: f.color }))}
             action={{ label: "View all", dest: "/proforma-invoice/list" }}
             navigate={navigate}
@@ -803,11 +803,11 @@ const Dashboard: React.FC = () => {
                 <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gradInv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.18} />
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.18} />
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gradDel" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#10b981" stopOpacity={0.18} />
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
@@ -818,7 +818,7 @@ const Dashboard: React.FC = () => {
                     contentStyle={{ borderRadius: 14, border: "1px solid #bfdbfe", boxShadow: "0 12px 40px rgba(37,99,235,0.12)", fontSize: 12, fontWeight: 600, background: "#fff" }}
                     cursor={{ stroke: "#93c5fd", strokeWidth: 1, strokeDasharray: "4 4" }}
                   />
-                  <Area type="monotone" dataKey="invoices"  stroke="#3b82f6" strokeWidth={2.5} fill="url(#gradInv)" dot={{ r: 3.5, fill: "#3b82f6", strokeWidth: 0 }} activeDot={{ r: 6, fill: "#2563eb" }} name="Invoices" />
+                  <Area type="monotone" dataKey="invoices" stroke="#3b82f6" strokeWidth={2.5} fill="url(#gradInv)" dot={{ r: 3.5, fill: "#3b82f6", strokeWidth: 0 }} activeDot={{ r: 6, fill: "#2563eb" }} name="Invoices" />
                   <Area type="monotone" dataKey="deliveries" stroke="#10b981" strokeWidth={2.5} fill="url(#gradDel)" dot={{ r: 3.5, fill: "#10b981", strokeWidth: 0 }} activeDot={{ r: 6, fill: "#059669" }} name="Delivered" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -832,10 +832,10 @@ const Dashboard: React.FC = () => {
             <h2 className="text-[17px] font-bold text-slate-900 mb-5">Business Entities</h2>
             <div className="space-y-2.5">
               {[
-                { label: "Clients",      value: data.clients.length,   sub: `${data.clients.filter((c) => c.isActive !== false).length} active`,            icon: <Users size={15} />,     dest: "/clients/dashboard",   g: ["#2563eb","#1d4ed8"] },
-                { label: "Companies",    value: data.companies.length,  sub: `${data.companies.filter((c) => c.isActive).length} active exporters`,         icon: <Building2 size={15} />, dest: "/companies/dashboard", g: ["#6366f1","#4f46e5"] },
-                { label: "Dealers",      value: data.dealers.length,    sub: `${data.dealers.filter((d) => d.gstNumber).length} GST registered`,            icon: <Store size={15} />,     dest: "/dealers/dashboard",   g: ["#0284c7","#0369a1"] },
-                { label: "Team Members", value: data.users.length,      sub: isAdmin ? `${data.users.filter((u) => u.role === "admin").length} admins` : "Admin view only", icon: <ShieldCheck size={15} />, dest: isAdmin ? "/user-management" : "/profile", g: ["#0891b2","#0e7490"] },
+                { label: "Clients", value: data.clients.length, sub: `${data.clients.filter((c) => c.isActive !== false).length} active`, icon: <Users size={15} />, dest: "/clients/dashboard", g: ["#2563eb", "#1d4ed8"] },
+                { label: "Companies", value: data.companies.length, sub: `${data.companies.filter((c) => c.isActive).length} active exporters`, icon: <Building2 size={15} />, dest: "/companies/dashboard", g: ["#6366f1", "#4f46e5"] },
+                { label: "Dealers", value: data.dealers.length, sub: `${data.dealers.filter((d) => d.gstNumber).length} GST registered`, icon: <Store size={15} />, dest: "/dealers/dashboard", g: ["#0284c7", "#0369a1"] },
+                { label: "Team Members", value: data.users.length, sub: isAdmin ? `${data.users.filter((u) => u.role === "admin").length} admins` : "Admin view only", icon: <ShieldCheck size={15} />, dest: isAdmin ? "/user-management" : "/profile", g: ["#0891b2", "#0e7490"] },
               ].map((item) => (
                 <button key={item.label} onClick={() => navigate(item.dest)}
                   className="w-full flex items-center justify-between gap-3 rounded-xl px-4 py-3 group transition-all duration-200"
@@ -926,10 +926,10 @@ const Dashboard: React.FC = () => {
         ════════════════════════════════════════ */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           {[
-            { title: "Clients & Network", desc: "Client relationships and intake",    icon: <Users size={20} />,      dest: "/clients/dashboard",          g: ["#2563eb","#1d4ed8"] },
-            { title: "Vehicle Sourcing",  desc: "Bookings, inventory, and dispatch",  icon: <CarFront size={20} />,   dest: "/vehicles/dashboard",         g: ["#6366f1","#4f46e5"] },
-            { title: "Documentation",     desc: "PI creation, approvals, and LC",     icon: <FileText size={20} />,   dest: "/proforma-invoice/dashboard", g: ["#0284c7","#0369a1"] },
-            { title: "Counterparties",    desc: "Companies, dealers, governance",     icon: <Landmark size={20} />,   dest: "/companies/dashboard",        g: ["#0891b2","#0e7490"] },
+            { title: "Clients & Network", desc: "Client relationships and intake", icon: <Users size={20} />, dest: "/clients/dashboard", g: ["#2563eb", "#1d4ed8"] },
+            { title: "Vehicle Sourcing", desc: "Bookings, inventory, and dispatch", icon: <CarFront size={20} />, dest: "/vehicles/dashboard", g: ["#6366f1", "#4f46e5"] },
+            { title: "Documentation", desc: "PI creation, approvals, and LC", icon: <FileText size={20} />, dest: "/proforma-invoice/dashboard", g: ["#0284c7", "#0369a1"] },
+            { title: "Counterparties", desc: "Companies, dealers, governance", icon: <Landmark size={20} />, dest: "/companies/dashboard", g: ["#0891b2", "#0e7490"] },
           ].map((tile) => (
             <button key={tile.title} onClick={() => navigate(tile.dest)}
               className="cursor-pointer group relative overflow-hidden rounded-2xl bg-white p-5 text-left transition-all duration-300 hover:-translate-y-2 active:scale-[0.98]"
@@ -1067,9 +1067,8 @@ const InfoCard = ({
   wide?: boolean;
 }) => (
   <div
-    className={`rounded-2xl border border-blue-100 bg-blue-50/60 p-4 ${
-      wide ? "sm:col-span-2" : ""
-    }`}
+    className={`rounded-2xl border border-blue-100 bg-blue-50/60 p-4 ${wide ? "sm:col-span-2" : ""
+      }`}
   >
     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-400">
       {label}
