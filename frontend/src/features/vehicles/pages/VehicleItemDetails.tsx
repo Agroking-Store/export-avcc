@@ -8,6 +8,8 @@ import {
   Palette,
   Package,
   Shapes,
+  Barcode,
+  Percent,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -15,11 +17,18 @@ import {
   vehicleManagementApi,
 } from "../vehicleManagementApi";
 
+
+
+
+
 const VehicleItemDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [vehicle, setVehicle] = useState<VehicleListItem | null>(null);
   const [loading, setLoading] = useState(false);
+
+
+
 
   useEffect(() => {
     const loadVehicle = async () => {
@@ -59,6 +68,10 @@ const VehicleItemDetails = () => {
 
   if (!vehicle) return null;
 
+  function isValidHSN(hsnCode: string) {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div className="w-full animate-in fade-in duration-500">
       <div className="flex justify-between items-center mb-6">
@@ -78,7 +91,7 @@ const VehicleItemDetails = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-9 space-y-6">
+        <div className="lg:col-span-12 space-y-6">
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
             <div className="flex items-center gap-3 mb-8 border-b border-gray-50 pb-4">
               <ClipboardList size={18} className="text-gray-400" />
@@ -105,13 +118,15 @@ const VehicleItemDetails = () => {
                 <InfoBox label="Color" value={vehicle.color} icon={Palette} />
                 <InfoBox label="FOB Amount (USD)" value={vehicle.fobAmount ? `$${Number(vehicle.fobAmount).toLocaleString()}` : "$0"} icon={DollarSign} />
                 <InfoBox label="Freight (USD)" value={vehicle.freight ? `$${Number(vehicle.freight).toLocaleString()}` : "$0"} icon={DollarSign} />
+                <InfoBox label="HSN Code" value={vehicle.hsnCode} icon={Barcode} />
+                <InfoBox
+                  label="IGST Rate"
+                  value={vehicle.igstRate ? `${vehicle.igstRate}` : "0%"}
+                  icon={Percent}
+                />
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="lg:col-span-3 space-y-4 lg:sticky lg:top-6">
-
         </div>
       </div>
     </div>
