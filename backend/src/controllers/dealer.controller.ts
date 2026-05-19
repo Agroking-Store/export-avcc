@@ -103,7 +103,7 @@ export const getDealerVehicles = async (
       select: "brandName modelName variant",
     })
       .sort({ createdAt: -1 })
-      .limit(6)
+
       .lean();
 
     if (!dealerVehicles.length) {
@@ -114,7 +114,13 @@ export const getDealerVehicles = async (
     }
 
     // OPTIONAL: light formatting (only what UI needs)
-    const result = dealerVehicles.map((v) => ({
+    const result = dealerVehicles.map((v) => {
+      const basicValue = v.quotationDetails?.netCost?.basicValue || 0;
+      const bookingAmount = v.bookingAmount || 0;
+      const payments = v.payments || [];
+      const amountPaid = payments.reduce((acc: number, p: any) => acc + p.amount, 0);
+      const remainingBalance = basicValue - bookingAmount - amountPaid;
+      return {
       _id: v._id,
       vehicleIndex: v.vehicleIndex,
       engineNumber: v.engineNumber || "-",
@@ -124,7 +130,14 @@ export const getDealerVehicles = async (
       variant: v.vehicleId?.variant ,
       status: v.status,
       deliveryDate: v.deliveryDate || v.createdAt,
-    }));
+        basicValue,
+        bookingAmount,
+        payments,
+        paymentAmount: v.paymentAmount || 0,
+        amountPaid,
+        remainingBalance,
+      };
+    });
 
     res.status(200).json({
       success: true,

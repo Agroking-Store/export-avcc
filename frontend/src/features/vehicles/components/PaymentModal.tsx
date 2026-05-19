@@ -19,7 +19,8 @@ const PaymentModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
   useEffect(() => {
     if (booking) {
-      setPaymentAmount(booking.paymentAmount ? String(booking.paymentAmount) : "");
+      const amountVal = booking.paymentAmount || booking.bookingAmount;
+      setPaymentAmount(amountVal ? String(amountVal) : "");
     }
   }, [booking]);
 

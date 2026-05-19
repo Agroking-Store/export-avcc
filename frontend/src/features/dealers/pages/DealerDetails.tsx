@@ -23,6 +23,25 @@ const InfoBox = ({ label, value, icon: Icon }: any) => (
   </div>
 );
 
+const getStatusBadgeClass = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case "delivered":
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "payment_done":
+    case "approved":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "chassis_received":
+      return "bg-indigo-50 text-indigo-700 border-indigo-200";
+    case "rejected":
+      return "bg-rose-50 text-rose-700 border-rose-200";
+    case "pending":
+    case "quotation_details_pending":
+    case "quotation_uploaded":
+    default:
+      return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+};
+
 const DealerDetails = () => {
   const API_URL = import.meta.env.VITE_API_BASE_URL;
   const { id } = useParams();
@@ -171,59 +190,116 @@ const DealerDetails = () => {
             </div>
           </div>
         </div>
-        <div className=" mt-5 overflow-x-auto bg-blue-50/50 rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 transition-shadow hover:shadow-md">
-          <table className="min-w-full text-sm text-left">
-            {/* HEADER */}
-            <thead className="bg-blue-50/50 text-cyan-600 uppercase text-xs">
-              <tr>
-                <th className="px-4 py-3">#</th>
 
-                <th className="px-4 py-3">Engine / Chassis</th>
+        {/* LEDGER TABLE */}
+        <div className="mt-6 bg-white rounded-[24px] shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Allotted Vehicles Ledger</h3>
+              <p className="text-xs text-slate-500">List of vehicles assigned to this dealer and their financial breakdown.</p>
+            </div>
+            <span className="self-start sm:self-auto rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1">
+              {dealerVehicles.length} {dealerVehicles.length === 1 ? "Vehicle" : "Vehicles"}
+            </span>
+          </div>
 
-                <th className="px-4 py-3">Vehicle Name</th>
-
-                <th className="px-4 py-3">variant</th>
-
-                <th className="px-4 py-3">Status</th>
-
-                <th className="px-4 py-3">Delivery Date</th>
-              </tr>
-            </thead>
-            {/* BODY */}
-            <tbody className="divide-y">
-              {dealerVehicles.map((v: any, index: number) => (
-                <tr key={v._id} className="hover:bg-gray-50 transition">
-                  {/* Serial Number */}
-                  <td className="px-4 py-3 font-medium text-gray-700">
-                    {index + 1}
-                  </td>
-
-                  {/* Engine / Chassis */}
-                  <td className="px-4 py-3 text-xs font-mono">
-                    {v.engineNumber || "-"} / {v.chassisNumber || "-"}
-                  </td>
-
-                  {/* Brand_Model */}
-                  <td className="px-4 py-3">
-                    {v.brandName || "-"}_{v.modelName || "-"}
-                  </td>
-
-                  {/* Variant */}
-                  <td className="px-4 py-3">{v.variant || "-"}</td>
-
-                  {/* Status */}
-                  <td className="px-4 py-3 capitalize">{v.status || "-"}</td>
-
-                  {/* Date */}
-                  <td className="px-4 py-3 text-gray-600">
-                    {v.deliveryDate
-                      ? new Date(v.deliveryDate).toLocaleDateString()
-                      : new Date(v.createdAt).toLocaleDateString()}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-150 text-sm text-left">
+              {/* HEADER */}
+              <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th className="px-6 py-4">#</th>
+                  <th className="px-6 py-4">Engine / Chassis</th>
+                  <th className="px-6 py-4">Vehicle Name</th>
+                  <th className="px-6 py-4">Variant</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Price (Basic)</th>
+                  <th className="px-6 py-4">Booking Amt</th>
+                  <th className="px-6 py-4">Paid</th>
+                  <th className="px-6 py-4">Remaining</th>
+                  <th className="px-6 py-4">Delivery Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              {/* BODY */}
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {vehiclesLoading ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-8 text-center text-slate-400 font-semibold uppercase text-xs tracking-wider">
+                      Loading Vehicles Ledger...
+                    </td>
+                  </tr>
+                ) : dealerVehicles.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-8 text-center text-slate-400 font-semibold uppercase text-xs tracking-wider">
+                      No Allotted Vehicles found
+                    </td>
+                  </tr>
+                ) : (
+                  dealerVehicles.map((v: any, index: number) => {
+                    const hasRemaining = v.basicValue && (v.remainingBalance || 0) > 0;
+                    return (
+                      <tr key={v._id} className="hover:bg-slate-50/50 transition-colors">
+                        {/* Serial Number */}
+                        <td className="px-6 py-4 font-medium text-slate-400">
+                          {index + 1}
+                        </td>
+
+                        {/* Engine / Chassis */}
+                        <td className="px-6 py-4 text-xs font-mono text-slate-600">
+                          <span className="block">E: {v.engineNumber || "-"}</span>
+                          <span className="block text-[10px] text-slate-400">C: {v.chassisNumber || "-"}</span>
+                        </td>
+
+                        {/* Brand_Model */}
+                        <td className="px-6 py-4 font-semibold text-slate-800">
+                          {v.brandName || "-"}_{v.modelName || "-"}
+                        </td>
+
+                        {/* Variant */}
+                        <td className="px-6 py-4 text-slate-600">{v.variant || "-"}</td>
+
+                        {/* Status */}
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getStatusBadgeClass(v.status)}`}>
+                            {v.status ? v.status.replace(/_/g, " ").toUpperCase() : "PENDING"}
+                          </span>
+                        </td>
+
+                        {/* Price */}
+                        <td className="px-6 py-4 font-semibold text-slate-800">
+                          {v.basicValue ? `₹${v.basicValue.toLocaleString("en-IN")}` : "—"}
+                        </td>
+
+                        {/* Booking Amt */}
+                        <td className="px-6 py-4 text-slate-600">
+                          {v.bookingAmount ? `₹${v.bookingAmount.toLocaleString("en-IN")}` : "—"}
+                        </td>
+
+                        {/* Paid */}
+                        <td className="px-6 py-4 font-semibold text-emerald-600">
+                          {v.amountPaid ? `₹${v.amountPaid.toLocaleString("en-IN")}` : "—"}
+                        </td>
+
+                        {/* Remaining */}
+                        <td className={`px-6 py-4 font-bold ${hasRemaining ? "text-rose-600" : "text-emerald-600"}`}>
+                          {v.basicValue ? `₹${(v.remainingBalance || 0).toLocaleString("en-IN")}` : "—"}
+                        </td>
+
+                        {/* Date */}
+                        <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                          {new Date(v.deliveryDate || v.createdAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric"
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

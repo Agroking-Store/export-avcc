@@ -10,6 +10,7 @@ import {
   approveBooking,
   rejectBooking,
   confirmPayment,
+  addPayment,
   updateChassisEngine,
   updateBookingStatus,
   assignClientToBooking,
@@ -116,6 +117,21 @@ export const confirmPaymentHandler = async (req: Request, res: Response) => {
       req.params.id as string,
       Number(amount),
     );
+    res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const addPaymentHandler = async (req: Request, res: Response) => {
+  try {
+    const { amount, date, reference, remarks } = req.body;
+    const booking = await addPayment(req.params.id as string, {
+      amount: Number(amount),
+      date,
+      reference,
+      remarks,
+    });
     res.json(booking);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
