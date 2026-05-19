@@ -91,10 +91,10 @@ const VehicleList = () => {
         <div className="px-8 py-6 flex justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
-              Vehicle List
+              Vehicle Database
             </h2>
             <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-              Maintain a dedicated vehicle inventory list
+              Maintain a dedicated vehicle database
             </p>
           </div>
 

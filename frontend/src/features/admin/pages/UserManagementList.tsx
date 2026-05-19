@@ -150,7 +150,6 @@ const UserManagementList = () => {
                         </SelectItem>
                         <SelectItem value="accountant">Accountant</SelectItem>
                         <SelectItem value="dealer">Dealer</SelectItem>
-                        <SelectItem value="client">Client</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

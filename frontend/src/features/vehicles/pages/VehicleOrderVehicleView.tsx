@@ -139,15 +139,13 @@ const VehicleOrderVehicleView = () => {
           ? "CRTM Uploaded"
           : "Pending",
     },
+    // Client tab/section  (Dealer/Quotation remove)
+    // { icon: Receipt, label: "Dealer Invoice", value: booking.isDealerInvoiceUploaded ? "Uploaded" : "Not Uploaded" }
     {
-      icon: Receipt,
-      label: "Dealer Invoice",
-      value: booking.isDealerInvoiceUploaded ? "Uploaded" : "Not Uploaded",
-    },
-    {
+      // Client: "Only Export HSN"
       icon: Hash,
       label: "Commercial HSN",
-      value: booking.commercialHsnCode || booking.hsnCode || "-",
+      value: isClient ? "—" : booking.commercialHsnCode || booking.hsnCode || "-",
     },
     {
       icon: Hash,
@@ -204,9 +202,13 @@ const VehicleOrderVehicleView = () => {
                 <Eye size={14} />
                 VIEW LIBRARY
               </button>
+              {/* Client mode: dealer invoice view hide */}
               <button
-                onClick={() => setIsDealerInvoiceViewOpen(true)}
-                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-100 active:scale-95"
+                onClick={() => {
+                  toast.info("Dealer invoice is not available for your account.");
+                }}
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-400 border border-slate-200 rounded-xl font-bold text-[10px] transition-all active:scale-95"
+                disabled
               >
                 <Eye size={14} />
                 VIEW INVOICE
@@ -214,6 +216,7 @@ const VehicleOrderVehicleView = () => {
             </>
           ) : (
             <>
+              { /* Client mode ke liye dealer invoice actions allow nahi */ }
               <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
                 <button
                   onClick={() => setIsDocModalOpen(true)}
@@ -295,32 +298,34 @@ const VehicleOrderVehicleView = () => {
       )}
 
       {/* QUOTATION SECTION */}
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900">Quotation</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Uploaded file for this vehicle unit.
-        </p>
+      {!isClient && (
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Quotation</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Uploaded file for this vehicle unit.
+          </p>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          {booking.quotationFile ? (
-            <>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-sm font-medium text-blue-800">
-                <FileText size={16} />
-                Quotation uploaded
-              </div>
-              <button
-                onClick={() => window.open(quotationUrl, "_blank")}
-                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                <Eye size={16} />
-                View quotation
-              </button>
-            </>
-          ) : (
-            <p className="text-sm text-slate-500">No quotation uploaded yet.</p>
-          )}
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {booking.quotationFile ? (
+              <>
+                <div className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-sm font-medium text-blue-800">
+                  <FileText size={16} />
+                  Quotation uploaded
+                </div>
+                <button
+                  onClick={() => window.open(quotationUrl, "_blank")}
+                  className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                >
+                  <Eye size={16} />
+                  View quotation
+                </button>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">No quotation uploaded yet.</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MODALS */}
       {isDocModalOpen && booking && (
