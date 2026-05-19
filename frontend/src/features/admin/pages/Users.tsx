@@ -1,4 +1,4 @@
-import { Plus, Eye, Pencil, Settings, Mail, Phone, User, Clock } from "lucide-react";
+import { Plus, Eye, Pencil, Settings, Mail, Phone, User, Clock, UserCog } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -12,6 +12,7 @@ interface UserInterface {
     email: string;
     lastLogin: string;
     phone: string;
+    role: string;
 }
 
 const Users = () => {
@@ -97,6 +98,14 @@ const Users = () => {
                                     </div>
                                 </th>
 
+
+                                <th className="px-6 py-3 text-left text-gray-500">
+                                    <div className="flex items-center gap-2">
+                                       <UserCog size={14} className="text-blue-500" />
+                                        Role
+                                    </div>
+                                </th>
+
                                 <th className="px-6 py-3 text-right text-gray-500">
                                     <div className="flex items-center justify-end gap-2">
                                         <Clock size={14} className="text-gray-500" />
@@ -125,6 +134,11 @@ const Users = () => {
                                     {/* Phone */}
                                     <td className="px-6 py-4 text-gray-600 font-medium">
                                         {user.phone}
+                                    </td>
+
+                                    {/* Role */}
+                                    <td className="px-6 py-4 text-gray-600 font-medium">
+                                        {user.role}
                                     </td>
 
                                     {/* Last Login */}

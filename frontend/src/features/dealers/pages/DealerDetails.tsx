@@ -151,7 +151,7 @@ const DealerDetails = () => {
               </div>
 
               {/* UPDATED GRID */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoBox
                   label="Phone Number"
                   value={dealer.contact}
@@ -168,9 +168,7 @@ const DealerDetails = () => {
                   icon={Hash}
                 />
                 <InfoBox label="Address" value={dealer.address} icon={MapPin} />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InfoBox
                   label="Bank Name"
                   value={dealer.bankDetails?.bankName}

@@ -29,7 +29,7 @@ const VehicleList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const lastToastMessage = useRef<string | null>(null);
 
-  const limit = 5;
+  const limit = 10;
 
   const fetchVehicles = async () => {
     try {

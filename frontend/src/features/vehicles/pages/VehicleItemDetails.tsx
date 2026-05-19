@@ -118,7 +118,17 @@ const VehicleItemDetails = () => {
                 <InfoBox label="Color" value={vehicle.color} icon={Palette} />
                 <InfoBox label="FOB Amount (USD)" value={vehicle.fobAmount ? `$${Number(vehicle.fobAmount).toLocaleString()}` : "$0"} icon={DollarSign} />
                 <InfoBox label="Freight (USD)" value={vehicle.freight ? `$${Number(vehicle.freight).toLocaleString()}` : "$0"} icon={DollarSign} />
-                <InfoBox label="HSN Code" value={vehicle.hsnCode} icon={Barcode} />
+                <InfoBox
+                  label="Export HSN Code"
+                  value={vehicle.exportHsnCode || "-"}
+                  icon={Barcode}
+                />
+                <InfoBox
+                  label="Commercial HSN Code"
+                  value={vehicle.commercialHsnCode || "-"}
+                  icon={Barcode}
+                />
+
                 <InfoBox
                   label="IGST Rate"
                   value={vehicle.igstRate ? `${vehicle.igstRate}` : "0%"}
