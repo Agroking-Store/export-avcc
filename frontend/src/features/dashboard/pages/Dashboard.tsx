@@ -655,12 +655,12 @@ const Dashboard: React.FC = () => {
         {/* ════════════════════════════════════════
             KPI SUMMARY ROW
         ════════════════════════════════════════ */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {[
             { label: "Business Network",  num: data.clients.length + data.companies.length + data.dealers.length, detail: `${data.clients.length} clients · ${data.companies.length} cos · ${data.dealers.length} dealers`, icon: <Building2 size={18} />, dest: "/clients/dashboard",          g: ["#2563eb","#1d4ed8"], light: "#eff6ff" },
             { label: "Vehicle Bookings",  num: data.vehicleBookings.length,  detail: `${m.inFlight} in active sourcing & transit`,    icon: <CarFront size={18} />,   dest: "/vehicles/dashboard",         g: ["#6366f1","#4f46e5"], light: "#eef2ff" },
             { label: "Proforma Invoices", num: data.proformaInvoices.length, detail: `${m.awaitingLc} PIs awaiting buyer LC`,         icon: <FileCheck2 size={18} />, dest: "/proforma-invoice/dashboard", g: ["#0284c7","#0369a1"], light: "#e0f2fe" },
-            { label: "Network Countries", num: m.countries,                  detail: "clients and companies footprint",               icon: <Globe2 size={18} />,     dest: "/companies/dashboard",        g: ["#0891b2","#0e7490"], light: "#ecfeff" },
+            
           ].map((card) => (
             <button key={card.label} onClick={() => navigate(card.dest)}
               className="group text-left rounded-2xl bg-white p-5 transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98]"
