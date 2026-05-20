@@ -31,8 +31,8 @@ interface Props {
 
 import { useAuth } from "../../../hooks/useAuth";
 
-/** USD exchange rate used for "Total USD @ 89.5" rows */
-const USD_RATE = 89.5;
+// /** USD exchange rate used for "Total USD @ 89.5" rows */
+// const USD_RATE = 89.5;
 
 type CostingForm = {
   dealershipName: string;
@@ -47,6 +47,8 @@ type CostingForm = {
   bookingAmount: string;
   netCost: Record<keyof QuotationDetailsPayload["netCost"], string>;
   taxAmount: Record<keyof QuotationDetailsPayload["taxAmount"], string>;
+  usdRate: string;
+
 };
 
 const emptyCostingForm = (): CostingForm => ({
@@ -57,6 +59,7 @@ const emptyCostingForm = (): CostingForm => ({
   exShowroomPrice: "",
   gstRate: "",
   bookingAmount: "",
+  usdRate: "",
   netCost: {
     basicValue: "",
     handlingCharges: "",
@@ -105,13 +108,13 @@ const deriveFromExShowroom = (
 // ─── component ────────────────────────────────────────────────────────────────
 
 const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
+  const [costingForm, setCostingForm] = useState<CostingForm>(emptyCostingForm);
+  const usdRate = toAmount(costingForm.usdRate);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [quotationSaving, setQuotationSaving] = useState(false);
-  const [costingForm, setCostingForm] = useState<CostingForm>(emptyCostingForm);
   const { isSourcingTeam } = useAuth();
-
   useEffect(() => {
     const loadDetails = async () => {
       if (!booking) return;
@@ -121,7 +124,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
       const vehicleSnapshot = (booking as any).orderId?.vehicleSnapshot;
       // Fetch igstRate from the vehicle list item snapshot (populated vehicleId or vehicleSnapshot)
       const vehicleItem = (booking as any).vehicleId;
-      
+
       // GST rate (%) should come from vehicle list item (igstRate)
       let igstRate =
         details?.gstRate ??
@@ -163,11 +166,11 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
       if (!vehicleSnapshot && typeof booking.vehicleId === "string") {
         try {
           fetchedVehicle = await vehicleManagementApi.getVehicleById(booking.vehicleId);
-        } catch {}
+        } catch { }
       }
 
       const brandName = details?.brand || vehicleSnapshot?.brandName || fetchedVehicle?.brandName || "";
-      const modelName = details?.carModelName || 
+      const modelName = details?.carModelName ||
         (vehicleSnapshot
           ? [vehicleSnapshot.modelName, vehicleSnapshot.variant].filter(Boolean).join(" ")
           : fetchedVehicle
@@ -185,6 +188,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         exShowroomPrice: formatAmountForInput(details?.exShowroomPrice),
         gstRate: String(savedGstRate || ""),
         bookingAmount: formatAmountForInput(booking.bookingAmount),
+        usdRate: formatAmountForInput(details?.usdRate),
         netCost: {
           basicValue: formatAmountForInput(
             details?.netCost?.basicValue || (savedExShowroom ? derivedBasic : undefined),
@@ -305,9 +309,13 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
   const grandTotal = netTotal + taxTotal;
 
-  const netTotalUsd = netTotal > 0 ? (netTotal / USD_RATE).toFixed(5) : "—";
-  const taxTotalUsd = taxTotal > 0 ? (taxTotal / USD_RATE).toFixed(5) : "—";
-  const grandTotalUsd = grandTotal > 0 ? (grandTotal / USD_RATE).toFixed(5) : "—";
+  // const netTotalUsd = netTotal > 0 ? (netTotal / USD_RATE).toFixed(5) : "—";
+  // const taxTotalUsd = taxTotal > 0 ? (taxTotal / USD_RATE).toFixed(5) : "—";
+  // const grandTotalUsd = grandTotal > 0 ? (grandTotal / USD_RATE).toFixed(5) : "—";
+
+  const netTotalUsd = netTotal > 0 && usdRate > 0 ? (netTotal / usdRate).toFixed(5) : "—";
+  const taxTotalUsd = taxTotal > 0 && usdRate > 0 ? (taxTotal / usdRate).toFixed(5) : "—";
+  const grandTotalUsd = grandTotal > 0 && usdRate > 0 ? (grandTotal / usdRate).toFixed(5) : "—";
 
   // ── save handler ────────────────────────────────────────────────────────────
 
@@ -591,7 +599,22 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                     className={disabledInputCls}
                   />
                 </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    USD Exchange Rate (₹ per $1)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={costingForm.usdRate}
+                    onChange={(e) => setCostingField("usdRate", e.target.value)}
+                    placeholder="e.g. 89.5"
+                    className={inputCls}
+                  />
+                </div>
               </div>
+
 
               {/* ── Net Cost & Tax Amount tables ── */}
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -641,8 +664,11 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   </div>
                   {/* Total USD row */}
                   <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
-                    Total USD @ {USD_RATE}: {netTotalUsd}
+                    Total USD @ {usdRate || "—"}: {netTotalUsd}
                   </div>
+                  {/* <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+                    Total USD @ {USD_RATE}: {netTotalUsd}
+                  </div> */}
                 </div>
 
                 {/* TAX AMOUNT */}
@@ -687,8 +713,11 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                     Total: ₹{taxTotal.toLocaleString("en-IN")}
                   </div>
                   {/* Total USD row */}
-                  <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+                  {/* <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
                     Total USD @ {USD_RATE}: {taxTotalUsd}
+                  </div> */}
+                  <div className="mt-1 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+                    Total USD @ {usdRate || "—"}: {taxTotalUsd}
                   </div>
                 </div>
               </div>
@@ -699,8 +728,11 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   <p className="text-sm font-semibold text-blue-900">
                     Grand Total: ₹{grandTotal.toLocaleString("en-IN")}
                   </p>
-                  <p className="text-xs text-blue-600">
+                  {/* <p className="text-xs text-blue-600">
                     Total USD @ {USD_RATE}: {grandTotalUsd}
+                  </p> */}
+                  <p className="text-xs text-blue-600">
+                    Total USD @ {usdRate || "—"}: {grandTotalUsd}
                   </p>
                 </div>
                 <button
