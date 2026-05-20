@@ -326,20 +326,61 @@ export const uploadLC = async (req: Request, res: Response) => {
 
 // controllers/proforma-invoice.controller.ts
 
+// export const getLCFile = async (req: Request, res: Response) => {
+//   try {
+//     const pi = await ProformaInvoice.findById(req.params.id).select("lcPath");
+
+//     if (!pi?.lcPath) {
+//       return res.status(404).json({ message: "No LC uploaded for this PI" });
+//     }
+
+//     // Build absolute path — make sure this matches where files actually land
+//     const filePath = path.join(process.cwd(), pi.lcPath);
+
+//     // Debug: log both to confirm mismatch
+//     console.log("LC path from DB:", pi.lcPath);
+//     console.log("Resolved path:", filePath);
+//     console.log("File exists:", fs.existsSync(filePath));
+
+//     if (!fs.existsSync(filePath)) {
+//       return res.status(404).json({ message: "File not found on server disk" });
+//     }
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", "inline; filename=letter-of-credit.pdf");
+//     fs.createReadStream(filePath).pipe(res);
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to serve LC file" });
+//   }
+// };
+
+
 export const getLCFile = async (req: Request, res: Response) => {
   try {
-    const pi = await ProformaInvoice.findById(req.params.id).select("lcPath");
+    // Cast to any temporarily to inspect what's actually stored
+    const pi = await ProformaInvoice.findById(req.params.id).lean();
+    console.log("Full PI doc keys:", Object.keys(pi || {}));
+    console.log("PI doc:", JSON.stringify(pi, null, 2));
 
-    if (!pi?.lcPath) {
+    if (!pi) {
+      return res.status(404).json({ message: "PI not found" });
+    }
+
+    // Check all possible field names the upload controller might have used
+    const lcPath = (pi as any).lcPath
+      || (pi as any).lcFile
+      || (pi as any).lcFilePath
+      || (pi as any).lc?.path
+      || (pi as any).lc?.filePath;
+
+    console.log("Resolved lcPath:", lcPath);
+
+    if (!lcPath) {
       return res.status(404).json({ message: "No LC uploaded for this PI" });
     }
 
-    // Build absolute path — make sure this matches where files actually land
-    const filePath = path.join(process.cwd(), pi.lcPath);
-
-    // Debug: log both to confirm mismatch
-    console.log("LC path from DB:", pi.lcPath);
-    console.log("Resolved path:", filePath);
+    const filePath = path.join(process.cwd(), lcPath);
+    console.log("Absolute path:", filePath);
     console.log("File exists:", fs.existsSync(filePath));
 
     if (!fs.existsSync(filePath)) {
@@ -350,10 +391,10 @@ export const getLCFile = async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", "inline; filename=letter-of-credit.pdf");
     fs.createReadStream(filePath).pipe(res);
   } catch (err) {
+    console.error("getLCFile error:", err);
     res.status(500).json({ message: "Failed to serve LC file" });
   }
 };
-
 export const getBookedVehicleOrders = async (req: Request, res: Response) => {
   try {
     const { clientId, search } = req.query;
