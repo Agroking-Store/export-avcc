@@ -103,6 +103,7 @@ export interface QuotationDetailsPayload {
   exShowroomPrice?: number;
   /** GST rate (%) fetched from vehicle list item */
   gstRate?: number;
+  usdRate?: number;
   netCost: {
     basicValue?: number | string;
     handlingCharges?: number | string;
