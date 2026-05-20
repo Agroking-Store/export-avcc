@@ -48,7 +48,6 @@ type CostingForm = {
   netCost: Record<keyof QuotationDetailsPayload["netCost"], string>;
   taxAmount: Record<keyof QuotationDetailsPayload["taxAmount"], string>;
   usdRate: string;
-
 };
 
 const emptyCostingForm = (): CostingForm => ({

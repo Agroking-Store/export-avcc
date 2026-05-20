@@ -59,6 +59,7 @@ export interface IVehicleBooking extends Document {
     };
     grandTotal?: number;
     savedAt?: Date;
+    usdRate?: number;
   };
   rejectionReason?: string;
   bookingAmount?: number;
@@ -113,6 +114,7 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: Number,
       required: true,
     },
+    usdRate: { type: Number },
     assignedClientId: {
       type: Schema.Types.ObjectId,
       ref: "Client",
