@@ -287,39 +287,70 @@ export const uploadLC = async (req: Request, res: Response) => {
   }
 };
 
+// export const getLCFile = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+//     const piIdString = Array.isArray(id) ? id[0] : id;
+
+//     const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
+//       uploadedAt: -1,
+//     });
+
+//     if (!lc || !lc.documentUrl) {
+//       return res
+//         .status(404)
+//         .json({ message: "Letter of Credit file not found" });
+//     }
+
+//     const absolutePath = path.join(process.cwd(), lc.documentUrl);
+
+//     if (!fs.existsSync(absolutePath)) {
+//       console.error("File missing on disk:", absolutePath);
+//       return res.status(404).json({ message: "File not found on server disk" });
+//     }
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader(
+//       "Content-Disposition",
+//       'inline; filename="letter-of-credit.pdf"',
+//     );
+//     res.setHeader("Cache-Control", "no-cache");
+
+//     res.sendFile(absolutePath);
+//   } catch (error: any) {
+//     console.error("getLCFile error:", error);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+// controllers/proforma-invoice.controller.ts
+
 export const getLCFile = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const piIdString = Array.isArray(id) ? id[0] : id;
+    const pi = await ProformaInvoice.findById(req.params.id).select("lcPath");
 
-    const lc = await LetterOfCredit.findOne({ pi_id: piIdString }).sort({
-      uploadedAt: -1,
-    });
-
-    if (!lc || !lc.documentUrl) {
-      return res
-        .status(404)
-        .json({ message: "Letter of Credit file not found" });
+    if (!pi?.lcPath) {
+      return res.status(404).json({ message: "No LC uploaded for this PI" });
     }
 
-    const absolutePath = path.join(process.cwd(), lc.documentUrl);
+    // Build absolute path — make sure this matches where files actually land
+    const filePath = path.join(process.cwd(), pi.lcPath);
 
-    if (!fs.existsSync(absolutePath)) {
-      console.error("File missing on disk:", absolutePath);
+    // Debug: log both to confirm mismatch
+    console.log("LC path from DB:", pi.lcPath);
+    console.log("Resolved path:", filePath);
+    console.log("File exists:", fs.existsSync(filePath));
+
+    if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: "File not found on server disk" });
     }
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      'inline; filename="letter-of-credit.pdf"',
-    );
-    res.setHeader("Cache-Control", "no-cache");
-
-    res.sendFile(absolutePath);
-  } catch (error: any) {
-    console.error("getLCFile error:", error);
-    res.status(500).json({ message: error.message });
+    res.setHeader("Content-Disposition", "inline; filename=letter-of-credit.pdf");
+    fs.createReadStream(filePath).pipe(res);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to serve LC file" });
   }
 };
 
