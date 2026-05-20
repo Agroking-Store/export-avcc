@@ -131,7 +131,7 @@ const DealerAllotModal = ({ isOpen, onClose, booking, dealers, onSync }: Props) 
                     placeholder="Search dealer..."
                     className="h-9"
                   />
-                  <CommandList>
+                  <CommandList className="max-h-[200px] overflow-y-auto">
                     <CommandEmpty>No dealer found.</CommandEmpty>
                     <CommandGroup>
                       {dealers.map((dealer) => {
