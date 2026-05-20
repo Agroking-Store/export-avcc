@@ -28,6 +28,8 @@ import PaymentModal from "../components/PaymentModal";
 import ClientAllotModal from "../components/ClientAllotModal";
 import DealerAllotModal from "../components/DealerAllotModal";
 import { useAuth } from "../../../hooks/useAuth";
+import axios from "axios";
+import { apiConfig } from "@/config/apiConfig";
 
 const STATUS_META: Record<
   VehicleBookingStatus,
@@ -269,8 +271,8 @@ const VehicleOrdersList = () => {
     }
     const fetchDealers = async () => {
       try {
-        const response = await dealerApi.getAll();
-        const dealerList = response.data || response || [];
+        const response = await axios.get(`${apiConfig.baseURL}/dealers?limit=1000`);
+        const dealerList = response.data.data || response || [];
         setDealers(Array.isArray(dealerList) ? dealerList : []);
       } catch {
         toast.error("Failed to load dealers");
