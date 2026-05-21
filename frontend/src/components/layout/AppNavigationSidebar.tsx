@@ -89,7 +89,6 @@ let menuItems =
       ]
     : [...defaultMenuItems];
 
-
 if (role === "admin") {
   menuItems.push({
     name: "User Management",

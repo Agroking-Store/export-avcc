@@ -12,7 +12,18 @@ export type VehicleBookingStatus =
 
 export interface VehicleBookingItem {
   _id: string;
-  orderId: string;
+  orderId:
+    | string
+    | {
+        _id?: string;
+        orderNumber?: string;
+        vehicleSnapshot?: {
+          brandName?: string;
+          modelName?: string;
+          variant?: string;
+          color?: string;
+        };
+      };
   vehicleId: string;
   vehicleIndex: number;
   assignedClientId?: string;

@@ -598,6 +598,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
         "orderId.vehicleSnapshot.modelName": { $regex: search, $options: "i" },
       },
       { "orderId.vehicleSnapshot.variant": { $regex: search, $options: "i" } },
+      { "orderId.vehicleSnapshot.color": { $regex: search, $options: "i" } },
       { "orderId.orderNumber": { $regex: search, $options: "i" } },
       { engineNumber: { $regex: search, $options: "i" } },
       { chassisNumber: { $regex: search, $options: "i" } },
