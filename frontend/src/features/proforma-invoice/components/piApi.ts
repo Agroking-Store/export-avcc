@@ -217,7 +217,8 @@ export const piApi = {
     const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`;
     const params = new URLSearchParams();
     if (token) params.append("token", token);
-    return `${baseUrl}?${params.toString()}`;
+    // return `${baseUrl}?${params.toString()}`;
+    return `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`;
   },
 
   uploadHBL: async (id: string, file: File) => {
