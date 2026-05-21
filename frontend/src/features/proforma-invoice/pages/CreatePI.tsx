@@ -344,9 +344,14 @@ const CreatePI = () => {
     const bookingColor =
       booking.orderId?.vehicleSnapshot?.color || vehicle.color || "";
 
+    // Keep vehicle id consistent with what was selected from Vehicle List.
+    // Prefer the booking's populated vehicleId (VehicleListItem _id).
+    const selectedVehicleId =
+      vehicle._id?.toString?.() || vehicle._id || "";
+
     const newVehicle = {
       booking_id: booking._id,
-      vehicle_id: vehicle._id || "",
+      vehicle_id: selectedVehicleId,
       variant: vehicle.variant || "",
 
       model:
@@ -356,6 +361,7 @@ const CreatePI = () => {
 
       engineNo: booking.engineNumber || "",
       chassisNo: booking.chassisNumber || "",
+
 
       quantity: 1,
 
