@@ -27,6 +27,9 @@ const VehicleList = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [totalVehicles, setTotalVehicles] = useState(0);
+
   const lastToastMessage = useRef<string | null>(null);
 
   const limit = 10;
@@ -41,6 +44,7 @@ const VehicleList = () => {
       });
       setVehicles(res.data || []);
       setTotalPages(res.totalPages || 1);
+      setTotalVehicles(res.totalCount || res.total || 0);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch vehicles");
@@ -100,7 +104,7 @@ const VehicleList = () => {
 
           <div className="flex items-center gap-3">
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
-              {vehicles.length} Vehicles
+              {totalVehicles} Vehicles
             </span>
             {role === "admin" && (
               <button
