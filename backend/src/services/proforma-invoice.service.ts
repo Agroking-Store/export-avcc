@@ -144,7 +144,6 @@ export const getBookedVehicleOrdersService = async (
 
   const bookings = await VehicleBooking.find({
     assignedClientId: clientId,
-    engineNumber: { $exists: true, $nin: ["", null] },
     chassisNumber: { $exists: true, $nin: ["", null] },
     status: {
       $in: ["approved", "payment_done", "chassis_received", "delivered"],
@@ -254,23 +253,20 @@ export const createPIService = async (data: any) => {
       );
     }
 
-    const incompleteVehicleCount = await VehicleBooking.countDocuments({
-      _id: { $in: vehicleBookingIds },
-      $or: [
-        { engineNumber: { $exists: false } },
-        { engineNumber: "" },
-        { engineNumber: null },
-        { chassisNumber: { $exists: false } },
-        { chassisNumber: "" },
-        { chassisNumber: null },
-      ],
-    });
+  const incompleteVehicleCount = await VehicleBooking.countDocuments({
+    _id: { $in: vehicleBookingIds },
+    $or: [
+      { chassisNumber: { $exists: false } },
+      { chassisNumber: "" },
+      { chassisNumber: null },
+    ],
+  });
 
-    if (incompleteVehicleCount > 0) {
-      throw new Error(
-        "PI can only be generated for vehicles with engine and chassis numbers.",
-      );
-    }
+  if (incompleteVehicleCount > 0) {
+    throw new Error(
+      "PI can only be generated for vehicles with a chassis number.",
+    );
+  }
   }
 
   const totalAmount = (data.vehicleDetails || []).reduce(
