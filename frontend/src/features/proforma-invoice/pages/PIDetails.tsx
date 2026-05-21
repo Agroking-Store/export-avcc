@@ -570,78 +570,54 @@ const PIDetails = () => {
   };
 
   // const handleViewLC = async () => {
-  //   try {
-  //     setViewingLC(true);
-  //     const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`, {
-  //       responseType: "blob",
-  //       headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
-  //     });
-  //     window.open(URL.createObjectURL(new Blob([res.data], { type: "application/pdf" })), "_blank");
-  //   } catch { toast.error("Failed to open Letter of Credit"); }
-  //   finally { setViewingLC(false); }
-  // };
+  //   if (!id) return;
 
-  // const handleViewLC = async () => {
   //   try {
   //     setViewingLC(true);
   //     const token = getToken();
 
-  //     const res = await axios.get(
+  //     // 1. Fetch the file using Axios so we can include the Auth Header
+  //     const response = await axios.get(
   //       `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`,
   //       {
-  //         responseType: "blob",
   //         headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //         responseType: "blob", // Critical for binary files like PDFs
   //       },
   //     );
 
-  //     // Check if we actually got a PDF
-  //     if (res.data.type !== "application/pdf" && res.data.size < 100) {
-  //       console.error("Received non-PDF or empty response");
-  //       toast.error("Invalid PDF response from server");
+  //     // 2. Check if the response is actually a JSON error (happens with some backends)
+  //     if (response.data.type === "application/json") {
+  //       const text = await response.data.text();
+  //       const error = JSON.parse(text);
+  //       toast.error(error.message || "LC not found");
   //       return;
   //     }
 
-  //     const blobUrl = URL.createObjectURL(
-  //       new Blob([res.data], { type: "application/pdf" }),
-  //     );
+  //     // 3. Create a local URL for the downloaded blob
+  //     const blob = new Blob([response.data], { type: "application/pdf" });
+  //     const url = URL.createObjectURL(blob);
 
-  //     const newTab = window.open(blobUrl, "_blank");
-  //     if (!newTab) {
-  //       toast.warning("Popup blocked. PDF will download instead.");
-  //       const a = document.createElement("a");
-  //       a.href = blobUrl;
-  //       a.download = "letter-of-credit.pdf"; // optional
-  //       document.body.appendChild(a);
-  //       a.click();
-  //       a.remove();
+  //     // 4. Open in a new tab
+  //     const newWindow = window.open(url, "_blank");
+
+  //     // Popup blocker fallback
+  //     if (!newWindow) {
+  //       toast.info("Popup blocked. Downloading PDF instead...");
+  //       const link = document.createElement("a");
+  //       link.href = url;
+  //       link.download = `LC-${pi?.piNumber || id}.pdf`;
+  //       link.click();
   //     }
 
-  //     // Optional: revoke URL after some time
-  //     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  //     // 5. Cleanup memory
+  //     setTimeout(() => URL.revokeObjectURL(url), 60000);
   //   } catch (err: any) {
-  //     console.error("View LC Error:", err);
-  //     console.error("Response data:", err.response?.data);
-  //     console.error("Status:", err.response?.status);
-
-  //     if (err.response?.status === 404) {
-  //       toast.error("Letter of Credit file not found");
-  //     } else if (err.response?.status === 401 || err.response?.status === 403) {
-  //       toast.error("Authentication failed. Please login again.");
-  //     } else {
-  //       toast.error(
-  //         err.response?.data?.message || "Failed to open Letter of Credit",
-  //       );
-  //     }
+  //     console.error("View LC error:", err);
+  //     toast.error("Could not open LC. It might not be uploaded yet.");
   //   } finally {
   //     setViewingLC(false);
   //   }
   // };
-
-  const handleViewLC = () => {
-    if (!id) return;
-    const url = piApi.getLCViewUrl(id);
-    window.open(url, "_blank"); // Direct Port 5000 link
-  };
 
   // const handlePdfAction = async (action: "view" | "download") => {
   //   try {
@@ -671,14 +647,64 @@ const PIDetails = () => {
   //   }
   // };
 
+  const handleViewLC = async () => {
+    if (!id) return;
+
+    try {
+      setViewingLC(true);
+      const token = getToken();
+
+      const response = await axios.get(
+        `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          responseType: "blob",
+        },
+      );
+
+      if (response.data.type === "application/json") {
+        const text = await response.data.text();
+        const errorData = JSON.parse(text);
+        toast.error(errorData.message || "File not found");
+        return;
+      }
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+
+      const win = window.open(url, "_blank");
+      if (!win) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "Letter_of_Credit.pdf";
+        a.click();
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err: any) {
+      if (err.response?.data instanceof Blob) {
+        const text = await err.response.data.text();
+        try {
+          const msg = JSON.parse(text).message;
+          toast.error(msg);
+        } catch {
+          toast.error("Failed to load LC file");
+        }
+      } else {
+        toast.error(err.response?.data?.message || "Failed to open LC");
+      }
+    } finally {
+      setViewingLC(false);
+    }
+  };
+
   const handlePdfAction = (action: "view" | "download") => {
     if (!id) return;
     const url = piApi.getPIViewUrl(id, action === "download");
 
     if (action === "view") {
-      window.open(url, "_blank"); // Direct Port 5000 link
+      window.open(url, "_blank");
     } else {
-      // For direct download
       window.location.href = url;
     }
   };
@@ -990,7 +1016,7 @@ const PIDetails = () => {
                   <p className="text-sm text-zinc-400 italic">Not specified</p>
                 )}
               </div>
-              
+
               <div className="flex-1 sm:text-right">
                 <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3">
                   Billed To
