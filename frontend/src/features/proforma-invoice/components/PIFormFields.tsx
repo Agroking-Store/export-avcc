@@ -78,6 +78,56 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
   const isClientAutofilled = !!form.client_id;
   const isCompanyAutofilled = !!form.company_id;
 
+  const handleVehicleCheckbox = (booking: any, checked: boolean) => {
+    console.log("BOOKING:", booking);
+    const exists = form.vehicleDetails.some(
+      (v: any) => v.chassisNo === booking.chassisNumber
+    );
+
+    // REMOVE
+    if (!checked) {
+      setForm({
+        ...form,
+        vehicleDetails: form.vehicleDetails.filter(
+          (v: any) => v.chassisNo !== booking.chassisNumber
+        ),
+      });
+
+      return;
+    }
+
+    // PREVENT DUPLICATE
+    if (exists) return;
+
+    const newVehicle: VehicleLineItem = {
+      selected: true,
+
+      model: booking.vehicleName || "",
+      quantity: 1,
+
+      fob: booking.vehicleId?.fobAmount || 0,
+      freight: booking.vehicleId?.freight || 0,
+
+      color: booking.vehicleId?.color || "",
+      engineNo: booking.engineNumber || "",
+      chassisNo: booking.chassisNumber || "",
+      yom: booking.yom || "",
+
+      commercialHsn: booking.vehicleId?.commercialHsnCode || "",
+      exportHsn: booking.vehicleId?.exportHsnCode || "",
+
+      fuelType: booking.vehicleId?.fuelType || "",
+      countryOfOrigin: booking.vehicleId?.countryOfOrigin || "",
+      engineCapacity: booking.vehicleId?.engineCapacity || "",
+      vehicle_id: "",
+      hsn: ""
+    };
+
+    setForm({
+      ...form,
+      vehicleDetails: [...form.vehicleDetails, newVehicle],
+    });
+  };
   return (
     <>
       {/* BUYER / CLIENT */}
@@ -241,12 +291,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               )}
               disabled={false}
               value={selectedOrder?._id || ""}
-              onValueChange={(value) => {
-                const selected = ordersWithDisplay.find(
-                  (item) => item._id === value,
-                );
-                if (selected) handleSelectOrder(selected);
-              }}
+              onValueChange={() => { }}
               onSearchChange={setOrderSearch}
               displayField="displayName"
               valueField="_id"
@@ -272,31 +317,55 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
                   <div>Status</div>
                 </div>
               }
-              renderItem={(item) => (
-                <div className="grid grid-cols-[40px_110px_minmax(180px,1fr)_160px_140px_110px_100px] gap-2 w-full items-center py-0.5">
-                  <span className="text-xs text-gray-400 font-mono">
-                    {item.serialNumber}.
-                  </span>
-                  <span className="font-bold text-blue-600 truncate">
-                    {item.vehicleDisplayId || "-"}
-                  </span>
-                  <span className="truncate text-gray-700 font-medium">
-                    {item.vehicleName || "-"}
-                  </span>
-                  <span className="truncate text-gray-700 font-medium">
-                    {item.assignedDealerSnapshot.name || "-"}
-                  </span>
-                  <span className="text-[11px] text-gray-500 whitespace-nowrap">
-                    {item.chassisNumber || "-"}
-                  </span>
-                  <span className="text-[11px] text-gray-600 truncate">
-                    {item.color || "-"}
-                  </span>
-                  <span className="text-[11px] text-gray-600 truncate">
-                    {item.statusLabel || "-"}
-                  </span>
-                </div>
-              )}
+              renderItem={(item) => {
+                const checked = form.vehicleDetails.some(
+                  (v: any) => v.chassisNo === item.chassisNumber,
+                );
+
+                return (
+                  <div className="grid grid-cols-[60px_110px_minmax(180px,1fr)_160px_140px_110px_100px] gap-2 w-full items-center py-1">
+
+                    {/* Checkbox + S.NO */}
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={checked}
+                        onClick={(e) => e.stopPropagation()}
+                        onCheckedChange={(value) =>
+                          handleVehicleCheckbox(item, !!value)
+                        }
+                      />
+
+                      <span className="text-xs text-gray-400 font-mono">
+                        {item.serialNumber}.
+                      </span>
+                    </div>
+
+                    <span className="font-bold text-blue-600 truncate">
+                      {item.vehicleDisplayId || "-"}
+                    </span>
+
+                    <span className="truncate text-gray-700 font-medium">
+                      {item.vehicleName || "-"}
+                    </span>
+
+                    <span className="truncate text-gray-700">
+                      {item.assignedDealerSnapshot?.name || "-"}
+                    </span>
+
+                    <span className="text-[11px] text-gray-500">
+                      {item.chassisNumber || "-"}
+                    </span>
+
+                    <span className="text-[11px] text-gray-600">
+                      {item.color || "-"}
+                    </span>
+
+                    <span className="text-[11px] text-gray-600">
+                      {item.statusLabel || "-"}
+                    </span>
+                  </div>
+                );
+              }}
             />
           </div>
         </div>
