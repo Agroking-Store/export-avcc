@@ -100,6 +100,12 @@ export interface VehicleBookingItem {
   isCRTMUploaded?: boolean;
   isBVUploaded?: boolean;
   isDealerInvoiceUploaded?: boolean;
+  piGenerated?: boolean;
+  associatedPIs?: Array<{
+    _id: string;
+    piNumber?: string;
+    status?: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

@@ -493,7 +493,11 @@ const CreatePI = () => {
   // };
 
   const bookingsWithDisplay = bookings
-    .filter((b) => !!String(b.chassisNumber || "").trim())
+    .filter(
+      (b) =>
+        !!String(b.engineNumber || "").trim() &&
+        !!String(b.chassisNumber || "").trim(),
+    )
     .map((b, index) => {
     const vehicleDisplayId =
       b.vehicleDisplayId ||

@@ -144,6 +144,7 @@ export const getBookedVehicleOrdersService = async (
 
   const bookings = await VehicleBooking.find({
     assignedClientId: clientId,
+    engineNumber: { $exists: true, $nin: ["", null] },
     chassisNumber: { $exists: true, $nin: ["", null] },
     status: {
       $in: ["approved", "payment_done", "chassis_received", "delivered"],
@@ -243,17 +244,32 @@ const getCompanyShortCode = (companyName: string): string => {
 export const createPIService = async (data: any) => {
   const vehicleBookingIds = (data.vehicleBookingIds || []).filter(Boolean);
   if (vehicleBookingIds.length > 0) {
-    const missingChassisCount = await VehicleBooking.countDocuments({
+    const existingPI = await ProformaInvoice.findOne({
+      vehicleBookingIds: { $in: vehicleBookingIds },
+    }).select("piNumber");
+
+    if (existingPI) {
+      throw new Error(
+        `PI already generated for one or more selected vehicles (${existingPI.piNumber}).`,
+      );
+    }
+
+    const incompleteVehicleCount = await VehicleBooking.countDocuments({
       _id: { $in: vehicleBookingIds },
       $or: [
+        { engineNumber: { $exists: false } },
+        { engineNumber: "" },
+        { engineNumber: null },
         { chassisNumber: { $exists: false } },
         { chassisNumber: "" },
         { chassisNumber: null },
       ],
     });
 
-    if (missingChassisCount > 0) {
-      throw new Error("PI can only be generated for vehicles with chassis number.");
+    if (incompleteVehicleCount > 0) {
+      throw new Error(
+        "PI can only be generated for vehicles with engine and chassis numbers.",
+      );
     }
   }
 

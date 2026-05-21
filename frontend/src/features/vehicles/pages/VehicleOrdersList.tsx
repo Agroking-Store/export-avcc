@@ -76,9 +76,10 @@ const statusOptions = [
   "Awaiting Chassis/Engine No.",
   "In Transit",
   "Delivered",
+  "PI Pending",
 ];
 
-const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
+const statusLabelToRaw: Record<string, VehicleBookingStatus | "All" | "piPending"> = {
   All: "All",
   "Quotation Pending": "pending",
   "Costing Details Pending": "quotation_details_pending",
@@ -87,6 +88,7 @@ const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
   "Awaiting Chassis/Engine No.": "payment_done",
   "In Transit": "chassis_received",
   Delivered: "delivered",
+  "PI Pending": "piPending",
 };
 
 interface ClientOrdersResponse {
@@ -111,6 +113,7 @@ const VehicleOrdersList = () => {
     payment_done:      "Awaiting Chassis/Engine No.",
     chassis_received:  "In Transit",
     delivered:         "Delivered",
+    piPending:         "PI Pending",
     missingClient:     "All",   // no dedicated label — show all, handled on dashboard side
   };
   const incomingFilter = (location.state as any)?.statusFilter;
@@ -149,8 +152,14 @@ const VehicleOrdersList = () => {
           : [];
         const normalizedSearch = search.trim().toLowerCase();
         const filteredBookings = clientBookings.filter((booking) => {
+          const hasNumbers =
+            !!String(booking.engineNumber || "").trim() &&
+            !!String(booking.chassisNumber || "").trim();
           const statusMatches =
-            statusValue === "All" || booking.status === statusValue;
+            statusValue === "All" ||
+            (statusValue === "piPending"
+              ? hasNumbers && !booking.piGenerated
+              : booking.status === statusValue);
 
           if (!statusMatches) {
             return false;
@@ -362,6 +371,16 @@ const VehicleOrdersList = () => {
       : { vehicleSnapshot: null, orderNumber: "" };
   };
 
+  const getNumberActionLabel = (booking: VehicleBookingItem) => {
+    const missingEngine = !String(booking.engineNumber || "").trim();
+    const missingChassis = !String(booking.chassisNumber || "").trim();
+
+    if (missingEngine && missingChassis) return "Add Engine/Chassis";
+    if (missingEngine) return "Enter Engine";
+    if (missingChassis) return "Enter Chassis";
+    return "Review Numbers";
+  };
+
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const orderId = getOrderId(booking);
     const primaryActionClass =
@@ -425,7 +444,7 @@ const VehicleOrdersList = () => {
             className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700`}
           >
             <FilePenLine size={14} />
-            Add Engine/Chassis
+            {getNumberActionLabel(booking)}
           </button>
         );
       case "chassis_received":

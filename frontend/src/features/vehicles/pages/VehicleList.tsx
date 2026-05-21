@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Eye,
   FilePenLine,
+  Filter,
   Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -25,6 +26,7 @@ const VehicleList = () => {
   const [vehicles, setVehicles] = useState<VehicleListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const lastToastMessage = useRef<string | null>(null);
@@ -36,6 +38,7 @@ const VehicleList = () => {
       setLoading(true);
       const res = await vehicleManagementApi.getVehicleList({
         search,
+        status: statusFilter === "All" ? undefined : statusFilter,
         page: currentPage,
         limit,
       });
@@ -51,11 +54,11 @@ const VehicleList = () => {
 
   useEffect(() => {
     fetchVehicles();
-  }, [search, currentPage]);
+  }, [search, statusFilter, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, statusFilter]);
 
   useEffect(() => {
     if (location.state?.success) {
@@ -117,6 +120,21 @@ const VehicleList = () => {
         <hr className="border-slate-100 dark:border-gray-800" />
 
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
+              <Filter size={16} />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="cursor-pointer appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Available">Available</option>
+              <option value="Out of Stock">Out of Stock</option>
+            </select>
+          </div>
+
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -141,6 +159,7 @@ const VehicleList = () => {
                   "Model Name",
                   "Variant",
                   "Color",
+                  "Status",
                   "Actions",
                 ].map((head) => (
                   <th
@@ -157,7 +176,7 @@ const VehicleList = () => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-20 text-slate-400 italic"
                   >
                     Loading vehicles...
@@ -166,7 +185,7 @@ const VehicleList = () => {
               ) : vehicles.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-20 text-slate-400 italic"
                   >
                     No vehicles found
@@ -193,6 +212,17 @@ const VehicleList = () => {
                     </td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
                       {vehicle.color}
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                          vehicle.status === "Available"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {vehicle.status}
+                      </span>
                     </td>
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">

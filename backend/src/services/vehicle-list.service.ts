@@ -56,9 +56,13 @@ export const createVehicleListItemsService = async (
 };
 
 export const getVehicleListItemsService = async (query: any) => {
-  const { search, page = 1, limit = 5 } = query;
+  const { search, status, page = 1, limit = 5 } = query;
 
   const match: any = {};
+  if (status && status !== "All") {
+    match.status = status;
+  }
+
   if (search) {
     match.$or = [
       { brandName: { $regex: search, $options: "i" } },

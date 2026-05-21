@@ -465,6 +465,16 @@ const VehicleOrderDetails = () => {
     }
   };
 
+  const getNumberActionLabel = (booking: VehicleBookingItem) => {
+    const missingEngine = !String(booking.engineNumber || "").trim();
+    const missingChassis = !String(booking.chassisNumber || "").trim();
+
+    if (missingEngine && missingChassis) return "Add Engine/Chassis";
+    if (missingEngine) return "Enter Engine";
+    if (missingChassis) return "Enter Chassis";
+    return "Review Numbers";
+  };
+
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const primaryActionClass =
       "cursor-pointer inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0";
@@ -517,7 +527,7 @@ const VehicleOrderDetails = () => {
             className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700`}
           >
             <FilePenLine size={14} />
-            Add Engine/Chassis
+            {getNumberActionLabel(booking)}
           </button>
         );
       case "chassis_received":

@@ -43,12 +43,11 @@ const AddDealer = () => {
     if (
       !form.name ||
       !form.contact ||
-      !form.gstNumber ||
       !form.bankDetails.bankName ||
       !form.bankDetails.accountNo ||
       !form.bankDetails.branchIfsc
     ) {
-      toast.error("Dealer info, GST number and bank details are required!");
+      toast.error("Dealer info and bank details are required!");
       return;
     }
     if (!/^[0-9]{10,15}$/.test(form.contact.replace(/\D/g, ""))) {
@@ -59,7 +58,7 @@ const AddDealer = () => {
       toast.error("Enter valid email address");
       return;
     }
-    if (!validateGST(form.gstNumber)) {
+    if (form.gstNumber.trim() && !validateGST(form.gstNumber)) {
       toast.error("Invalid GST Number format!");
       return;
     }
@@ -176,7 +175,7 @@ const AddDealer = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> GST Number *
+                <Hash size={14} className="text-emerald-500" /> GST Number
               </label>
               <input
                 name="gstNumber"
