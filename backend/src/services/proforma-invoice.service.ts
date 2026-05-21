@@ -273,7 +273,7 @@ export const createPIService = async (data: any) => {
     (sum: number, v: any) =>
       sum +
       (Number(v.quantity) || 1) *
-        ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+      ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
     0,
   );
 
@@ -806,14 +806,14 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
   const verificationRate =
     currentMetrics.receivedLC > 0
       ? Math.round(
-          (currentMetrics.verifiedLC / currentMetrics.receivedLC) * 100,
-        )
+        (currentMetrics.verifiedLC / currentMetrics.receivedLC) * 100,
+      )
       : 0;
   const amendmentRate =
     currentMetrics.receivedLC > 0
       ? Math.round(
-          (currentMetrics.amendmentLC / currentMetrics.receivedLC) * 100,
-        )
+        (currentMetrics.amendmentLC / currentMetrics.receivedLC) * 100,
+      )
       : 0;
 
   const lcStageDistribution = [
@@ -902,45 +902,45 @@ export const getPIDashboardOverviewService = async (timeRange: string) => {
         value: currentMetrics.totalPIAmount,
         trend: canCompare
           ? calculateTrend(
-              currentMetrics.totalPIAmount,
-              previousMetrics.totalPIAmount,
-            )
+            currentMetrics.totalPIAmount,
+            previousMetrics.totalPIAmount,
+          )
           : null,
       },
       awaitingLC: {
         value: currentMetrics.awaitingLC,
         trend: canCompare
           ? calculateTrend(
-              currentMetrics.awaitingLC,
-              previousMetrics.awaitingLC,
-            )
+            currentMetrics.awaitingLC,
+            previousMetrics.awaitingLC,
+          )
           : null,
       },
       receivedLC: {
         value: currentMetrics.receivedLC,
         trend: canCompare
           ? calculateTrend(
-              currentMetrics.receivedLC,
-              previousMetrics.receivedLC,
-            )
+            currentMetrics.receivedLC,
+            previousMetrics.receivedLC,
+          )
           : null,
       },
       verifiedLC: {
         value: currentMetrics.verifiedLC,
         trend: canCompare
           ? calculateTrend(
-              currentMetrics.verifiedLC,
-              previousMetrics.verifiedLC,
-            )
+            currentMetrics.verifiedLC,
+            previousMetrics.verifiedLC,
+          )
           : null,
       },
       amendmentLC: {
         value: currentMetrics.amendmentLC,
         trend: canCompare
           ? calculateTrend(
-              currentMetrics.amendmentLC,
-              previousMetrics.amendmentLC,
-            )
+            currentMetrics.amendmentLC,
+            previousMetrics.amendmentLC,
+          )
           : null,
       },
     },
@@ -1587,25 +1587,72 @@ export const getPIByIdService = async (id: string) => {
 };
 
 // UPDATE PI
+// export const updatePIService = async (id: string, data: any) => {
+//   if (data.vehicleDetails) {
+//     data.totalAmount = data.vehicleDetails.reduce(
+//       (sum: number, v: any) =>
+//         // Ensure fob and freight are treated as numbers
+//         sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+//       0,
+//     );
+
+//     data.amountInWords = numberToWords(data.totalAmount);
+//   }
+
+//   const updated = await ProformaInvoice.findByIdAndUpdate(id, data, {
+//     new: true,
+//   });
+
+//   // Booking status update removed — "PI Created" status no longer exists in the system
+
+//   return updated;
+// };
+
 export const updatePIService = async (id: string, data: any) => {
   if (data.vehicleDetails) {
     data.totalAmount = data.vehicleDetails.reduce(
       (sum: number, v: any) =>
-        // Ensure fob and freight are treated as numbers
-        sum + v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
+        sum +
+        v.quantity * ((Number(v.fob) || 0) + (Number(v.freight) || 0)),
       0,
     );
 
     data.amountInWords = numberToWords(data.totalAmount);
   }
 
+  // Update PI
   const updated = await ProformaInvoice.findByIdAndUpdate(id, data, {
     new: true,
   });
 
-  // Booking status update removed — "PI Created" status no longer exists in the system
+  if (!updated) {
+    throw new Error("PI not found");
+  }
 
-  return updated;
+  try {
+    // Refetch populated data
+    const fullPI = await ProformaInvoice.findById(updated._id)
+      .populate("client_id company_id");
+
+    const pdfData = preparePIDataForService(fullPI);
+
+    // Generate NEW PDF
+    const relativePath = await savePIPdfToDisk(pdfData);
+
+    // Save latest PDF path
+    await ProformaInvoice.findByIdAndUpdate(updated._id, {
+      pdfPath: relativePath,
+    });
+
+  } catch (err) {
+    console.error("Auto PDF Generation failed", err);
+  }
+
+  // RETURN latest updated document
+  const finalUpdatedPI = await ProformaInvoice.findById(id)
+    .populate("client_id company_id");
+
+  return finalUpdatedPI;
 };
 
 // UPDATE STATUS

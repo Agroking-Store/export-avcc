@@ -42,6 +42,7 @@ const router = Router();
 router.get("/:id/pdf", downloadProformaInvoice);
 router.get("/:id/hbl/view", getHBLFile);
 
+router.get("/:id/lc/view", getLCFile);
 router.use(authenticate);
 router.use(authorize(ROLES.ADMIN, ROLES.ACCOUNTANT));
 
@@ -63,7 +64,6 @@ router.get("/", getPIs);
 
 router.get("/:id/data", getProformaInvoiceData);
 // router.get("/:id/pdf", downloadProformaInvoice);
-router.get("/:id/lc/view", getLCFile);
 router.get("/:id", getPIById);
 
 router.put("/:id", validate(createPIValidationSchema), updatePI);
