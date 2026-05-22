@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Download,
-  Eye,
-  FileText,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
@@ -219,6 +213,7 @@ const buildInitialForm = (
     netWeightKg: manual.netWeightKg || vehicle.netWeightKg || "",
     grossWeightKg: manual.grossWeightKg || vehicle.grossWeightKg || "",
     dimensionsCm: manual.dimensionsCm || vehicle.dimensionsCm || "",
+    vehicleDescriptionPrefix: manual.vehicleDescriptionPrefix || "",
   };
 };
 
@@ -604,6 +599,25 @@ export default function InvoiceFormPage() {
                 </>
               )}
               {showCommercialFields && (
+                <EditableField
+                  label="Vehicle Description Suffix"
+                  name="vehicleDescriptionPrefix"
+                  value={form.vehicleDescriptionPrefix}
+                  onChange={handleFieldChange}
+                  placeholder="e.g. TOYOTA GT 1.0T 7DCT HTX"
+                />
+              )}
+              {showCommercialFields && (
+                <EditableField
+                  label="Type of Vehicle"
+                  name="typeOfVehicle"
+                  value={form.typeOfVehicle}
+                  onChange={handleFieldChange}
+                  placeholder="SUV"
+                />
+              )}
+
+              {showCommercialFields && (
                 <>
                   <EditableField
                     label="Terms of Delivery"
@@ -663,6 +677,7 @@ export default function InvoiceFormPage() {
                   ? "USD invoice uses export-format fields only. Packing list is generated separately."
                   : "Only fields used in the invoice format are shown here. INR assessable value is calculated automatically from USD total and exchange rate."}
             </p>
+
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {showCommercialFields && (
                 <EditableField
@@ -687,6 +702,15 @@ export default function InvoiceFormPage() {
                 onChange={handleFieldChange}
                 placeholder="V AT / G1.0T 7DCT HTX"
               />
+              {showCommercialFields && (
+                <EditableField
+                  label="Vehicle Description Suffix"
+                  name="vehicleDescriptionPrefix"
+                  value={form.vehicleDescriptionPrefix}
+                  onChange={handleFieldChange}
+                  placeholder="e.g. TOYOTA GT 1.0T 7DCT HTX"
+                />
+              )}
               {showCommercialFields && (
                 <EditableField
                   label="Type of Vehicle"
@@ -870,7 +894,9 @@ export default function InvoiceFormPage() {
               </div>
               {showInrFields && (
                 <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-700">
-                  Formula: `Assessable INR = USD Total x Exchange Rate`; `IGST = Assessable INR x IGST%`; `Invoice Total = Assessable INR + IGST`
+                  Formula: `Assessable INR = USD Total x Exchange Rate`; `IGST =
+                  Assessable INR x IGST%`; `Invoice Total = Assessable INR +
+                  IGST`
                 </div>
               )}
             </div>
@@ -977,7 +1003,6 @@ export default function InvoiceFormPage() {
               <Download className="h-4 w-4" />
               Download PDF
             </Button>
-
           </div>
 
           <DialogFooter className="mt-2">
