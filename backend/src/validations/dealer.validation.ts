@@ -1,23 +1,11 @@
-const validateDealerBankDetails = (bankDetails: any, isRequired = false) => {
+const validateDealerBankDetails = (bankDetails: any) => {
   if (!bankDetails || typeof bankDetails !== "object") {
-    if (isRequired) {
-      throw new Error("Dealer bank details are required");
-    }
     return;
-  }
-
-  if (
-    !bankDetails.bankName ||
-    !bankDetails.accountNo ||
-    !bankDetails.branchIfsc
-  ) {
-    throw new Error(
-      "Bank name, account number and branch/IFSC are required",
-    );
   }
 };
 
-const isValidPhone = (value: string) => /^[0-9]{10,15}$/.test(value.replace(/\D/g, ""));
+const isValidPhone = (value: string) =>
+  /^[0-9]{10,15}$/.test(value.replace(/\D/g, ""));
 
 export const validateCreateDealer = (data: any) => {
   if (!data.name || !data.contact) {
@@ -33,7 +21,8 @@ export const validateCreateDealer = (data: any) => {
   if (data.gstNumber && !gstRegex.test(data.gstNumber)) {
     throw new Error("Invalid GST number format");
   }
-  validateDealerBankDetails(data.bankDetails, true);
+
+  validateDealerBankDetails(data.bankDetails);
 };
 
 export const validateUpdateDealer = (data: any) => {
@@ -41,12 +30,13 @@ export const validateUpdateDealer = (data: any) => {
     throw new Error("Update data required");
   }
   if (data.gstNumber) {
-    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const gstRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     if (!gstRegex.test(data.gstNumber)) {
       throw new Error("Invalid GST number format");
     }
   }
   if (data.bankDetails) {
-    validateDealerBankDetails(data.bankDetails, false);
+    validateDealerBankDetails(data.bankDetails);
   }
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -13,12 +13,35 @@ import {
   X,
 } from "lucide-react";
 import { vehicleManagementApi } from "../vehicleManagementApi";
+import { useAuth } from "../../../hooks/useAuth";
+import api from "../../../services/api";
+
+/* ─── Hierarchy Types ─── */
+interface Brand {
+  _id: string;
+  name: string;
+}
+interface Model {
+  _id: string;
+  name: string;
+  brandId: string;
+}
+interface Variant {
+  _id: string;
+  name: string;
+  modelId: string;
+}
+interface Color {
+  _id: string;
+  name: string;
+  variantId: string;
+}
 
 interface VehicleForm {
-  brandName: string;
-  modelName: string;
-  variant: string;
-  color: string;
+  brandId: string;
+  modelId: string;
+  variantId: string;
+  colorId: string;
   commercialHsnCode: string;
   exportHsnCode: string;
   fobAmount: string;
@@ -27,10 +50,10 @@ interface VehicleForm {
 }
 
 const emptyVehicle = (): VehicleForm => ({
-  brandName: "",
-  modelName: "",
-  variant: "",
-  color: "",
+  brandId: "",
+  modelId: "",
+  variantId: "",
+  colorId: "",
   commercialHsnCode: "",
   exportHsnCode: "",
   fobAmount: "",
@@ -38,12 +61,62 @@ const emptyVehicle = (): VehicleForm => ({
   igstRate: "18",
 });
 
-import { useAuth } from "../../../hooks/useAuth";
-
 const AddVehicle = () => {
   const navigate = useNavigate();
   const { isSourcingTeam } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  const [vehicles, setVehicles] = useState<VehicleForm[]>([emptyVehicle()]);
+
+  /* ─── Hierarchy Data ─── */
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [modelsMap, setModelsMap] = useState<Record<string, Model[]>>({});
+  const [variantsMap, setVariantsMap] = useState<Record<string, Variant[]>>({});
+  const [colorsMap, setColorsMap] = useState<Record<string, Color[]>>({});
+
+  useEffect(() => {
+    if (isSourcingTeam) return;
+    fetchBrands();
+  }, [isSourcingTeam]);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await api.get("/vehicles/brands");
+      setBrands(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchModels = async (brandId: string) => {
+    if (modelsMap[brandId]) return; // already fetched
+    try {
+      const res = await api.get(`/vehicles/models?brandId=${brandId}`);
+      setModelsMap((prev) => ({ ...prev, [brandId]: res.data || [] }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchVariants = async (modelId: string) => {
+    if (variantsMap[modelId]) return;
+    try {
+      const res = await api.get(`/vehicles/variants?modelId=${modelId}`);
+      setVariantsMap((prev) => ({ ...prev, [modelId]: res.data || [] }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchColors = async (variantId: string) => {
+    if (colorsMap[variantId]) return;
+    try {
+      const res = await api.get(`/vehicles/colors?variantId=${variantId}`);
+      setColorsMap((prev) => ({ ...prev, [variantId]: res.data || [] }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (isSourcingTeam) {
     return (
@@ -52,24 +125,51 @@ const AddVehicle = () => {
       </div>
     );
   }
-  const [vehicles, setVehicles] = useState<VehicleForm[]>([emptyVehicle()]);
 
-  const handleChange = (index: number, field: keyof VehicleForm, value: string) => {
+  const handleChange = (
+    index: number,
+    field: keyof VehicleForm,
+    value: string,
+  ) => {
     setVehicles((prev) =>
-      prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
+      prev.map((v, i) => {
+        if (i !== index) return v;
+        const updated = { ...v, [field]: value };
+
+        // Reset child dropdowns on parent change
+        if (field === "brandId") {
+          updated.modelId = "";
+          updated.variantId = "";
+          updated.colorId = "";
+          if (value) fetchModels(value);
+        }
+        if (field === "modelId") {
+          updated.variantId = "";
+          updated.colorId = "";
+          if (value) fetchVariants(value);
+        }
+        if (field === "variantId") {
+          updated.colorId = "";
+          if (value) fetchColors(value);
+        }
+
+        return updated;
+      }),
     );
   };
 
-  const handleNumberChange = (index: number, field: keyof VehicleForm, value: string) => {
+  const handleNumberChange = (
+    index: number,
+    field: keyof VehicleForm,
+    value: string,
+  ) => {
     const num = parseFloat(value);
     if (value === "" || num >= 0) {
       handleChange(index, field, value);
     }
   };
 
-  const addVehicle = () => {
-    setVehicles((prev) => [...prev, emptyVehicle()]);
-  };
+  const addVehicle = () => setVehicles((prev) => [...prev, emptyVehicle()]);
 
   const removeVehicle = (index: number) => {
     if (vehicles.length <= 1) {
@@ -83,10 +183,10 @@ const AddVehicle = () => {
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i];
       if (
-        !v.brandName.trim() ||
-        !v.modelName.trim() ||
-        !v.variant.trim() ||
-        !v.color.trim() ||
+        !v.brandId ||
+        !v.modelId ||
+        !v.variantId ||
+        !v.colorId ||
         !v.commercialHsnCode.trim() ||
         !v.exportHsnCode.trim()
       ) {
@@ -113,17 +213,30 @@ const AddVehicle = () => {
 
     try {
       setLoading(true);
-      const payload = vehicles.map((v) => ({
-        brandName: v.brandName.trim(),
-        modelName: v.modelName.trim(),
-        variant: v.variant.trim(),
-        color: v.color.trim(),
-        commercialHsnCode: v.commercialHsnCode.trim(),
-        exportHsnCode: v.exportHsnCode.trim(),
-        fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
-        freight: v.freight !== "" ? parseFloat(v.freight) : 0,
-        igstRate: Number(v.igstRate),
-      }));
+      const payload = vehicles.map((v) => {
+        const brand = brands.find((b) => b._id === v.brandId);
+        const model = (modelsMap[v.brandId] || []).find(
+          (m) => m._id === v.modelId,
+        );
+        const variant = (variantsMap[v.modelId] || []).find(
+          (va) => va._id === v.variantId,
+        );
+        const color = (colorsMap[v.variantId] || []).find(
+          (c) => c._id === v.colorId,
+        );
+
+        return {
+          brandName: brand?.name || "",
+          modelName: model?.name || "",
+          variant: variant?.name || "",
+          color: color?.name || "",
+          commercialHsnCode: v.commercialHsnCode.trim(),
+          exportHsnCode: v.exportHsnCode.trim(),
+          fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
+          freight: v.freight !== "" ? parseFloat(v.freight) : 0,
+          igstRate: Number(v.igstRate),
+        };
+      });
 
       await vehicleManagementApi.createVehiclesBulk(payload);
 
@@ -139,6 +252,9 @@ const AddVehicle = () => {
 
   const inputStyle =
     "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
+
+  const selectStyle =
+    "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer appearance-none";
 
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
@@ -202,55 +318,95 @@ const AddVehicle = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>
-                    <Car size={14} className="text-indigo-500" /> Brand Name <span className="text-red-500 ml-0.5">*</span>
+                    <Car size={14} className="text-indigo-500" /> Brand Name{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <input
-                    value={vehicle.brandName}
-                    onChange={(e) => handleChange(index, "brandName", e.target.value)}
-                    className={inputStyle}
-                    placeholder="Toyota"
-                  />
+                  <select
+                    value={vehicle.brandId}
+                    onChange={(e) =>
+                      handleChange(index, "brandId", e.target.value)
+                    }
+                    className={selectStyle}
+                  >
+                    <option value="">Select Brand</option>
+                    {brands.map((b) => (
+                      <option key={b._id} value={b._id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className={labelStyle}>
-                    <Car size={14} className="text-blue-400" /> Model Name <span className="text-red-500 ml-0.5">*</span>
+                    <Car size={14} className="text-blue-400" /> Model Name{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <input
-                    value={vehicle.modelName}
-                    onChange={(e) => handleChange(index, "modelName", e.target.value)}
-                    className={inputStyle}
-                    placeholder="Land Cruiser"
-                  />
+                  <select
+                    value={vehicle.modelId}
+                    onChange={(e) =>
+                      handleChange(index, "modelId", e.target.value)
+                    }
+                    className={selectStyle}
+                    disabled={!vehicle.brandId}
+                  >
+                    <option value="">Select Model</option>
+                    {(modelsMap[vehicle.brandId] || []).map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-emerald-500" /> Variant <span className="text-red-500 ml-0.5">*</span>
+                    <Hash size={14} className="text-emerald-500" /> Variant{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <input
-                    value={vehicle.variant}
-                    onChange={(e) => handleChange(index, "variant", e.target.value)}
-                    className={inputStyle}
-                    placeholder="ZX Diesel"
-                  />
+                  <select
+                    value={vehicle.variantId}
+                    onChange={(e) =>
+                      handleChange(index, "variantId", e.target.value)
+                    }
+                    className={selectStyle}
+                    disabled={!vehicle.modelId}
+                  >
+                    <option value="">Select Variant</option>
+                    {(variantsMap[vehicle.modelId] || []).map((va) => (
+                      <option key={va._id} value={va._id}>
+                        {va.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className={labelStyle}>
-                    <Palette size={14} className="text-rose-400" /> Color <span className="text-red-500 ml-0.5">*</span>
+                    <Palette size={14} className="text-rose-400" /> Color{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <input
-                    value={vehicle.color}
-                    onChange={(e) => handleChange(index, "color", e.target.value)}
-                    className={inputStyle}
-                    placeholder="White Pearl"
-                  />
+                  <select
+                    value={vehicle.colorId}
+                    onChange={(e) =>
+                      handleChange(index, "colorId", e.target.value)
+                    }
+                    className={selectStyle}
+                    disabled={!vehicle.variantId}
+                  >
+                    <option value="">Select Color</option>
+                    {(colorsMap[vehicle.variantId] || []).map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-violet-500" /> GST Rate <span className="text-red-500 ml-0.5">*</span>
+                    <Hash size={14} className="text-violet-500" /> GST Rate{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <select
                     value={vehicle.igstRate}
@@ -261,7 +417,7 @@ const AddVehicle = () => {
                         e.target.value as VehicleForm["igstRate"],
                       )
                     }
-                    className={`${inputStyle} cursor-pointer`}
+                    className={`${selectStyle}`}
                   >
                     <option value="5">5%</option>
                     <option value="18">18%</option>
@@ -271,7 +427,8 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-amber-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span>
+                    <Hash size={14} className="text-amber-500" /> Commercial HSN{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     value={vehicle.commercialHsnCode}
@@ -285,7 +442,8 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span>
+                    <Hash size={14} className="text-sky-500" /> Export HSN{" "}
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     value={vehicle.exportHsnCode}
@@ -311,14 +469,17 @@ const AddVehicle = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>
-                    <DollarSign size={14} className="text-emerald-600" /> FOB Amount (USD)
+                    <DollarSign size={14} className="text-emerald-600" /> FOB
+                    Amount (USD)
                   </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={vehicle.fobAmount}
-                    onChange={(e) => handleNumberChange(index, "fobAmount", e.target.value)}
+                    onChange={(e) =>
+                      handleNumberChange(index, "fobAmount", e.target.value)
+                    }
                     className={inputStyle}
                     placeholder="0.00"
                   />
@@ -326,14 +487,17 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <DollarSign size={14} className="text-blue-600" /> Freight Charges (USD)
+                    <DollarSign size={14} className="text-blue-600" /> Freight
+                    Charges (USD)
                   </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={vehicle.freight}
-                    onChange={(e) => handleNumberChange(index, "freight", e.target.value)}
+                    onChange={(e) =>
+                      handleNumberChange(index, "freight", e.target.value)
+                    }
                     className={inputStyle}
                     placeholder="0.00"
                   />
@@ -367,7 +531,13 @@ const AddVehicle = () => {
             disabled={loading}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><Save size={18} /> Save Vehicle(s)</>}
+            {loading ? (
+              "Saving..."
+            ) : (
+              <>
+                <Save size={18} /> Save Vehicle(s)
+              </>
+            )}
           </button>
         </div>
       </form>
@@ -376,4 +546,3 @@ const AddVehicle = () => {
 };
 
 export default AddVehicle;
-
