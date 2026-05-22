@@ -26,6 +26,8 @@ export interface VehicleBookingItem {
       };
   vehicleId: string;
   vehicleIndex: number;
+  usdRate?: number;
+
   assignedClientId?: string;
   assignedClientSnapshot?: {
     name: string;
@@ -75,7 +77,12 @@ export interface VehicleBookingItem {
   rejectionReason?: string;
   bookingAmount?: number;
   paymentAmount?: number;
-  payments?: Array<{ amount: number; date: string; reference?: string; remarks?: string }>;
+  payments?: Array<{
+    amount: number;
+    date: string;
+    reference?: string;
+    remarks?: string;
+  }>;
   paymentReference?: string;
   engineNumber?: string;
   chassisNumber?: string;
@@ -150,7 +157,12 @@ export const vehicleBookingApi = {
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ data: VehicleBookingItem[]; total: number; page: number; totalPages: number }> => {
+  }): Promise<{
+    data: VehicleBookingItem[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
     const response = await api.get("/vehicle-bookings", { params });
     return response.data;
   },
@@ -263,9 +275,17 @@ export const vehicleBookingApi = {
 
   addPayment: async (
     bookingId: string,
-    payload: { amount: number; date?: string; reference?: string; remarks?: string }
+    payload: {
+      amount: number;
+      date?: string;
+      reference?: string;
+      remarks?: string;
+    },
   ): Promise<VehicleBookingItem> => {
-    const response = await api.post(`/vehicle-bookings/${bookingId}/payments`, payload);
+    const response = await api.post(
+      `/vehicle-bookings/${bookingId}/payments`,
+      payload,
+    );
     return response.data as VehicleBookingItem;
   },
 };
