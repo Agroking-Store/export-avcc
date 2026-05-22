@@ -26,8 +26,8 @@ const AppNavigationSidebar: React.FC = () => {
 
   const role = user?.role?.toLowerCase();
 
-
 const defaultMenuItems = [
+
   {
     name: "Dashboard",
     icon: <LayoutDashboard size={20} />,
@@ -58,7 +58,13 @@ const defaultMenuItems = [
     icon: <Users size={20} />,
     path: "/companies",
   },
+  {
+    name: "Shipment Planning",
+    icon: <Truck size={20} />,
+    path: "/shipment-planning/dashboard",
+  },
 ];
+
 
 let menuItems =
   role === "client"
