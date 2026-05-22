@@ -139,7 +139,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
               ? (booking.vehicleId as any)._id
               : booking.vehicleId;
           if (vehicleIdStr) {
-            const vehicle = await vehicleManagementApi.getVehicleById(vehicleIdStr);
+            const vehicle =
+              await vehicleManagementApi.getVehicleById(vehicleIdStr);
             if (vehicle?.igstRate) {
               igstRate = vehicle.igstRate;
             }
@@ -164,18 +165,33 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
       let fetchedVehicle: any = null;
       if (!vehicleSnapshot && typeof booking.vehicleId === "string") {
         try {
-          fetchedVehicle = await vehicleManagementApi.getVehicleById(booking.vehicleId);
-        } catch { }
+          fetchedVehicle = await vehicleManagementApi.getVehicleById(
+            booking.vehicleId,
+          );
+        } catch {}
       }
 
-      const brandName = details?.brand || vehicleSnapshot?.brandName || fetchedVehicle?.brandName || "";
-      const modelName = details?.carModelName ||
+      const brandName =
+        details?.brand ||
+        vehicleSnapshot?.brandName ||
+        fetchedVehicle?.brandName ||
+        "";
+      const modelName =
+        details?.carModelName ||
         (vehicleSnapshot
-          ? [vehicleSnapshot.modelName, vehicleSnapshot.variant].filter(Boolean).join(" ")
+          ? [vehicleSnapshot.modelName, vehicleSnapshot.variant]
+              .filter(Boolean)
+              .join(" ")
           : fetchedVehicle
-            ? [fetchedVehicle.modelName, fetchedVehicle.variant].filter(Boolean).join(" ")
+            ? [fetchedVehicle.modelName, fetchedVehicle.variant]
+                .filter(Boolean)
+                .join(" ")
             : "");
-      const color = details?.carColour || vehicleSnapshot?.color || fetchedVehicle?.color || "";
+      const color =
+        details?.carColour ||
+        vehicleSnapshot?.color ||
+        fetchedVehicle?.color ||
+        "";
 
       setCostingForm({
         dealershipName:
@@ -187,15 +203,20 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         exShowroomPrice: formatAmountForInput(details?.exShowroomPrice),
         gstRate: String(savedGstRate || ""),
         bookingAmount: formatAmountForInput(booking.bookingAmount),
-        usdRate: formatAmountForInput(details?.usdRate),
+        usdRate: formatAmountForInput(booking.usdRate),
         netCost: {
           basicValue: formatAmountForInput(
-            details?.netCost?.basicValue || (savedExShowroom ? derivedBasic : undefined),
+            details?.netCost?.basicValue ||
+              (savedExShowroom ? derivedBasic : undefined),
           ),
-          handlingCharges: formatAmountForInput(details?.netCost?.handlingCharges),
+          handlingCharges: formatAmountForInput(
+            details?.netCost?.handlingCharges,
+          ),
           crtm: formatAmountForInput(details?.netCost?.crtm),
           insurance: formatAmountForInput(details?.netCost?.insurance),
-          registrationCost: formatAmountForInput(details?.netCost?.registrationCost),
+          registrationCost: formatAmountForInput(
+            details?.netCost?.registrationCost,
+          ),
           cashComponent: formatAmountForInput(details?.netCost?.cashComponent),
           bureauVeritas: formatAmountForInput(details?.netCost?.bureauVeritas),
           shippingCost: formatAmountForInput(details?.netCost?.shippingCost),
@@ -203,9 +224,12 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
         },
         taxAmount: {
           carGst: formatAmountForInput(
-            details?.taxAmount?.carGst || (savedExShowroom ? derivedCarGst : undefined),
+            details?.taxAmount?.carGst ||
+              (savedExShowroom ? derivedCarGst : undefined),
           ),
-          bureauVeritasGst: formatAmountForInput(details?.taxAmount?.bureauVeritasGst),
+          bureauVeritasGst: formatAmountForInput(
+            details?.taxAmount?.bureauVeritasGst,
+          ),
           shippingGst: formatAmountForInput(details?.taxAmount?.shippingGst),
           insuranceGst: formatAmountForInput(details?.taxAmount?.insuranceGst),
           tcs: formatAmountForInput(details?.taxAmount?.tcs),
@@ -221,7 +245,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
   // ── upload handler ──────────────────────────────────────────────────────────
 
-  const handleFileChangeAndUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChangeAndUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -238,7 +264,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
           : "Quotation uploaded successfully. Please save costing details.",
       );
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to upload quotation");
+      toast.error(
+        error.response?.data?.message || "Failed to upload quotation",
+      );
     } finally {
       setQuotationSaving(false);
       event.target.value = "";
@@ -312,9 +340,12 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
   // const taxTotalUsd = taxTotal > 0 ? (taxTotal / USD_RATE).toFixed(5) : "—";
   // const grandTotalUsd = grandTotal > 0 ? (grandTotal / USD_RATE).toFixed(5) : "—";
 
-  const netTotalUsd = netTotal > 0 && usdRate > 0 ? (netTotal / usdRate).toFixed(5) : "—";
-  const taxTotalUsd = taxTotal > 0 && usdRate > 0 ? (taxTotal / usdRate).toFixed(5) : "—";
-  const grandTotalUsd = grandTotal > 0 && usdRate > 0 ? (grandTotal / usdRate).toFixed(5) : "—";
+  const netTotalUsd =
+    netTotal > 0 && usdRate > 0 ? (netTotal / usdRate).toFixed(5) : "—";
+  const taxTotalUsd =
+    taxTotal > 0 && usdRate > 0 ? (taxTotal / usdRate).toFixed(5) : "—";
+  const grandTotalUsd =
+    grandTotal > 0 && usdRate > 0 ? (grandTotal / usdRate).toFixed(5) : "—";
 
   // ── save handler ────────────────────────────────────────────────────────────
 
@@ -335,24 +366,29 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
     try {
       setQuotationSaving(true);
-      const updated = await vehicleBookingApi.saveQuotationDetails(booking._id, {
-        dealershipName: costingForm.dealershipName,
-        brand: costingForm.brand,
-        carModelName: costingForm.carModelName,
-        carColour: costingForm.carColour,
-        exShowroomPrice: toAmount(costingForm.exShowroomPrice),
-        gstRate: toAmount(costingForm.gstRate),
-        bookingAmount: toAmount(costingForm.bookingAmount),
-        netCost: {
-          ...costingForm.netCost,
-          total: netTotal,
+      const updated = await vehicleBookingApi.saveQuotationDetails(
+        booking._id,
+        {
+          dealershipName: costingForm.dealershipName,
+          brand: costingForm.brand,
+          carModelName: costingForm.carModelName,
+          carColour: costingForm.carColour,
+          exShowroomPrice: toAmount(costingForm.exShowroomPrice),
+          gstRate: toAmount(costingForm.gstRate),
+          bookingAmount: toAmount(costingForm.bookingAmount),
+          usdRate: toAmount(costingForm.usdRate),
+
+          netCost: {
+            ...costingForm.netCost,
+            total: netTotal,
+          },
+          taxAmount: {
+            ...costingForm.taxAmount,
+            total: taxTotal,
+          },
+          grandTotal,
         },
-        taxAmount: {
-          ...costingForm.taxAmount,
-          total: taxTotal,
-        },
-        grandTotal,
-      });
+      );
       onSync(updated);
       toast.success("Costing details saved. Waiting for approval.");
     } catch (error: any) {
@@ -391,10 +427,7 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
     try {
       setQuotationSaving(true);
-      const updated = await vehicleBookingApi.reject(
-        booking._id,
-        rejectReason,
-      );
+      const updated = await vehicleBookingApi.reject(booking._id, rejectReason);
       onSync(updated);
       toast.success("Vehicle rejected");
       onClose();
@@ -445,7 +478,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
             <div className="flex items-center gap-2">
               <FileText size={18} className="text-blue-600" />
               <span className="text-sm font-semibold text-slate-800">
-                {booking.quotationFile ? "Quotation File Uploaded" : "No Quotation File Uploaded"}
+                {booking.quotationFile
+                  ? "Quotation File Uploaded"
+                  : "No Quotation File Uploaded"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -453,7 +488,10 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                 <button
                   type="button"
                   onClick={() =>
-                    window.open(getQuotationUrl(booking.quotationFile), "_blank")
+                    window.open(
+                      getQuotationUrl(booking.quotationFile),
+                      "_blank",
+                    )
                   }
                   className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
                 >
@@ -489,7 +527,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                     Costing Sheet Details
                   </p>
                   <p className="text-sm text-slate-500">
-                    Save these details to move the quotation to Waiting for Approval.
+                    Save these details to move the quotation to Waiting for
+                    Approval.
                   </p>
                 </div>
                 {booking.status === "quotation_uploaded" &&
@@ -508,7 +547,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   </label>
                   <input
                     value={costingForm.dealershipName}
-                    onChange={(e) => setCostingField("dealershipName", e.target.value)}
+                    onChange={(e) =>
+                      setCostingField("dealershipName", e.target.value)
+                    }
                     className={inputCls}
                   />
                 </div>
@@ -528,7 +569,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   </label>
                   <input
                     value={costingForm.carModelName}
-                    onChange={(e) => setCostingField("carModelName", e.target.value)}
+                    onChange={(e) =>
+                      setCostingField("carModelName", e.target.value)
+                    }
                     className={inputCls}
                   />
                 </div>
@@ -537,7 +580,9 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-500">
                     Car Colour
-                    <span className="ml-1 text-[10px] font-normal text-slate-400">(from vehicle)</span>
+                    <span className="ml-1 text-[10px] font-normal text-slate-400">
+                      (from vehicle)
+                    </span>
                   </label>
                   <input
                     value={costingForm.carColour}
@@ -559,11 +604,13 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                     placeholder="e.g. 1000000"
                     className={inputCls}
                   />
-                  {toAmount(costingForm.exShowroomPrice) > 0 && toAmount(costingForm.gstRate) > 0 && (
-                    <p className="mt-1 text-[10px] text-slate-400">
-                      Basic Value auto-calculated as Ex-Showroom - Car GST ({costingForm.gstRate}%)
-                    </p>
-                  )}
+                  {toAmount(costingForm.exShowroomPrice) > 0 &&
+                    toAmount(costingForm.gstRate) > 0 && (
+                      <p className="mt-1 text-[10px] text-slate-400">
+                        Basic Value auto-calculated as Ex-Showroom - Car GST (
+                        {costingForm.gstRate}%)
+                      </p>
+                    )}
                 </div>
 
                 {/* Booking Amount */}
@@ -575,25 +622,36 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                     type="number"
                     min="0"
                     value={costingForm.bookingAmount}
-                    onChange={(e) => setCostingField("bookingAmount", e.target.value)}
+                    onChange={(e) =>
+                      setCostingField("bookingAmount", e.target.value)
+                    }
                     placeholder="e.g. 50000"
                     className={inputCls}
                   />
-                  {toAmount(costingForm.netCost.basicValue) > 0 && toAmount(costingForm.bookingAmount) > 0 && (
-                    <p className="mt-1 text-[10px] text-emerald-600 font-medium">
-                      Remaining to pay: ₹{(toAmount(costingForm.netCost.basicValue) - toAmount(costingForm.bookingAmount)).toLocaleString("en-IN")}
-                    </p>
-                  )}
+                  {toAmount(costingForm.netCost.basicValue) > 0 &&
+                    toAmount(costingForm.bookingAmount) > 0 && (
+                      <p className="mt-1 text-[10px] text-emerald-600 font-medium">
+                        Remaining to pay: ₹
+                        {(
+                          toAmount(costingForm.netCost.basicValue) -
+                          toAmount(costingForm.bookingAmount)
+                        ).toLocaleString("en-IN")}
+                      </p>
+                    )}
                 </div>
 
                 {/* GST Rate – disabled, fetched from vehicle list item */}
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-500">
                     Applied GST Rate (%)
-                    <span className="ml-1 text-[10px] font-normal text-slate-400">(from vehicle)</span>
+                    <span className="ml-1 text-[10px] font-normal text-slate-400">
+                      (from vehicle)
+                    </span>
                   </label>
                   <input
-                    value={costingForm.gstRate ? `${costingForm.gstRate}%` : "—"}
+                    value={
+                      costingForm.gstRate ? `${costingForm.gstRate}%` : "—"
+                    }
                     disabled
                     className={disabledInputCls}
                   />
@@ -613,7 +671,6 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                   />
                 </div>
               </div>
-
 
               {/* ── Net Cost & Tax Amount tables ── */}
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -640,9 +697,12 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                       <div key={field} className="mb-3">
                         <label className="mb-1 block text-xs font-medium text-slate-500">
                           {label}
-                          {isAutoField && toAmount(costingForm.exShowroomPrice) > 0 && (
-                            <span className="ml-1 text-[10px] text-blue-400">(auto)</span>
-                          )}
+                          {isAutoField &&
+                            toAmount(costingForm.exShowroomPrice) > 0 && (
+                              <span className="ml-1 text-[10px] text-blue-400">
+                                (auto)
+                              </span>
+                            )}
                         </label>
                         <input
                           type="number"
@@ -690,9 +750,12 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
                       <div key={field} className="mb-3">
                         <label className="mb-1 block text-xs font-medium text-slate-500">
                           {label}
-                          {isAutoField && toAmount(costingForm.exShowroomPrice) > 0 && (
-                            <span className="ml-1 text-[10px] text-blue-400">(auto)</span>
-                          )}
+                          {isAutoField &&
+                            toAmount(costingForm.exShowroomPrice) > 0 && (
+                              <span className="ml-1 text-[10px] text-blue-400">
+                                (auto)
+                              </span>
+                            )}
                         </label>
                         <input
                           type="number"
@@ -749,7 +812,8 @@ const QuotationModal = ({ isOpen, onClose, booking, onSync }: Props) => {
 
           {/* ── Approval Actions ── */}
           {booking.quotationFile &&
-            booking.status === "quotation_uploaded" && !isSourcingTeam && (
+            booking.status === "quotation_uploaded" &&
+            !isSourcingTeam && (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="mb-4 flex items-center gap-2 text-slate-800">
                   <ShieldCheck size={18} />
