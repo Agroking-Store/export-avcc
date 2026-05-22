@@ -11,6 +11,7 @@ import bookingRoutes from "./booking.route";
 import taxInvoiceRoutes from "./taxInvoice.routes";
 import invoiceRoutes from "./invoice.route";
 import userRoutes from "./user.route";
+import vehicleHierarchyRoutes from "./vehicleHierarchyRoutes";
 const router = Router();
 
 // Mount routes
@@ -28,5 +29,7 @@ router.use("/bookings", bookingRoutes);
 router.use("/tax-invoices", taxInvoiceRoutes);
 router.use("/", invoiceRoutes);
 router.use("/users", userRoutes);
+router.use("/vehicle-hierarchy", vehicleHierarchyRoutes);
+router.use("/vehicles", vehicleHierarchyRoutes);
 
 export default router;
