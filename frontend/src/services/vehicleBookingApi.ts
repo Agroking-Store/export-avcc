@@ -12,7 +12,18 @@ export type VehicleBookingStatus =
 
 export interface VehicleBookingItem {
   _id: string;
-  orderId: string;
+  orderId:
+    | string
+    | {
+        _id?: string;
+        orderNumber?: string;
+        vehicleSnapshot?: {
+          brandName?: string;
+          modelName?: string;
+          variant?: string;
+          color?: string;
+        };
+      };
   vehicleId: string;
   vehicleIndex: number;
   assignedClientId?: string;
@@ -89,6 +100,12 @@ export interface VehicleBookingItem {
   isCRTMUploaded?: boolean;
   isBVUploaded?: boolean;
   isDealerInvoiceUploaded?: boolean;
+  piGenerated?: boolean;
+  associatedPIs?: Array<{
+    _id: string;
+    piNumber?: string;
+    status?: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

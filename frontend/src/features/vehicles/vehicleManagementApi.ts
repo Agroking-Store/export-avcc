@@ -52,6 +52,7 @@ export interface VehicleManagementFormOptions {
 export const vehicleManagementApi = {
   getVehicleList: async (params?: {
     search?: string;
+    status?: string;
     page?: number;
     limit?: number;
   }) => {

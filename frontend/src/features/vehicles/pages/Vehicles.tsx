@@ -86,6 +86,10 @@ const Vehicles: React.FC = () => {
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const hasEngineAndChassis = (booking: VehicleBookingItem) =>
+    !!String(booking.engineNumber || "").trim() &&
+    !!String(booking.chassisNumber || "").trim();
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -121,6 +125,9 @@ const Vehicles: React.FC = () => {
       (b) => b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber)
     ).length;
     const missingClient = bookings.filter((b) => !b.assignedClientId).length;
+    const piPending = bookings.filter(
+      (b) => hasEngineAndChassis(b) && !b.piGenerated,
+    ).length;
 
     return {
       total,
@@ -132,6 +139,7 @@ const Vehicles: React.FC = () => {
       awaitingApproval,
       awaitingNumbers,
       missingClient,
+      piPending,
     };
   }, [bookings]);
 
@@ -148,6 +156,11 @@ const Vehicles: React.FC = () => {
   const completedBookings = useMemo(
     () => bookings.filter((b) => STATUS_META[b.status].section === "completed"),
     [bookings]
+  );
+
+  const piPendingBookings = useMemo(
+    () => bookings.filter((b) => hasEngineAndChassis(b) && !b.piGenerated),
+    [bookings],
   );
 
   const statusCounts = useMemo(() => {
@@ -216,6 +229,7 @@ const Vehicles: React.FC = () => {
         <ActionCard label="Costing Pending"        value={metrics.costingPending}   icon={<FileText size={18} />}    color="text-blue-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "quotation_details_pending" } })} />
         <ActionCard label="Waiting for Approval"  value={metrics.awaitingApproval}  icon={<AlertCircle size={18} />} color="text-amber-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "quotation_uploaded" } })} />
         <ActionCard label="Missing Engine/Chassis" value={metrics.awaitingNumbers}   icon={<Wrench size={18} />}      color="text-blue-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "payment_done"        } })} />
+        <ActionCard label="Proforma Invoices Pending" value={metrics.piPending} icon={<FileText size={18} />} color="text-cyan-600" onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "piPending" } })} />
         {isAdmin && (
           <ActionCard label="Missing Client Allotment" value={metrics.missingClient} icon={<User size={18} />}        color="text-rose-600"  onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "missingClient"       } })} />
         )}
@@ -251,7 +265,7 @@ const Vehicles: React.FC = () => {
       </div>
 
       {/* Status Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatusSection title="Pending" count={pendingBookings.length} icon={<Clock size={18} className="text-amber-600" />} borderColor="border-amber-200" bgColor="bg-amber-50/50">
           {pendingBookings.length === 0 ? (
             <EmptyState message="No pending vehicles" />
@@ -278,6 +292,21 @@ const Vehicles: React.FC = () => {
           {inProgressBookings.length > 8 && (
             <button onClick={() => navigate("/vehicles/orders")} className="w-full mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-700 text-center py-2">
               View all {inProgressBookings.length} in progress
+            </button>
+          )}
+        </StatusSection>
+
+        <StatusSection title="Proforma Invoices Pending" count={piPendingBookings.length} icon={<FileText size={18} className="text-cyan-600" />} borderColor="border-cyan-200" bgColor="bg-cyan-50/50">
+          {piPendingBookings.length === 0 ? (
+            <EmptyState message="No PI pending vehicles" />
+          ) : (
+            piPendingBookings.slice(0, 8).map((booking) => (
+              <BookingRow key={booking._id} booking={booking} vehicleName={getVehicleName(booking)} onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "piPending" } })} />
+            ))
+          )}
+          {piPendingBookings.length > 8 && (
+            <button onClick={() => navigate("/vehicles/orders", { state: { statusFilter: "piPending" } })} className="w-full mt-3 text-xs font-semibold text-cyan-600 hover:text-cyan-700 text-center py-2">
+              View all {piPendingBookings.length} PI pending
             </button>
           )}
         </StatusSection>

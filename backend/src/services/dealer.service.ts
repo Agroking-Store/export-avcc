@@ -1,9 +1,5 @@
-import { Vehicle } from "../models/Vehicle.model";
 import Dealer from "../models/Dealer.model";
-import { VehicleBooking } from "../models/VehicleBooking.model";
-import { ROLES } from "../config/constants";
 import {
-  createUserAccountForProfile,
   getNextDealerId,
   normalizePhone,
 } from "./profile-sync.service";
@@ -13,27 +9,37 @@ const generateDealerId = async (): Promise<string> => {
 };
 
 export const createDealerService = async (data: any) => {
-  const email = data.email.toLowerCase().trim();
+  const email = data.email ? data.email.toLowerCase().trim() : "";
   const contact = normalizePhone(data.contact);
+  const duplicateChecks: any[] = [{ contact }];
+
+  if (email) {
+    duplicateChecks.push({ email });
+  }
+
   const existingDealer = await Dealer.findOne({
-    $or: [{ email }, { contact }],
+    $or: duplicateChecks,
   });
 
   if (existingDealer) {
-    throw new Error("Dealer already exists with this email or contact");
+    throw new Error(
+      email
+        ? "Dealer already exists with this email or contact"
+        : "Dealer already exists with this contact",
+    );
   }
 
-  await createUserAccountForProfile({
-    name: data.name,
-    email,
-    password: data.password,
-    phone: contact,
-    role: ROLES.DEALER,
-  });
-
   const dealerId = await generateDealerId();
-  const { password, ...dealerData } = data;
-  const dealer = new Dealer({ ...dealerData, contact, email, dealerId });
+  const dealerData = { ...data };
+  delete dealerData.password;
+  delete dealerData.confirmPassword;
+  delete dealerData.email;
+  const dealer = new Dealer({
+    ...dealerData,
+    contact,
+    ...(email ? { email } : {}),
+    dealerId,
+  });
   return await dealer.save();
 };
 

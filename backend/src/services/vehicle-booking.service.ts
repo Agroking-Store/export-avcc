@@ -584,8 +584,9 @@ export const getAllVehicleBookingsService = async (query: any) => {
   const { search, status, page = 1, limit = 10 } = query;
 
   const match: any = {};
+  const isPiPendingFilter = status === "piPending";
 
-  if (status && status !== "All") {
+  if (status && status !== "All" && !isPiPendingFilter) {
     match.status = status;
   }
 
@@ -598,6 +599,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
         "orderId.vehicleSnapshot.modelName": { $regex: search, $options: "i" },
       },
       { "orderId.vehicleSnapshot.variant": { $regex: search, $options: "i" } },
+      { "orderId.vehicleSnapshot.color": { $regex: search, $options: "i" } },
       { "orderId.orderNumber": { $regex: search, $options: "i" } },
       { engineNumber: { $regex: search, $options: "i" } },
       { chassisNumber: { $regex: search, $options: "i" } },
@@ -621,7 +623,41 @@ export const getAllVehicleBookingsService = async (query: any) => {
         orderId: "$order",
       },
     },
+    {
+      $lookup: {
+        from: "proformainvoices",
+        localField: "_id",
+        foreignField: "vehicleBookingIds",
+        as: "proformaInvoices",
+      },
+    },
+    {
+      $addFields: {
+        piGenerated: { $gt: [{ $size: "$proformaInvoices" }, 0] },
+        associatedPIs: {
+          $map: {
+            input: "$proformaInvoices",
+            as: "pi",
+            in: {
+              _id: "$$pi._id",
+              piNumber: "$$pi.piNumber",
+              status: "$$pi.status",
+            },
+          },
+        },
+      },
+    },
   ];
+
+  if (isPiPendingFilter) {
+    pipeline.push({
+      $match: {
+        piGenerated: false,
+        engineNumber: { $exists: true, $nin: ["", null] },
+        chassisNumber: { $exists: true, $nin: ["", null] },
+      },
+    });
+  }
 
   if (Object.keys(match).length > 0) {
     pipeline.push({ $match: match });
@@ -635,6 +671,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
     { $sort: { createdAt: -1 } },
     { $skip: skip },
     { $limit: Number(limit) },
+    { $project: { proformaInvoices: 0 } },
   );
 
   const data = await VehicleBooking.aggregate(pipeline);

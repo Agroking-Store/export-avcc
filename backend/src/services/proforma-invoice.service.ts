@@ -243,18 +243,30 @@ const getCompanyShortCode = (companyName: string): string => {
 export const createPIService = async (data: any) => {
   const vehicleBookingIds = (data.vehicleBookingIds || []).filter(Boolean);
   if (vehicleBookingIds.length > 0) {
-    const missingChassisCount = await VehicleBooking.countDocuments({
-      _id: { $in: vehicleBookingIds },
-      $or: [
-        { chassisNumber: { $exists: false } },
-        { chassisNumber: "" },
-        { chassisNumber: null },
-      ],
-    });
+    const existingPI = await ProformaInvoice.findOne({
+      vehicleBookingIds: { $in: vehicleBookingIds },
+    }).select("piNumber");
 
-    if (missingChassisCount > 0) {
-      throw new Error("PI can only be generated for vehicles with chassis number.");
+    if (existingPI) {
+      throw new Error(
+        `PI already generated for one or more selected vehicles (${existingPI.piNumber}).`,
+      );
     }
+
+  const incompleteVehicleCount = await VehicleBooking.countDocuments({
+    _id: { $in: vehicleBookingIds },
+    $or: [
+      { chassisNumber: { $exists: false } },
+      { chassisNumber: "" },
+      { chassisNumber: null },
+    ],
+  });
+
+  if (incompleteVehicleCount > 0) {
+    throw new Error(
+      "PI can only be generated for vehicles with a chassis number.",
+    );
+  }
   }
 
   const totalAmount = (data.vehicleDetails || []).reduce(

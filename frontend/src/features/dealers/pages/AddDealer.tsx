@@ -9,9 +9,6 @@ import {
   Hash,
   Landmark,
   CreditCard,
-  Lock,
-  Eye,
-  EyeOff,
   ArrowLeft,
   X,
   PlusCircle,
@@ -25,8 +22,6 @@ const AddDealer = () => {
     name: "",
     contact: "",
     email: "",
-    password: "",
-    confirmPassword: "",
     address: "",
     gstNumber: "",
     bankDetails: {
@@ -36,8 +31,6 @@ const AddDealer = () => {
     },
   });
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateGST = (gst: string) => {
     const gstRegex =
@@ -50,33 +43,22 @@ const AddDealer = () => {
     if (
       !form.name ||
       !form.contact ||
-      !form.email ||
-      !form.password ||
-      !form.gstNumber ||
       !form.bankDetails.bankName ||
       !form.bankDetails.accountNo ||
       !form.bankDetails.branchIfsc
     ) {
-      toast.error("Dealer info, password, GST number and bank details are required!");
+      toast.error("Dealer info and bank details are required!");
       return;
     }
     if (!/^[0-9]{10,15}$/.test(form.contact.replace(/\D/g, ""))) {
       toast.error("Contact must be 10 to 15 digits");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       toast.error("Enter valid email address");
       return;
     }
-    if (form.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-    if (!validateGST(form.gstNumber)) {
+    if (form.gstNumber.trim() && !validateGST(form.gstNumber)) {
       toast.error("Invalid GST Number format!");
       return;
     }
@@ -86,14 +68,13 @@ const AddDealer = () => {
         name: form.name,
         contact: form.contact.replace(/\D/g, ""),
         email: form.email.toLowerCase().trim(),
-        password: form.password,
         address: form.address,
         gstNumber: form.gstNumber,
         bankDetails: form.bankDetails,
       };
       await axios.post(`${API_URL}/dealers`, payload);
       navigate("/dealers/list", {
-        state: { success: "Dealer profile and login account created successfully" },
+        state: { success: "Dealer profile created successfully" },
       });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Dealer create failed. Please check the details and try again.");
@@ -194,7 +175,7 @@ const AddDealer = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> GST Number *
+                <Hash size={14} className="text-emerald-500" /> GST Number
               </label>
               <input
                 name="gstNumber"
@@ -222,64 +203,6 @@ const AddDealer = () => {
                 placeholder="Full dealer address"
                 rows={3}
               />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
-            <div className="h-5 w-1 bg-sky-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-              Login Credentials
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className={labelStyle}>
-                <Lock size={14} className="text-sky-500" /> Password *
-              </label>
-              <div className="relative">
-                <input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className={`${inputStyle} pr-11`}
-                  placeholder="Minimum 6 characters"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className={labelStyle}>
-                <Lock size={14} className="text-orange-500" /> Confirm Password *
-              </label>
-              <div className="relative">
-                <input
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={form.confirmPassword}
-                  onChange={(e) =>
-                    setForm({ ...form, confirmPassword: e.target.value })
-                  }
-                  className={`${inputStyle} pr-11`}
-                  placeholder="Re-enter password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
             </div>
           </div>
         </div>

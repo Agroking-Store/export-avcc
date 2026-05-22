@@ -78,9 +78,10 @@ const statusOptions = [
   "Awaiting Chassis/Engine No.",
   "In Transit",
   "Delivered",
+  "PI Pending",
 ];
 
-const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
+const statusLabelToRaw: Record<string, VehicleBookingStatus | "All" | "piPending"> = {
   All: "All",
   "Quotation Pending": "pending",
   "Costing Details Pending": "quotation_details_pending",
@@ -89,6 +90,7 @@ const statusLabelToRaw: Record<string, VehicleBookingStatus | "All"> = {
   "Awaiting Chassis/Engine No.": "payment_done",
   "In Transit": "chassis_received",
   Delivered: "delivered",
+  "PI Pending": "piPending",
 };
 
 interface ClientOrdersResponse {
@@ -113,6 +115,7 @@ const VehicleOrdersList = () => {
     payment_done:      "Awaiting Chassis/Engine No.",
     chassis_received:  "In Transit",
     delivered:         "Delivered",
+    piPending:         "PI Pending",
     missingClient:     "All",   // no dedicated label — show all, handled on dashboard side
   };
   const incomingFilter = (location.state as any)?.statusFilter;
@@ -151,8 +154,14 @@ const VehicleOrdersList = () => {
           : [];
         const normalizedSearch = search.trim().toLowerCase();
         const filteredBookings = clientBookings.filter((booking) => {
+          const hasNumbers =
+            !!String(booking.engineNumber || "").trim() &&
+            !!String(booking.chassisNumber || "").trim();
           const statusMatches =
-            statusValue === "All" || booking.status === statusValue;
+            statusValue === "All" ||
+            (statusValue === "piPending"
+              ? hasNumbers && !booking.piGenerated
+              : booking.status === statusValue);
 
           if (!statusMatches) {
             return false;
@@ -364,6 +373,16 @@ const VehicleOrdersList = () => {
       : { vehicleSnapshot: null, orderNumber: "" };
   };
 
+  const getNumberActionLabel = (booking: VehicleBookingItem) => {
+    const missingEngine = !String(booking.engineNumber || "").trim();
+    const missingChassis = !String(booking.chassisNumber || "").trim();
+
+    if (missingEngine && missingChassis) return "Add Engine/Chassis";
+    if (missingEngine) return "Enter Engine";
+    if (missingChassis) return "Enter Chassis";
+    return "Review Numbers";
+  };
+
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const orderId = getOrderId(booking);
     const primaryActionClass =
@@ -427,7 +446,7 @@ const VehicleOrdersList = () => {
             className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700`}
           >
             <FilePenLine size={14} />
-            Add Engine/Chassis
+            {getNumberActionLabel(booking)}
           </button>
         );
       case "chassis_received":
@@ -595,11 +614,13 @@ const VehicleOrdersList = () => {
                 {/* Vehicle ID */}
                 <col style={{ width: "9%" }} />
                 {/* Vehicle */}
-                <col style={{ width: "22%" }} />
+                <col style={{ width: "20%" }} />
+                {/* Color */}
+                <col style={{ width: "12%" }} />
                 {/* Status */}
-                <col style={{ width: "17%" }} />
-                {/* Action — rest of space */}
-                <col style={{ width: "52%" }} />
+                <col style={{ width: "16%" }} />
+                {/* Action */}
+                <col style={{ width: "43%" }} />
               </colgroup>
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -608,6 +629,9 @@ const VehicleOrdersList = () => {
                   </th>
                   <th className="border-b border-slate-200 px-5 py-4 align-middle text-left">
                     Vehicle
+                  </th>
+                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                    Color
                   </th>
                   <th className="border-b border-slate-200 px-5 py-4 align-middle">
                     Status
@@ -621,7 +645,7 @@ const VehicleOrdersList = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -630,7 +654,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       {isClient
@@ -645,6 +669,7 @@ const VehicleOrdersList = () => {
                     const brand = vehicleSnapshot?.brandName || "Unknown";
                     const model = vehicleSnapshot?.modelName || "";
                     const variant = vehicleSnapshot?.variant || "";
+                    const color = vehicleSnapshot?.color || "-";
                     const statusMeta = STATUS_META[booking.status];
                     const globalIndex = total - ((currentPage - 1) * limit + idx);
                     const vehicleId = `VEH-${String(globalIndex).padStart(3, "0")}`;
@@ -698,6 +723,16 @@ const VehicleOrdersList = () => {
                           <p className="truncate max-w-[180px] text-sm text-slate-500" title={variant}>
                             {variant}
                           </p>
+                        </td>
+
+                        {/* Color */}
+                        <td className="border-b border-slate-100 px-5 py-5 align-middle">
+                          <span
+                            className="inline-flex max-w-[130px] rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"
+                            title={color}
+                          >
+                            <span className="truncate">{color}</span>
+                          </span>
                         </td>
 
                         {/* Status */}

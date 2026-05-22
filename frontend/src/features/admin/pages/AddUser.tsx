@@ -261,7 +261,6 @@ const AddUser = () => {
           >
             <option value="">Select role</option>
             <option value="admin">Admin</option>
-            <option value="dealer">Dealer</option>
             <option value="accountant">Accountant</option>
             <option value="sourcing_team">Sourcing Team</option>
           </select>

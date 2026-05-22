@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { userApi } from "../../../services/userApi";
 import { User, UserRole } from "../../../types/common.types";
-import { ShieldAlert, Users, UserCheck, Briefcase, Truck } from "lucide-react";
+import { ShieldAlert, Users, Briefcase, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -149,7 +149,6 @@ const UserManagementList = () => {
                           Sourcing Team
                         </SelectItem>
                         <SelectItem value="accountant">Accountant</SelectItem>
-                        <SelectItem value="dealer">Dealer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
