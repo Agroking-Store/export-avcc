@@ -81,7 +81,10 @@ const statusOptions = [
   "PI Pending",
 ];
 
-const statusLabelToRaw: Record<string, VehicleBookingStatus | "All" | "piPending"> = {
+const statusLabelToRaw: Record<
+  string,
+  VehicleBookingStatus | "All" | "piPending"
+> = {
   All: "All",
   "Quotation Pending": "pending",
   "Costing Details Pending": "quotation_details_pending",
@@ -108,21 +111,21 @@ const VehicleOrdersList = () => {
   const [search, setSearch] = useState("");
   // rawToStatusLabel maps VehicleBookingStatus → dropdown label
   const rawToStatusLabel: Record<string, string> = {
-    pending:           "Quotation Pending",
-    quotation_details_pending:"Costing Details Pending",
-    quotation_uploaded:"Waiting for Approval",
-    approved:          "Approved",
-    payment_done:      "Awaiting Chassis/Engine No.",
-    chassis_received:  "In Transit",
-    delivered:         "Delivered",
-    piPending:         "PI Pending",
-    missingClient:     "All",   // no dedicated label — show all, handled on dashboard side
+    pending: "Quotation Pending",
+    quotation_details_pending: "Costing Details Pending",
+    quotation_uploaded: "Waiting for Approval",
+    approved: "Approved",
+    payment_done: "Awaiting Chassis/Engine No.",
+    chassis_received: "In Transit",
+    delivered: "Delivered",
+    piPending: "PI Pending",
+    missingClient: "All", // no dedicated label — show all, handled on dashboard side
   };
   const incomingFilter = (location.state as any)?.statusFilter;
   const [statusLabel, setStatusLabel] = useState<string>(
     incomingFilter && rawToStatusLabel[incomingFilter]
       ? rawToStatusLabel[incomingFilter]
-      : "All"
+      : "All",
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -136,7 +139,9 @@ const VehicleOrdersList = () => {
   const [quotationModalOpen, setQuotationModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [clientModalOpen, setClientModalOpen] = useState(false);
-  const [activeBooking, setActiveBooking] = useState<VehicleBookingItem | null>(null);
+  const [activeBooking, setActiveBooking] = useState<VehicleBookingItem | null>(
+    null,
+  );
 
   const [clients, setClients] = useState<IClient[]>([]);
   const [dealers, setDealers] = useState<any[]>([]);
@@ -225,8 +230,7 @@ const VehicleOrdersList = () => {
   useEffect(() => {
     const pendingCount = bookings.filter(
       (b) =>
-        b.status === "payment_done" &&
-        (!b.engineNumber || !b.chassisNumber),
+        b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber),
     ).length;
 
     if (pendingCount > 0 && pendingCount !== lastReminderCount.current) {
@@ -280,7 +284,9 @@ const VehicleOrdersList = () => {
     }
     const fetchDealers = async () => {
       try {
-        const response = await axios.get(`${apiConfig.baseURL}/dealers?limit=1000`);
+        const response = await axios.get(
+          `${apiConfig.baseURL}/dealers?limit=1000`,
+        );
         const dealerList = response.data.data || response || [];
         setDealers(Array.isArray(dealerList) ? dealerList : []);
       } catch {
@@ -349,11 +355,16 @@ const VehicleOrdersList = () => {
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
     if (!booking.assignedClientId) {
-      toast.error("Please allot a client before marking this vehicle as delivered.");
+      toast.error(
+        "Please allot a client before marking this vehicle as delivered.",
+      );
       return;
     }
     try {
-      const updated = await vehicleBookingApi.updateStatus(booking._id, "delivered");
+      const updated = await vehicleBookingApi.updateStatus(
+        booking._id,
+        "delivered",
+      );
       syncBooking(updated);
       toast.success("Vehicle marked as delivered");
     } catch (error: any) {
@@ -393,11 +404,32 @@ const VehicleOrdersList = () => {
       case "rejected":
         return (
           <button
-            onClick={() => booking.assignedDealerId ? openQuotationModal(booking) : toast.error("Please allot a dealer first")}
-            className={`${primaryActionClass} ${booking.assignedDealerId ? 'bg-slate-900 hover:bg-slate-700' : 'bg-slate-400 opacity-60 cursor-not-allowed'}`}
-            title={booking.assignedDealerId ? "Upload Quotation" : "Allot dealer to upload quotation"}
+            onClick={() =>
+              booking.assignedDealerId
+                ? openQuotationModal(booking)
+                : toast.error("Please allot a dealer first")
+            }
+            className={`${primaryActionClass} ${booking.assignedDealerId ? "bg-slate-900 hover:bg-slate-700" : "bg-slate-400 opacity-60 cursor-not-allowed"}`}
+            title={
+              booking.assignedDealerId
+                ? "Upload Quotation"
+                : "Allot dealer to upload quotation"
+            }
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
             Upload Quotation
           </button>
         );
@@ -405,7 +437,11 @@ const VehicleOrdersList = () => {
       case "quotation_uploaded":
         return (
           <button
-            onClick={() => booking.assignedDealerId ? openQuotationModal(booking) : toast.error("Please allot a dealer first")}
+            onClick={() =>
+              booking.assignedDealerId
+                ? openQuotationModal(booking)
+                : toast.error("Please allot a dealer first")
+            }
             className={`${primaryActionClass} ${
               booking.assignedDealerId
                 ? booking.status === "quotation_details_pending"
@@ -413,9 +449,25 @@ const VehicleOrdersList = () => {
                   : "bg-amber-500 hover:bg-amber-600"
                 : "bg-slate-400 opacity-60 cursor-not-allowed"
             }`}
-            title={booking.assignedDealerId ? "Review Quotation" : "Allot dealer to review quotation"}
+            title={
+              booking.assignedDealerId
+                ? "Review Quotation"
+                : "Allot dealer to review quotation"
+            }
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
             {booking.status === "quotation_details_pending"
               ? "Add Costing"
               : "Review Quotation"}
@@ -431,9 +483,24 @@ const VehicleOrdersList = () => {
                 ? "bg-slate-400 text-white cursor-not-allowed opacity-60"
                 : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
             }`}
-            title={isSourcingTeam ? "Only Admin can confirm booking" : "Confirm Booking"}
+            title={
+              isSourcingTeam
+                ? "Only Admin can confirm booking"
+                : "Confirm Booking"
+            }
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
             Confirm Booking
           </button>
         );
@@ -441,7 +508,9 @@ const VehicleOrdersList = () => {
         return (
           <button
             onClick={() =>
-              navigate(`/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`)
+              navigate(
+                `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+              )
             }
             className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700`}
           >
@@ -463,7 +532,9 @@ const VehicleOrdersList = () => {
         return (
           <button
             onClick={() =>
-              navigate(`/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`)
+              navigate(
+                `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+              )
             }
             className="cursor-pointer inline-flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
           >
@@ -485,7 +556,8 @@ const VehicleOrdersList = () => {
       },
       {
         label: "Costing Pending",
-        value: bookings.filter((b) => b.status === "quotation_details_pending").length,
+        value: bookings.filter((b) => b.status === "quotation_details_pending")
+          .length,
         tone: "bg-blue-100 text-blue-800",
       },
       {
@@ -671,7 +743,8 @@ const VehicleOrdersList = () => {
                     const variant = vehicleSnapshot?.variant || "";
                     const color = vehicleSnapshot?.color || "-";
                     const statusMeta = STATUS_META[booking.status];
-                    const globalIndex = total - ((currentPage - 1) * limit + idx);
+                    const globalIndex =
+                      total - ((currentPage - 1) * limit + idx);
                     const vehicleId = `VEH-${String(globalIndex).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
@@ -690,37 +763,73 @@ const VehicleOrdersList = () => {
                         {/* Vehicle Info */}
                         <td className="border-b border-slate-100 px-5 py-5 align-middle text-left">
                           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                            {booking.status === "payment_done" && (!booking.engineNumber || !booking.chassisNumber) && (
-                              <span title="Engine/Chassis number pending" className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
-                                <CircleAlert size={10} className="mr-0.5" />
-                                Missing#
-                              </span>
-                            )}
-                            {booking.deliveryDate && booking.status !== "delivered" && (() => {
-                              const today = new Date(); today.setHours(0,0,0,0);
-                              const d = new Date(booking.deliveryDate); d.setHours(0,0,0,0);
-                              return today.getTime() > d.getTime();
-                            })() && (
-                              <span title="Delivery overdue" className="inline-flex items-center rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200">
-                                <CircleAlert size={10} className="mr-0.5" />
-                                Overdue
-                              </span>
-                            )}
-                            {booking.deliveryDate && booking.status !== "delivered" && (() => {
-                              const today = new Date(); today.setHours(0,0,0,0);
-                              const d = new Date(booking.deliveryDate); d.setHours(0,0,0,0);
-                              return d.getTime() >= today.getTime();
-                            })() && (
-                              <span title="Upcoming delivery" className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
-                                <Calendar size={10} className="mr-0.5" />
-                                {Math.ceil((new Date(booking.deliveryDate).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (1000*60*60*24)) === 0 ? "Today" : `${Math.ceil((new Date(booking.deliveryDate).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (1000*60*60*24))}d`}
-                              </span>
-                            )}
+                            {booking.status === "payment_done" &&
+                              (!booking.engineNumber ||
+                                !booking.chassisNumber) && (
+                                <span
+                                  title="Engine/Chassis number pending"
+                                  className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200"
+                                >
+                                  <CircleAlert size={10} className="mr-0.5" />
+                                  Missing#
+                                </span>
+                              )}
+                            {booking.deliveryDate &&
+                              booking.status !== "delivered" &&
+                              (() => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const d = new Date(booking.deliveryDate);
+                                d.setHours(0, 0, 0, 0);
+                                return today.getTime() > d.getTime();
+                              })() && (
+                                <span
+                                  title="Delivery overdue"
+                                  className="inline-flex items-center rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 border border-rose-200"
+                                >
+                                  <CircleAlert size={10} className="mr-0.5" />
+                                  Overdue
+                                </span>
+                              )}
+                            {booking.deliveryDate &&
+                              booking.status !== "delivered" &&
+                              (() => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const d = new Date(booking.deliveryDate);
+                                d.setHours(0, 0, 0, 0);
+                                return d.getTime() >= today.getTime();
+                              })() && (
+                                <span
+                                  title="Upcoming delivery"
+                                  className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200"
+                                >
+                                  <Calendar size={10} className="mr-0.5" />
+                                  {Math.ceil(
+                                    (new Date(booking.deliveryDate).setHours(
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                    ) -
+                                      new Date().setHours(0, 0, 0, 0)) /
+                                      (1000 * 60 * 60 * 24),
+                                  ) === 0
+                                    ? "Today"
+                                    : `${Math.ceil((new Date(booking.deliveryDate).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24))}d`}
+                                </span>
+                              )}
                           </div>
-                          <p className="truncate max-w-[180px] font-semibold text-slate-900" title={`${brand} ${model}`}>
+                          <p
+                            className="truncate max-w-[180px] font-semibold text-slate-900"
+                            title={`${brand} ${model}`}
+                          >
                             {brand} {model}
                           </p>
-                          <p className="truncate max-w-[180px] text-sm text-slate-500" title={variant}>
+                          <p
+                            className="truncate max-w-[180px] text-sm text-slate-500"
+                            title={variant}
+                          >
                             {variant}
                           </p>
                         </td>
@@ -743,12 +852,36 @@ const VehicleOrdersList = () => {
                             >
                               {statusMeta.label}
                             </span>
-                            {booking.deliveryDate && booking.status !== "delivered" && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                {new Date(booking.deliveryDate).toLocaleDateString()}
-                              </span>
-                            )}
+                            {booking.deliveryDate &&
+                              booking.status !== "delivered" && (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <rect
+                                      x="3"
+                                      y="4"
+                                      width="18"
+                                      height="18"
+                                      rx="2"
+                                      ry="2"
+                                    />
+                                    <line x1="16" y1="2" x2="16" y2="6" />
+                                    <line x1="8" y1="2" x2="8" y2="6" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                  </svg>
+                                  {new Date(
+                                    booking.deliveryDate,
+                                  ).toLocaleDateString()}
+                                </span>
+                              )}
                           </div>
                         </td>
 
@@ -757,7 +890,9 @@ const VehicleOrdersList = () => {
                             <div className="flex items-center justify-center">
                               <button
                                 onClick={() =>
-                                  navigate(`/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`)
+                                  navigate(
+                                    `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                                  )
                                 }
                                 className="cursor-pointer inline-flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
                               >
@@ -780,11 +915,17 @@ const VehicleOrdersList = () => {
                                       ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
                                       : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                                   }`}
-                                  title={booking.assignedDealerId ? "Dealer Allotted" : "Allot Dealer"}
+                                  title={
+                                    booking.assignedDealerId
+                                      ? "Dealer Allotted"
+                                      : "Allot Dealer"
+                                  }
                                 >
                                   <Store size={14} className="shrink-0" />
                                   <span className="truncate max-w-[90px]">
-                                    {booking.assignedDealerId ? booking.assignedDealerSnapshot?.name : "Allot Dealer"}
+                                    {booking.assignedDealerId
+                                      ? booking.assignedDealerSnapshot?.name
+                                      : "Allot Dealer"}
                                   </span>
                                 </button>
                               </div>
@@ -804,7 +945,9 @@ const VehicleOrdersList = () => {
                                   </span>
                                 )}
                                 <button
-                                  onClick={() => !isSourcingTeam && openClientModal(booking)}
+                                  onClick={() =>
+                                    !isSourcingTeam && openClientModal(booking)
+                                  }
                                   disabled={isSourcingTeam}
                                   className={`inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition truncate ${
                                     isSourcingTeam
@@ -816,7 +959,9 @@ const VehicleOrdersList = () => {
                                   title={
                                     isSourcingTeam
                                       ? "Only Admin can allot client"
-                                      : booking.assignedClientId ? "Client Allotted" : "Allot Client"
+                                      : booking.assignedClientId
+                                        ? "Client Allotted"
+                                        : "Allot Client"
                                   }
                                 >
                                   <Check size={14} className="shrink-0" />
@@ -833,7 +978,9 @@ const VehicleOrdersList = () => {
                               <div className="flex items-center gap-1.5 shrink-0">
                                 <button
                                   onClick={() =>
-                                    navigate(`/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`)
+                                    navigate(
+                                      `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                                    )
                                   }
                                   className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:scale-110 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm active:scale-95"
                                   title="View Vehicle"
@@ -842,7 +989,9 @@ const VehicleOrdersList = () => {
                                 </button>
                                 <button
                                   onClick={() =>
-                                    navigate(`/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`)
+                                    navigate(
+                                      `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+                                    )
                                   }
                                   className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 transition-all duration-200 hover:scale-110 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm active:scale-95"
                                   title="Edit Vehicle"
