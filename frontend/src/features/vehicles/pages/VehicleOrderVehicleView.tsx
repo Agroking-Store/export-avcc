@@ -244,15 +244,18 @@ const VehicleOrderVehicleView = () => {
       {/* HEADER */}
       <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+          {/* <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
             {vehicleName}
-          </p>
+          </p> */}
           <h1 className="text-2xl font-bold text-slate-900">
             {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          {/* <p className="mt-1 text-sm text-slate-500">
             {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color}
-          </p>
+          </p> */}
+          <h2 className="mt-1 font-bold text-slate-700 text-blue-700">
+            {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color}
+          </h2>
         </div>
 
         <div className="flex flex-wrap gap-3">
