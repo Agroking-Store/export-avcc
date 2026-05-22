@@ -14,6 +14,7 @@ export interface IVehicleBooking extends Document {
   orderId: mongoose.Types.ObjectId;
   vehicleId: mongoose.Types.ObjectId;
   vehicleIndex: number;
+  usdRate?: number;
   assignedClientId?: mongoose.Types.ObjectId;
   assignedClientSnapshot?: {
     name: string;
