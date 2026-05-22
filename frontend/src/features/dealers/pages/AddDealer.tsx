@@ -40,16 +40,13 @@ const AddDealer = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !form.name ||
-      !form.contact ||
-      !form.bankDetails.bankName ||
-      !form.bankDetails.accountNo ||
-      !form.bankDetails.branchIfsc
-    ) {
-      toast.error("Dealer info and bank details are required!");
+
+    // Only Dealer Name and Contact are mandatory now
+    if (!form.name || !form.contact) {
+      toast.error("Dealer name and contact number are required!");
       return;
     }
+
     if (!/^[0-9]{10,15}$/.test(form.contact.replace(/\D/g, ""))) {
       toast.error("Contact must be 10 to 15 digits");
       return;
@@ -62,6 +59,7 @@ const AddDealer = () => {
       toast.error("Invalid GST Number format!");
       return;
     }
+
     try {
       setLoading(true);
       const payload = {
@@ -70,26 +68,38 @@ const AddDealer = () => {
         email: form.email.toLowerCase().trim(),
         address: form.address,
         gstNumber: form.gstNumber,
-        bankDetails: form.bankDetails,
+        // Only send bankDetails if at least one field is filled, otherwise send empty object
+        bankDetails:
+          form.bankDetails.bankName ||
+          form.bankDetails.accountNo ||
+          form.bankDetails.branchIfsc
+            ? form.bankDetails
+            : {},
       };
       await axios.post(`${API_URL}/dealers`, payload);
       navigate("/dealers/list", {
         state: { success: "Dealer profile created successfully" },
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Dealer create failed. Please check the details and try again.");
+      toast.error(
+        error.response?.data?.message ||
+          "Dealer create failed. Please check the details and try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // UI Styles to match the client module reference
   const inputStyle =
     "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
 
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
-  const handleBankDetailChange = (field: "bankName" | "accountNo" | "branchIfsc", value: string) => {
+
+  const handleBankDetailChange = (
+    field: "bankName" | "accountNo" | "branchIfsc",
+    value: string,
+  ) => {
     setForm((prev) => ({
       ...prev,
       bankDetails: {
@@ -207,45 +217,57 @@ const AddDealer = () => {
           </div>
         </div>
 
+        {/* BANK DETAILS SECTION - Removed asterisks (*) from labels here */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
             <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
             <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-              Bank Details
+              Bank Details{" "}
+              <span className="text-xs font-normal text-slate-400">
+                (Optional)
+              </span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className={labelStyle}>
-                <Landmark size={14} className="text-emerald-500" /> Bank Name *
+                <Landmark size={14} className="text-emerald-500" /> Bank Name
               </label>
               <input
                 value={form.bankDetails.bankName}
-                onChange={(e) => handleBankDetailChange("bankName", e.target.value)}
+                onChange={(e) =>
+                  handleBankDetailChange("bankName", e.target.value)
+                }
                 className={inputStyle}
                 placeholder="HDFC Bank"
               />
             </div>
             <div>
               <label className={labelStyle}>
-                <CreditCard size={14} className="text-blue-500" /> Account Number *
+                <CreditCard size={14} className="text-blue-500" /> Account
+                Number
               </label>
               <input
                 value={form.bankDetails.accountNo}
-                onChange={(e) => handleBankDetailChange("accountNo", e.target.value)}
+                onChange={(e) =>
+                  handleBankDetailChange("accountNo", e.target.value)
+                }
                 className={inputStyle}
                 placeholder="1234567890"
               />
             </div>
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-violet-500" /> Branch / IFSC *
+                <Hash size={14} className="text-violet-500" /> Branch / IFSC
               </label>
               <input
                 value={form.bankDetails.branchIfsc}
                 onChange={(e) =>
-                  handleBankDetailChange("branchIfsc", e.target.value.toUpperCase())
+                  handleBankDetailChange(
+                    "branchIfsc",
+                    e.target.value.toUpperCase(),
+                  )
                 }
                 className={inputStyle}
                 placeholder="HDFC0001234"
