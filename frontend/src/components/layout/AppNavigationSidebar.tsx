@@ -59,7 +59,7 @@ const defaultMenuItems = [
     path: "/companies",
   },
   {
-    name: "Shipment Planning",
+    name: "Shipment Plan",
     icon: <Truck size={20} />,
     path: "/shipment-planning/dashboard",
   },
