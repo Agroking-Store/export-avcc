@@ -139,7 +139,10 @@ const formatCurrency = (value: number, currency: "USD" | "INR") => {
 
 const roundCurrency = (value: number) => Number(value.toFixed(2));
 
-const deriveExchangeRate = (vehicle: any, manualFields: Record<string, any>) => {
+const deriveExchangeRate = (
+  vehicle: any,
+  manualFields: Record<string, any>,
+) => {
   const manualExchangeRate = Number(manualFields.customExchangeRate || 0);
 
   if (manualExchangeRate > 0) {
@@ -546,10 +549,17 @@ const getMissingFields = (
 const buildVehicleDescription = (
   vehicle: any,
   type: InvoiceDocumentType | "PACKING_LIST",
+  manualFields?: Record<string, any>,
 ) => {
   if (type === "COMMERCIAL") {
+    const prefix = manualFields?.vehicleDescriptionPrefix?.trim() || "";
+    const firstLine = prefix
+      ? `01 UNIT OF USED ${prefix}`
+      : `01 UNIT OF USED ${[vehicle.make, vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim()}`;
+
     return [
-      `01 UNIT OF USED ${vehicle.make} ${[vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim()}`.trim(),
+      // `01 UNIT OF USED ${vehicle.make} ${[vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim()}`.trim(),
+      firstLine,
       `CHASSIS NO: ${vehicle.chassisNo || "-"}`,
       `ENGINE NO: ${vehicle.engineNo || "-"}`,
       `YEAR OF MANUFACTURE: ${vehicle.yearOfManufacture || "-"}`,
@@ -591,12 +601,13 @@ const buildTemplateData = ({
   const totalUSD = Number(vehicle.totalUSD || 0);
   const igstRate = Number(vehicle.igstRate || manualFields.igstRate || 18);
   const exchangeRate = deriveExchangeRate(vehicle, manualFields);
-  const { exShowroomINR, igstAmountINR, totalINR } =
-    calculateInrInvoiceAmounts({
+  const { exShowroomINR, igstAmountINR, totalINR } = calculateInrInvoiceAmounts(
+    {
       totalUSD,
       exchangeRate,
       igstRate,
-    });
+    },
+  );
   const resolvedHsnCode =
     type === "COMMERCIAL"
       ? vehicle.commercialHsnCode || vehicle.hsnCode || ""
@@ -606,6 +617,7 @@ const buildTemplateData = ({
   const descriptionLines = buildVehicleDescription(
     { ...vehicle, hsnCode: resolvedHsnCode },
     type,
+    manualFields,
   );
 
   const base = {

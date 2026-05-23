@@ -45,7 +45,10 @@ export interface PIInvoiceVehicle {
   quantity: number;
   displayModel: string;
   invoices: Partial<
-    Record<InvoiceAssetType, GeneratedInvoiceRecord & { type: InvoiceAssetType }>
+    Record<
+      InvoiceAssetType,
+      GeneratedInvoiceRecord & { type: InvoiceAssetType }
+    >
   >;
 }
 
@@ -101,4 +104,5 @@ export interface InvoiceManualFields {
   netWeightKg?: string;
   grossWeightKg?: string;
   dimensionsCm?: string;
+  vehicleDescriptionPrefix?: string;
 }
