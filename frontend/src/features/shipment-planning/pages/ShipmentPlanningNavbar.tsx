@@ -14,13 +14,13 @@ const ShipmentPlanningNavbar: React.FC = () => {
     },
     {
       key: "shipments",
-      label: "Shipments",
+      label: "Shipment Details",
       path: "/shipment-planning/list",
       icon: <Package size={18} />,
     },
     {
       key: "details",
-      label: "Shipment Details",
+      label: "Shipment Vehicle Details",
       path: "/shipment-planning/details/SP-1001",
       icon: <ClipboardList size={18} />,
     },
