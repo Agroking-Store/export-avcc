@@ -966,7 +966,7 @@ const Dashboard: React.FC = () => {
                 Admin Watchlist
               </h2>
             </div>
-            <div className="p-3 space-y-1.5 flex-1">
+            <div className="p-3 space-y-1.5 flex-1 ">
               <WatchButton
                 label="Bookings missing dealer"
                 value={
@@ -1137,7 +1137,7 @@ const SummaryCard = ({ label, num, detail, icon, g, dest, navigate }: any) => (
 const WatchButton = ({ label, value, urgent, icon, onClick }: any) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${urgent ? "bg-rose-50 border border-rose-100" : "bg-blue-50/50 border border-blue-50"}`}
+    className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left  cursor-pointer transition-all ${urgent ? "bg-rose-50 border border-rose-100" : "bg-blue-50/50 border border-blue-50"}`}
   >
     <div className="flex items-center gap-2.5 min-w-0">
       <div
