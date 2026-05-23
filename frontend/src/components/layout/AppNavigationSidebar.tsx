@@ -7,6 +7,7 @@ import {
   FileText,
   FileCheck,
   Truck,
+  Ship,
 } from "lucide-react";
 import {
   SidebarContent,
@@ -60,7 +61,7 @@ const defaultMenuItems = [
   },
   {
     name: "Shipment Plan",
-    icon: <Truck size={20} />,
+    icon: <Ship size={20} />,
     path: "/shipment-planning/dashboard",
   },
 ];
