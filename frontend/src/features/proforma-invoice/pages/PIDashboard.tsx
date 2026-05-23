@@ -678,7 +678,7 @@ const PIDashboard = () => {
               <button
                 key={item.id}
                 onClick={() => navigate(`/proforma-invoice/${item.id}`)}
-                className="flex w-full flex-col gap-3 rounded-xl border border-slate-100 dark:border-gray-800 bg-slate-50/70 dark:bg-gray-800/30 px-4 py-3 text-left transition-all hover:border-sky-200 dark:hover:border-sky-800 hover:shadow-sm"
+                className="flex w-full flex-col gap-3 rounded-xl border border-slate-100 dark:border-gray-800 bg-slate-50/70 dark:bg-gray-800/30 px-4 py-3 text-left transition-all hover:border-sky-200 dark:hover:border-sky-800 hover:shadow-sm cursor-pointer"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
