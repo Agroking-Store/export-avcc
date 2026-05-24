@@ -471,25 +471,40 @@ const VehicleOrderDetails = () => {
   };
 
   const getShipDisabledReason = (booking: VehicleBookingItem) => {
-  // Ensure engine and chassis numbers are present
-  if (!booking.chassisNumber || !booking.engineNumber) {
-    return "Engine and chassis numbers are required before shipping.";
-  }
+    // Ensure engine and chassis numbers are present
+    if (!booking.chassisNumber || !booking.engineNumber) {
+      return "Engine and chassis numbers are required before shipping.";
+    }
 
-  const readiness = booking.invoiceReadiness;
-  // Require all invoices and packing list
-  const missing: string[] = [];
-  if (!readiness?.INR) missing.push("INR");
-  if (!readiness?.USD) missing.push("USD");
-  if (!readiness?.COMMERCIAL) missing.push("Commercial");
-  if (!readiness?.PACKING_LIST) missing.push("Packing List");
-  if (missing.length) {
-    return `Generate ${missing.join(", ")} first.`;
-  }
-  // All conditions satisfied
-  return "";
-};
+    const readiness = booking.invoiceReadiness;
+    // Require all invoices and packing list
+    const missing: string[] = [];
+    if (!readiness?.INR) missing.push("INR");
+    if (!readiness?.USD) missing.push("USD");
+    if (!readiness?.COMMERCIAL) missing.push("Commercial");
+    if (!readiness?.PACKING_LIST) missing.push("Packing List");
+    if (missing.length) {
+      return `Generate ${missing.join(", ")} first.`;
+    }
+    // All conditions satisfied
+    return "";
+  };
 
+  const handleShipVehicle = async (booking: VehicleBookingItem) => {
+    const disabledReason = getShipDisabledReason(booking);
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+
+    try {
+      const updated = await vehicleBookingApi.updateStatus(booking._id, "shipped");
+      syncBooking(updated);
+      toast.success("Vehicle marked as shipped");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to ship vehicle");
+    }
+  };
 
   const getNumberActionLabel = (booking: VehicleBookingItem) => {
     const missingEngine = !String(booking.engineNumber || "").trim();
