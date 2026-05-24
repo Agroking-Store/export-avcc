@@ -41,40 +41,122 @@ export const getInvoiceReadinessByBookingIds = async (
     return readiness;
   }
 
+  // Retrieve chassis and engine numbers for these bookings to support matching by chassis/engine
+  const bookings = await VehicleBooking.find({
+    _id: { $in: uniqueBookingIds },
+  })
+    .select("_id chassisNumber engineNumber")
+    .lean();
+
+  const chassisToBookingId = new Map<string, string>();
+  const engineToBookingId = new Map<string, string>();
+
+  for (const b of bookings) {
+    const chassis = b.chassisNumber?.trim().toUpperCase();
+    const engine = b.engineNumber?.trim().toUpperCase();
+    if (chassis) {
+      chassisToBookingId.set(chassis, String(b._id));
+    }
+    if (engine) {
+      engineToBookingId.set(engine, String(b._id));
+    }
+  }
+
+  const chassisList = Array.from(chassisToBookingId.keys());
+  const engineList = Array.from(engineToBookingId.keys());
+
+  const queryConditions: any[] = [
+    { vehicleBookingId: { $in: uniqueBookingIds } },
+    { vehicleId: { $in: uniqueBookingIds } }
+  ];
+
+  if (chassisList.length > 0) {
+    queryConditions.push({ "dataSnapshot.vehicle.chassisNo": { $in: chassisList } });
+    queryConditions.push({ "manualFields.chassisNo": { $in: chassisList } });
+    queryConditions.push({ "dataSnapshot.vehicles.chassisNo": { $in: chassisList } });
+  }
+  if (engineList.length > 0) {
+    queryConditions.push({ "dataSnapshot.vehicle.engineNo": { $in: engineList } });
+    queryConditions.push({ "manualFields.engineNo": { $in: engineList } });
+    queryConditions.push({ "dataSnapshot.vehicles.engineNo": { $in: engineList } });
+  }
+
   const invoices = await Invoice.find({
     active: true,
-    $or: [
-      {
-        vehicleId: { $in: uniqueBookingIds },
-        type: { $in: ["INR", "USD", "COMMERCIAL"] },
-      },
-      {
-        type: "PACKING_LIST",
-        "dataSnapshot.vehicles.vehicleId": { $in: uniqueBookingIds },
-      },
-    ],
+    $or: queryConditions,
   })
-    .select("vehicleId type dataSnapshot")
+    .select("vehicleBookingId vehicleId type dataSnapshot manualFields")
     .lean();
 
   for (const invoice of invoices as any[]) {
+    // Determine which booking IDs this invoice is associated with
+    const associatedBookingIds = new Set<string>();
+
+    if (invoice.vehicleBookingId && uniqueBookingIds.includes(String(invoice.vehicleBookingId))) {
+      associatedBookingIds.add(String(invoice.vehicleBookingId));
+    }
+    if (invoice.vehicleId && uniqueBookingIds.includes(String(invoice.vehicleId))) {
+      associatedBookingIds.add(String(invoice.vehicleId));
+    }
+
     if (invoice.type === "PACKING_LIST") {
       const selectedVehicles = Array.isArray(invoice.dataSnapshot?.vehicles)
         ? invoice.dataSnapshot.vehicles
         : [];
 
       for (const vehicle of selectedVehicles) {
-        const vehicleId = String(vehicle?.vehicleId || "");
-        if (readiness[vehicleId]) {
-          readiness[vehicleId].PACKING_LIST = true;
+        const vChassis = (vehicle?.chassisNo || vehicle?.chassisNumber || "")?.trim().toUpperCase();
+        const vEngine = (vehicle?.engineNo || vehicle?.engineNumber || "")?.trim().toUpperCase();
+        
+        const bookingIdFromChassis = vChassis ? chassisToBookingId.get(vChassis) : null;
+        const bookingIdFromEngine = vEngine ? engineToBookingId.get(vEngine) : null;
+        const bookingIdFromId = (vehicle?.vehicleBookingId || vehicle?.vehicleId) && 
+          uniqueBookingIds.includes(String(vehicle.vehicleBookingId || vehicle.vehicleId))
+          ? String(vehicle.vehicleBookingId || vehicle.vehicleId)
+          : null;
+
+        const targetBookingId = bookingIdFromChassis || bookingIdFromEngine || bookingIdFromId;
+        if (targetBookingId) {
+          associatedBookingIds.add(targetBookingId);
         }
       }
-      continue;
+    } else {
+      const chassis = (
+        invoice.dataSnapshot?.vehicle?.chassisNo ||
+        invoice.dataSnapshot?.vehicle?.chassisNumber ||
+        invoice.manualFields?.chassisNo ||
+        invoice.manualFields?.chassisNumber ||
+        ""
+      )?.trim().toUpperCase();
+
+      const engine = (
+        invoice.dataSnapshot?.vehicle?.engineNo ||
+        invoice.dataSnapshot?.vehicle?.engineNumber ||
+        invoice.manualFields?.engineNo ||
+        invoice.manualFields?.engineNumber ||
+        ""
+      )?.trim().toUpperCase();
+
+      const bookingIdFromChassis = chassis ? chassisToBookingId.get(chassis) : null;
+      const bookingIdFromEngine = engine ? engineToBookingId.get(engine) : null;
+
+      if (bookingIdFromChassis) {
+        associatedBookingIds.add(bookingIdFromChassis);
+      }
+      if (bookingIdFromEngine) {
+        associatedBookingIds.add(bookingIdFromEngine);
+      }
     }
 
-    const vehicleId = String(invoice.vehicleId || "");
-    if (readiness[vehicleId] && ["INR", "USD", "COMMERCIAL"].includes(invoice.type)) {
-      readiness[vehicleId][invoice.type as "INR" | "USD" | "COMMERCIAL"] = true;
+    // Apply the readiness to the matched booking IDs
+    for (const bId of associatedBookingIds) {
+      if (readiness[bId]) {
+        if (invoice.type === "PACKING_LIST") {
+          readiness[bId].PACKING_LIST = true;
+        } else if (["INR", "USD", "COMMERCIAL"].includes(invoice.type)) {
+          readiness[bId][invoice.type as "INR" | "USD" | "COMMERCIAL"] = true;
+        }
+      }
     }
   }
 
@@ -90,7 +172,7 @@ const hasEngineAndChassis = (booking: any) =>
   !!String(booking.engineNumber || "").trim() &&
   !!String(booking.chassisNumber || "").trim();
 
-const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
+export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
   const plainBookings = bookings.map((booking: any) =>
     typeof booking.toObject === "function" ? booking.toObject() : booking,
   );

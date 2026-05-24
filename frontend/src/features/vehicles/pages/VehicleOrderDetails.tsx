@@ -471,34 +471,25 @@ const VehicleOrderDetails = () => {
   };
 
   const getShipDisabledReason = (booking: VehicleBookingItem) => {
-    const readiness = booking.invoiceReadiness;
-    if (!booking.chassisNumber || !booking.engineNumber) {
-      return "Engine and chassis numbers are required before shipping.";
-    }
-    if (!readiness?.INR) return "Generate INR invoice first.";
-    if (!readiness?.USD) return "Generate USD invoice first.";
-    if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
-    if (!readiness?.PACKING_LIST) return "Generate packing list first.";
-    return "";
-  };
+  // Ensure engine and chassis numbers are present
+  if (!booking.chassisNumber || !booking.engineNumber) {
+    return "Engine and chassis numbers are required before shipping.";
+  }
 
-  const handleShipVehicle = async (booking: VehicleBookingItem) => {
-    const disabledReason = getShipDisabledReason(booking);
-    if (disabledReason) {
-      toast.error(disabledReason);
-      return;
-    }
+  const readiness = booking.invoiceReadiness;
+  // Require all invoices and packing list
+  const missing: string[] = [];
+  if (!readiness?.INR) missing.push("INR");
+  if (!readiness?.USD) missing.push("USD");
+  if (!readiness?.COMMERCIAL) missing.push("Commercial");
+  if (!readiness?.PACKING_LIST) missing.push("Packing List");
+  if (missing.length) {
+    return `Generate ${missing.join(", ")} first.`;
+  }
+  // All conditions satisfied
+  return "";
+};
 
-    try {
-      const updated = await vehicleBookingApi.updateStatus(booking._id, "shipped");
-      setBookings((current) =>
-        current.map((item) => (item._id === updated._id ? updated : item)),
-      );
-      toast.success("Vehicle marked as shipped");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to ship vehicle");
-    }
-  };
 
   const getNumberActionLabel = (booking: VehicleBookingItem) => {
     const missingEngine = !String(booking.engineNumber || "").trim();
