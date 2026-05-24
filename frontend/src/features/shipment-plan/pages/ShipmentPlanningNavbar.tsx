@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, Truck, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Package } from "lucide-react";
 
 const ShipmentPlanningNavbar: React.FC = () => {
   const location = useLocation();
@@ -18,19 +18,17 @@ const ShipmentPlanningNavbar: React.FC = () => {
       path: "/shipment-planning/list",
       icon: <Package size={18} />,
     },
-    {
-      key: "details",
-      label: "Shipment Vehicle Details",
-      path: "/shipment-planning/details/SP-1001",
-      icon: <ClipboardList size={18} />,
-    },
   ];
 
   const isActiveTab = (tabKey: string) => {
     const p = location.pathname;
     if (tabKey === "dashboard") return p === "/shipment-planning/dashboard";
-    if (tabKey === "shipments") return p.startsWith("/shipment-planning/list");
-    if (tabKey === "details") return p.startsWith("/shipment-planning/details");
+    if (tabKey === "shipments")
+      return (
+        p.startsWith("/shipment-planning/list") ||
+        p.startsWith("/shipment-planning/add") ||
+        p.startsWith("/shipment-planning/view")
+      );
     return false;
   };
 

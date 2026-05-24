@@ -3,7 +3,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ShipmentPlanningDashboard from "./ShipmentPlanningDashboard";
 import ShipmentPlanningList from "./ShipmentPlanningList";
 import ShipmentDetails from "./ShipmentDetails";
-import { Store, Truck } from "lucide-react";
+import AddShipmentDetails from "./AddShipmentDetails";
+import { Truck } from "lucide-react";
 import ShipmentPlanningNavbar from "./ShipmentPlanningNavbar";
 
 const ShipmentPlanningModule: React.FC = () => {
@@ -36,7 +37,12 @@ const ShipmentPlanningModule: React.FC = () => {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ShipmentPlanningDashboard />} />
             <Route path="list" element={<ShipmentPlanningList />} />
-            <Route path="details/:shipmentId" element={<ShipmentDetails />} />
+            <Route path="add" element={<AddShipmentDetails />} />
+            <Route path="view/:shipmentId" element={<ShipmentDetails />} />
+            <Route
+              path="details/:shipmentId"
+              element={<Navigate to="../list" replace />}
+            />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </div>

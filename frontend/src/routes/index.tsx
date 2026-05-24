@@ -23,7 +23,7 @@ import VehiclesModule from "../features/vehicles/pages/VehiclesModule";
 import UserManagementModule from "../features/admin/pages/UserManagementModule";
 import VehicleSelectionPage from "../features/proforma-invoice/pages/VehicleSelectionPage";
 import InvoiceFormPage from "../features/proforma-invoice/pages/InvoiceFormPage";
-import ShipmentPlanningModule from "../features/shipment-planning/pages/ShipmentPlanningModule";
+import ShipmentPlanningModule from "../features/shipment-plan/pages/ShipmentPlanningModule";
 
 import { useAppSelector } from "../app/hooks";
 import GeneratePackingList from "@/features/proforma-invoice/pages/GeneratePackingList";
