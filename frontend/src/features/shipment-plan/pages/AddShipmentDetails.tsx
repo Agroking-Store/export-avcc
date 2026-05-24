@@ -101,6 +101,7 @@ const AddShipmentDetails = () => {
                 <div key={field.key}>
                   <label className={labelStyle}>
                     <Icon size={14} className={field.iconTone} /> {field.label}
+                    {field.required && <span className="text-rose-600"> *</span>}
                   </label>
                   <input
                     type={field.type ?? "text"}
