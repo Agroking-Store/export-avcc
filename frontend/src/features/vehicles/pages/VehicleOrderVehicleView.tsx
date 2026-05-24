@@ -41,7 +41,8 @@ const STATUS_LABELS: Record<VehicleBookingStatus, string> = {
   approved: "Approved",
   rejected: "Rejected",
   payment_done: "Awaiting Chassis/Engine No.",
-  chassis_received: "In Transit",
+  chassis_received: "Ready to Ship",
+  shipped: "Shipped",
   delivered: "Delivered",
 };
 

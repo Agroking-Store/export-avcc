@@ -383,6 +383,7 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
 
   return {
     vehicleId,
+    vehicleBookingId: booking?._id?.toString?.() || "",
     vehicleLineIndex: index,
     srNo: index + 1,
     sourceVehicleId:

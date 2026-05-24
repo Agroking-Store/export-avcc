@@ -1,17 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Eye, Filter, Plus, Search } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { formatDate, getShippingDetails, ShippingDetail } from "./shipmentData";
+import { formatDate, ShippingDetail } from "./shipmentData";
+import { shipmentApi } from "../../../services/shipmentApi";
 
 const ShipmentPlanningList = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [shippingDetails] = useState<ShippingDetail[]>(() => getShippingDetails());
+  const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const limit = 5;
+
+  const fetchShipments = async () => {
+    try {
+      setLoading(true);
+      const result = await shipmentApi.list({
+        search,
+        page: currentPage,
+        limit,
+      });
+      setShippingDetails(result.data || []);
+      setTotalPages(result.totalPages || 1);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch shipments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchShipments();
+  }, [search, currentPage]);
 
   useEffect(() => {
     if (location.state?.success) {
@@ -19,26 +43,6 @@ const ShipmentPlanningList = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
-
-  const filteredDetails = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return shippingDetails;
-
-    return shippingDetails.filter((detail) =>
-      [
-        detail.shippingLine,
-        detail.vesselName,
-        detail.sailingDate,
-        detail.arrivalDate,
-      ].some((value) => value.toLowerCase().includes(query))
-    );
-  }, [search, shippingDetails]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredDetails.length / limit));
-  const visibleDetails = filteredDetails.slice(
-    (currentPage - 1) * limit,
-    currentPage * limit
-  );
 
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
@@ -106,16 +110,22 @@ const ShipmentPlanningList = () => {
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
-              {visibleDetails.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-20 text-slate-400 italic">
+                    Loading shipping details...
+                  </td>
+                </tr>
+              ) : shippingDetails.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-20 text-slate-400 italic">
                     No shipping details found
                   </td>
                 </tr>
               ) : (
-                visibleDetails.map((detail) => (
+                shippingDetails.map((detail) => (
                   <tr
-                    key={detail.id}
+                    key={detail._id}
                     className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40"
                   >
                     <td className="px-8 py-5 text-center">
@@ -128,7 +138,7 @@ const ShipmentPlanningList = () => {
                         {detail.vesselName || "-"}
                       </div>
                       <div className="text-xs text-slate-400 dark:text-gray-500">
-                        {detail.id}
+                        {detail._id.slice(-6).toUpperCase()}
                       </div>
                     </td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
@@ -139,7 +149,7 @@ const ShipmentPlanningList = () => {
                     </td>
                     <td className="px-8 py-5 text-center">
                       <button
-                        onClick={() => navigate(`/shipment-planning/view/${detail.id}`)}
+                        onClick={() => navigate(`/shipment-planning/view/${detail._id}`)}
                         className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
                         title="View Details"
                       >

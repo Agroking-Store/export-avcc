@@ -8,6 +8,7 @@ export type VehicleBookingStatus =
   | "rejected"
   | "payment_done"
   | "chassis_received"
+  | "shipped"
   | "delivered";
 
 export interface VehicleBookingItem {
@@ -113,6 +114,14 @@ export interface VehicleBookingItem {
     piNumber?: string;
     status?: string;
   }>;
+  invoiceReadiness?: {
+    INR: boolean;
+    USD: boolean;
+    COMMERCIAL: boolean;
+    PACKING_LIST: boolean;
+    isComplete: boolean;
+  };
+  canShip?: boolean;
   createdAt: string;
   updatedAt: string;
 }

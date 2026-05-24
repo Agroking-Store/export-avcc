@@ -9,6 +9,7 @@ import {
   Globe,
   Hash,
   Package,
+  Ship,
   Truck,
 } from "lucide-react";
 import CreatableSelect from "react-select/creatable";
@@ -431,6 +432,39 @@ const VehicleOrderVehicleEdit = () => {
     }
   };
 
+  const getShipDisabledReason = () => {
+    if (!booking) return "Vehicle booking not found.";
+    const readiness = booking.invoiceReadiness;
+    if (!booking.chassisNumber || !booking.engineNumber) {
+      return "Engine and chassis numbers are required before shipping.";
+    }
+    if (!readiness?.INR) return "Generate INR invoice first.";
+    if (!readiness?.USD) return "Generate USD invoice first.";
+    if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
+    if (!readiness?.PACKING_LIST) return "Generate packing list first.";
+    return "";
+  };
+
+  const shipVehicle = async () => {
+    if (!booking) return;
+    const disabledReason = getShipDisabledReason();
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await vehicleBookingApi.updateStatus(booking._id, "shipped");
+      toast.success("Vehicle marked as shipped");
+      navigate(`/vehicles/orders`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to ship vehicle");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="rounded-[24px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
@@ -761,6 +795,19 @@ const VehicleOrderVehicleEdit = () => {
           </button>
 
           {booking.status === "chassis_received" && (
+            <button
+              type="button"
+              onClick={shipVehicle}
+              disabled={saving || !!getShipDisabledReason()}
+              title={getShipDisabledReason() || "Ship Vehicle"}
+              className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Ship size={16} />
+              Ship Vehicle
+            </button>
+          )}
+
+          {booking.status === "shipped" && (
             <button
               type="button"
               onClick={markDelivered}

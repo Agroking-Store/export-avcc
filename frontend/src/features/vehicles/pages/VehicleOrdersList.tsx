@@ -16,6 +16,7 @@ import {
   FileText,
   Clock,
   Zap,
+  Ship,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
@@ -63,8 +64,12 @@ const STATUS_META: Record<
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
-    label: "In Transit",
+    label: "Ready to Ship",
     badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  },
+  shipped: {
+    label: "Shipped",
+    badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
   },
   delivered: {
     label: "Delivered",
@@ -79,7 +84,8 @@ const statusOptions = [
   "Waiting for Approval",
   "Approved",
   "Awaiting Chassis/Engine No.",
-  "In Transit",
+  "Ready to Ship",
+  "Shipped",
   "Delivered",
   "PI Pending",
 ];
@@ -94,7 +100,8 @@ const statusLabelToRaw: Record<
   "Waiting for Approval": "quotation_uploaded",
   Approved: "approved",
   "Awaiting Chassis/Engine No.": "payment_done",
-  "In Transit": "chassis_received",
+  "Ready to Ship": "chassis_received",
+  Shipped: "shipped",
   Delivered: "delivered",
   "PI Pending": "piPending",
 };
@@ -119,7 +126,8 @@ const VehicleOrdersList = () => {
     quotation_uploaded: "Waiting for Approval",
     approved: "Approved",
     payment_done: "Awaiting Chassis/Engine No.",
-    chassis_received: "In Transit",
+    chassis_received: "Ready to Ship",
+    shipped: "Shipped",
     delivered: "Delivered",
     piPending: "PI Pending",
     missingClient: "All",
@@ -360,6 +368,34 @@ const VehicleOrdersList = () => {
     }
   };
 
+  const getShipDisabledReason = (booking: VehicleBookingItem) => {
+    const readiness = booking.invoiceReadiness;
+    if (!booking.chassisNumber || !booking.engineNumber) {
+      return "Engine and chassis numbers are required before shipping.";
+    }
+    if (!readiness?.INR) return "Generate INR invoice first.";
+    if (!readiness?.USD) return "Generate USD invoice first.";
+    if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
+    if (!readiness?.PACKING_LIST) return "Generate packing list first.";
+    return "";
+  };
+
+  const handleShipVehicle = async (booking: VehicleBookingItem) => {
+    const disabledReason = getShipDisabledReason(booking);
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+
+    try {
+      const updated = await vehicleBookingApi.updateStatus(booking._id, "shipped");
+      syncBooking(updated);
+      toast.success("Vehicle marked as shipped");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to ship vehicle");
+    }
+  };
+
   const getOrderId = (booking: VehicleBookingItem) => {
     const oid = (booking as any).orderId;
     return typeof oid === "string" ? oid : oid?._id || "";
@@ -442,6 +478,25 @@ const VehicleOrdersList = () => {
           </button>
         );
       case "chassis_received":
+        {
+          const disabledReason = getShipDisabledReason(booking);
+          return (
+            <button
+              onClick={() => handleShipVehicle(booking)}
+              disabled={!!disabledReason}
+              title={disabledReason || "Ship Vehicle"}
+              className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0 ${
+                disabledReason
+                  ? "cursor-not-allowed bg-slate-400 opacity-60"
+                  : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+              }`}
+            >
+              <Ship size={14} />
+              Ship Vehicle
+            </button>
+          );
+        }
+      case "shipped":
         return (
           <button
             onClick={() => handleMarkDelivered(booking)}

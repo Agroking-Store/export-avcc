@@ -14,12 +14,10 @@ import {
 import { toast } from "react-toastify";
 import {
   emptyShippingDetail,
-  getNextShipmentId,
-  getShippingDetails,
-  saveShippingDetails,
   shippingFields,
   ShippingDetailForm,
 } from "./shipmentData";
+import { shipmentApi } from "../../../services/shipmentApi";
 
 const fieldIcons = {
   customerName: User,
@@ -43,30 +41,28 @@ const AddShipmentDetails = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const missingField = shippingFields.find(
-      (field) => field.key !== "arrivalDate" && !form[field.key].trim()
+      (field) => field.required && !String(form[field.key] || "").trim()
     );
     if (missingField) {
       toast.error(`${missingField.label} is required`);
       return;
     }
 
-    setSaving(true);
-    const currentDetails = getShippingDetails();
-    saveShippingDetails([
-      ...currentDetails,
-      {
-        id: getNextShipmentId(currentDetails),
-        ...form,
-      },
-    ]);
-
-    navigate("/shipment-planning/list", {
-      state: { success: "Shipping details added successfully" },
-    });
+    try {
+      setSaving(true);
+      await shipmentApi.create(form);
+      navigate("/shipment-planning/list", {
+        state: { success: "Shipping details added successfully" },
+      });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add shipping details");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -117,6 +113,7 @@ const AddShipmentDetails = () => {
                     }
                     className={inputStyle}
                     placeholder={field.type === "date" ? "" : field.label}
+                    required={field.required}
                   />
                 </div>
               );

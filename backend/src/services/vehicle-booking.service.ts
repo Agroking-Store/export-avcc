@@ -7,6 +7,120 @@ import {
 } from "../models/VehicleBooking.model";
 import { Client } from "../models/Client.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
+import Invoice from "../models/Invoice.model";
+
+type InvoiceReadiness = {
+  INR: boolean;
+  USD: boolean;
+  COMMERCIAL: boolean;
+  PACKING_LIST: boolean;
+  isComplete: boolean;
+};
+
+const emptyInvoiceReadiness = (): InvoiceReadiness => ({
+  INR: false,
+  USD: false,
+  COMMERCIAL: false,
+  PACKING_LIST: false,
+  isComplete: false,
+});
+
+export const getInvoiceReadinessByBookingIds = async (
+  bookingIds: string[],
+) => {
+  const uniqueBookingIds = [...new Set(bookingIds.filter(Boolean))];
+  const readiness = uniqueBookingIds.reduce<Record<string, InvoiceReadiness>>(
+    (acc, bookingId) => {
+      acc[bookingId] = emptyInvoiceReadiness();
+      return acc;
+    },
+    {},
+  );
+
+  if (uniqueBookingIds.length === 0) {
+    return readiness;
+  }
+
+  const invoices = await Invoice.find({
+    active: true,
+    $or: [
+      {
+        vehicleId: { $in: uniqueBookingIds },
+        type: { $in: ["INR", "USD", "COMMERCIAL"] },
+      },
+      {
+        type: "PACKING_LIST",
+        "dataSnapshot.vehicles.vehicleId": { $in: uniqueBookingIds },
+      },
+    ],
+  })
+    .select("vehicleId type dataSnapshot")
+    .lean();
+
+  for (const invoice of invoices as any[]) {
+    if (invoice.type === "PACKING_LIST") {
+      const selectedVehicles = Array.isArray(invoice.dataSnapshot?.vehicles)
+        ? invoice.dataSnapshot.vehicles
+        : [];
+
+      for (const vehicle of selectedVehicles) {
+        const vehicleId = String(vehicle?.vehicleId || "");
+        if (readiness[vehicleId]) {
+          readiness[vehicleId].PACKING_LIST = true;
+        }
+      }
+      continue;
+    }
+
+    const vehicleId = String(invoice.vehicleId || "");
+    if (readiness[vehicleId] && ["INR", "USD", "COMMERCIAL"].includes(invoice.type)) {
+      readiness[vehicleId][invoice.type as "INR" | "USD" | "COMMERCIAL"] = true;
+    }
+  }
+
+  for (const item of Object.values(readiness)) {
+    item.isComplete =
+      item.INR && item.USD && item.COMMERCIAL && item.PACKING_LIST;
+  }
+
+  return readiness;
+};
+
+const hasEngineAndChassis = (booking: any) =>
+  !!String(booking.engineNumber || "").trim() &&
+  !!String(booking.chassisNumber || "").trim();
+
+const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
+  const plainBookings = bookings.map((booking: any) =>
+    typeof booking.toObject === "function" ? booking.toObject() : booking,
+  );
+  const readinessByBookingId = await getInvoiceReadinessByBookingIds(
+    plainBookings.map((booking: any) => String(booking._id)),
+  );
+
+  return plainBookings.map((booking: any) => {
+    const invoiceReadiness =
+      readinessByBookingId[String(booking._id)] || emptyInvoiceReadiness();
+    return {
+      ...booking,
+      invoiceReadiness,
+      canShip:
+        booking.status === "chassis_received" &&
+        hasEngineAndChassis(booking) &&
+        invoiceReadiness.isComplete,
+    };
+  });
+};
+
+const getPopulatedBookingWithReadiness = async (bookingId: any) => {
+  const populatedBooking = await VehicleBooking.findById(bookingId)
+    .populate("vehicleId")
+    .populate("orderId");
+  const [bookingWithReadiness] = await attachShipmentReadiness(
+    populatedBooking ? [populatedBooking] : [],
+  );
+  return bookingWithReadiness;
+};
 
 /**
  * Get all bookings for a given order
@@ -69,10 +183,11 @@ export const getBookingsByOrderId = async (orderId: string) => {
     );
   }
 
-  return await VehicleBooking.find({ orderId })
+  const bookings = await VehicleBooking.find({ orderId })
     .populate("vehicleId")
     .populate("orderId")
     .sort({ vehicleIndex: 1 });
+  return attachShipmentReadiness(bookings);
 };
 
 /**
@@ -109,9 +224,13 @@ export const getOrCreateBooking = async (
     await booking.save();
   }
 
-  return await VehicleBooking.findById(booking._id)
+  const populatedBooking = await VehicleBooking.findById(booking._id)
     .populate("vehicleId")
     .populate("orderId");
+  const [bookingWithReadiness] = await attachShipmentReadiness(
+    populatedBooking ? [populatedBooking] : [],
+  );
+  return bookingWithReadiness;
 };
 
 /**
@@ -152,9 +271,13 @@ export const uploadQuotation = async (bookingId: string, filePath: string) => {
     }
   }
 
-  return await VehicleBooking.findById(updatedBooking._id)
+  const populatedBooking = await VehicleBooking.findById(updatedBooking._id)
     .populate("vehicleId")
     .populate("orderId");
+  const [bookingWithReadiness] = await attachShipmentReadiness(
+    populatedBooking ? [populatedBooking] : [],
+  );
+  return bookingWithReadiness;
 };
 
 const toCleanNumber = (value: unknown) => {
@@ -235,9 +358,7 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
   booking.rejectionReason = "";
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -257,9 +378,7 @@ export const approveBooking = async (bookingId: string) => {
 
   booking.status = "approved";
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -280,9 +399,7 @@ export const rejectBooking = async (bookingId: string, reason: string) => {
   booking.status = "rejected";
   booking.rejectionReason = reason.trim();
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -313,9 +430,7 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
   });
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -350,9 +465,7 @@ export const addPayment = async (
   }
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 export const updateChassisEngine = async (
@@ -428,9 +541,7 @@ export const updateChassisEngine = async (
   }
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -449,11 +560,30 @@ export const updateBookingStatus = async (
     );
   }
 
+  if (status === "shipped") {
+    if (booking.status !== "chassis_received") {
+      throw new Error("Vehicle can only be shipped after chassis/engine numbers are received.");
+    }
+
+    const readinessByBookingId = await getInvoiceReadinessByBookingIds([
+      String(booking._id),
+    ]);
+    const readiness = readinessByBookingId[String(booking._id)];
+
+    if (!readiness?.isComplete) {
+      throw new Error(
+        "Generate INR, USD, commercial invoice and packing list before shipping this vehicle.",
+      );
+    }
+  }
+
+  if (status === "delivered" && booking.status !== "shipped") {
+    throw new Error("Vehicle must be shipped before marking it as delivered.");
+  }
+
   booking.status = status;
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 export const assignDealerToBooking = async (
@@ -479,9 +609,7 @@ export const assignDealerToBooking = async (
   };
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 export const assignClientToBooking = async (
@@ -506,9 +634,7 @@ export const assignClientToBooking = async (
   };
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -519,7 +645,8 @@ export const getBookingById = async (bookingId: string) => {
     .populate("vehicleId")
     .populate("orderId");
   if (!booking) throw new Error("Booking not found");
-  return booking;
+  const [bookingWithReadiness] = await attachShipmentReadiness([booking]);
+  return bookingWithReadiness;
 };
 
 /**
@@ -559,9 +686,7 @@ export const uploadBookingDocuments = async (
   booking.isDealerInvoiceUploaded = isDealerInvoiceComplete;
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -675,9 +800,10 @@ export const getAllVehicleBookingsService = async (query: any) => {
   );
 
   const data = await VehicleBooking.aggregate(pipeline);
+  const dataWithReadiness = await attachShipmentReadiness(data);
 
   return {
-    data,
+    data: dataWithReadiness,
     total,
     page: Number(page),
     totalPages: Math.ceil(total / Number(limit)),

@@ -13,6 +13,7 @@ import {
   IndianRupee,
   RefreshCw,
   ShieldCheck,
+  Ship,
   Truck,
   Upload,
   X,
@@ -79,8 +80,12 @@ const STATUS_META: Record<
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
-    label: "In Transit",
+    label: "Ready to Ship",
     badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  },
+  shipped: {
+    label: "Shipped",
+    badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
   },
   delivered: {
     label: "Delivered",
@@ -465,6 +470,36 @@ const VehicleOrderDetails = () => {
     }
   };
 
+  const getShipDisabledReason = (booking: VehicleBookingItem) => {
+    const readiness = booking.invoiceReadiness;
+    if (!booking.chassisNumber || !booking.engineNumber) {
+      return "Engine and chassis numbers are required before shipping.";
+    }
+    if (!readiness?.INR) return "Generate INR invoice first.";
+    if (!readiness?.USD) return "Generate USD invoice first.";
+    if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
+    if (!readiness?.PACKING_LIST) return "Generate packing list first.";
+    return "";
+  };
+
+  const handleShipVehicle = async (booking: VehicleBookingItem) => {
+    const disabledReason = getShipDisabledReason(booking);
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+
+    try {
+      const updated = await vehicleBookingApi.updateStatus(booking._id, "shipped");
+      setBookings((current) =>
+        current.map((item) => (item._id === updated._id ? updated : item)),
+      );
+      toast.success("Vehicle marked as shipped");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to ship vehicle");
+    }
+  };
+
   const getNumberActionLabel = (booking: VehicleBookingItem) => {
     const missingEngine = !String(booking.engineNumber || "").trim();
     const missingChassis = !String(booking.chassisNumber || "").trim();
@@ -531,6 +566,25 @@ const VehicleOrderDetails = () => {
           </button>
         );
       case "chassis_received":
+        {
+          const disabledReason = getShipDisabledReason(booking);
+          return (
+            <button
+              onClick={() => handleShipVehicle(booking)}
+              disabled={!!disabledReason}
+              title={disabledReason || "Ship Vehicle"}
+              className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0 ${
+                disabledReason
+                  ? "cursor-not-allowed bg-slate-400 opacity-60"
+                  : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+              }`}
+            >
+              <Ship size={14} />
+              Ship Vehicle
+            </button>
+          );
+        }
+      case "shipped":
         return (
           <button
             onClick={() => handleMarkDelivered(booking)}

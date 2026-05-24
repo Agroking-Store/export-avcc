@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -15,128 +15,126 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { formatDate, getShippingDetails, ShippingDetail } from "./shipmentData";
-
-type VehicleOption = {
-  id: string;
-  label: string;
-  chassisNumber: string;
-};
-
-type ShipmentContainer = {
-  id: string;
-  name: string;
-  vehicleIds: string[];
-};
-
-const vehicles: VehicleOption[] = [
-  { id: "VH-1001", label: "Toyota Aqua", chassisNumber: "NHP10-2457812" },
-  { id: "VH-1002", label: "Honda Fit", chassisNumber: "GP5-3381092" },
-  { id: "VH-1003", label: "Suzuki Swift", chassisNumber: "ZC72S-982145" },
-  { id: "VH-1004", label: "Nissan Note", chassisNumber: "E12-441900" },
-];
-
-const fallbackShipment: ShippingDetail = {
-  id: "SP-1001",
-  customerName: "Auto Direct Pvt Ltd",
-  destinationCountry: "Sri Lanka",
-  portOfLoading: "Chennai",
-  portOfDischarge: "Colombo",
-  shippingLine: "One Line",
-  vesselName: "Ever Libra/083A",
-  sailingDate: "2026-05-22",
-  arrivalDate: "2026-05-22",
-};
+import {
+  formatDate,
+  getShipmentVehicleLabel,
+  ShippingDetail,
+  ShipmentVehicleBooking,
+} from "./shipmentData";
+import { shipmentApi } from "../../../services/shipmentApi";
 
 const ShipmentDetails = () => {
   const { shipmentId } = useParams();
   const navigate = useNavigate();
-  const shipment =
-    getShippingDetails().find((detail) => detail.id === shipmentId) ||
-    fallbackShipment;
 
-  const [containers, setContainers] = useState<ShipmentContainer[]>([
-    { id: "CN-1001", name: "ABCD", vehicleIds: [] },
-    { id: "CN-1002", name: "ABCD123", vehicleIds: [] },
-  ]);
+  const [shipment, setShipment] = useState<ShippingDetail | null>(null);
+  const [availableVehicles, setAvailableVehicles] = useState<ShipmentVehicleBooking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isContainerModalOpen, setIsContainerModalOpen] = useState(false);
   const [containerName, setContainerName] = useState("");
   const [vehicleModalContainerId, setVehicleModalContainerId] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const assignedVehicleIds = useMemo(
-    () => new Set(containers.flatMap((container) => container.vehicleIds)),
-    [containers]
-  );
+  const fetchShipment = async () => {
+    if (!shipmentId) return;
 
-  const availableVehicles = useMemo(
-    () => vehicles.filter((vehicle) => !assignedVehicleIds.has(vehicle.id)),
-    [assignedVehicleIds]
-  );
+    try {
+      setLoading(true);
+      const [shipmentData, vehiclesData] = await Promise.all([
+        shipmentApi.getById(shipmentId),
+        shipmentApi.getAvailableVehicles(),
+      ]);
+      setShipment(shipmentData);
+      setAvailableVehicles(vehiclesData || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load shipment");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const details = [
-    { label: "Customer Name", value: shipment.customerName, icon: User, tone: "text-indigo-500" },
-    { label: "Destination", value: shipment.destinationCountry, icon: Globe, tone: "text-blue-500" },
-    { label: "Port Of Loading", value: shipment.portOfLoading, icon: Anchor, tone: "text-emerald-500" },
-    { label: "Port Of Discharge", value: shipment.portOfDischarge, icon: MapPin, tone: "text-rose-500" },
-    { label: "Shipping Line", value: shipment.shippingLine, icon: Ship, tone: "text-purple-500" },
-    { label: "Vessel Name", value: shipment.vesselName, icon: Package, tone: "text-cyan-500" },
-    { label: "Sailing Date", value: formatDate(shipment.sailingDate), icon: Calendar, tone: "text-amber-500" },
-    { label: "Arrival Date", value: formatDate(shipment.arrivalDate), icon: Calendar, tone: "text-teal-500" },
-  ];
+  useEffect(() => {
+    fetchShipment();
+  }, [shipmentId]);
 
-  const handleAddContainer = (event: FormEvent<HTMLFormElement>) => {
+  const details = shipment
+    ? [
+        { label: "Customer Name", value: shipment.customerName, icon: User, tone: "text-indigo-500" },
+        { label: "Destination", value: shipment.destinationCountry, icon: Globe, tone: "text-blue-500" },
+        { label: "Port Of Loading", value: shipment.portOfLoading, icon: Anchor, tone: "text-emerald-500" },
+        { label: "Port Of Discharge", value: shipment.portOfDischarge, icon: MapPin, tone: "text-rose-500" },
+        { label: "Shipping Line", value: shipment.shippingLine, icon: Ship, tone: "text-purple-500" },
+        { label: "Vessel Name", value: shipment.vesselName, icon: Package, tone: "text-cyan-500" },
+        { label: "Sailing Date", value: formatDate(shipment.sailingDate), icon: Calendar, tone: "text-amber-500" },
+        { label: "Arrival Date", value: formatDate(shipment.arrivalDate), icon: Calendar, tone: "text-teal-500" },
+      ]
+    : [];
+
+  const handleAddContainer = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!shipmentId) return;
+
     const trimmedName = containerName.trim();
     if (!trimmedName) {
       toast.error("Container name is required");
       return;
     }
 
-    setContainers((current) => [
-      ...current,
-      {
-        id: `CN-${String(1001 + current.length).padStart(4, "0")}`,
-        name: trimmedName,
-        vehicleIds: [],
-      },
-    ]);
-    setContainerName("");
-    setIsContainerModalOpen(false);
-    toast.success("Container added successfully");
+    try {
+      setSaving(true);
+      const updatedShipment = await shipmentApi.addContainer(shipmentId, trimmedName);
+      setShipment(updatedShipment);
+      setContainerName("");
+      setIsContainerModalOpen(false);
+      toast.success("Container added successfully");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add container");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const openVehicleModal = (containerId: string) => {
-    setVehicleModalContainerId(containerId);
-    setSelectedVehicleId("");
+  const openVehicleModal = async (containerId: string) => {
+    try {
+      const vehicles = await shipmentApi.getAvailableVehicles();
+      setAvailableVehicles(vehicles || []);
+      setVehicleModalContainerId(containerId);
+      setSelectedVehicleId("");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load shipped vehicles");
+    }
   };
 
-  const handleAddVehicle = (event: FormEvent<HTMLFormElement>) => {
+  const handleAddVehicle = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!vehicleModalContainerId || !selectedVehicleId) {
+    if (!shipmentId || !vehicleModalContainerId || !selectedVehicleId) {
       toast.error("Select a vehicle first");
       return;
     }
 
-    if (assignedVehicleIds.has(selectedVehicleId)) {
-      toast.error("This vehicle is already added to another container");
-      return;
+    try {
+      setSaving(true);
+      const updatedShipment = await shipmentApi.addVehicleToContainer(
+        shipmentId,
+        vehicleModalContainerId,
+        selectedVehicleId,
+      );
+      const vehicles = await shipmentApi.getAvailableVehicles();
+      setShipment(updatedShipment);
+      setAvailableVehicles(vehicles || []);
+      setVehicleModalContainerId(null);
+      setSelectedVehicleId("");
+      toast.success("Vehicle added to container");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add vehicle");
+    } finally {
+      setSaving(false);
     }
-
-    setContainers((current) =>
-      current.map((container) =>
-        container.id === vehicleModalContainerId
-          ? { ...container, vehicleIds: [...container.vehicleIds, selectedVehicleId] }
-          : container
-      )
-    );
-    setVehicleModalContainerId(null);
-    setSelectedVehicleId("");
-    toast.success("Vehicle added to container");
   };
 
-  const vehicleModalContainer = containers.find(
-    (container) => container.id === vehicleModalContainerId
+  const vehicleModalContainer = shipment?.containers?.find(
+    (container) => container._id === vehicleModalContainerId,
   );
 
   const InfoBox = ({ label, value, icon: Icon, tone }: any) => (
@@ -148,12 +146,28 @@ const ShipmentDetails = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="rounded-[24px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+        Loading shipment details...
+      </div>
+    );
+  }
+
+  if (!shipment) {
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-white p-10 text-center text-rose-600 shadow-sm">
+        Shipment not found.
+      </div>
+    );
+  }
+
   return (
     <div className="w-full animate-in fade-in duration-500">
       <div className="flex justify-between items-center mb-6">
         <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
           <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-indigo-300 transition-colors">
-            {shipment.id}
+            {shipment._id.slice(-6).toUpperCase()}
           </span>
         </div>
 
@@ -197,26 +211,26 @@ const ShipmentDetails = () => {
         </div>
 
         <div className="px-6 md:px-8 pb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {containers.map((container) => {
-              const containerVehicles = container.vehicleIds
-                .map((vehicleId) => vehicles.find((vehicle) => vehicle.id === vehicleId))
-                .filter(Boolean) as VehicleOption[];
-
-              return (
+          {(shipment.containers || []).length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FB] p-10 text-center text-sm font-semibold text-gray-400">
+              No containers added yet
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(shipment.containers || []).map((container) => (
                 <div
-                  key={container.id}
+                  key={container._id}
                   className="rounded-2xl border border-gray-100 bg-[#F8F9FB] p-5 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-md"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <Container size={18} className="text-blue-500" />
                       <h3 className="font-black text-[#1B2559] tracking-wide">
-                        {container.name}
+                        {container.containerNumber}
                       </h3>
                     </div>
                     <button
-                      onClick={() => openVehicleModal(container.id)}
+                      onClick={() => openVehicleModal(container._id)}
                       className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
                     >
                       <Plus size={14} strokeWidth={3} />
@@ -225,27 +239,27 @@ const ShipmentDetails = () => {
                   </div>
 
                   <div className="mt-6 min-h-16 rounded-xl border border-dashed border-gray-200 bg-white/70 p-4">
-                    {containerVehicles.length === 0 ? (
+                    {container.vehicleBookingIds.length === 0 ? (
                       <p className="py-2 text-center text-[11px] font-semibold text-gray-400">
                         Container Empty
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {containerVehicles.map((vehicle) => (
+                        {container.vehicleBookingIds.map((vehicle) => (
                           <div
-                            key={vehicle.id}
+                            key={vehicle._id}
                             className="flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3"
                           >
                             <div>
                               <p className="text-sm font-bold text-[#1B2559]">
-                                {vehicle.label}
+                                {getShipmentVehicleLabel(vehicle)}
                               </p>
                               <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
-                                {vehicle.chassisNumber}
+                                {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
                               </p>
                             </div>
                             <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
-                              {vehicle.id}
+                              Unit {vehicle.vehicleIndex + 1}
                             </span>
                           </div>
                         ))}
@@ -253,9 +267,9 @@ const ShipmentDetails = () => {
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -295,14 +309,20 @@ const ShipmentDetails = () => {
                   Containers
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {containers.map((container) => (
-                    <span
-                      key={container.id}
-                      className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#1B2559] shadow-sm"
-                    >
-                      {container.name}
+                  {(shipment.containers || []).length === 0 ? (
+                    <span className="text-xs font-semibold text-gray-400">
+                      No containers yet
                     </span>
-                  ))}
+                  ) : (
+                    shipment.containers!.map((container) => (
+                      <span
+                        key={container._id}
+                        className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-[#1B2559] shadow-sm"
+                      >
+                        {container.containerNumber}
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -316,7 +336,8 @@ const ShipmentDetails = () => {
                 </button>
                 <button
                   type="submit"
-                  className="cursor-pointer flex items-center gap-2 rounded-xl bg-[#5243EF] px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4335d6]"
+                  disabled={saving}
+                  className="cursor-pointer flex items-center gap-2 rounded-xl bg-[#5243EF] px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4335d6] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus size={16} /> Add Container
                 </button>
@@ -333,7 +354,7 @@ const ShipmentDetails = () => {
               <div>
                 <h3 className="text-lg font-bold text-[#1B2559]">Add Vehicle</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  {vehicleModalContainer?.name} container
+                  {vehicleModalContainer?.containerNumber} container
                 </p>
               </div>
               <button
@@ -347,7 +368,7 @@ const ShipmentDetails = () => {
             <form onSubmit={handleAddVehicle} className="space-y-5 p-6">
               {availableVehicles.length === 0 ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5 text-sm font-semibold text-amber-700">
-                  All vehicles are already assigned to containers.
+                  No shipped vehicles are available for container assignment.
                 </div>
               ) : (
                 <div>
@@ -359,10 +380,10 @@ const ShipmentDetails = () => {
                     onChange={(event) => setSelectedVehicleId(event.target.value)}
                     className="w-full bg-[#F8F9FB] border border-[#F1F3F6] rounded-xl px-4 py-3 text-sm text-[#4A5568] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   >
-                    <option value="">Select available vehicle</option>
+                    <option value="">Select shipped vehicle</option>
                     {availableVehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.label} - {vehicle.chassisNumber}
+                      <option key={vehicle._id} value={vehicle._id}>
+                        {getShipmentVehicleLabel(vehicle)} - {vehicle.chassisNumber || "No chassis"}
                       </option>
                     ))}
                   </select>
@@ -379,7 +400,7 @@ const ShipmentDetails = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={availableVehicles.length === 0}
+                  disabled={saving || availableVehicles.length === 0}
                   className="cursor-pointer flex items-center gap-2 rounded-xl bg-[#5243EF] px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-[#4335d6] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={16} /> Add Vehicle
