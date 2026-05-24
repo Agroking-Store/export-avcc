@@ -9,6 +9,7 @@ import {
   createShipmentHandler,
   getShipmentHandler,
   listShipmentsHandler,
+  getShippedVehicleDetailsHandler,
 } from "../controllers/shipment.controller";
 
 const router = Router();
@@ -17,6 +18,7 @@ router.get("/", authenticate, listShipmentsHandler);
 router.post("/", authenticate, authorize(ROLES.ADMIN), createShipmentHandler);
 router.get("/available-vehicles", authenticate, availableShipmentVehiclesHandler);
 router.get("/:id", authenticate, getShipmentHandler);
+router.get("/:id/shipped-details", authenticate, getShippedVehicleDetailsHandler);
 router.post(
   "/:id/containers",
   authenticate,

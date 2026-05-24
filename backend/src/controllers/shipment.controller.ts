@@ -6,6 +6,7 @@ import {
   getAvailableShipmentVehicles,
   getShipmentById,
   listShipments,
+  getShippedVehicleDetailsForShipment,
 } from "../services/shipment.service";
 
 export const listShipmentsHandler = async (req: Request, res: Response) => {
@@ -70,6 +71,20 @@ export const addVehicleToContainerHandler = async (
       vehicleBookingId: req.body.vehicleBookingId,
     });
     res.json(shipment);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getShippedVehicleDetailsHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const details = await getShippedVehicleDetailsForShipment(
+      req.params.id as string,
+    );
+    res.json(details);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

@@ -4,6 +4,8 @@ import ShipmentPlanningDashboard from "./ShipmentPlanningDashboard";
 import ShipmentPlanningList from "./ShipmentPlanningList";
 import ShipmentDetails from "./ShipmentDetails";
 import AddShipmentDetails from "./AddShipmentDetails";
+import ShippedVehiclesList from "./ShippedVehiclesList";
+import ShippedVehiclesDetails from "./ShippedVehiclesDetails";
 import { Truck } from "lucide-react";
 import ShipmentPlanningNavbar from "./ShipmentPlanningNavbar";
 
@@ -39,6 +41,8 @@ const ShipmentPlanningModule: React.FC = () => {
             <Route path="list" element={<ShipmentPlanningList />} />
             <Route path="add" element={<AddShipmentDetails />} />
             <Route path="view/:shipmentId" element={<ShipmentDetails />} />
+            <Route path="shipped-vehicles" element={<ShippedVehiclesList />} />
+            <Route path="shipped-view/:shipmentId" element={<ShippedVehiclesDetails />} />
             <Route
               path="details/:shipmentId"
               element={<Navigate to="../list" replace />}

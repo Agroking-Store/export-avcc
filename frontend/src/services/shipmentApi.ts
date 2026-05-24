@@ -45,6 +45,11 @@ export const shipmentApi = {
     return response.data;
   },
 
+  getShippedDetails: async (shipmentId: string): Promise<any> => {
+    const response = await api.get(`/shipments/${shipmentId}/shipped-details`);
+    return response.data;
+  },
+
   addVehicleToContainer: async (
     shipmentId: string,
     containerId: string,

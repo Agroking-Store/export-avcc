@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package } from "lucide-react";
+import { LayoutDashboard, Package, Ship } from "lucide-react";
 
 const ShipmentPlanningNavbar: React.FC = () => {
   const location = useLocation();
@@ -18,6 +18,12 @@ const ShipmentPlanningNavbar: React.FC = () => {
       path: "/shipment-planning/list",
       icon: <Package size={18} />,
     },
+    {
+      key: "shipped-vehicles",
+      label: "Shipped Vehicle Details",
+      path: "/shipment-planning/shipped-vehicles",
+      icon: <Ship size={18} />,
+    },
   ];
 
   const isActiveTab = (tabKey: string) => {
@@ -28,6 +34,11 @@ const ShipmentPlanningNavbar: React.FC = () => {
         p.startsWith("/shipment-planning/list") ||
         p.startsWith("/shipment-planning/add") ||
         p.startsWith("/shipment-planning/view")
+      );
+    if (tabKey === "shipped-vehicles")
+      return (
+        p.startsWith("/shipment-planning/shipped-vehicles") ||
+        p.startsWith("/shipment-planning/shipped-view")
       );
     return false;
   };
@@ -56,4 +67,3 @@ const ShipmentPlanningNavbar: React.FC = () => {
 };
 
 export default ShipmentPlanningNavbar;
-

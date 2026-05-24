@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import { Shipment } from "../models/Shipment.model";
 import { VehicleBooking } from "../models/VehicleBooking.model";
+import ProformaInvoice from "../models/ProformaInvoice.model";
+import LetterOfCredit from "../models/LetterOfCredit.model";
+import Invoice from "../models/Invoice.model";
 
 const shipmentPopulate = [
   {
@@ -176,6 +179,211 @@ export const addVehicleToContainer = async ({
 
   container.vehicleBookingIds.push(new mongoose.Types.ObjectId(vehicleBookingId));
   await shipment.save();
-
+ 
   return getShipmentById(shipmentId);
+};
+
+export const getShippedVehicleDetailsForShipment = async (shipmentId: string) => {
+  if (!mongoose.isValidObjectId(shipmentId)) {
+    throw new Error("Shipment not found");
+  }
+
+  const shipment = await Shipment.findById(shipmentId).populate(shipmentPopulate);
+  if (!shipment) {
+    throw new Error("Shipment not found");
+  }
+
+  // Collect all vehicle booking IDs in this shipment
+  const bookingIds: string[] = [];
+  for (const container of shipment.containers || []) {
+    for (const booking of container.vehicleBookingIds || []) {
+      if (booking._id) {
+        bookingIds.push(String(booking._id));
+      }
+    }
+  }
+
+  if (bookingIds.length === 0) {
+    return {
+      shipment: {
+        _id: shipment._id,
+        customerName: shipment.customerName,
+        destinationCountry: shipment.destinationCountry,
+        sailingDate: shipment.sailingDate,
+        arrivalDate: shipment.arrivalDate,
+        shippingLine: shipment.shippingLine,
+        vesselName: shipment.vesselName,
+        portOfLoading: shipment.portOfLoading,
+        portOfDischarge: shipment.portOfDischarge,
+      },
+      containers: [],
+    };
+  }
+
+  // Fetch the booking details
+  const bookings = await VehicleBooking.find({ _id: { $in: bookingIds } })
+    .populate("vehicleId", "brandName modelName variant color")
+    .populate("orderId", "orderNumber vehicleSnapshot")
+    .lean();
+
+  const bookingMap = new Map<string, any>(
+    bookings.map((b) => [String(b._id), b])
+  );
+
+  const chassisList = bookings
+    .map((b) => b.chassisNumber?.trim())
+    .filter(Boolean);
+
+  // Fetch Proforma Invoices that mention these bookings or chassis numbers
+  const pis = await ProformaInvoice.find({
+    $or: [
+      { vehicleBookingIds: { $in: bookingIds.map(id => new mongoose.Types.ObjectId(id)) } },
+      { "vehicleDetails.chassisNo": { $in: chassisList } },
+    ],
+  })
+    .populate("company_id", "name")
+    .lean();
+
+  // Fetch Letters of Credit for these PIs
+  const piIds = pis.map((pi) => pi._id);
+  const lcs = await LetterOfCredit.find({ pi_id: { $in: piIds } })
+    .sort({ uploadedAt: -1 })
+    .lean();
+
+  const piIdToLC = new Map<string, any>();
+  for (const lc of lcs) {
+    if (!piIdToLC.has(String(lc.pi_id))) {
+      piIdToLC.set(String(lc.pi_id), lc);
+    }
+  }
+
+  // Fetch Commercial Invoices for these bookings or chassis numbers
+  const queryConditions: any[] = [
+    { vehicleBookingId: { $in: bookingIds.map(id => new mongoose.Types.ObjectId(id)) }, type: "COMMERCIAL", active: true },
+    { vehicleId: { $in: bookingIds }, type: "COMMERCIAL", active: true }
+  ];
+  if (chassisList.length > 0) {
+    queryConditions.push({
+      "dataSnapshot.vehicle.chassisNo": { $in: chassisList },
+      type: "COMMERCIAL",
+      active: true
+    });
+    queryConditions.push({
+      "manualFields.chassisNo": { $in: chassisList },
+      type: "COMMERCIAL",
+      active: true
+    });
+  }
+
+  const commercialInvoices = await Invoice.find({
+    active: true,
+    $or: queryConditions,
+  }).lean();
+
+  // Map to group invoices and PIs by booking ID / chassis number
+  const resolveDetails = (bookingId: string, chassisNo?: string) => {
+    const cleanChassis = chassisNo?.trim().toLowerCase();
+    
+    // Find matching Commercial Invoice
+    const invoice = commercialInvoices.find((inv) => {
+      if (inv.vehicleBookingId && String(inv.vehicleBookingId) === bookingId) return true;
+      if (inv.vehicleId && String(inv.vehicleId) === bookingId) return true;
+      if (cleanChassis) {
+        const invChassis = (
+          inv.dataSnapshot?.vehicle?.chassisNo ||
+          inv.dataSnapshot?.vehicle?.chassisNumber ||
+          inv.manualFields?.chassisNo ||
+          inv.manualFields?.chassisNumber ||
+          ""
+        ).trim().toLowerCase();
+        if (invChassis === cleanChassis) return true;
+      }
+      return false;
+    });
+
+    // Find matching PI
+    const pi = pis.find((p) => {
+      if (p.vehicleBookingIds?.map(String).includes(bookingId)) return true;
+      if (cleanChassis && p.vehicleDetails) {
+        return p.vehicleDetails.some(
+          (vd: any) => vd.chassisNo?.trim().toLowerCase() === cleanChassis
+        );
+      }
+      return false;
+    });
+
+    const lc = pi ? piIdToLC.get(String(pi._id)) : null;
+
+    let amount = 0;
+    if (invoice) {
+      amount = invoice.computedFields?.totalUSD || invoice.computedFields?.totalINR || 0;
+      // Fallback: check manualFields or totalAmount
+      if (!amount && invoice.dataSnapshot?.vehicle) {
+        const v = invoice.dataSnapshot.vehicle;
+        amount = (Number(v.fobUSD || v.fob) || 0) + (Number(v.freightUSD || v.freight) || 0);
+      }
+    } else if (pi && cleanChassis) {
+      const piVehicle = pi.vehicleDetails.find(
+        (vd: any) => vd.chassisNo?.trim().toLowerCase() === cleanChassis
+      );
+      if (piVehicle) {
+        amount = (Number(piVehicle.fob) || 0) + (Number(piVehicle.freight) || 0);
+      }
+    }
+
+    return {
+      piNo: pi?.piNumber || "-",
+      commercialInvoiceNo: invoice?.invoiceNumber || "-",
+      amount: amount || 0,
+      lcNo: lc?.lcNumber || lc?.extractedData?.lcNumber || "-",
+      lcDate: lc?.uploadedAt ? lc.uploadedAt : "-",
+    };
+  };
+
+  const populatedContainers = shipment.containers.map((container: any) => {
+    const vehicles = container.vehicleBookingIds.map((v: any, index: number) => {
+      const bId = String(v._id || v);
+      const booking = bookingMap.get(bId);
+      const vehicleSnapshot = booking?.vehicleId || booking?.orderId?.vehicleSnapshot || {};
+      const carName = [
+        vehicleSnapshot.brandName,
+        vehicleSnapshot.modelName,
+        vehicleSnapshot.variant,
+      ]
+        .filter(Boolean)
+        .join(" ") || `Vehicle ${index + 1}`;
+      
+      const chassis = booking?.chassisNumber || "";
+      const extra = resolveDetails(bId, chassis);
+
+      return {
+        _id: bId,
+        vehicleIndex: booking?.vehicleIndex ?? index,
+        carName,
+        chassisNo: chassis || "-",
+        ...extra,
+      };
+    });
+
+    return {
+      _id: container._id,
+      containerNumber: container.containerNumber,
+      vehicles,
+    };
+  });
+
+  return {
+    shipment: {
+      _id: shipment._id,
+      customerName: shipment.customerName,
+      destinationCountry: shipment.destinationCountry,
+      sailingDate: shipment.sailingDate,
+      arrivalDate: shipment.arrivalDate,
+      shippingLine: shipment.shippingLine,
+      vesselName: shipment.vesselName,
+      portOfLoading: shipment.portOfLoading,
+      portOfDischarge: shipment.portOfDischarge,
+    },
+    containers: populatedContainers,
+  };
 };
