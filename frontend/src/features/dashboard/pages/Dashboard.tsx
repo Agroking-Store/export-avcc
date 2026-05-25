@@ -899,7 +899,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* ADMIN KPI ROW */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ">
           <SummaryCard
             label="Business Network"
             num={data.clients.length + data.dealers.length}
@@ -966,7 +966,7 @@ const Dashboard: React.FC = () => {
                 Admin Watchlist
               </h2>
             </div>
-            <div className="p-3 space-y-1.5 flex-1">
+            <div className="p-3 space-y-1.5 flex-1 ">
               <WatchButton
                 label="Bookings missing dealer"
                 value={
@@ -1116,7 +1116,7 @@ const HeroKpi = ({ label, value, sub, icon, accent }: any) => (
 const SummaryCard = ({ label, num, detail, icon, g, dest, navigate }: any) => (
   <button
     onClick={() => dest && navigate(dest)}
-    className="text-left rounded-2xl bg-white p-5 border border-blue-100 shadow-sm transition-all hover:-translate-y-1"
+    className="text-left rounded-2xl bg-white p-5 border border-blue-100 shadow-sm transition-all hover:-translate-y-1 cursor-pointer"
   >
     <div
       className="w-10 h-10 rounded-xl flex items-center justify-center text-white mb-4 shadow-md"
@@ -1137,7 +1137,7 @@ const SummaryCard = ({ label, num, detail, icon, g, dest, navigate }: any) => (
 const WatchButton = ({ label, value, urgent, icon, onClick }: any) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${urgent ? "bg-rose-50 border border-rose-100" : "bg-blue-50/50 border border-blue-50"}`}
+    className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left  cursor-pointer transition-all ${urgent ? "bg-rose-50 border border-rose-100" : "bg-blue-50/50 border border-blue-50"}`}
   >
     <div className="flex items-center gap-2.5 min-w-0">
       <div
