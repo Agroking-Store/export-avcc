@@ -113,6 +113,13 @@ export interface VehicleBookingItem {
     _id: string;
     piNumber?: string;
     status?: string;
+    hblPath?: string;
+    pdfPath?: string;
+  }>;
+  commercialInvoices?: Array<{
+    _id: string;
+    invoiceNumber: string;
+    type: string;
   }>;
   invoiceReadiness?: {
     INR: boolean;

@@ -143,6 +143,46 @@ const VehicleOrderVehicleView = () => {
     return `${API_ORIGIN}${booking.quotationFile}`;
   }, [booking?.quotationFile]);
 
+  const getHBLUrl = useCallback(() => {
+    const hblPi = booking?.associatedPIs?.find((pi: any) => pi.hblPath);
+    if (!hblPi) return "";
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("auth_token");
+    const baseUrl = `${apiConfig.baseURL}/proforma-invoices/${hblPi._id}/hbl/view`;
+    return token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl;
+  }, [booking?.associatedPIs]);
+
+  const getCommercialInvoiceUrl = useCallback(() => {
+    const commInv = booking?.commercialInvoices?.find((inv: any) => inv.type === "COMMERCIAL");
+    if (!commInv) return "";
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("auth_token");
+    const baseUrl = `${apiConfig.baseURL}/invoices/${commInv._id}/download`;
+    return token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl;
+  }, [booking?.commercialInvoices]);
+
+  const handleViewHBL = useCallback(() => {
+    const url = getHBLUrl();
+    if (url) {
+      window.open(url, "_blank");
+    } else {
+      toast.error("HBL Document is not uploaded yet.");
+    }
+  }, [getHBLUrl]);
+
+  const handleViewCommercialInvoice = useCallback(() => {
+    const url = getCommercialInvoiceUrl();
+    if (url) {
+      window.open(url, "_blank");
+    } else {
+      toast.error("Commercial Invoice is not generated yet.");
+    }
+  }, [getCommercialInvoiceUrl]);
+
   if (loading) {
     return (
       <div className="rounded-[24px] border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
@@ -260,13 +300,51 @@ const VehicleOrderVehicleView = () => {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => setIsViewModalOpen(true)}
-            className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
-          >
-            <Eye size={14} />
-            VIEW LIBRARY
-          </button>
+          {isClient ? (
+            <>
+              <button
+                onClick={() => setIsViewModalOpen(true)}
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
+              >
+                <Eye size={14} />
+                VIEW LIBRARY
+              </button>
+
+              <button
+                onClick={handleViewHBL}
+                disabled={!getHBLUrl()}
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[10px] transition-all active:scale-95 border ${
+                  getHBLUrl()
+                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-md"
+                    : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                }`}
+              >
+                <FileText size={14} />
+                {getHBLUrl() ? "VIEW HBL" : "HBL PENDING"}
+              </button>
+
+              <button
+                onClick={handleViewCommercialInvoice}
+                disabled={!getCommercialInvoiceUrl()}
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[10px] transition-all active:scale-95 border ${
+                  getCommercialInvoiceUrl()
+                    ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 hover:shadow-md"
+                    : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                }`}
+              >
+                <Receipt size={14} />
+                {getCommercialInvoiceUrl() ? "VIEW COMMERCIAL INVOICE" : "COMMERCIAL INVOICE PENDING"}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsViewModalOpen(true)}
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
+            >
+              <Eye size={14} />
+              VIEW LIBRARY
+            </button>
+          )}
 
           {!isClient && (
             <>

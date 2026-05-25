@@ -176,16 +176,140 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
   const plainBookings = bookings.map((booking: any) =>
     typeof booking.toObject === "function" ? booking.toObject() : booking,
   );
-  const readinessByBookingId = await getInvoiceReadinessByBookingIds(
-    plainBookings.map((booking: any) => String(booking._id)),
-  );
+  const bookingIds = plainBookings.map((booking: any) => String(booking._id));
+  const bookingObjectIds = bookingIds.map(id => new mongoose.Types.ObjectId(id));
+  const readinessByBookingId = await getInvoiceReadinessByBookingIds(bookingIds);
+
+  // Build chassis/engine maps for fallback matching
+  const chassisToBookingId = new Map<string, string>();
+  const engineToBookingId = new Map<string, string>();
+  for (const b of plainBookings) {
+    const chassis = (b.chassisNumber || "")?.trim().toUpperCase();
+    const engine = (b.engineNumber || "")?.trim().toUpperCase();
+    if (chassis) chassisToBookingId.set(chassis, String(b._id));
+    if (engine) engineToBookingId.set(engine, String(b._id));
+  }
+  const chassisList = Array.from(chassisToBookingId.keys());
+  const engineList = Array.from(engineToBookingId.keys());
+
+  // Fetch associated PIs - match by vehicleBookingIds OR chassis/engine in vehicleDetails
+  const ProformaInvoice = mongoose.model("ProformaInvoice");
+  const piQueryConditions: any[] = [
+    { vehicleBookingIds: { $in: bookingObjectIds } },
+    { vehicleBookingIds: { $in: bookingIds } },
+  ];
+  if (chassisList.length > 0) {
+    piQueryConditions.push({ "vehicleDetails.chassisNo": { $in: chassisList } });
+  }
+  if (engineList.length > 0) {
+    piQueryConditions.push({ "vehicleDetails.engineNo": { $in: engineList } });
+  }
+
+  const pis = await ProformaInvoice.find({
+    $or: piQueryConditions,
+  }).select("_id piNumber status hblPath pdfPath vehicleBookingIds vehicleDetails");
+
+  const piMapByBookingId: Record<string, any[]> = {};
+  const addPiForBooking = (bIdStr: string, pi: any) => {
+    if (!bookingIds.includes(bIdStr)) return;
+    if (!piMapByBookingId[bIdStr]) piMapByBookingId[bIdStr] = [];
+    // Avoid duplicates
+    if (piMapByBookingId[bIdStr].some((p: any) => String(p._id) === String(pi._id))) return;
+    piMapByBookingId[bIdStr].push({
+      _id: pi._id,
+      piNumber: pi.piNumber,
+      status: pi.status,
+      hblPath: pi.hblPath,
+      pdfPath: pi.pdfPath,
+    });
+  };
+
+  for (const pi of pis) {
+    // Match by vehicleBookingIds
+    if (pi.vehicleBookingIds) {
+      for (const vbId of pi.vehicleBookingIds) {
+        addPiForBooking(String(vbId), pi);
+      }
+    }
+    // Fallback: match by chassis/engine in vehicleDetails
+    if (pi.vehicleDetails && Array.isArray(pi.vehicleDetails)) {
+      for (const vd of pi.vehicleDetails) {
+        const vdChassis = (vd.chassisNo || "")?.trim().toUpperCase();
+        const vdEngine = (vd.engineNo || "")?.trim().toUpperCase();
+        const matchedByChassis = vdChassis ? chassisToBookingId.get(vdChassis) : null;
+        const matchedByEngine = vdEngine ? engineToBookingId.get(vdEngine) : null;
+        if (matchedByChassis) addPiForBooking(matchedByChassis, pi);
+        if (matchedByEngine) addPiForBooking(matchedByEngine, pi);
+      }
+    }
+  }
+
+  // Fetch associated commercial invoices - match by vehicleBookingId, vehicleId, OR chassis/engine
+  const InvoiceModel = mongoose.model("Invoice");
+  const invoiceQueryConditions: any[] = [
+    { vehicleBookingId: { $in: bookingObjectIds } },
+    { vehicleId: { $in: bookingIds } },
+  ];
+  if (chassisList.length > 0) {
+    invoiceQueryConditions.push({ "dataSnapshot.vehicle.chassisNo": { $in: chassisList } });
+    invoiceQueryConditions.push({ "manualFields.chassisNo": { $in: chassisList } });
+  }
+  if (engineList.length > 0) {
+    invoiceQueryConditions.push({ "dataSnapshot.vehicle.engineNo": { $in: engineList } });
+    invoiceQueryConditions.push({ "manualFields.engineNo": { $in: engineList } });
+  }
+
+  const invoices = await InvoiceModel.find({
+    $or: invoiceQueryConditions,
+    type: "COMMERCIAL",
+    active: true
+  }).select("_id invoiceNumber type vehicleBookingId vehicleId dataSnapshot.vehicle.chassisNo dataSnapshot.vehicle.engineNo manualFields.chassisNo manualFields.engineNo");
+
+  const invoiceMapByBookingId: Record<string, any[]> = {};
+  const addInvoiceForBooking = (bIdStr: string, invoice: any) => {
+    if (!bookingIds.includes(bIdStr)) return;
+    if (!invoiceMapByBookingId[bIdStr]) invoiceMapByBookingId[bIdStr] = [];
+    if (invoiceMapByBookingId[bIdStr].some((inv: any) => String(inv._id) === String(invoice._id))) return;
+    invoiceMapByBookingId[bIdStr].push({
+      _id: invoice._id,
+      invoiceNumber: invoice.invoiceNumber,
+      type: invoice.type,
+    });
+  };
+
+  for (const invoice of invoices) {
+    // Match by vehicleBookingId or vehicleId
+    const directId = invoice.vehicleBookingId || invoice.vehicleId;
+    if (directId && bookingIds.includes(String(directId))) {
+      addInvoiceForBooking(String(directId), invoice);
+    }
+    // Fallback: match by chassis/engine
+    const invChassis = (
+      invoice.dataSnapshot?.vehicle?.chassisNo ||
+      invoice.manualFields?.chassisNo || ""
+    )?.trim().toUpperCase();
+    const invEngine = (
+      invoice.dataSnapshot?.vehicle?.engineNo ||
+      invoice.manualFields?.engineNo || ""
+    )?.trim().toUpperCase();
+    const matchedByChassis = invChassis ? chassisToBookingId.get(invChassis) : null;
+    const matchedByEngine = invEngine ? engineToBookingId.get(invEngine) : null;
+    if (matchedByChassis) addInvoiceForBooking(matchedByChassis, invoice);
+    if (matchedByEngine) addInvoiceForBooking(matchedByEngine, invoice);
+  }
 
   return plainBookings.map((booking: any) => {
+    const bookingIdStr = String(booking._id);
     const invoiceReadiness =
-      readinessByBookingId[String(booking._id)] || emptyInvoiceReadiness();
+      readinessByBookingId[bookingIdStr] || emptyInvoiceReadiness();
+    const associatedPIs = piMapByBookingId[bookingIdStr] || [];
+    const commercialInvoices = invoiceMapByBookingId[bookingIdStr] || [];
     return {
       ...booking,
       invoiceReadiness,
+      associatedPIs,
+      commercialInvoices,
+      piGenerated: associatedPIs.length > 0,
       canShip:
         booking.status === "chassis_received" &&
         hasEngineAndChassis(booking) &&
