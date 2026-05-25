@@ -64,7 +64,7 @@ const Users = () => {
 
                         <button
                             onClick={() => navigate("add")}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95 cursor-pointer"
                         >
                             <Plus size={18} strokeWidth={3} />
                             Add User

@@ -43,28 +43,37 @@ const PINav = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm p-1.5">
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-2 px-2">
-        {navItems.map((item) => (
+  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-2 inline-flex">
+    <div className="flex items-center gap-2 overflow-x-auto">
+      {navItems.map((item) => {
+        const isActive = getIsActive(item.path);
+
+        return (
           <Link
             key={item.name}
             to={item.path}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap relative ${
-              getIsActive(item.path)
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60"
-            }`}
+            className={`
+              flex items-center gap-2.5
+              px-5 py-2.5
+              rounded-xl
+              text-sm font-medium
+              transition-all duration-200
+              whitespace-nowrap
+              ${
+                isActive
+                  ?"bg-[#1877F2] text-white shadow-md shadow-indigo-200" 
+                  : "text-slate-500 hover:text-[#1877F2] hover:bg-[#1877F2]/10 hover:shadow-sm"
+              }
+            `}
           >
             {item.icon}
             {item.name}
-            {getIsActive(item.path) && (
-              <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
-            )}
           </Link>
-        ))}
-      </div>
+        );
+      })}
     </div>
-  );
+  </div>
+);
 };
 
 export default PINav;

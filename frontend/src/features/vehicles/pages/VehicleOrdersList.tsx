@@ -782,7 +782,7 @@ const VehicleOrdersList = () => {
                                 onClick={() =>
                                   !isSourcingTeam && openClientModal(booking)
                                 }
-                                className={`inline-flex h-9 min-w-[130px] items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition ${booking.assignedClientId ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white"}`}
+                                className={`inline-flex h-9 min-w-[130px] items-center justify-center gap-1.5 rounded-xl border px-3 text-xs cursor-pointer font-semibold transition ${booking.assignedClientId ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white"}`}
                               >
                                 <Check size={14} />
                                 <span className="truncate max-w-[90px]">
@@ -798,7 +798,7 @@ const VehicleOrdersList = () => {
                                     `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
                                   )
                                 }
-                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-blue-50 transition-all"
+                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-blue-50 transition-all cursor-pointer"
                               >
                                 <Eye size={16} />
                               </button>
@@ -808,7 +808,7 @@ const VehicleOrdersList = () => {
                                     `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
                                   )
                                 }
-                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-all"
+                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
                               >
                                 <FilePenLine size={16} />
                               </button>
