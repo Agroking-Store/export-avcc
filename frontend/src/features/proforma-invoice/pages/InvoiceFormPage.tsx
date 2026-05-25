@@ -157,6 +157,19 @@ const toIndianWords = (num: number): string => {
     .join(" ")} Only`;
 };
 
+const getSharedVehicleInvoiceNumber = (vehicle: PIInvoiceVehicle) => {
+  const invoiceTypes = ["INR", "USD", "COMMERCIAL", "PACKING_LIST"] as const;
+
+  for (const invoiceType of invoiceTypes) {
+    const invoiceNumber = vehicle.invoices[invoiceType]?.invoiceNumber;
+    if (invoiceNumber?.trim()) {
+      return invoiceNumber.trim();
+    }
+  }
+
+  return "";
+};
+
 const buildInitialForm = (
   context: PIInvoiceContext,
   vehicle: PIInvoiceVehicle,
@@ -169,6 +182,7 @@ const buildInitialForm = (
 
   return {
     invoiceNumber:
+      getSharedVehicleInvoiceNumber(vehicle) ||
       manual.invoiceNumber ||
       existingInvoice?.invoiceNumber ||
       context.suggestedInvoiceNumber,
@@ -377,16 +391,16 @@ export default function InvoiceFormPage() {
       toast.success(`${invoiceType} invoice generated successfully`);
       setSuccessData({
         invoiceId: response.invoiceId,
-        invoiceNumber: form.invoiceNumber,
+        invoiceNumber: response.invoiceNumber,
       });
       setExistingInvoice({
         _id: response.invoiceId,
-        invoiceNumber: form.invoiceNumber,
+        invoiceNumber: response.invoiceNumber,
         generatedAt: new Date().toISOString(),
         vehicleId,
         type: invoiceType,
         hasPackingList: false,
-        manualFields: form,
+        manualFields: { ...form, invoiceNumber: response.invoiceNumber },
       });
     } catch (error: any) {
       if (error.response?.status === 409) {

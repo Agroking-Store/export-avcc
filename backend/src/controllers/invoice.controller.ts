@@ -287,6 +287,45 @@ const buildInvoiceNumber = async () => {
   return `${prefix}${maxSequence + 1}`;
 };
 
+const getSharedVehicleInvoiceNumber = (vehicle: any) => {
+  const invoices = vehicle?.invoices || {};
+  const invoiceTypes: InvoiceDocumentType[] = [
+    "INR",
+    "USD",
+    "COMMERCIAL",
+    "PACKING_LIST",
+  ];
+
+  for (const invoiceType of invoiceTypes) {
+    const invoiceNumber = invoices[invoiceType]?.invoiceNumber;
+    if (invoiceNumber && String(invoiceNumber).trim()) {
+      return String(invoiceNumber).trim();
+    }
+  }
+
+  return "";
+};
+
+const resolveInvoiceNumber = ({
+  manualFields,
+  vehicles,
+  fallbackInvoiceNumber,
+}: {
+  manualFields: Record<string, any>;
+  vehicles: any[];
+  fallbackInvoiceNumber?: string;
+}) => {
+  const sharedInvoiceNumber =
+    vehicles.map(getSharedVehicleInvoiceNumber).find(Boolean) || "";
+  const manualInvoiceNumber = String(manualFields.invoiceNumber || "").trim();
+
+  return (
+    sharedInvoiceNumber ||
+    manualInvoiceNumber ||
+    String(fallbackInvoiceNumber || "").trim()
+  );
+};
+
 const getLatestLC = async (piId: string) =>
   LetterOfCredit.findOne({ pi_id: piId }).sort({ uploadedAt: -1 }).lean();
 
@@ -525,11 +564,14 @@ const jsonError = (
 ) => res.status(status).json(payload);
 
 const getMissingFields = (
-  type: InvoiceDocumentType,
+  type: Exclude<InvoiceDocumentType, "PACKING_LIST">,
   manualFields: Record<string, any>,
 ) => {
   const common = ["invoiceNumber", "invoiceDate", "lcNumber", "lcDate"];
-  const requiredByType: Record<InvoiceDocumentType, string[]> = {
+  const requiredByType: Record<
+    Exclude<InvoiceDocumentType, "PACKING_LIST">,
+    string[]
+  > = {
     INR: ["placeOfSupply", "termsOfPayment", "customExchangeRate"],
     USD: [
       "termsOfDelivery",
@@ -863,7 +905,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
     }: {
       piId: string;
       vehicleId: string;
-      type: InvoiceDocumentType;
+      type: Exclude<InvoiceDocumentType, "PACKING_LIST">;
       manualFields: Record<string, any>;
       replaceExisting?: boolean;
     } = req.body || {};
@@ -881,15 +923,6 @@ export const generateInvoice = async (req: Request, res: Response) => {
       return jsonError(res, 400, {
         error: "INVALID_INVOICE_TYPE",
         message: "Invoice type is invalid",
-      });
-    }
-
-    const missingFields = getMissingFields(type, manualFields);
-
-    if (missingFields.length > 0) {
-      return jsonError(res, 400, {
-        error: "MISSING_FIELDS",
-        fields: missingFields,
       });
     }
 
@@ -913,6 +946,24 @@ export const generateInvoice = async (req: Request, res: Response) => {
       });
     }
 
+    const resolvedInvoiceNumber = resolveInvoiceNumber({
+      manualFields,
+      vehicles: [vehicle],
+      fallbackInvoiceNumber: context.suggestedInvoiceNumber,
+    });
+    const resolvedManualFields: Record<string, any> = {
+      ...manualFields,
+      invoiceNumber: resolvedInvoiceNumber,
+    };
+    const missingFields = getMissingFields(type, resolvedManualFields);
+
+    if (missingFields.length > 0) {
+      return jsonError(res, 400, {
+        error: "MISSING_FIELDS",
+        fields: missingFields,
+      });
+    }
+
     const existingInvoice = await Invoice.findOne({
       piId,
       vehicleId,
@@ -928,16 +979,18 @@ export const generateInvoice = async (req: Request, res: Response) => {
       });
     }
 
-    const resolvedVehicle = applyVehicleOverrides(vehicle, manualFields);
+    const resolvedVehicle = applyVehicleOverrides(vehicle, resolvedManualFields);
 
     const { templateData, computedFields } = buildTemplateData({
       pi: context,
       vehicle: resolvedVehicle,
       type,
-      manualFields,
+      manualFields: resolvedManualFields,
     });
 
-    const sanitizedInvoiceNumber = sanitizeFileName(manualFields.invoiceNumber);
+    const sanitizedInvoiceNumber = sanitizeFileName(
+      resolvedManualFields.invoiceNumber,
+    );
 
     let invoicePdfBuffer: Buffer;
 
@@ -945,19 +998,19 @@ export const generateInvoice = async (req: Request, res: Response) => {
       invoicePdfBuffer = await renderInvoicePDF({
         templateName: "inrInvoice",
         data: templateData,
-        invoiceNumber: manualFields.invoiceNumber,
+        invoiceNumber: resolvedManualFields.invoiceNumber,
       });
     } else if (type === "USD") {
       invoicePdfBuffer = await renderInvoicePDF({
         templateName: "usdInvoice",
         data: templateData,
-        invoiceNumber: manualFields.invoiceNumber,
+        invoiceNumber: resolvedManualFields.invoiceNumber,
       });
     } else if (type === "COMMERCIAL") {
       invoicePdfBuffer = await renderInvoicePDF({
         templateName: "commercialInvoice",
         data: templateData,
-        invoiceNumber: manualFields.invoiceNumber,
+        invoiceNumber: resolvedManualFields.invoiceNumber,
       });
     } else {
       throw new Error("Invalid invoice type");
@@ -969,10 +1022,10 @@ export const generateInvoice = async (req: Request, res: Response) => {
       vehicleLineIndex: resolvedVehicle.vehicleLineIndex,
       vehicleBookingId: resolvedVehicle.vehicleBookingId || null,
       type,
-      invoiceNumber: manualFields.invoiceNumber,
-      invoiceDate: new Date(manualFields.invoiceDate),
-      containerNo: manualFields.containerNo || "",
-      manualFields,
+      invoiceNumber: resolvedManualFields.invoiceNumber,
+      invoiceDate: new Date(resolvedManualFields.invoiceDate),
+      containerNo: resolvedManualFields.containerNo || "",
+      manualFields: resolvedManualFields,
       computedFields,
       invoicePdf: invoicePdfBuffer,
       packingListPdf: null,
@@ -997,6 +1050,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
     return res.json({
       success: true,
       invoiceId: invoiceRecord._id,
+      invoiceNumber: invoiceRecord.invoiceNumber,
       downloadUrl: `/api/v1/invoices/${invoiceRecord._id}/download`,
     });
   } catch (error: any) {
@@ -1137,19 +1191,25 @@ export const generatePackingList = async (req: Request, res: Response) => {
     }
 
     const baseVehicle = selectedVehicles[0];
+    const invoiceNumber = resolveInvoiceNumber({
+      manualFields,
+      vehicles: selectedVehicles,
+      fallbackInvoiceNumber: context.suggestedInvoiceNumber,
+    });
+    const resolvedManualFields: Record<string, any> = {
+      ...manualFields,
+      invoiceNumber,
+    };
 
     const { templateData } = buildTemplateData({
       pi: context,
       vehicle: baseVehicle,
       type: "USD",
-      manualFields,
+      manualFields: resolvedManualFields,
     });
 
     (templateData as any).selectedVehicles = selectedVehicles;
     (templateData as any).totalVehicles = selectedVehicles.length;
-
-    const invoiceNumber =
-      manualFields.invoiceNumber || context.suggestedInvoiceNumber;
 
     const packingListPdfBuffer = await renderInvoicePDF({
       templateName: "packingList",
@@ -1163,8 +1223,8 @@ export const generatePackingList = async (req: Request, res: Response) => {
       vehicleLineIndex: -1,
       type: "PACKING_LIST",
       invoiceNumber,
-      invoiceDate: new Date(manualFields.invoiceDate || Date.now()),
-      manualFields,
+      invoiceDate: new Date(resolvedManualFields.invoiceDate || Date.now()),
+      manualFields: resolvedManualFields,
       invoicePdf: Buffer.from([]), // Empty buffer is now allowed
       packingListPdf: packingListPdfBuffer,
       generatedAt: new Date(),
@@ -1190,6 +1250,7 @@ export const generatePackingList = async (req: Request, res: Response) => {
     return res.json({
       success: true,
       invoiceId: record._id,
+      invoiceNumber: record.invoiceNumber,
       packingListUrl: `/api/v1/invoices/${record._id}/download-packing`,
     });
   } catch (error: any) {

@@ -60,6 +60,7 @@ export const invoiceApi = {
     const res = await axios.post<{
       success: boolean;
       invoiceId: string;
+      invoiceNumber: string;
       downloadUrl: string;
     }>(`${apiConfig.baseURL}/invoices/generate`, payload, {
       headers: getAuthHeaders(),
@@ -76,6 +77,7 @@ export const invoiceApi = {
     const res = await axios.post<{
       success: boolean;
       invoiceId: string;
+      invoiceNumber: string;
       packingListUrl: string;
     }>(`${apiConfig.baseURL}/packing-list/generate`, payload, {
       headers: getAuthHeaders(),
