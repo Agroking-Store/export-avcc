@@ -8,6 +8,7 @@ export type VehicleBookingStatus =
   | "rejected"
   | "payment_done"
   | "chassis_received"
+  | "shipped"
   | "delivered";
 
 export interface IVehicleBooking extends Document {
@@ -146,6 +147,7 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
         "rejected",
         "payment_done",
         "chassis_received",
+        "shipped",
         "delivered",
       ],
       default: "pending",

@@ -7,6 +7,326 @@ import {
 } from "../models/VehicleBooking.model";
 import { Client } from "../models/Client.model";
 import { VehicleOrder } from "../models/VehicleOrder.model";
+import Invoice from "../models/Invoice.model";
+
+type InvoiceReadiness = {
+  INR: boolean;
+  USD: boolean;
+  COMMERCIAL: boolean;
+  PACKING_LIST: boolean;
+  isComplete: boolean;
+};
+
+const emptyInvoiceReadiness = (): InvoiceReadiness => ({
+  INR: false,
+  USD: false,
+  COMMERCIAL: false,
+  PACKING_LIST: false,
+  isComplete: false,
+});
+
+export const getInvoiceReadinessByBookingIds = async (
+  bookingIds: string[],
+) => {
+  const uniqueBookingIds = [...new Set(bookingIds.filter(Boolean))];
+  const readiness = uniqueBookingIds.reduce<Record<string, InvoiceReadiness>>(
+    (acc, bookingId) => {
+      acc[bookingId] = emptyInvoiceReadiness();
+      return acc;
+    },
+    {},
+  );
+
+  if (uniqueBookingIds.length === 0) {
+    return readiness;
+  }
+
+  // Retrieve chassis and engine numbers for these bookings to support matching by chassis/engine
+  const bookings = await VehicleBooking.find({
+    _id: { $in: uniqueBookingIds },
+  })
+    .select("_id chassisNumber engineNumber")
+    .lean();
+
+  const chassisToBookingId = new Map<string, string>();
+  const engineToBookingId = new Map<string, string>();
+
+  for (const b of bookings) {
+    const chassis = b.chassisNumber?.trim().toUpperCase();
+    const engine = b.engineNumber?.trim().toUpperCase();
+    if (chassis) {
+      chassisToBookingId.set(chassis, String(b._id));
+    }
+    if (engine) {
+      engineToBookingId.set(engine, String(b._id));
+    }
+  }
+
+  const chassisList = Array.from(chassisToBookingId.keys());
+  const engineList = Array.from(engineToBookingId.keys());
+
+  const queryConditions: any[] = [
+    { vehicleBookingId: { $in: uniqueBookingIds } },
+    { vehicleId: { $in: uniqueBookingIds } }
+  ];
+
+  if (chassisList.length > 0) {
+    queryConditions.push({ "dataSnapshot.vehicle.chassisNo": { $in: chassisList } });
+    queryConditions.push({ "manualFields.chassisNo": { $in: chassisList } });
+    queryConditions.push({ "dataSnapshot.vehicles.chassisNo": { $in: chassisList } });
+  }
+  if (engineList.length > 0) {
+    queryConditions.push({ "dataSnapshot.vehicle.engineNo": { $in: engineList } });
+    queryConditions.push({ "manualFields.engineNo": { $in: engineList } });
+    queryConditions.push({ "dataSnapshot.vehicles.engineNo": { $in: engineList } });
+  }
+
+  const invoices = await Invoice.find({
+    active: true,
+    $or: queryConditions,
+  })
+    .select("vehicleBookingId vehicleId type dataSnapshot manualFields")
+    .lean();
+
+  for (const invoice of invoices as any[]) {
+    // Determine which booking IDs this invoice is associated with
+    const associatedBookingIds = new Set<string>();
+
+    if (invoice.vehicleBookingId && uniqueBookingIds.includes(String(invoice.vehicleBookingId))) {
+      associatedBookingIds.add(String(invoice.vehicleBookingId));
+    }
+    if (invoice.vehicleId && uniqueBookingIds.includes(String(invoice.vehicleId))) {
+      associatedBookingIds.add(String(invoice.vehicleId));
+    }
+
+    if (invoice.type === "PACKING_LIST") {
+      const selectedVehicles = Array.isArray(invoice.dataSnapshot?.vehicles)
+        ? invoice.dataSnapshot.vehicles
+        : [];
+
+      for (const vehicle of selectedVehicles) {
+        const vChassis = (vehicle?.chassisNo || vehicle?.chassisNumber || "")?.trim().toUpperCase();
+        const vEngine = (vehicle?.engineNo || vehicle?.engineNumber || "")?.trim().toUpperCase();
+        
+        const bookingIdFromChassis = vChassis ? chassisToBookingId.get(vChassis) : null;
+        const bookingIdFromEngine = vEngine ? engineToBookingId.get(vEngine) : null;
+        const bookingIdFromId = (vehicle?.vehicleBookingId || vehicle?.vehicleId) && 
+          uniqueBookingIds.includes(String(vehicle.vehicleBookingId || vehicle.vehicleId))
+          ? String(vehicle.vehicleBookingId || vehicle.vehicleId)
+          : null;
+
+        const targetBookingId = bookingIdFromChassis || bookingIdFromEngine || bookingIdFromId;
+        if (targetBookingId) {
+          associatedBookingIds.add(targetBookingId);
+        }
+      }
+    } else {
+      const chassis = (
+        invoice.dataSnapshot?.vehicle?.chassisNo ||
+        invoice.dataSnapshot?.vehicle?.chassisNumber ||
+        invoice.manualFields?.chassisNo ||
+        invoice.manualFields?.chassisNumber ||
+        ""
+      )?.trim().toUpperCase();
+
+      const engine = (
+        invoice.dataSnapshot?.vehicle?.engineNo ||
+        invoice.dataSnapshot?.vehicle?.engineNumber ||
+        invoice.manualFields?.engineNo ||
+        invoice.manualFields?.engineNumber ||
+        ""
+      )?.trim().toUpperCase();
+
+      const bookingIdFromChassis = chassis ? chassisToBookingId.get(chassis) : null;
+      const bookingIdFromEngine = engine ? engineToBookingId.get(engine) : null;
+
+      if (bookingIdFromChassis) {
+        associatedBookingIds.add(bookingIdFromChassis);
+      }
+      if (bookingIdFromEngine) {
+        associatedBookingIds.add(bookingIdFromEngine);
+      }
+    }
+
+    // Apply the readiness to the matched booking IDs
+    for (const bId of associatedBookingIds) {
+      if (readiness[bId]) {
+        if (invoice.type === "PACKING_LIST") {
+          readiness[bId].PACKING_LIST = true;
+        } else if (["INR", "USD", "COMMERCIAL"].includes(invoice.type)) {
+          readiness[bId][invoice.type as "INR" | "USD" | "COMMERCIAL"] = true;
+        }
+      }
+    }
+  }
+
+  for (const item of Object.values(readiness)) {
+    item.isComplete =
+      item.INR && item.USD && item.COMMERCIAL && item.PACKING_LIST;
+  }
+
+  return readiness;
+};
+
+const hasEngineAndChassis = (booking: any) =>
+  !!String(booking.engineNumber || "").trim() &&
+  !!String(booking.chassisNumber || "").trim();
+
+export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
+  const plainBookings = bookings.map((booking: any) =>
+    typeof booking.toObject === "function" ? booking.toObject() : booking,
+  );
+  const bookingIds = plainBookings.map((booking: any) => String(booking._id));
+  const bookingObjectIds = bookingIds.map(id => new mongoose.Types.ObjectId(id));
+  const readinessByBookingId = await getInvoiceReadinessByBookingIds(bookingIds);
+
+  // Build chassis/engine maps for fallback matching
+  const chassisToBookingId = new Map<string, string>();
+  const engineToBookingId = new Map<string, string>();
+  for (const b of plainBookings) {
+    const chassis = (b.chassisNumber || "")?.trim().toUpperCase();
+    const engine = (b.engineNumber || "")?.trim().toUpperCase();
+    if (chassis) chassisToBookingId.set(chassis, String(b._id));
+    if (engine) engineToBookingId.set(engine, String(b._id));
+  }
+  const chassisList = Array.from(chassisToBookingId.keys());
+  const engineList = Array.from(engineToBookingId.keys());
+
+  // Fetch associated PIs - match by vehicleBookingIds OR chassis/engine in vehicleDetails
+  const ProformaInvoice = mongoose.model("ProformaInvoice");
+  const piQueryConditions: any[] = [
+    { vehicleBookingIds: { $in: bookingObjectIds } },
+    { vehicleBookingIds: { $in: bookingIds } },
+  ];
+  if (chassisList.length > 0) {
+    piQueryConditions.push({ "vehicleDetails.chassisNo": { $in: chassisList } });
+  }
+  if (engineList.length > 0) {
+    piQueryConditions.push({ "vehicleDetails.engineNo": { $in: engineList } });
+  }
+
+  const pis = await ProformaInvoice.find({
+    $or: piQueryConditions,
+  }).select("_id piNumber status hblPath pdfPath vehicleBookingIds vehicleDetails");
+
+  const piMapByBookingId: Record<string, any[]> = {};
+  const addPiForBooking = (bIdStr: string, pi: any) => {
+    if (!bookingIds.includes(bIdStr)) return;
+    if (!piMapByBookingId[bIdStr]) piMapByBookingId[bIdStr] = [];
+    // Avoid duplicates
+    if (piMapByBookingId[bIdStr].some((p: any) => String(p._id) === String(pi._id))) return;
+    piMapByBookingId[bIdStr].push({
+      _id: pi._id,
+      piNumber: pi.piNumber,
+      status: pi.status,
+      hblPath: pi.hblPath,
+      pdfPath: pi.pdfPath,
+    });
+  };
+
+  for (const pi of pis) {
+    // Match by vehicleBookingIds
+    if (pi.vehicleBookingIds) {
+      for (const vbId of pi.vehicleBookingIds) {
+        addPiForBooking(String(vbId), pi);
+      }
+    }
+    // Fallback: match by chassis/engine in vehicleDetails
+    if (pi.vehicleDetails && Array.isArray(pi.vehicleDetails)) {
+      for (const vd of pi.vehicleDetails) {
+        const vdChassis = (vd.chassisNo || "")?.trim().toUpperCase();
+        const vdEngine = (vd.engineNo || "")?.trim().toUpperCase();
+        const matchedByChassis = vdChassis ? chassisToBookingId.get(vdChassis) : null;
+        const matchedByEngine = vdEngine ? engineToBookingId.get(vdEngine) : null;
+        if (matchedByChassis) addPiForBooking(matchedByChassis, pi);
+        if (matchedByEngine) addPiForBooking(matchedByEngine, pi);
+      }
+    }
+  }
+
+  // Fetch associated commercial invoices - match by vehicleBookingId, vehicleId, OR chassis/engine
+  const InvoiceModel = mongoose.model("Invoice");
+  const invoiceQueryConditions: any[] = [
+    { vehicleBookingId: { $in: bookingObjectIds } },
+    { vehicleId: { $in: bookingIds } },
+  ];
+  if (chassisList.length > 0) {
+    invoiceQueryConditions.push({ "dataSnapshot.vehicle.chassisNo": { $in: chassisList } });
+    invoiceQueryConditions.push({ "manualFields.chassisNo": { $in: chassisList } });
+  }
+  if (engineList.length > 0) {
+    invoiceQueryConditions.push({ "dataSnapshot.vehicle.engineNo": { $in: engineList } });
+    invoiceQueryConditions.push({ "manualFields.engineNo": { $in: engineList } });
+  }
+
+  const invoices = await InvoiceModel.find({
+    $or: invoiceQueryConditions,
+    type: "COMMERCIAL",
+    active: true
+  }).select("_id invoiceNumber type vehicleBookingId vehicleId dataSnapshot.vehicle.chassisNo dataSnapshot.vehicle.engineNo manualFields.chassisNo manualFields.engineNo");
+
+  const invoiceMapByBookingId: Record<string, any[]> = {};
+  const addInvoiceForBooking = (bIdStr: string, invoice: any) => {
+    if (!bookingIds.includes(bIdStr)) return;
+    if (!invoiceMapByBookingId[bIdStr]) invoiceMapByBookingId[bIdStr] = [];
+    if (invoiceMapByBookingId[bIdStr].some((inv: any) => String(inv._id) === String(invoice._id))) return;
+    invoiceMapByBookingId[bIdStr].push({
+      _id: invoice._id,
+      invoiceNumber: invoice.invoiceNumber,
+      type: invoice.type,
+    });
+  };
+
+  for (const invoice of invoices) {
+    // Match by vehicleBookingId or vehicleId
+    const directId = invoice.vehicleBookingId || invoice.vehicleId;
+    if (directId && bookingIds.includes(String(directId))) {
+      addInvoiceForBooking(String(directId), invoice);
+    }
+    // Fallback: match by chassis/engine
+    const invChassis = (
+      invoice.dataSnapshot?.vehicle?.chassisNo ||
+      invoice.manualFields?.chassisNo || ""
+    )?.trim().toUpperCase();
+    const invEngine = (
+      invoice.dataSnapshot?.vehicle?.engineNo ||
+      invoice.manualFields?.engineNo || ""
+    )?.trim().toUpperCase();
+    const matchedByChassis = invChassis ? chassisToBookingId.get(invChassis) : null;
+    const matchedByEngine = invEngine ? engineToBookingId.get(invEngine) : null;
+    if (matchedByChassis) addInvoiceForBooking(matchedByChassis, invoice);
+    if (matchedByEngine) addInvoiceForBooking(matchedByEngine, invoice);
+  }
+
+  return plainBookings.map((booking: any) => {
+    const bookingIdStr = String(booking._id);
+    const invoiceReadiness =
+      readinessByBookingId[bookingIdStr] || emptyInvoiceReadiness();
+    const associatedPIs = piMapByBookingId[bookingIdStr] || [];
+    const commercialInvoices = invoiceMapByBookingId[bookingIdStr] || [];
+    return {
+      ...booking,
+      invoiceReadiness,
+      associatedPIs,
+      commercialInvoices,
+      piGenerated: associatedPIs.length > 0,
+      canShip:
+        booking.status === "chassis_received" &&
+        hasEngineAndChassis(booking) &&
+        invoiceReadiness.isComplete,
+    };
+  });
+};
+
+const getPopulatedBookingWithReadiness = async (bookingId: any) => {
+  const populatedBooking = await VehicleBooking.findById(bookingId)
+    .populate("vehicleId")
+    .populate("orderId");
+  const [bookingWithReadiness] = await attachShipmentReadiness(
+    populatedBooking ? [populatedBooking] : [],
+  );
+  return bookingWithReadiness;
+};
 
 /**
  * Get all bookings for a given order
@@ -69,10 +389,11 @@ export const getBookingsByOrderId = async (orderId: string) => {
     );
   }
 
-  return await VehicleBooking.find({ orderId })
+  const bookings = await VehicleBooking.find({ orderId })
     .populate("vehicleId")
     .populate("orderId")
     .sort({ vehicleIndex: 1 });
+  return attachShipmentReadiness(bookings);
 };
 
 /**
@@ -109,9 +430,13 @@ export const getOrCreateBooking = async (
     await booking.save();
   }
 
-  return await VehicleBooking.findById(booking._id)
+  const populatedBooking = await VehicleBooking.findById(booking._id)
     .populate("vehicleId")
     .populate("orderId");
+  const [bookingWithReadiness] = await attachShipmentReadiness(
+    populatedBooking ? [populatedBooking] : [],
+  );
+  return bookingWithReadiness;
 };
 
 /**
@@ -152,9 +477,13 @@ export const uploadQuotation = async (bookingId: string, filePath: string) => {
     }
   }
 
-  return await VehicleBooking.findById(updatedBooking._id)
+  const populatedBooking = await VehicleBooking.findById(updatedBooking._id)
     .populate("vehicleId")
     .populate("orderId");
+  const [bookingWithReadiness] = await attachShipmentReadiness(
+    populatedBooking ? [populatedBooking] : [],
+  );
+  return bookingWithReadiness;
 };
 
 const toCleanNumber = (value: unknown) => {
@@ -235,9 +564,7 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
   booking.rejectionReason = "";
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -257,9 +584,7 @@ export const approveBooking = async (bookingId: string) => {
 
   booking.status = "approved";
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -280,9 +605,7 @@ export const rejectBooking = async (bookingId: string, reason: string) => {
   booking.status = "rejected";
   booking.rejectionReason = reason.trim();
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -313,9 +636,7 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
   });
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -350,9 +671,7 @@ export const addPayment = async (
   }
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 export const updateChassisEngine = async (
@@ -428,9 +747,7 @@ export const updateChassisEngine = async (
   }
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -449,11 +766,30 @@ export const updateBookingStatus = async (
     );
   }
 
+  if (status === "shipped") {
+    if (booking.status !== "chassis_received") {
+      throw new Error("Vehicle can only be shipped after chassis/engine numbers are received.");
+    }
+
+    const readinessByBookingId = await getInvoiceReadinessByBookingIds([
+      String(booking._id),
+    ]);
+    const readiness = readinessByBookingId[String(booking._id)];
+
+    if (!readiness?.isComplete) {
+      throw new Error(
+        "Generate INR, USD, commercial invoice and packing list before shipping this vehicle.",
+      );
+    }
+  }
+
+  if (status === "delivered" && booking.status !== "shipped") {
+    throw new Error("Vehicle must be shipped before marking it as delivered.");
+  }
+
   booking.status = status;
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 export const assignDealerToBooking = async (
@@ -479,9 +815,7 @@ export const assignDealerToBooking = async (
   };
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 export const assignClientToBooking = async (
@@ -506,9 +840,7 @@ export const assignClientToBooking = async (
   };
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -519,7 +851,8 @@ export const getBookingById = async (bookingId: string) => {
     .populate("vehicleId")
     .populate("orderId");
   if (!booking) throw new Error("Booking not found");
-  return booking;
+  const [bookingWithReadiness] = await attachShipmentReadiness([booking]);
+  return bookingWithReadiness;
 };
 
 /**
@@ -559,9 +892,7 @@ export const uploadBookingDocuments = async (
   booking.isDealerInvoiceUploaded = isDealerInvoiceComplete;
 
   const saved = await booking.save();
-  return await VehicleBooking.findById(saved._id)
-    .populate("vehicleId")
-    .populate("orderId");
+  return getPopulatedBookingWithReadiness(saved._id);
 };
 
 /**
@@ -675,9 +1006,10 @@ export const getAllVehicleBookingsService = async (query: any) => {
   );
 
   const data = await VehicleBooking.aggregate(pipeline);
+  const dataWithReadiness = await attachShipmentReadiness(data);
 
   return {
-    data,
+    data: dataWithReadiness,
     total,
     page: Number(page),
     totalPages: Math.ceil(total / Number(limit)),

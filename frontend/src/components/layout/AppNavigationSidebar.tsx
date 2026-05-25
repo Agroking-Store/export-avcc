@@ -7,6 +7,7 @@ import {
   FileText,
   FileCheck,
   Truck,
+  Ship,
 } from "lucide-react";
 import {
   SidebarContent,
@@ -26,8 +27,8 @@ const AppNavigationSidebar: React.FC = () => {
 
   const role = user?.role?.toLowerCase();
 
-
 const defaultMenuItems = [
+
   {
     name: "Dashboard",
     icon: <LayoutDashboard size={20} />,
@@ -58,7 +59,13 @@ const defaultMenuItems = [
     icon: <Users size={20} />,
     path: "/companies",
   },
+  {
+    name: "Shipment Plan",
+    icon: <Ship size={20} />,
+    path: "/shipment-planning/dashboard",
+  },
 ];
+
 
 let menuItems =
   role === "client"

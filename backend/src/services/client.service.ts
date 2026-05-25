@@ -7,6 +7,7 @@ import {
   getNextClientCode,
   normalizePhone,
 } from "./profile-sync.service";
+import { attachShipmentReadiness } from "./vehicle-booking.service";
 
 export const createClientService = async (data: CreateClientDto) => {
   const email = data.email.toLowerCase().trim();
@@ -105,6 +106,8 @@ export const getClientByIdService = async (id: string) => {
     .populate("vehicleId")
     .sort({ createdAt: -1 });
 
+  const ordersWithReadiness = await attachShipmentReadiness(vehicleOrders);
+
   const allBookingIds = await VehicleBooking.find({}, { _id: 1 })
     .sort({ createdAt: -1 })
     .lean();
@@ -118,13 +121,12 @@ export const getClientByIdService = async (id: string) => {
     );
   });
 
-  const vehicleOrdersWithDisplayId = vehicleOrders.map((order: any) => {
-    const plainOrder = order.toObject ? order.toObject() : order;
+  const vehicleOrdersWithDisplayId = ordersWithReadiness.map((order: any) => {
     return {
-      ...plainOrder,
+      ...order,
       vehicleDisplayId:
-        bookingDisplayIdMap.get(plainOrder._id.toString()) ||
-        `VEH-${String(plainOrder.vehicleIndex || 0).padStart(3, "0")}`,
+        bookingDisplayIdMap.get(order._id.toString()) ||
+        `VEH-${String(order.vehicleIndex || 0).padStart(3, "0")}`,
     };
   });
 
@@ -153,6 +155,8 @@ export const getClientByEmailService = async (email: string) => {
     .populate("vehicleId")
     .sort({ createdAt: -1 });
 
+  const ordersWithReadiness = await attachShipmentReadiness(vehicleOrders);
+
   const allBookingIds = await VehicleBooking.find({}, { _id: 1 })
     .sort({ createdAt: -1 })
     .lean();
@@ -166,13 +170,12 @@ export const getClientByEmailService = async (email: string) => {
     );
   });
 
-  const vehicleOrdersWithDisplayId = vehicleOrders.map((order: any) => {
-    const plainOrder = order.toObject ? order.toObject() : order;
+  const vehicleOrdersWithDisplayId = ordersWithReadiness.map((order: any) => {
     return {
-      ...plainOrder,
+      ...order,
       vehicleDisplayId:
-        bookingDisplayIdMap.get(plainOrder._id.toString()) ||
-        `VEH-${String(plainOrder.vehicleIndex || 0).padStart(3, "0")}`,
+        bookingDisplayIdMap.get(order._id.toString()) ||
+        `VEH-${String(order.vehicleIndex || 0).padStart(3, "0")}`,
     };
   });
 

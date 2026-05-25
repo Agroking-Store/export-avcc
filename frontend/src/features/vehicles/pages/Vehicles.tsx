@@ -66,8 +66,14 @@ const STATUS_META: Record<
     section: "inprogress",
   },
   chassis_received: {
-    label: "In Transit",
+    label: "Ready to Ship",
     badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    icon: <Truck size={14} />,
+    section: "inprogress",
+  },
+  shipped: {
+    label: "Shipped",
+    badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
     icon: <Truck size={14} />,
     section: "inprogress",
   },
@@ -114,7 +120,7 @@ const Vehicles: React.FC = () => {
       ["pending", "quotation_details_pending", "quotation_uploaded", "rejected"].includes(b.status)
     ).length;
     const inProgress = bookings.filter((b) =>
-      ["approved", "payment_done", "chassis_received"].includes(b.status)
+      ["approved", "payment_done", "chassis_received", "shipped"].includes(b.status)
     ).length;
     const completed = bookings.filter((b) => b.status === "delivered").length;
 
@@ -172,6 +178,7 @@ const Vehicles: React.FC = () => {
       rejected: 0,
       payment_done: 0,
       chassis_received: 0,
+      shipped: 0,
       delivered: 0,
     };
     bookings.forEach((b) => {
@@ -248,6 +255,7 @@ const Vehicles: React.FC = () => {
               <StatusBarSegment count={statusCounts.rejected} total={metrics.total} color="bg-rose-400" />
               <StatusBarSegment count={statusCounts.payment_done} total={metrics.total} color="bg-blue-400" />
               <StatusBarSegment count={statusCounts.chassis_received} total={metrics.total} color="bg-indigo-400" />
+              <StatusBarSegment count={statusCounts.shipped} total={metrics.total} color="bg-cyan-400" />
               <StatusBarSegment count={statusCounts.delivered} total={metrics.total} color="bg-green-400" />
             </>
           )}
@@ -259,7 +267,8 @@ const Vehicles: React.FC = () => {
           <LegendDot color="bg-emerald-400" label="Approved" value={statusCounts.approved} />
           <LegendDot color="bg-rose-400" label="Rejected" value={statusCounts.rejected} />
           <LegendDot color="bg-blue-400" label="Awaiting Numbers" value={statusCounts.payment_done} />
-          <LegendDot color="bg-indigo-400" label="In Transit" value={statusCounts.chassis_received} />
+          <LegendDot color="bg-indigo-400" label="Ready to Ship" value={statusCounts.chassis_received} />
+          <LegendDot color="bg-cyan-400" label="Shipped" value={statusCounts.shipped} />
           <LegendDot color="bg-green-400" label="Delivered" value={statusCounts.delivered} />
         </div>
       </div>

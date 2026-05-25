@@ -1,6 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export type InvoiceDocumentType = "INR" | "USD" | "COMMERCIAL";
+export type InvoiceDocumentType =
+  | "INR"
+  | "USD"
+  | "COMMERCIAL"
+  | "PACKING_LIST";
 
 export interface IInvoice extends Document {
   piId: mongoose.Types.ObjectId;

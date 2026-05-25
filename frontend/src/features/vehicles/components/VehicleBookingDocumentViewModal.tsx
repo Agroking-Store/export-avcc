@@ -2,6 +2,7 @@ import React from "react";
 import { X, Eye, Download, FileText, AlertCircle } from "lucide-react";
 import { apiConfig } from "@/config/apiConfig";
 import { VehicleBookingItem } from "../../../services/vehicleBookingApi";
+import { useAuth } from "../../../hooks/useAuth";
 
 interface Props {
   isOpen: boolean;
@@ -17,13 +18,22 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
     localStorage.getItem("accessToken") ||
     localStorage.getItem("auth_token");
 
-  const docs = [
-    { label: "Form 20", key: "form20" },
-    { label: "Form 21", key: "form21" },
-    { label: "Form 22", key: "form22" },
-    { label: "Temporary Registration", key: "tempRegCert" },
-    { label: "BV Certificate", key: "bvCertificate" },
-  ];
+  const { isClient } = useAuth();
+
+  const docs = isClient
+    ? [
+        // Client should only view these
+        { label: "CRTM", key: "tempRegCert" },
+        { label: "BV Certificate", key: "bvCertificate" },
+      ]
+    : [
+        // Admin / Sourcing team: full document list
+        { label: "Form 20", key: "form20" },
+        { label: "Form 21", key: "form21" },
+        { label: "Form 22", key: "form22" },
+        { label: "Temporary Registration", key: "tempRegCert" },
+        { label: "BV Certificate", key: "bvCertificate" },
+      ];
 
   const getFileUrl = (field: string, download = false) => {
     const cleanBaseUrl = apiConfig.baseURL.endsWith("/")
