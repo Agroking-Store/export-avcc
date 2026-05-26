@@ -76,6 +76,7 @@ export interface InvoiceManualFields {
   invoiceDate: string;
   lcNumber: string;
   lcDate: string;
+  lcSharedConfirmed?: boolean;
   containerNo: string;
   buyerOrderDate?: string;
   otherReference?: string;

@@ -461,9 +461,11 @@ const CreatePI = () => {
         toast.success("PI created successfully ✅");
         navigate(`/proforma-invoice/${res._id || res.id}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting PI", err);
-      toast.error("Failed to save Proforma Invoice");
+      toast.error(
+        err.response?.data?.message || "Failed to save Proforma Invoice",
+      );
     } finally {
       setLoading(false);
     }

@@ -150,9 +150,9 @@ export const getProformaInvoiceData = async (req: Request, res: Response) => {
         return {
           ...v,
           yom: v.yom || b?.yom || "",
-          fuelType: v.fuelType || b?.fuelType || "",
+          fuelType: b?.fuelType || v.fuelType || "",
           countryOfOrigin: v.countryOfOrigin || b?.countryOfOrigin || "",
-          engineCapacity: v.engineCapacity || b?.engineCapacity || "",
+          engineCapacity: b?.engineCapacity || v.engineCapacity || "",
           hsn:
             v.commercialHsn ||
             v.hsn ||

@@ -10,6 +10,8 @@ import LetterOfCredit from "../models/LetterOfCredit.model";
 import { savePIPdfToDisk } from "./pdf.service";
 import { preparePIDataForService } from "../utils/pi-pdf-helper";
 
+const cleanString = (value: unknown) => String(value || "").trim();
+
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
   const a = [
@@ -135,11 +137,28 @@ export const getBookedVehicleOrdersService = async (
   }
 
   const usedBookings = await ProformaInvoice.find({
-    vehicleBookingIds: { $exists: true, $ne: [] },
-  }).select("vehicleBookingIds");
+    $or: [
+      { vehicleBookingIds: { $exists: true, $ne: [] } },
+      { vehicleDetails: { $exists: true, $ne: [] } },
+    ],
+  }).select("vehicleBookingIds vehicleDetails.chassisNo vehicleDetails.engineNo");
 
   const usedIds = usedBookings.flatMap(
     (pi: any) => pi.vehicleBookingIds?.map((id: any) => id.toString()) || [],
+  );
+  const usedChassis = new Set(
+    usedBookings.flatMap((pi: any) =>
+      (pi.vehicleDetails || [])
+        .map((vehicle: any) => cleanString(vehicle.chassisNo).toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+  const usedEngines = new Set(
+    usedBookings.flatMap((pi: any) =>
+      (pi.vehicleDetails || [])
+        .map((vehicle: any) => cleanString(vehicle.engineNo).toLowerCase())
+        .filter(Boolean),
+    ),
   );
 
   const bookings = await VehicleBooking.find({
@@ -169,7 +188,13 @@ export const getBookedVehicleOrdersService = async (
     );
   });
 
-  const bookingsWithDisplayId = bookings.map((booking: any) => {
+  const unusedBookings = bookings.filter((booking: any) => {
+    const chassis = cleanString(booking.chassisNumber).toLowerCase();
+    const engine = cleanString(booking.engineNumber).toLowerCase();
+    return !usedChassis.has(chassis) && !usedEngines.has(engine);
+  });
+
+  const bookingsWithDisplayId = unusedBookings.map((booking: any) => {
     const vehicle = booking.vehicleId || {};
     const order = booking.orderId || {};
     const vehicleSnapshot = order.vehicleSnapshot || {};
@@ -242,9 +267,24 @@ const getCompanyShortCode = (companyName: string): string => {
 // CREATE PI
 export const createPIService = async (data: any) => {
   const vehicleBookingIds = (data.vehicleBookingIds || []).filter(Boolean);
+  const selectedChassisNumbers = (data.vehicleDetails || [])
+    .map((vehicle: any) => cleanString(vehicle.chassisNo))
+    .filter(Boolean);
+  const selectedEngineNumbers = (data.vehicleDetails || [])
+    .map((vehicle: any) => cleanString(vehicle.engineNo))
+    .filter(Boolean);
+
   if (vehicleBookingIds.length > 0) {
     const existingPI = await ProformaInvoice.findOne({
-      vehicleBookingIds: { $in: vehicleBookingIds },
+      $or: [
+        { vehicleBookingIds: { $in: vehicleBookingIds } },
+        ...(selectedChassisNumbers.length
+          ? [{ "vehicleDetails.chassisNo": { $in: selectedChassisNumbers } }]
+          : []),
+        ...(selectedEngineNumbers.length
+          ? [{ "vehicleDetails.engineNo": { $in: selectedEngineNumbers } }]
+          : []),
+      ],
     }).select("piNumber");
 
     if (existingPI) {
@@ -266,6 +306,23 @@ export const createPIService = async (data: any) => {
     throw new Error(
       "PI can only be generated for vehicles with a chassis number.",
     );
+  } else if (selectedChassisNumbers.length || selectedEngineNumbers.length) {
+    const existingPI = await ProformaInvoice.findOne({
+      $or: [
+        ...(selectedChassisNumbers.length
+          ? [{ "vehicleDetails.chassisNo": { $in: selectedChassisNumbers } }]
+          : []),
+        ...(selectedEngineNumbers.length
+          ? [{ "vehicleDetails.engineNo": { $in: selectedEngineNumbers } }]
+          : []),
+      ],
+    }).select("piNumber");
+
+    if (existingPI) {
+      throw new Error(
+        `PI already generated for this vehicle (${existingPI.piNumber}).`,
+      );
+    }
   }
   }
 

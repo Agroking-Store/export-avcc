@@ -142,9 +142,12 @@ const ShippedVehiclesDetails = () => {
   return (
     <div className="w-full animate-in fade-in duration-500 pb-12">
       <div className="flex justify-between items-center mb-6">
-        <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center group cursor-default">
-          <span className="text-white text-base font-black tracking-[0.2em] group-hover:text-indigo-300 transition-colors">
-            {shipment._id.slice(-6).toUpperCase()}
+        <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2 group cursor-default">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+            Shipment
+          </span>
+          <span className="font-mono text-base font-black text-white group-hover:text-indigo-300 transition-colors">
+            #{shipment._id.slice(-6).toUpperCase()}
           </span>
         </div>
 

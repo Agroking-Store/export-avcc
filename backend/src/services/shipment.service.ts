@@ -257,6 +257,30 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     }
   }
 
+  const invoiceLCs = await Invoice.find({
+    piId: { $in: piIds },
+    active: true,
+    $or: [
+      { "manualFields.lcNumber": { $exists: true, $nin: ["", null] } },
+      { "manualFields.lcDate": { $exists: true, $nin: ["", null] } },
+    ],
+  })
+    .sort({ generatedAt: -1 })
+    .select("piId manualFields generatedAt")
+    .lean();
+
+  const piIdToInvoiceLC = new Map<string, any>();
+  for (const invoice of invoiceLCs) {
+    const piKey = String(invoice.piId);
+    if (piIdToInvoiceLC.has(piKey)) continue;
+
+    const lcNumber = cleanString(invoice.manualFields?.lcNumber);
+    const lcDate = cleanString(invoice.manualFields?.lcDate);
+    if (lcNumber || lcDate) {
+      piIdToInvoiceLC.set(piKey, { lcNumber, lcDate });
+    }
+  }
+
   // Fetch Commercial Invoices for these bookings or chassis numbers
   const queryConditions: any[] = [
     { vehicleBookingId: { $in: bookingIds.map(id => new mongoose.Types.ObjectId(id)) }, type: "COMMERCIAL", active: true },
@@ -312,6 +336,7 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
       return false;
     });
 
+    const invoiceLC = pi ? piIdToInvoiceLC.get(String(pi._id)) : null;
     const lc = pi ? piIdToLC.get(String(pi._id)) : null;
 
     let amount = 0;
@@ -335,8 +360,12 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
       piNo: pi?.piNumber || "-",
       commercialInvoiceNo: invoice?.invoiceNumber || "-",
       amount: amount || 0,
-      lcNo: lc?.lcNumber || lc?.extractedData?.lcNumber || "-",
-      lcDate: lc?.uploadedAt ? lc.uploadedAt : "-",
+      lcNo:
+        invoiceLC?.lcNumber ||
+        lc?.lcNumber ||
+        lc?.extractedData?.lcNumber ||
+        "-",
+      lcDate: invoiceLC?.lcDate || (lc?.uploadedAt ? lc.uploadedAt : "-"),
     };
   };
 

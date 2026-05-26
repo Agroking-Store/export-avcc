@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Eye, FileText, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -191,6 +192,7 @@ const buildInitialForm = (
       new Date().toISOString().slice(0, 10),
     lcNumber: manual.lcNumber || context.lcNumber || "",
     lcDate: toDateInputValue(manual.lcDate || context.lcDate),
+    lcSharedConfirmed: manual.lcSharedConfirmed === true,
     containerNo: manual.containerNo || "",
     buyerOrderDate: manual.buyerOrderDate || "",
     otherReference: manual.otherReference || context.piNumber || "",
@@ -209,8 +211,8 @@ const buildInitialForm = (
     model: manual.model || vehicle.model || "",
     variant: manual.variant || vehicle.variant || "",
     colour: manual.colour || vehicle.colour || "",
-    engineCapacity: manual.engineCapacity || vehicle.engineCapacity || "",
-    fuelType: manual.fuelType || vehicle.fuelType || "",
+    engineCapacity: vehicle.engineCapacity || "",
+    fuelType: vehicle.fuelType || "",
     yearOfManufacture:
       manual.yearOfManufacture || vehicle.yearOfManufacture || "",
     monthYearFirstReg:
@@ -370,13 +372,18 @@ export default function InvoiceFormPage() {
 
   const handleFieldChange = (
     name: keyof InvoiceManualFields,
-    value: string,
+    value: string | boolean,
   ) => {
     setForm((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
   const submit = async (replaceExisting = false) => {
     if (!form) return;
+
+    if (!form.lcSharedConfirmed) {
+      toast.error("Please confirm the LC number and date are same for all invoices");
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -495,6 +502,11 @@ export default function InvoiceFormPage() {
               <ReadOnlyField label="VIN / Chassis" value={vehicle.chassisNo} />
               <ReadOnlyField label="Engine No" value={vehicle.engineNo} />
               <ReadOnlyField
+                label="Engine Capacity"
+                value={vehicle.engineCapacity}
+              />
+              <ReadOnlyField label="Fuel Type" value={vehicle.fuelType} />
+              <ReadOnlyField
                 label="Vehicle Value (USD)"
                 value={vehicle.totalUSD.toFixed(2)}
               />
@@ -543,6 +555,23 @@ export default function InvoiceFormPage() {
                 type="date"
                 required
               />
+              <label className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 md:col-span-2 xl:col-span-3">
+                <Checkbox
+                  checked={!!form.lcSharedConfirmed}
+                  onCheckedChange={(checked) =>
+                    handleFieldChange("lcSharedConfirmed", checked === true)
+                  }
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-slate-800">
+                    Same LC number and date for all invoices
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-500">
+                    Confirm this before generating the PDF.
+                  </span>
+                </span>
+              </label>
               <EditableField
                 label="Container No"
                 name="containerNo"
@@ -742,20 +771,6 @@ export default function InvoiceFormPage() {
                     value={form.colour}
                     onChange={handleFieldChange}
                     placeholder="Gaming Grey"
-                  />
-                  <EditableField
-                    label="Engine Capacity"
-                    name="engineCapacity"
-                    value={form.engineCapacity}
-                    onChange={handleFieldChange}
-                    placeholder="1490"
-                  />
-                  <EditableField
-                    label="Fuel Type"
-                    name="fuelType"
-                    value={form.fuelType}
-                    onChange={handleFieldChange}
-                    placeholder="Petrol"
                   />
                   <EditableField
                     label="Export HSN"
