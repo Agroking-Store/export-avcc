@@ -408,21 +408,36 @@ const AddVehicle = () => {
                     <Hash size={14} className="text-violet-500" /> GST Rate{" "}
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <select
-                    value={vehicle.igstRate}
-                    onChange={(e) =>
-                      handleChange(
-                        index,
-                        "igstRate",
-                        e.target.value as VehicleForm["igstRate"],
-                      )
-                    }
-                    className={`${selectStyle}`}
-                  >
-                    <option value="5">5%</option>
-                    <option value="18">18%</option>
-                    <option value="40">40%</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={vehicle.igstRate}
+                      onChange={(e) =>
+                        handleChange(
+                          index,
+                          "igstRate",
+                          e.target.value as VehicleForm["igstRate"],
+                        )
+                      }
+                      className={`${selectStyle} pr-10`}  // IMPORTANT: pr-10 for space
+                    >
+                      <option value="5">5% </option>
+                      <option value="18">18% </option>
+                      <option value="40">40% </option>
+                    </select>
+
+                    {/* Custom Arrow */}
+                    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

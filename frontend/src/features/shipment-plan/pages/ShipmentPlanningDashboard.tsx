@@ -209,7 +209,7 @@ const ShipmentPlanningDashboard: React.FC = () => {
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as TimeRangeKey)}
-            className="py-2.5 px-4 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            className="py-2.5 px-4 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
           >
             <option value="thisMonth">This Month</option>
             <option value="lastMonth">Last Month</option>
