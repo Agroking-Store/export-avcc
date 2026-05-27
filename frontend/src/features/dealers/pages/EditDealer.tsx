@@ -21,6 +21,7 @@ const EditDealer = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
+    representativeName: "",
     contact: "",
     email: "",
     address: "",
@@ -39,6 +40,7 @@ const EditDealer = () => {
       .then((res) =>
         setForm({
           ...res.data.data,
+          representativeName: res.data.data?.representativeName || "",
           bankDetails: {
             bankName: res.data.data?.bankDetails?.bankName || "",
             accountNo: res.data.data?.bankDetails?.accountNo || "",
@@ -133,6 +135,25 @@ const EditDealer = () => {
                 placeholder="John Motors"
               />
             </div>
+
+
+            {/* Representative Name */}
+            <div>
+              <label className={labelStyle}>
+                <User size={14} className="text-indigo-500" /> Representative Name
+              </label>
+
+              <input
+                name="representativeName"
+                value={form.representativeName}
+                onChange={(e) =>
+                  setForm({ ...form, representativeName: e.target.value })
+                }
+                className={inputStyle}
+                placeholder="John Doe"
+              />
+            </div>
+
 
             {/* Contact */}
             <div>
