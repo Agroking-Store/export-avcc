@@ -204,7 +204,7 @@ const CreateCompany: React.FC = () => {
             </div>
 
             <div>
-              <label className={labelStyle}><Mail size={14} className="text-blue-500"/> Email Address <span className="text-red-500 ml-0.5">*</span></label>
+              <label className={labelStyle}><Mail size={14} className="text-blue-500"/> Email Address</label>
               <input name="email" type="email" value={form.email} onChange={handleChange} className={inputStyle} placeholder="contact@company.com" />
               {errors.email && <p className={errorStyle}><AlertCircle size={10}/> {errors.email}</p>}
             </div>
@@ -216,7 +216,7 @@ const CreateCompany: React.FC = () => {
             </div>
 
             <div>
-              <label className={labelStyle}><CreditCard size={14} className="text-amber-500"/> GST Number <span className="text-red-500 ml-0.5">*</span></label>
+              <label className={labelStyle}><CreditCard size={14} className="text-amber-500"/> GST Number </label>
               <input name="gstNumber" value={form.gstNumber} onChange={handleChange} className={inputStyle} placeholder="GSTIN..." />
             </div>
 
