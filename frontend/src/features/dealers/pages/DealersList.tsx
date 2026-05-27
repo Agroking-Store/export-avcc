@@ -119,7 +119,7 @@ const DealersList = () => {
             {dealers.length === 0 && !loading ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center py-20 text-slate-400 italic"
                 >
                   No dealers found
@@ -139,6 +139,10 @@ const DealersList = () => {
                   <td className="px-8 py-5 text-center">
                     <div className="font-bold text-[#0f172a] dark:text-white text-[15px]">
                       {dealer.name}
+                    </div>
+
+                    <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+                      {dealer.representativeName || "-"}
                     </div>
                   </td>
                   <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">

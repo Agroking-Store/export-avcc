@@ -20,6 +20,7 @@ const AddDealer = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
+    representativeName: "",
     contact: "",
     email: "",
     address: "",
@@ -64,6 +65,7 @@ const AddDealer = () => {
       setLoading(true);
       const payload = {
         name: form.name,
+        representativeName: form.representativeName,
         contact: form.contact.replace(/\D/g, ""),
         email: form.email.toLowerCase().trim(),
         address: form.address,
@@ -71,8 +73,8 @@ const AddDealer = () => {
         // Only send bankDetails if at least one field is filled, otherwise send empty object
         bankDetails:
           form.bankDetails.bankName ||
-          form.bankDetails.accountNo ||
-          form.bankDetails.branchIfsc
+            form.bankDetails.accountNo ||
+            form.bankDetails.branchIfsc
             ? form.bankDetails
             : {},
       };
@@ -83,7 +85,7 @@ const AddDealer = () => {
     } catch (error: any) {
       toast.error(
         error.response?.data?.message ||
-          "Dealer create failed. Please check the details and try again.",
+        "Dealer create failed. Please check the details and try again.",
       );
     } finally {
       setLoading(false);
@@ -151,6 +153,22 @@ const AddDealer = () => {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className={inputStyle}
                 placeholder="John Motors"
+              />
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                <User size={14} className="text-cyan-500" /> Representative Name
+              </label>
+
+              <input
+                name="representativeName"
+                value={form.representativeName}
+                onChange={(e) =>
+                  setForm({ ...form, representativeName: e.target.value })
+                }
+                className={inputStyle}
+                placeholder="Enter representative name"
               />
             </div>
 
