@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const dealerSchema = new mongoose.Schema({
   dealerId: { type: String, unique: true, index: true },
   name: { type: String, required: true, index: true },
+  representativeName: { type: String, trim: true },
   contact: { type: String, required: true, index: true},
   email: { type: String },
   address: { type: String },

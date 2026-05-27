@@ -10,6 +10,7 @@ import {
   Hash,
   Landmark,
   CreditCard,
+  User,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "@/config/apiConfig";
@@ -157,6 +158,13 @@ const DealerDetails = () => {
                   value={dealer.contact}
                   icon={Phone}
                 />
+
+                <InfoBox
+                  label="Representative Name"
+                  value={dealer.representativeName}
+                  icon={User}
+                />
+
                 <InfoBox
                   label="Email Address"
                   value={dealer.email}
