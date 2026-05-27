@@ -96,26 +96,28 @@ const VehicleOrderVehicleBooking = () => {
       vehicleManagementApi
         .getVehicleOrderById(orderId)
         .then((order) => {
-          if (
-            order?.vehicleSnapshot?.commercialHsnCode ||
-            order?.vehicleSnapshot?.exportHsnCode ||
-            order?.vehicleSnapshot?.hsnCode
-          ) {
+          if (order?.vehicleSnapshot) {
             setVehicle((prev) => ({
               ...prev,
               commercialHsnCode:
                 order.vehicleSnapshot.commercialHsnCode ||
                 order.vehicleSnapshot.hsnCode ||
+                prev.commercialHsnCode ||
                 "",
               exportHsnCode:
                 order.vehicleSnapshot.exportHsnCode ||
                 order.vehicleSnapshot.hsnCode ||
+                prev.exportHsnCode ||
+                "",
+              engineCapacity:
+                order.vehicleSnapshot.engineCapacity ||
+                prev.engineCapacity ||
                 "",
             }));
           }
         })
         .catch(() => {
-          // non-critical: HSN can be entered manually
+          // non-critical: HSN/Specs can be entered manually
         });
     }
   }, [orderId]);
