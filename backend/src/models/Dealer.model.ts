@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const dealerSchema = new mongoose.Schema({
-  dealerId: { type: String, unique: true },
-  name: { type: String, required: true },
-  contact: { type: String, required: true },
+  dealerId: { type: String, unique: true, index: true },
+  name: { type: String, required: true, index: true },
+  contact: { type: String, required: true, index: true},
   email: { type: String },
   address: { type: String },
   gstNumber: { type: String },

@@ -216,7 +216,7 @@ const CreateCompany: React.FC = () => {
             </div>
 
             <div>
-              <label className={labelStyle}><CreditCard size={14} className="text-amber-500"/> GST Number</label>
+              <label className={labelStyle}><CreditCard size={14} className="text-amber-500"/> GST Number </label>
               <input name="gstNumber" value={form.gstNumber} onChange={handleChange} className={inputStyle} placeholder="GSTIN..." />
             </div>
 

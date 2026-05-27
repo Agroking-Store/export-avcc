@@ -24,7 +24,15 @@ export const getDealers = async (req: Request, res: Response) => {
     const search = req.query.search as string;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
-    const query = search ? { name: { $regex: search, $options: "i" } } : {};
+    const query = search
+      ? {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { dealerId: { $regex: search, $options: "i" } },
+          { contact: { $regex: search, $options: "i" } },
+        ],
+      }
+      : {};
     const dealers = await Dealer.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
@@ -98,7 +106,7 @@ export const getDealerVehicles = async (
 
     const dealerVehicles = await VehicleBooking.find({
       assignedDealerId: dealerId,
-    }).populate<{ vehicleId: { brandName: string; modelName: string; variant:string } }>({
+    }).populate<{ vehicleId: { brandName: string; modelName: string; variant: string } }>({
       path: "vehicleId",
       select: "brandName modelName variant",
     })
@@ -121,15 +129,15 @@ export const getDealerVehicles = async (
       const amountPaid = payments.reduce((acc: number, p: any) => acc + p.amount, 0);
       const remainingBalance = basicValue - bookingAmount - amountPaid;
       return {
-      _id: v._id,
-      vehicleIndex: v.vehicleIndex,
-      engineNumber: v.engineNumber || "-",
-      chassisNumber: v.chassisNumber || "-",
-      brandName: v.vehicleId?.brandName || "-",
-      modelName: v.vehicleId?.modelName  || "-",
-      variant: v.vehicleId?.variant ,
-      status: v.status,
-      deliveryDate: v.deliveryDate || v.createdAt,
+        _id: v._id,
+        vehicleIndex: v.vehicleIndex,
+        engineNumber: v.engineNumber || "-",
+        chassisNumber: v.chassisNumber || "-",
+        brandName: v.vehicleId?.brandName || "-",
+        modelName: v.vehicleId?.modelName || "-",
+        variant: v.vehicleId?.variant,
+        status: v.status,
+        deliveryDate: v.deliveryDate || v.createdAt,
         basicValue,
         bookingAmount,
         payments,
