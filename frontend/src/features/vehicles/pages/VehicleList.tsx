@@ -499,6 +499,7 @@ const VehicleList = () => {
                   "Model Name",
                   "Variant",
                   "Color",
+                  "Engine Capacity",
                   "Status",
                   "Actions",
                 ].map((head) => (
@@ -516,7 +517,7 @@ const VehicleList = () => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center py-20 text-slate-400 italic"
                   >
                     Loading vehicles...
@@ -525,7 +526,7 @@ const VehicleList = () => {
               ) : vehicles.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center py-20 text-slate-400 italic"
                   >
                     No vehicles found
@@ -552,6 +553,9 @@ const VehicleList = () => {
                     </td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
                       {vehicle.color}
+                    </td>
+                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
+                      {vehicle.engineCapacity || "-"}
                     </td>
                     <td className="px-8 py-5 text-center">
                       <span
@@ -586,13 +590,15 @@ const VehicleList = () => {
                             >
                               <FilePenLine size={18} />
                             </button>
-                            <button
-                              onClick={() => handleDelete(vehicle._id)}
-                              className="cursor-pointer p-2.5 text-red-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50 hover:scale-110 transition-all duration-200"
-                              title="Delete Vehicle"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {role === "admin" && (
+                              <button
+                                onClick={() => handleDelete(vehicle._id)}
+                                className="cursor-pointer p-2.5 text-red-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50 hover:scale-110 transition-all duration-200"
+                                title="Delete Vehicle"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

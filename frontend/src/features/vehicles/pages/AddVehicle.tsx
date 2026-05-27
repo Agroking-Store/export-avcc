@@ -42,6 +42,7 @@ interface VehicleForm {
   modelId: string;
   variantId: string;
   colorId: string;
+  engineCapacity: string;
   commercialHsnCode: string;
   exportHsnCode: string;
   fobAmount: string;
@@ -54,6 +55,7 @@ const emptyVehicle = (): VehicleForm => ({
   modelId: "",
   variantId: "",
   colorId: "",
+  engineCapacity: "",
   commercialHsnCode: "",
   exportHsnCode: "",
   fobAmount: "",
@@ -230,6 +232,7 @@ const AddVehicle = () => {
           modelName: model?.name || "",
           variant: variant?.name || "",
           color: color?.name || "",
+          engineCapacity: v.engineCapacity.trim(),
           commercialHsnCode: v.commercialHsnCode.trim(),
           exportHsnCode: v.exportHsnCode.trim(),
           fobAmount: v.fobAmount !== "" ? parseFloat(v.fobAmount) : 0,
@@ -427,7 +430,21 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-amber-500" /> Commercial HSN{" "}
+                    <Hash size={14} className="text-indigo-500" /> Engine Capacity
+                  </label>
+                  <input
+                    value={vehicle.engineCapacity}
+                    onChange={(e) =>
+                      handleChange(index, "engineCapacity", e.target.value)
+                    }
+                    className={inputStyle}
+                    placeholder="1498 cc"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelStyle}>
+                    <Hash size={14} className="text-amber-500" /> Sri Lanka HSN Code{" "}
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
@@ -442,7 +459,7 @@ const AddVehicle = () => {
 
                 <div>
                   <label className={labelStyle}>
-                    <Hash size={14} className="text-sky-500" /> Export HSN{" "}
+                    <Hash size={14} className="text-sky-500" /> India HSN Code{" "}
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input

@@ -7,6 +7,7 @@ interface CreateVehicleListItemDto {
   modelName: string;
   variant: string;
   color: string;
+  engineCapacity?: string;
   commercialHsnCode: string;
   exportHsnCode: string;
   quantity?: number;
@@ -20,6 +21,7 @@ interface UpdateVehicleListItemDto {
   modelName?: string;
   variant?: string;
   color?: string;
+  engineCapacity?: string;
   commercialHsnCode?: string;
   exportHsnCode?: string;
   quantity?: number;
@@ -69,6 +71,7 @@ export const getVehicleListItemsService = async (query: any) => {
       { modelName: { $regex: search, $options: "i" } },
       { variant: { $regex: search, $options: "i" } },
       { color: { $regex: search, $options: "i" } },
+      { engineCapacity: { $regex: search, $options: "i" } },
       { status: { $regex: search, $options: "i" } },
     ];
   }
@@ -95,7 +98,7 @@ export const getVehicleOrderFormOptionsService = async () => {
   const [clients, vehicles] = await Promise.all([
     Client.find({}).select("name companyName").sort({ createdAt: -1 }),
     VehicleListItem.find({})
-      .select("brandName modelName variant color quantity status igstRate")
+      .select("brandName modelName variant color engineCapacity quantity status igstRate commercialHsnCode exportHsnCode hsnCode")
       .sort({ createdAt: -1 }),
   ]);
 
@@ -130,6 +133,9 @@ export const updateVehicleListItemService = async (
   if (updateData.modelName !== undefined) item.modelName = updateData.modelName;
   if (updateData.variant !== undefined) item.variant = updateData.variant;
   if (updateData.color !== undefined) item.color = updateData.color;
+  if (updateData.engineCapacity !== undefined) {
+    item.engineCapacity = updateData.engineCapacity;
+  }
   if (updateData.commercialHsnCode !== undefined) {
     item.commercialHsnCode = updateData.commercialHsnCode;
   }

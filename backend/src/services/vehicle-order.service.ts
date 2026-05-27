@@ -65,6 +65,7 @@ export const createVehicleOrderService = async (
       modelName: vehicle.modelName,
       variant: vehicle.variant,
       color: vehicle.color,
+      engineCapacity: vehicle.engineCapacity || "",
       commercialHsnCode:
         vehicle.commercialHsnCode || vehicle.hsnCode || "",
       exportHsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",
@@ -184,6 +185,7 @@ export const updateVehicleOrderService = async (
     modelName: vehicle.modelName,
     variant: vehicle.variant,
     color: vehicle.color,
+    engineCapacity: vehicle.engineCapacity || "",
     commercialHsnCode: vehicle.commercialHsnCode || vehicle.hsnCode || "",
     exportHsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",
     hsnCode: vehicle.exportHsnCode || vehicle.hsnCode || "",

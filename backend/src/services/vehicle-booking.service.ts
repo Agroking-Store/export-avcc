@@ -172,6 +172,20 @@ const hasEngineAndChassis = (booking: any) =>
   !!String(booking.engineNumber || "").trim() &&
   !!String(booking.chassisNumber || "").trim();
 
+const hasReadyToShipInvoices = (readiness?: InvoiceReadiness) =>
+  !!readiness?.INR && !!readiness?.USD && !!readiness?.COMMERCIAL;
+
+const BOOKING_STATUS_ORDER: VehicleBookingStatus[] = [
+  "pending",
+  "quotation_details_pending",
+  "quotation_uploaded",
+  "approved",
+  "payment_done",
+  "chassis_received",
+  "shipped",
+  "delivered",
+];
+
 export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
   const plainBookings = bookings.map((booking: any) =>
     typeof booking.toObject === "function" ? booking.toObject() : booking,
@@ -313,7 +327,7 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
       canShip:
         booking.status === "chassis_received" &&
         hasEngineAndChassis(booking) &&
-        invoiceReadiness.isComplete,
+        hasReadyToShipInvoices(invoiceReadiness),
     };
   });
 };
@@ -351,6 +365,7 @@ export const getBookingsByOrderId = async (orderId: string) => {
         vehicleId: order.vehicleId,
         vehicleIndex,
         status: "pending",
+        engineCapacity: order.vehicleSnapshot?.engineCapacity || "",
         ...(order.clientId
           ? {
               assignedClientId: order.clientId,
@@ -417,6 +432,7 @@ export const getOrCreateBooking = async (
       vehicleId: order.vehicleId,
       vehicleIndex,
       status: "pending",
+      engineCapacity: order.vehicleSnapshot?.engineCapacity || "",
       ...(order.clientId
         ? {
             assignedClientId: order.clientId,
@@ -760,13 +776,21 @@ export const updateBookingStatus = async (
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
+  if (!BOOKING_STATUS_ORDER.includes(status)) {
+    throw new Error("Invalid booking status");
+  }
+
+  const currentIndex = BOOKING_STATUS_ORDER.indexOf(booking.status);
+  const targetIndex = BOOKING_STATUS_ORDER.indexOf(status);
+  const isForwardMove = targetIndex > currentIndex;
+
   if (status === "delivered" && !booking.assignedClientId) {
     throw new Error(
       "Please allot a client before marking this vehicle as delivered.",
     );
   }
 
-  if (status === "shipped") {
+  if (isForwardMove && status === "shipped") {
     if (booking.status !== "chassis_received") {
       throw new Error("Vehicle can only be shipped after chassis/engine numbers are received.");
     }
@@ -776,20 +800,44 @@ export const updateBookingStatus = async (
     ]);
     const readiness = readinessByBookingId[String(booking._id)];
 
-    if (!readiness?.isComplete) {
+    if (!hasReadyToShipInvoices(readiness)) {
       throw new Error(
-        "Generate INR, USD, commercial invoice and packing list before shipping this vehicle.",
+        "Generate INR, USD and commercial invoice before shipping this vehicle.",
       );
     }
   }
 
-  if (status === "delivered" && booking.status !== "shipped") {
+  if (isForwardMove && status === "delivered" && booking.status !== "shipped") {
     throw new Error("Vehicle must be shipped before marking it as delivered.");
   }
 
   booking.status = status;
   const saved = await booking.save();
   return getPopulatedBookingWithReadiness(saved._id);
+};
+
+export const deleteVehicleBooking = async (bookingId: string) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const lockedStatuses: VehicleBookingStatus[] = [
+    "quotation_details_pending",
+    "quotation_uploaded",
+    "approved",
+    "payment_done",
+    "chassis_received",
+    "shipped",
+    "delivered",
+  ];
+
+  if (booking.quotationFile || lockedStatuses.includes(booking.status)) {
+    throw new Error(
+      "Cannot delete this entry after quotation is uploaded or approved.",
+    );
+  }
+
+  await VehicleBooking.findByIdAndDelete(bookingId);
+  return booking;
 };
 
 export const assignDealerToBooking = async (
@@ -912,7 +960,19 @@ export const getBookingFile = async (bookingId: string, field: string) => {
  * Get all vehicle bookings across all orders with filters & pagination
  */
 export const getAllVehicleBookingsService = async (query: any) => {
-  const { search, status, page = 1, limit = 10 } = query;
+  const {
+    search,
+    status,
+    page = 1,
+    limit = 10,
+    vehicleId,
+    vehicle,
+    color,
+    engineNumber,
+    chassisNumber,
+    dealer,
+    client,
+  } = query;
 
   const match: any = {};
   const isPiPendingFilter = status === "piPending";
@@ -934,6 +994,48 @@ export const getAllVehicleBookingsService = async (query: any) => {
       { "orderId.orderNumber": { $regex: search, $options: "i" } },
       { engineNumber: { $regex: search, $options: "i" } },
       { chassisNumber: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const addRegexFilter = (field: string, value?: string) => {
+    if (value && String(value).trim()) {
+      match[field] = { $regex: String(value).trim(), $options: "i" };
+    }
+  };
+
+  addRegexFilter("orderId.orderNumber", vehicleId);
+  addRegexFilter("orderId.vehicleSnapshot.color", color);
+  addRegexFilter("engineNumber", engineNumber);
+  addRegexFilter("chassisNumber", chassisNumber);
+  addRegexFilter("assignedDealerSnapshot.name", dealer);
+  addRegexFilter("assignedClientSnapshot.name", client);
+
+  if (vehicle && String(vehicle).trim()) {
+    const value = String(vehicle).trim();
+    match.$and = [
+      ...(match.$and || []),
+      {
+        $or: [
+          {
+            "orderId.vehicleSnapshot.brandName": {
+              $regex: value,
+              $options: "i",
+            },
+          },
+          {
+            "orderId.vehicleSnapshot.modelName": {
+              $regex: value,
+              $options: "i",
+            },
+          },
+          {
+            "orderId.vehicleSnapshot.variant": {
+              $regex: value,
+              $options: "i",
+            },
+          },
+        ],
+      },
     ];
   }
 
@@ -980,6 +1082,36 @@ export const getAllVehicleBookingsService = async (query: any) => {
     },
   ];
 
+  const statsPipeline = [
+    ...pipeline,
+    {
+      $group: {
+        _id: null,
+        deliveredTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
+        },
+        piReadyTotal: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$piGenerated", false] },
+                  { $ne: ["$engineNumber", ""] },
+                  { $ne: ["$engineNumber", null] },
+                  { $ne: ["$chassisNumber", ""] },
+                  { $ne: ["$chassisNumber", null] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalAll: { $sum: 1 },
+      },
+    },
+  ];
+
   if (isPiPendingFilter) {
     pipeline.push({
       $match: {
@@ -995,8 +1127,16 @@ export const getAllVehicleBookingsService = async (query: any) => {
   }
 
   const countPipeline = [...pipeline, { $count: "total" }];
-  const countResult = await VehicleBooking.aggregate(countPipeline);
+  const [countResult, statsResult] = await Promise.all([
+    VehicleBooking.aggregate(countPipeline),
+    VehicleBooking.aggregate(statsPipeline),
+  ]);
   const total = countResult[0]?.total || 0;
+  const stats = statsResult[0] || {
+    deliveredTotal: 0,
+    piReadyTotal: 0,
+    totalAll: 0,
+  };
 
   pipeline.push(
     { $sort: { createdAt: -1 } },
@@ -1013,6 +1153,11 @@ export const getAllVehicleBookingsService = async (query: any) => {
     total,
     page: Number(page),
     totalPages: Math.ceil(total / Number(limit)),
+    stats: {
+      deliveredTotal: stats.deliveredTotal || 0,
+      piReadyTotal: stats.piReadyTotal || 0,
+      totalAll: stats.totalAll || 0,
+    },
   };
 };
 

@@ -23,6 +23,7 @@ import {
   uploadBookingDocumentsHandler,
   getBookingFileHandler,
   getAllBookingsHandler,
+  deleteBookingHandler,
 } from "../controllers/vehicle-booking.controller";
 
 // Quotation-specific multer config
@@ -98,6 +99,7 @@ router.post("/:id/confirm-payment", authenticate, authorize(ROLES.ADMIN), confir
 router.post("/:id/payments", authenticate, authorize(ROLES.ADMIN), addPaymentHandler);
 router.patch("/:id/assign-client", authenticate, authorize(ROLES.ADMIN), assignClientHandler);
 router.patch("/:id/status", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), updateStatusHandler);
+router.delete("/:id", authenticate, authorize(ROLES.ADMIN), deleteBookingHandler);
 router.post(
   "/:id/documents",
   authenticate,

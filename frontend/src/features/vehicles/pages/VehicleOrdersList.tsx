@@ -17,6 +17,8 @@ import {
   Clock,
   Zap,
   Ship,
+  ArrowLeftRight,
+  Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "../../../services/api";
@@ -44,7 +46,7 @@ const STATUS_META: Record<
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
   quotation_details_pending: {
-    label: "Costing Details Pending",
+    label: "Waiting for Approval",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   quotation_uploaded: {
@@ -60,7 +62,7 @@ const STATUS_META: Record<
     badge: "bg-rose-100 text-rose-700 border-rose-200",
   },
   payment_done: {
-    label: "Awaiting Chassis/Engine No.",
+    label: "Awaiting Engine / Chassis Number",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
@@ -68,7 +70,7 @@ const STATUS_META: Record<
     badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
   },
   shipped: {
-    label: "Shipped",
+    label: "Shipped / In Transit",
     badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
   },
   delivered: {
@@ -79,15 +81,14 @@ const STATUS_META: Record<
 
 const statusOptions = [
   "All",
-  "Quotation Pending",
-  "Costing Details Pending",
+  "Pending",
   "Waiting for Approval",
   "Approved",
-  "Awaiting Chassis/Engine No.",
+  "Awaiting Engine / Chassis Number",
+  "Make PI",
   "Ready to Ship",
-  "Shipped",
+  "Shipped / In Transit",
   "Delivered",
-  "PI Pending",
 ];
 
 const statusLabelToRaw: Record<
@@ -95,15 +96,14 @@ const statusLabelToRaw: Record<
   VehicleBookingStatus | "All" | "piPending"
 > = {
   All: "All",
-  "Quotation Pending": "pending",
-  "Costing Details Pending": "quotation_details_pending",
+  Pending: "pending",
   "Waiting for Approval": "quotation_uploaded",
   Approved: "approved",
-  "Awaiting Chassis/Engine No.": "payment_done",
+  "Awaiting Engine / Chassis Number": "payment_done",
+  "Make PI": "piPending",
   "Ready to Ship": "chassis_received",
-  Shipped: "shipped",
+  "Shipped / In Transit": "shipped",
   Delivered: "delivered",
-  "PI Pending": "piPending",
 };
 
 interface ClientOrdersResponse {
@@ -119,17 +119,31 @@ const VehicleOrdersList = () => {
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [columnFilters, setColumnFilters] = useState({
+    vehicleId: "",
+    vehicle: "",
+    color: "",
+    engineNumber: "",
+    chassisNumber: "",
+    dealer: "",
+    client: "",
+  });
+  const [bookingStats, setBookingStats] = useState({
+    deliveredTotal: 0,
+    piReadyTotal: 0,
+    totalAll: 0,
+  });
 
   const rawToStatusLabel: Record<string, string> = {
-    pending: "Quotation Pending",
-    quotation_details_pending: "Costing Details Pending",
+    pending: "Pending",
+    quotation_details_pending: "Waiting for Approval",
     quotation_uploaded: "Waiting for Approval",
     approved: "Approved",
-    payment_done: "Awaiting Chassis/Engine No.",
+    payment_done: "Awaiting Engine / Chassis Number",
     chassis_received: "Ready to Ship",
-    shipped: "Shipped",
+    shipped: "Shipped / In Transit",
     delivered: "Delivered",
-    piPending: "PI Pending",
+    piPending: "Make PI",
     missingClient: "All",
   };
   const incomingFilter = (location.state as any)?.statusFilter;
@@ -181,13 +195,32 @@ const VehicleOrdersList = () => {
 
           if (!statusMatches) return false;
 
-          if (!normalizedSearch) return true;
-
           const orderData = (booking as any).orderId;
           const vehicleSnapshot =
             typeof orderData === "object" && orderData !== null
               ? orderData.vehicleSnapshot
               : null;
+          const filterValues = {
+            vehicleId: orderData?.orderNumber || "",
+            vehicle:
+              `${vehicleSnapshot?.brandName || ""} ${vehicleSnapshot?.modelName || ""} ${vehicleSnapshot?.variant || ""}`.trim(),
+            color: vehicleSnapshot?.color || "",
+            engineNumber: booking.engineNumber || "",
+            chassisNumber: booking.chassisNumber || "",
+            dealer: booking.assignedDealerSnapshot?.name || "",
+            client: booking.assignedClientSnapshot?.name || "",
+          };
+          const columnMatches = Object.entries(columnFilters).every(
+            ([key, value]) =>
+              !value.trim() ||
+              String(filterValues[key as keyof typeof filterValues])
+                .toLowerCase()
+                .includes(value.trim().toLowerCase()),
+          );
+          if (!columnMatches) return false;
+
+          if (!normalizedSearch) return true;
+
           const searchValue = [
             vehicleSnapshot?.brandName,
             vehicleSnapshot?.modelName,
@@ -209,6 +242,15 @@ const VehicleOrdersList = () => {
         setBookings(filteredBookings.slice(startIndex, startIndex + limit));
         setTotal(nextTotal);
         setTotalPages(nextTotalPages);
+        setBookingStats({
+          deliveredTotal: filteredBookings.filter(
+            (b) => b.status === "delivered",
+          ).length,
+          piReadyTotal: filteredBookings.filter(
+            (b) => b.engineNumber && b.chassisNumber && !b.piGenerated,
+          ).length,
+          totalAll: filteredBookings.length,
+        });
         return;
       }
 
@@ -217,11 +259,15 @@ const VehicleOrdersList = () => {
         status: statusValue === "All" ? undefined : statusValue,
         page: currentPage,
         limit,
+        ...columnFilters,
       });
 
       setBookings(res.data || []);
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
+      setBookingStats(
+        res.stats || { deliveredTotal: 0, piReadyTotal: 0, totalAll: 0 },
+      );
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
     } finally {
@@ -231,7 +277,7 @@ const VehicleOrdersList = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [currentPage, isClient, search, statusLabel]);
+  }, [currentPage, isClient, search, statusLabel, columnFilters]);
 
   useEffect(() => {
     const pendingCount = bookings.filter(
@@ -249,11 +295,11 @@ const VehicleOrdersList = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusLabel]);
+  }, [search, statusLabel, columnFilters]);
 
   useEffect(() => {
     setTotal(0);
-  }, [search, statusLabel]);
+  }, [search, statusLabel, columnFilters]);
 
   useEffect(() => {
     if (location.state?.success) {
@@ -376,8 +422,94 @@ const VehicleOrdersList = () => {
     if (!readiness?.INR) return "Generate INR invoice first.";
     if (!readiness?.USD) return "Generate USD invoice first.";
     if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
-    if (!readiness?.PACKING_LIST) return "Generate packing list first.";
     return "";
+  };
+
+  const hasEngineAndChassis = (booking: VehicleBookingItem) =>
+    !!String(booking.engineNumber || "").trim() &&
+    !!String(booking.chassisNumber || "").trim();
+
+  const hasReadyToShipInvoices = (booking: VehicleBookingItem) =>
+    !!booking.invoiceReadiness?.INR &&
+    !!booking.invoiceReadiness?.USD &&
+    !!booking.invoiceReadiness?.COMMERCIAL;
+
+  const getDisplayStatusMeta = (booking: VehicleBookingItem) => {
+    if (!isClient && hasEngineAndChassis(booking) && !booking.piGenerated) {
+      return {
+        label: "Make PI",
+        badge: "bg-purple-100 text-purple-700 border-purple-200",
+      };
+    }
+    if (booking.status === "chassis_received" && !hasReadyToShipInvoices(booking)) {
+      return {
+        label: isClient ? "Confirmed & Sourcing" : "Awaiting Invoices",
+        badge: isClient
+          ? "bg-blue-100 text-blue-700 border-blue-200"
+          : "bg-amber-100 text-amber-700 border-amber-200",
+      };
+    }
+    return STATUS_META[booking.status];
+  };
+
+  const statusFlow: VehicleBookingStatus[] = [
+    "pending",
+    "quotation_uploaded",
+    "approved",
+    "payment_done",
+    "chassis_received",
+    "shipped",
+    "delivered",
+  ];
+
+  const getStatusFlowIndex = (status: VehicleBookingStatus) => {
+    if (status === "quotation_details_pending") return 1;
+    if (status === "rejected") return 0;
+    return statusFlow.indexOf(status);
+  };
+
+  const handleStatusStep = async (
+    booking: VehicleBookingItem,
+    direction: "previous" | "next",
+  ) => {
+    const index = getStatusFlowIndex(booking.status);
+    const nextIndex = direction === "next" ? index + 1 : index - 1;
+    const nextStatus = statusFlow[nextIndex];
+    if (!nextStatus) return;
+
+    try {
+      const updated = await vehicleBookingApi.updateStatus(
+        booking._id,
+        nextStatus,
+      );
+      syncBooking(updated);
+      toast.success(`Status updated to ${STATUS_META[nextStatus].label}`);
+      fetchBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const canDeleteBooking = (booking: VehicleBookingItem) =>
+    isAdmin &&
+    !booking.quotationFile &&
+    ["pending", "rejected"].includes(booking.status);
+
+  const handleDeleteBooking = async (booking: VehicleBookingItem) => {
+    if (
+      !window.confirm(
+        "Delete this vehicle entry? This is allowed only before quotation upload/approval.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await vehicleBookingApi.delete(booking._id);
+      toast.success("Vehicle entry deleted");
+      fetchBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete entry");
+    }
   };
 
   const handleShipVehicle = async (booking: VehicleBookingItem) => {
@@ -518,10 +650,8 @@ const VehicleOrdersList = () => {
     if (isClient) {
       return [
         {
-          label: "PI Pending",
-          value: bookings.filter(
-            (b) => !b.piGenerated && b.engineNumber && b.chassisNumber,
-          ).length,
+          label: "In Progress",
+          value: bookings.filter((b) => b.status !== "delivered").length,
           tone: "bg-amber-100 text-amber-800",
         },
         {
@@ -546,7 +676,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "Delivered",
-          value: bookings.filter((b) => b.status === "delivered").length,
+          value: bookingStats.deliveredTotal,
           tone: "bg-emerald-100 text-emerald-800",
         },
         {
@@ -561,19 +691,17 @@ const VehicleOrdersList = () => {
     // ORIGINAL ADMIN CARDS
     return [
       {
-        label: "Quotation Pending",
+        label: "Pending",
         value: bookings.filter((b) => b.status === "pending").length,
         tone: "bg-slate-100 text-slate-800",
       },
       {
-        label: "Costing Pending",
-        value: bookings.filter((b) => b.status === "quotation_details_pending")
-          .length,
-        tone: "bg-blue-100 text-blue-800",
-      },
-      {
         label: "Waiting for Approval",
-        value: bookings.filter((b) => b.status === "quotation_uploaded").length,
+        value: bookings.filter((b) =>
+          ["quotation_details_pending", "quotation_uploaded"].includes(
+            b.status,
+          ),
+        ).length,
         tone: "bg-amber-100 text-amber-800",
       },
       {
@@ -582,12 +710,17 @@ const VehicleOrdersList = () => {
         tone: "bg-blue-100 text-blue-800",
       },
       {
+        label: "Make PI",
+        value: bookingStats.piReadyTotal,
+        tone: "bg-purple-100 text-purple-800",
+      },
+      {
         label: "Delivered",
-        value: bookings.filter((b) => b.status === "delivered").length,
+        value: bookingStats.deliveredTotal,
         tone: "bg-emerald-100 text-emerald-800",
       },
     ];
-  }, [bookings, isClient]);
+  }, [bookings, bookingStats, isClient]);
 
   const pageTitle = isClient ? "My Vehicle List" : "Vehicles List";
   const pageDescription = isClient
@@ -701,14 +834,19 @@ const VehicleOrdersList = () => {
                   <th className="border-b border-slate-200 px-5 py-4 align-middle">
                     Color
                   </th>
-                  {/* CLIENT ONLY COLUMNS */}
-                  {isClient && (
+                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                    Engine No
+                  </th>
+                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                    Chassis No
+                  </th>
+                  {!isClient && (
                     <>
                       <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                        Engine No
+                        Dealer
                       </th>
                       <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                        Chassis No
+                        Client
                       </th>
                     </>
                   )}
@@ -719,12 +857,111 @@ const VehicleOrdersList = () => {
                     {isClient ? "View" : "Actions"}
                   </th>
                 </tr>
+                <tr className="bg-white text-xs">
+                  <th className="border-b border-slate-200 px-3 py-2">
+                    <input
+                      value={columnFilters.vehicleId}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          vehicleId: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                      placeholder="Filter"
+                    />
+                  </th>
+                  <th className="border-b border-slate-200 px-3 py-2">
+                    <input
+                      value={columnFilters.vehicle}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          vehicle: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                      placeholder="Filter"
+                    />
+                  </th>
+                  <th className="border-b border-slate-200 px-3 py-2">
+                    <input
+                      value={columnFilters.color}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          color: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                      placeholder="Filter"
+                    />
+                  </th>
+                  <th className="border-b border-slate-200 px-3 py-2">
+                    <input
+                      value={columnFilters.engineNumber}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          engineNumber: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                      placeholder="Filter"
+                    />
+                  </th>
+                  <th className="border-b border-slate-200 px-3 py-2">
+                    <input
+                      value={columnFilters.chassisNumber}
+                      onChange={(e) =>
+                        setColumnFilters((prev) => ({
+                          ...prev,
+                          chassisNumber: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                      placeholder="Filter"
+                    />
+                  </th>
+                  {!isClient && (
+                    <>
+                      <th className="border-b border-slate-200 px-3 py-2">
+                        <input
+                          value={columnFilters.dealer}
+                          onChange={(e) =>
+                            setColumnFilters((prev) => ({
+                              ...prev,
+                              dealer: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                          placeholder="Filter"
+                        />
+                      </th>
+                      <th className="border-b border-slate-200 px-3 py-2">
+                        <input
+                          value={columnFilters.client}
+                          onChange={(e) =>
+                            setColumnFilters((prev) => ({
+                              ...prev,
+                              client: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                          placeholder="Filter"
+                        />
+                      </th>
+                    </>
+                  )}
+                  <th className="border-b border-slate-200 px-3 py-2" />
+                  <th className="border-b border-slate-200 px-3 py-2" />
+                </tr>
               </thead>
               <tbody className="bg-white">
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={isClient ? 7 : 5}
+                      colSpan={isClient ? 7 : 9}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -733,7 +970,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={isClient ? 7 : 5}
+                      colSpan={isClient ? 7 : 9}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       {isClient
@@ -749,10 +986,12 @@ const VehicleOrdersList = () => {
                     const model = vehicleSnapshot?.modelName || "";
                     const variant = vehicleSnapshot?.variant || "";
                     const color = vehicleSnapshot?.color || "-";
-                    const statusMeta = STATUS_META[booking.status];
+                    const statusMeta = getDisplayStatusMeta(booking);
                     const globalIndex =
                       total - ((currentPage - 1) * limit + idx);
-                    const vehicleId = `VEH-${String(globalIndex).padStart(3, "0")}`;
+                    const vehicleId =
+                      orderData?.orderNumber ||
+                      `VEH-${String(globalIndex).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
                     return (
@@ -781,14 +1020,22 @@ const VehicleOrdersList = () => {
                           </span>
                         </td>
 
-                        {/* CLIENT ONLY CELLS */}
-                        {isClient && (
+                        <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
+                          {booking.engineNumber || "-"}
+                        </td>
+                        <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
+                          {booking.chassisNumber || "-"}
+                        </td>
+
+                        {!isClient && (
                           <>
-                            <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
-                              {booking.engineNumber || "—"}
+                            <td className="border-b border-slate-100 px-5 py-5 align-middle text-xs text-slate-600">
+                              {booking.assignedDealerSnapshot?.name || "-"}
                             </td>
-                            <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
-                              {booking.chassisNumber || "—"}
+                            <td className="border-b border-slate-100 px-5 py-5 align-middle text-xs text-slate-600">
+                              {booking.assignedClientId
+                                ? getAssignedClientLabel(booking)
+                                : "-"}
                             </td>
                           </>
                         )}
@@ -847,6 +1094,40 @@ const VehicleOrdersList = () => {
                                 </span>
                               </button>
                               <div className="h-8 w-px bg-slate-200 shrink-0" />
+                              {isAdmin && (
+                                <>
+                                  <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-1 py-1">
+                                    <button
+                                      onClick={() =>
+                                        handleStatusStep(booking, "previous")
+                                      }
+                                      disabled={getStatusFlowIndex(booking.status) <= 0}
+                                      className="h-7 w-7 rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                                      title="Move status back"
+                                    >
+                                      <ChevronLeft size={15} />
+                                    </button>
+                                    <ArrowLeftRight
+                                      size={14}
+                                      className="text-slate-400"
+                                    />
+                                    <button
+                                      onClick={() =>
+                                        handleStatusStep(booking, "next")
+                                      }
+                                      disabled={
+                                        getStatusFlowIndex(booking.status) >=
+                                        statusFlow.length - 1
+                                      }
+                                      className="h-7 w-7 rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                                      title="Move status forward"
+                                    >
+                                      <ChevronRight size={15} />
+                                    </button>
+                                  </div>
+                                  <div className="h-8 w-px bg-slate-200 shrink-0" />
+                                </>
+                              )}
                               <button
                                 onClick={() =>
                                   navigate(
@@ -867,6 +1148,15 @@ const VehicleOrdersList = () => {
                               >
                                 <FilePenLine size={16} />
                               </button>
+                              {canDeleteBooking(booking) && (
+                                <button
+                                  onClick={() => handleDeleteBooking(booking)}
+                                  className="h-9 w-9 border border-rose-200 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-all cursor-pointer"
+                                  title="Delete entry"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
                             </div>
                           )}
                         </td>
