@@ -981,20 +981,77 @@ export const getAllVehicleBookingsService = async (query: any) => {
     match.status = status;
   }
 
-  if (search) {
+  const trimmedSearch = String(search || "").trim();
+
+  if (trimmedSearch) {
+    const normalizedSearch = trimmedSearch.toLowerCase();
+    const matchingStatuses: VehicleBookingStatus[] = [];
+    const searchRegex = { $regex: trimmedSearch, $options: "i" };
+
+    if ("pending".includes(normalizedSearch)) {
+      matchingStatuses.push("pending");
+    }
+    if (
+      "waiting for approval".includes(normalizedSearch) ||
+      "approval".includes(normalizedSearch)
+    ) {
+      matchingStatuses.push("quotation_details_pending", "quotation_uploaded");
+    }
+    if ("approved".includes(normalizedSearch)) {
+      matchingStatuses.push("approved");
+    }
+    if (
+      "awaiting engine chassis number".includes(normalizedSearch) ||
+      "engine".includes(normalizedSearch) ||
+      "chassis".includes(normalizedSearch)
+    ) {
+      matchingStatuses.push("payment_done");
+    }
+    if (
+      "ready to ship".includes(normalizedSearch) ||
+      "shipped in transit".includes(normalizedSearch) ||
+      "in transit".includes(normalizedSearch) ||
+      "ship".includes(normalizedSearch)
+    ) {
+      matchingStatuses.push("chassis_received", "shipped");
+    }
+    if ("delivered".includes(normalizedSearch)) {
+      matchingStatuses.push("delivered");
+    }
+
     match.$or = [
       {
-        "orderId.vehicleSnapshot.brandName": { $regex: search, $options: "i" },
+        "orderId.vehicleSnapshot.brandName": searchRegex,
       },
       {
-        "orderId.vehicleSnapshot.modelName": { $regex: search, $options: "i" },
+        "orderId.vehicleSnapshot.modelName": searchRegex,
       },
-      { "orderId.vehicleSnapshot.variant": { $regex: search, $options: "i" } },
-      { "orderId.vehicleSnapshot.color": { $regex: search, $options: "i" } },
-      { "orderId.orderNumber": { $regex: search, $options: "i" } },
-      { engineNumber: { $regex: search, $options: "i" } },
-      { chassisNumber: { $regex: search, $options: "i" } },
+      { "orderId.vehicleSnapshot.variant": searchRegex },
+      { "orderId.vehicleSnapshot.color": searchRegex },
+      { "orderId.orderNumber": searchRegex },
+      { engineNumber: searchRegex },
+      { chassisNumber: searchRegex },
+      { "assignedDealerSnapshot.name": searchRegex },
+      { "assignedClientSnapshot.name": searchRegex },
+      { "assignedClientSnapshot.companyName": searchRegex },
+      { "assignedClientSnapshot.clientCode": searchRegex },
+      { paymentReference: searchRegex },
+      { status: searchRegex },
     ];
+
+    if (matchingStatuses.length > 0) {
+      match.$or.push({ status: { $in: [...new Set(matchingStatuses)] } });
+    }
+    if (
+      "make pi".includes(normalizedSearch) ||
+      "pi pending".includes(normalizedSearch)
+    ) {
+      match.$or.push({
+        piGenerated: false,
+        engineNumber: { $exists: true, $nin: ["", null] },
+        chassisNumber: { $exists: true, $nin: ["", null] },
+      });
+    }
   }
 
   const addRegexFilter = (field: string, value?: string) => {

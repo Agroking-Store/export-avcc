@@ -10,17 +10,29 @@ import {
   Plus,
   Search,
   Truck,
-  CircleAlert,
-  Calendar,
   Store,
-  FileText,
-  Clock,
-  Zap,
   Ship,
-  ArrowLeftRight,
   Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import api from "../../../services/api";
 import { IClient } from "../../clients/clients.types";
 import {
@@ -28,7 +40,6 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
-import { dealerApi } from "../../../services/dealerApi";
 import QuotationModal from "../components/QuotationModal";
 import PaymentModal from "../components/PaymentModal";
 import ClientAllotModal from "../components/ClientAllotModal";
@@ -110,6 +121,8 @@ interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
 }
 
+type ConfirmationAction = "ship" | "deliver";
+
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -119,15 +132,6 @@ const VehicleOrdersList = () => {
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [columnFilters, setColumnFilters] = useState({
-    vehicleId: "",
-    vehicle: "",
-    color: "",
-    engineNumber: "",
-    chassisNumber: "",
-    dealer: "",
-    client: "",
-  });
   const [bookingStats, setBookingStats] = useState({
     deliveredTotal: 0,
     piReadyTotal: 0,
@@ -171,6 +175,10 @@ const VehicleOrdersList = () => {
   const [clients, setClients] = useState<IClient[]>([]);
   const [dealers, setDealers] = useState<any[]>([]);
   const [dealerModalOpen, setDealerModalOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    action: ConfirmationAction;
+    booking: VehicleBookingItem;
+  } | null>(null);
 
   const statusValue = statusLabelToRaw[statusLabel] || "All";
 
@@ -200,34 +208,22 @@ const VehicleOrdersList = () => {
             typeof orderData === "object" && orderData !== null
               ? orderData.vehicleSnapshot
               : null;
-          const filterValues = {
-            vehicleId: orderData?.orderNumber || "",
-            vehicle:
-              `${vehicleSnapshot?.brandName || ""} ${vehicleSnapshot?.modelName || ""} ${vehicleSnapshot?.variant || ""}`.trim(),
-            color: vehicleSnapshot?.color || "",
-            engineNumber: booking.engineNumber || "",
-            chassisNumber: booking.chassisNumber || "",
-            dealer: booking.assignedDealerSnapshot?.name || "",
-            client: booking.assignedClientSnapshot?.name || "",
-          };
-          const columnMatches = Object.entries(columnFilters).every(
-            ([key, value]) =>
-              !value.trim() ||
-              String(filterValues[key as keyof typeof filterValues])
-                .toLowerCase()
-                .includes(value.trim().toLowerCase()),
-          );
-          if (!columnMatches) return false;
 
           if (!normalizedSearch) return true;
 
           const searchValue = [
+            orderData?.orderNumber,
             vehicleSnapshot?.brandName,
             vehicleSnapshot?.modelName,
             vehicleSnapshot?.variant,
             vehicleSnapshot?.color,
+            booking.engineNumber,
+            booking.chassisNumber,
             booking.assignedDealerSnapshot?.name,
-            STATUS_META[booking.status]?.label,
+            booking.assignedClientSnapshot?.name,
+            booking.assignedClientSnapshot?.companyName,
+            getDisplayStatusMeta(booking)?.label,
+            booking.status,
           ]
             .filter(Boolean)
             .join(" ")
@@ -259,7 +255,6 @@ const VehicleOrdersList = () => {
         status: statusValue === "All" ? undefined : statusValue,
         page: currentPage,
         limit,
-        ...columnFilters,
       });
 
       setBookings(res.data || []);
@@ -277,7 +272,7 @@ const VehicleOrdersList = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [currentPage, isClient, search, statusLabel, columnFilters]);
+  }, [currentPage, isClient, search, statusLabel]);
 
   useEffect(() => {
     const pendingCount = bookings.filter(
@@ -295,11 +290,11 @@ const VehicleOrdersList = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusLabel, columnFilters]);
+  }, [search, statusLabel]);
 
   useEffect(() => {
     setTotal(0);
-  }, [search, statusLabel, columnFilters]);
+  }, [search, statusLabel]);
 
   useEffect(() => {
     if (location.state?.success) {
@@ -395,6 +390,36 @@ const VehicleOrdersList = () => {
     setActiveBooking(null);
   };
 
+  const openShipConfirmation = (booking: VehicleBookingItem) => {
+    const disabledReason = getShipDisabledReason(booking);
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+    setConfirmation({ action: "ship", booking });
+  };
+
+  const openDeliveredConfirmation = (booking: VehicleBookingItem) => {
+    if (!booking.assignedClientId) {
+      toast.error(
+        "Please allot a client before marking this vehicle as delivered.",
+      );
+      return;
+    }
+    setConfirmation({ action: "deliver", booking });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmation) return;
+    const { action, booking } = confirmation;
+    setConfirmation(null);
+    if (action === "ship") {
+      await handleShipVehicle(booking);
+      return;
+    }
+    await handleMarkDelivered(booking);
+  };
+
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
     if (!booking.assignedClientId) {
       toast.error(
@@ -450,44 +475,6 @@ const VehicleOrdersList = () => {
       };
     }
     return STATUS_META[booking.status];
-  };
-
-  const statusFlow: VehicleBookingStatus[] = [
-    "pending",
-    "quotation_uploaded",
-    "approved",
-    "payment_done",
-    "chassis_received",
-    "shipped",
-    "delivered",
-  ];
-
-  const getStatusFlowIndex = (status: VehicleBookingStatus) => {
-    if (status === "quotation_details_pending") return 1;
-    if (status === "rejected") return 0;
-    return statusFlow.indexOf(status);
-  };
-
-  const handleStatusStep = async (
-    booking: VehicleBookingItem,
-    direction: "previous" | "next",
-  ) => {
-    const index = getStatusFlowIndex(booking.status);
-    const nextIndex = direction === "next" ? index + 1 : index - 1;
-    const nextStatus = statusFlow[nextIndex];
-    if (!nextStatus) return;
-
-    try {
-      const updated = await vehicleBookingApi.updateStatus(
-        booking._id,
-        nextStatus,
-      );
-      syncBooking(updated);
-      toast.success(`Status updated to ${STATUS_META[nextStatus].label}`);
-      fetchBookings();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update status");
-    }
   };
 
   const canDeleteBooking = (booking: VehicleBookingItem) =>
@@ -552,7 +539,7 @@ const VehicleOrdersList = () => {
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const orderId = getOrderId(booking);
     const primaryActionClass =
-      "cursor-pointer inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0";
+      "cursor-pointer inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap";
 
     switch (booking.status) {
       case "pending":
@@ -590,7 +577,7 @@ const VehicleOrdersList = () => {
           <button
             onClick={() => !isSourcingTeam && openPaymentModal(booking)}
             disabled={isSourcingTeam}
-            className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold transition whitespace-nowrap shrink-0 ${isSourcingTeam ? "bg-slate-400 text-white cursor-not-allowed opacity-60" : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"}`}
+            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition whitespace-nowrap ${isSourcingTeam ? "bg-slate-400 text-white cursor-not-allowed opacity-60" : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"}`}
           >
             Confirm Booking
           </button>
@@ -614,10 +601,10 @@ const VehicleOrdersList = () => {
           const disabledReason = getShipDisabledReason(booking);
           return (
             <button
-              onClick={() => handleShipVehicle(booking)}
+              onClick={() => openShipConfirmation(booking)}
               disabled={!!disabledReason}
               title={disabledReason || "Ship Vehicle"}
-              className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0 ${
+              className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap ${
                 disabledReason
                   ? "cursor-not-allowed bg-slate-400 opacity-60"
                   : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
@@ -631,7 +618,7 @@ const VehicleOrdersList = () => {
       case "shipped":
         return (
           <button
-            onClick={() => handleMarkDelivered(booking)}
+            onClick={() => openDeliveredConfirmation(booking)}
             className={`${primaryActionClass} bg-[#1e40af] hover:bg-[#1d4ed8]`}
           >
             <Truck size={14} />
@@ -764,22 +751,27 @@ const VehicleOrdersList = () => {
 
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
           <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
-                <Filter size={16} />
-              </div>
-              <select
-                value={statusLabel}
-                onChange={(e) => setStatusLabel(e.target.value)}
-                className="cursor-pointer appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800"
+            <Select value={statusLabel} onValueChange={setStatusLabel}>
+              <SelectTrigger className="h-11 min-w-[240px] rounded-xl border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-gray-700 dark:bg-gray-900 dark:text-slate-200">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="inline-flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Filter size={15} />
+                  </span>
+                  <SelectValue placeholder="All Statuses" />
+                </div>
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                position="popper"
+                className="min-w-[240px] rounded-xl p-1"
               >
                 {statusOptions.map((item) => (
-                  <option key={item} value={item}>
+                  <SelectItem key={item} value={item} className="py-2">
                     {item === "All" ? "All Statuses" : item}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="relative">
@@ -790,7 +782,9 @@ const VehicleOrdersList = () => {
             <input
               type="text"
               placeholder={
-                isClient ? "Search your vehicle..." : "Search vehicle..."
+                isClient
+                  ? "Search ID, vehicle, color, status..."
+                  : "Search ID, vehicle, color, dealer, client..."
               }
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -822,7 +816,7 @@ const VehicleOrdersList = () => {
 
         <div className="px-8 pb-8">
           <div className="rounded-2xl border border-slate-200 overflow-x-auto">
-            <table className="min-w-full border-collapse bg-white text-center">
+            <table className="min-w-[1240px] border-collapse bg-white text-center">
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="border-b border-slate-200 px-7 py-4 align-middle">
@@ -835,133 +829,18 @@ const VehicleOrdersList = () => {
                     Color
                   </th>
                   <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                    Engine No
-                  </th>
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                    Chassis No
-                  </th>
-                  {!isClient && (
-                    <>
-                      <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                        Dealer
-                      </th>
-                      <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                        Client
-                      </th>
-                    </>
-                  )}
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
                     Status
                   </th>
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle">
-                    {isClient ? "View" : "Actions"}
+                  <th className="border-b border-slate-200 px-6 py-4 align-middle text-center">
+                    Actions
                   </th>
-                </tr>
-                <tr className="bg-white text-xs">
-                  <th className="border-b border-slate-200 px-3 py-2">
-                    <input
-                      value={columnFilters.vehicleId}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          vehicleId: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                      placeholder="Filter"
-                    />
-                  </th>
-                  <th className="border-b border-slate-200 px-3 py-2">
-                    <input
-                      value={columnFilters.vehicle}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          vehicle: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                      placeholder="Filter"
-                    />
-                  </th>
-                  <th className="border-b border-slate-200 px-3 py-2">
-                    <input
-                      value={columnFilters.color}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          color: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                      placeholder="Filter"
-                    />
-                  </th>
-                  <th className="border-b border-slate-200 px-3 py-2">
-                    <input
-                      value={columnFilters.engineNumber}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          engineNumber: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                      placeholder="Filter"
-                    />
-                  </th>
-                  <th className="border-b border-slate-200 px-3 py-2">
-                    <input
-                      value={columnFilters.chassisNumber}
-                      onChange={(e) =>
-                        setColumnFilters((prev) => ({
-                          ...prev,
-                          chassisNumber: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                      placeholder="Filter"
-                    />
-                  </th>
-                  {!isClient && (
-                    <>
-                      <th className="border-b border-slate-200 px-3 py-2">
-                        <input
-                          value={columnFilters.dealer}
-                          onChange={(e) =>
-                            setColumnFilters((prev) => ({
-                              ...prev,
-                              dealer: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                          placeholder="Filter"
-                        />
-                      </th>
-                      <th className="border-b border-slate-200 px-3 py-2">
-                        <input
-                          value={columnFilters.client}
-                          onChange={(e) =>
-                            setColumnFilters((prev) => ({
-                              ...prev,
-                              client: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
-                          placeholder="Filter"
-                        />
-                      </th>
-                    </>
-                  )}
-                  <th className="border-b border-slate-200 px-3 py-2" />
-                  <th className="border-b border-slate-200 px-3 py-2" />
                 </tr>
               </thead>
               <tbody className="bg-white">
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={isClient ? 7 : 9}
+                      colSpan={5}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -970,7 +849,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={isClient ? 7 : 9}
+                      colSpan={5}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       {isClient
@@ -1020,29 +899,9 @@ const VehicleOrdersList = () => {
                           </span>
                         </td>
 
-                        <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
-                          {booking.engineNumber || "-"}
-                        </td>
-                        <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
-                          {booking.chassisNumber || "-"}
-                        </td>
-
-                        {!isClient && (
-                          <>
-                            <td className="border-b border-slate-100 px-5 py-5 align-middle text-xs text-slate-600">
-                              {booking.assignedDealerSnapshot?.name || "-"}
-                            </td>
-                            <td className="border-b border-slate-100 px-5 py-5 align-middle text-xs text-slate-600">
-                              {booking.assignedClientId
-                                ? getAssignedClientLabel(booking)
-                                : "-"}
-                            </td>
-                          </>
-                        )}
-
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badge}`}
+                            className={`inline-flex max-w-[170px] items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold leading-4 ${statusMeta.badge}`}
                           >
                             {statusMeta.label}
                           </span>
@@ -1056,107 +915,84 @@ const VehicleOrdersList = () => {
                                   `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
                                 )
                               }
-                              className="cursor-pointer inline-flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                              className="cursor-pointer inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                             >
                               <Eye size={14} /> View Details
                             </button>
                           ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="flex flex-col items-center gap-1 min-w-[130px]">
+                            <div className="ml-auto grid min-w-[620px] max-w-[720px] grid-cols-[minmax(0,1fr)_max-content] gap-2">
+                              <div className="grid grid-cols-2 gap-2">
                                 <button
                                   onClick={() => openDealerModal(booking)}
-                                  className={`cursor-pointer inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition ${booking.assignedDealerId ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-white"}`}
+                                  className={`cursor-pointer inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition ${booking.assignedDealerId ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+                                  title={
+                                    booking.assignedDealerId
+                                      ? booking.assignedDealerSnapshot?.name
+                                      : "Allot Dealer"
+                                  }
                                 >
                                   <Store size={14} />
-                                  <span className="truncate max-w-[90px]">
+                                  <span className="truncate">
                                     {booking.assignedDealerId
                                       ? booking.assignedDealerSnapshot?.name
                                       : "Allot Dealer"}
                                   </span>
                                 </button>
-                              </div>
-                              <div className="h-8 w-px bg-slate-200 shrink-0" />
-                              <div className="shrink-0">
-                                {renderPrimaryAction(booking)}
-                              </div>
-                              <div className="h-8 w-px bg-slate-200 shrink-0" />
-                              <button
-                                onClick={() =>
-                                  !isSourcingTeam && openClientModal(booking)
-                                }
-                                className={`inline-flex h-9 min-w-[130px] items-center justify-center gap-1.5 rounded-xl border px-3 text-xs cursor-pointer font-semibold transition ${booking.assignedClientId ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white"}`}
-                              >
-                                <Check size={14} />
-                                <span className="truncate max-w-[90px]">
-                                  {booking.assignedClientId
-                                    ? getAssignedClientLabel(booking)
-                                    : "Allot Client"}
-                                </span>
-                              </button>
-                              <div className="h-8 w-px bg-slate-200 shrink-0" />
-                              {isAdmin && (
-                                <>
-                                  <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-1 py-1">
-                                    <button
-                                      onClick={() =>
-                                        handleStatusStep(booking, "previous")
-                                      }
-                                      disabled={getStatusFlowIndex(booking.status) <= 0}
-                                      className="h-7 w-7 rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-                                      title="Move status back"
-                                    >
-                                      <ChevronLeft size={15} />
-                                    </button>
-                                    <ArrowLeftRight
-                                      size={14}
-                                      className="text-slate-400"
-                                    />
-                                    <button
-                                      onClick={() =>
-                                        handleStatusStep(booking, "next")
-                                      }
-                                      disabled={
-                                        getStatusFlowIndex(booking.status) >=
-                                        statusFlow.length - 1
-                                      }
-                                      className="h-7 w-7 rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-                                      title="Move status forward"
-                                    >
-                                      <ChevronRight size={15} />
-                                    </button>
-                                  </div>
-                                  <div className="h-8 w-px bg-slate-200 shrink-0" />
-                                </>
-                              )}
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
-                                  )
-                                }
-                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-blue-50 transition-all cursor-pointer"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
-                                  )
-                                }
-                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
-                              >
-                                <FilePenLine size={16} />
-                              </button>
-                              {canDeleteBooking(booking) && (
                                 <button
-                                  onClick={() => handleDeleteBooking(booking)}
-                                  className="h-9 w-9 border border-rose-200 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-all cursor-pointer"
-                                  title="Delete entry"
+                                  onClick={() =>
+                                    !isSourcingTeam && openClientModal(booking)
+                                  }
+                                  className={`inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs cursor-pointer font-semibold transition ${booking.assignedClientId ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+                                  title={
+                                    booking.assignedClientId
+                                      ? getAssignedClientLabel(booking)
+                                      : "Allot Client"
+                                  }
                                 >
-                                  <Trash2 size={16} />
+                                  <Check size={14} />
+                                  <span className="truncate">
+                                    {booking.assignedClientId
+                                      ? getAssignedClientLabel(booking)
+                                      : "Allot Client"}
+                                  </span>
                                 </button>
-                              )}
+                                <div className="col-span-2 min-h-11">
+                                  {renderPrimaryAction(booking)}
+                                </div>
+                              </div>
+                              <div className="flex h-full items-end justify-end gap-2">
+                                <button
+                                  onClick={() =>
+                                    navigate(
+                                      `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                                    )
+                                  }
+                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-all hover:bg-blue-50 cursor-pointer"
+                                  title="View details"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    navigate(
+                                      `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+                                    )
+                                  }
+                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-blue-600 transition-all hover:bg-blue-50 cursor-pointer"
+                                  title="Edit vehicle"
+                                >
+                                  <FilePenLine size={16} />
+                                </button>
+                                {canDeleteBooking(booking) && (
+                                  <button
+                                    onClick={() => handleDeleteBooking(booking)}
+                                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 cursor-pointer"
+                                    title="Delete entry"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </td>
@@ -1223,6 +1059,46 @@ const VehicleOrdersList = () => {
           onSync={syncBooking}
         />
       )}
+      <AlertDialog
+        open={!!confirmation}
+        onOpenChange={(open) => {
+          if (!open) setConfirmation(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia
+              className={
+                confirmation?.action === "ship"
+                  ? "bg-cyan-50 text-cyan-700"
+                  : "bg-blue-50 text-blue-700"
+              }
+            >
+              {confirmation?.action === "ship" ? (
+                <Ship size={22} />
+              ) : (
+                <Truck size={22} />
+              )}
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              {confirmation?.action === "ship"
+                ? "Ship this vehicle?"
+                : "Mark as delivered?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmation?.action === "ship"
+                ? "This will move the vehicle to shipped / in transit status."
+                : "This will mark the vehicle as delivered for the assigned client."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAction}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
