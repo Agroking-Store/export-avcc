@@ -329,6 +329,20 @@ const resolveInvoiceNumber = ({
 const getLatestLC = async (piId: string) =>
   LetterOfCredit.findOne({ pi_id: piId }).sort({ uploadedAt: -1 }).lean();
 
+const getSharedLCFromInvoices = (invoices: any[]) => {
+  for (const invoice of invoices) {
+    const manual = invoice.manualFields || {};
+    const lcNumber = String(manual.lcNumber || "").trim();
+    const lcDate = manual.lcDate;
+
+    if (lcNumber || lcDate) {
+      return { lcNumber, lcDate };
+    }
+  }
+
+  return { lcNumber: "", lcDate: "" };
+};
+
 const asParamString = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
@@ -433,8 +447,8 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
     colour,
     chassisNo: line.chassisNo || booking?.chassisNumber || "",
     engineNo: line.engineNo || booking?.engineNumber || "",
-    engineCapacity: line.engineCapacity || booking?.engineCapacity || "",
-    fuelType: line.fuelType || booking?.fuelType || "",
+    engineCapacity: booking?.engineCapacity || line.engineCapacity || "",
+    fuelType: booking?.fuelType || line.fuelType || "",
     yearOfManufacture: line.yom || booking?.yom || "",
     monthYearFirstReg: formatMonthYearRegistration(
       line.monthYearFirstReg || booking?.deliveryDate || "",
@@ -476,6 +490,7 @@ const buildPIInvoiceContext = async (piId: string) => {
       "_id vehicleId type invoiceNumber generatedAt manualFields packingListPdf dataSnapshot",
     )
     .lean();
+  const sharedLC = getSharedLCFromInvoices(invoices);
 
   const vehicles = (pi.vehicleDetails || []).map((line: any, index: number) =>
     normalizeVehicle(pi, line, index),
@@ -532,8 +547,12 @@ const buildPIInvoiceContext = async (piId: string) => {
     buyerCity: buyer.address?.cityTown || "",
     buyerCountry: buyer.address?.country || buyer.country || "",
     buyerGstin: buyer.gstNumber || buyer.gstin || buyer.gstNo || "",
-    lcNumber: latestLC?.lcNumber || latestLC?.extractedData?.lcNumber || "",
-    lcDate: formatDisplayDate(latestLC?.uploadedAt),
+    lcNumber:
+      sharedLC.lcNumber ||
+      latestLC?.lcNumber ||
+      latestLC?.extractedData?.lcNumber ||
+      "",
+    lcDate: sharedLC.lcDate || formatDisplayDate(latestLC?.uploadedAt),
     portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
     portOfDischarge: pi.portOfDischarge || "",
     placeOfDelivery:
@@ -738,8 +757,6 @@ const applyVehicleOverrides = (
     "model",
     "variant",
     "colour",
-    "engineCapacity",
-    "fuelType",
     "yearOfManufacture",
     "monthYearFirstReg",
     "hsnCode",
@@ -955,6 +972,19 @@ export const generateInvoice = async (req: Request, res: Response) => {
       ...manualFields,
       invoiceNumber: resolvedInvoiceNumber,
     };
+
+    if (
+      resolvedManualFields.lcSharedConfirmed !== true &&
+      resolvedManualFields.lcSharedConfirmed !== "true"
+    ) {
+      return jsonError(res, 400, {
+        error: "LC_CONFIRMATION_REQUIRED",
+        message:
+          "Confirm that the LC number and date are same for all invoices before generating PDF",
+        fields: ["lcSharedConfirmed"],
+      });
+    }
+
     const missingFields = getMissingFields(type, resolvedManualFields);
 
     if (missingFields.length > 0) {

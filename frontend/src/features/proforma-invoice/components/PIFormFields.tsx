@@ -116,9 +116,10 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
       commercialHsn: booking.vehicleId?.commercialHsnCode || "",
       exportHsn: booking.vehicleId?.exportHsnCode || "",
 
-      fuelType: booking.vehicleId?.fuelType || "",
+      fuelType: booking.fuelType || booking.vehicleId?.fuelType || "",
       countryOfOrigin: booking.vehicleId?.countryOfOrigin || "",
-      engineCapacity: booking.vehicleId?.engineCapacity || "",
+      engineCapacity:
+        booking.engineCapacity || booking.vehicleId?.engineCapacity || "",
       vehicle_id: "",
       hsn: ""
     };

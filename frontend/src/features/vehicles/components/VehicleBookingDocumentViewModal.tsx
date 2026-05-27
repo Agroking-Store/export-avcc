@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Eye, Download, FileText, AlertCircle } from "lucide-react";
+import { X, Eye, Download, FileText, AlertCircle, Receipt } from "lucide-react";
 import { apiConfig } from "@/config/apiConfig";
 import { VehicleBookingItem } from "../../../services/vehicleBookingApi";
 import { useAuth } from "../../../hooks/useAuth";
@@ -11,14 +11,14 @@ interface Props {
 }
 
 const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) => {
+  const { isClient } = useAuth();
+
   if (!isOpen) return null;
 
   const token =
     localStorage.getItem("token") ||
     localStorage.getItem("accessToken") ||
     localStorage.getItem("auth_token");
-
-  const { isClient } = useAuth();
 
   const docs = isClient
     ? [
@@ -33,7 +33,36 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
         { label: "Form 22", key: "form22" },
         { label: "Temporary Registration", key: "tempRegCert" },
         { label: "BV Certificate", key: "bvCertificate" },
-      ];
+    ];
+
+  const appendToken = (url: string) =>
+    token ? `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}` : url;
+
+  const hblPi = booking?.associatedPIs?.find((pi: any) => pi.hblPath);
+  const commercialInvoice = booking?.commercialInvoices?.find(
+    (invoice: any) => invoice.type === "COMMERCIAL",
+  );
+
+  const clientDocs = isClient
+    ? [
+        {
+          label: "HBL",
+          available: !!hblPi,
+          url: hblPi
+            ? appendToken(`${apiConfig.baseURL}/proforma-invoices/${hblPi._id}/hbl/view`)
+            : "",
+          Icon: FileText,
+        },
+        {
+          label: "Commercial Invoice",
+          available: !!commercialInvoice,
+          url: commercialInvoice
+            ? appendToken(`${apiConfig.baseURL}/invoices/${commercialInvoice._id}/download`)
+            : "",
+          Icon: Receipt,
+        },
+      ]
+    : [];
 
   const getFileUrl = (field: string, download = false) => {
     const cleanBaseUrl = apiConfig.baseURL.endsWith("/")
@@ -53,7 +82,9 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
     return `${baseUrl}?${params.toString()}`;
   };
 
-  const hasAnyDoc = docs.some((d) => booking?.documents?.[d.key as keyof typeof booking.documents]);
+  const hasAnyDoc =
+    docs.some((d) => booking?.documents?.[d.key as keyof typeof booking.documents]) ||
+    clientDocs.length > 0;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -125,6 +156,57 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
                   </div>
                 );
               })}
+              {clientDocs.map(({ label, available, url, Icon }) => (
+                <div
+                  key={label}
+                  className={`flex items-center justify-between p-4 border rounded-2xl group transition-all duration-300 ${
+                    available
+                      ? "bg-slate-50 border-slate-100 hover:bg-white hover:border-indigo-100 hover:shadow-md"
+                      : "bg-slate-50/70 border-slate-100 opacity-75"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform ${
+                        available
+                          ? "bg-indigo-100 text-indigo-600 group-hover:scale-110"
+                          : "bg-slate-200 text-slate-400"
+                      }`}
+                    >
+                      <Icon size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-700 leading-none mb-1">
+                        {label}
+                      </p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                        {available ? "PDF Document" : "Pending"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {available ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="cursor-pointer p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all shadow-sm"
+                      >
+                        <Eye size={16} />
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="cursor-not-allowed p-2 bg-white text-slate-300 border border-slate-200 rounded-lg shadow-sm"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

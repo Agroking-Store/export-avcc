@@ -150,6 +150,8 @@ const visibleMenuItems =
                         location.pathname.startsWith("/orders") // This condition is fine
                       : item.name === "Companies"
                         ? location.pathname.startsWith("/companies")
+                        : item.name === "Shipment Plan"
+                          ? location.pathname.startsWith("/shipment-planning")
                         : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
 
               return (
