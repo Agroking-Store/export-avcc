@@ -866,7 +866,8 @@ const VehicleOrdersList = () => {
                     const variant = vehicleSnapshot?.variant || "";
                     const color = vehicleSnapshot?.color || "-";
                     const statusMeta = getDisplayStatusMeta(booking);
-                    const vehicleSerial = (currentPage - 1) * limit + idx + 1;
+                    const vehicleSerial =
+                      total - ((currentPage - 1) * limit + idx);
                     const vehicleId = `VEH${String(vehicleSerial).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
