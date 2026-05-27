@@ -815,23 +815,23 @@ const VehicleOrdersList = () => {
         </div>
 
         <div className="px-8 pb-8">
-          <div className="rounded-2xl border border-slate-200 overflow-x-auto">
-            <table className="min-w-[1240px] border-collapse bg-white text-center">
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <table className="w-full table-fixed border-collapse bg-white text-center">
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="border-b border-slate-200 px-7 py-4 align-middle">
+                  <th className="w-[11%] border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
                   </th>
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle text-left">
+                  <th className="w-[22%] border-b border-slate-200 px-5 py-4 align-middle text-left">
                     Vehicle
                   </th>
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                  <th className="w-[12%] border-b border-slate-200 px-4 py-4 align-middle">
                     Color
                   </th>
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                  <th className="w-[17%] border-b border-slate-200 px-4 py-4 align-middle">
                     Status
                   </th>
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle text-center">
+                  <th className="w-[38%] border-b border-slate-200 px-5 py-4 align-middle text-center">
                     Actions
                   </th>
                 </tr>
@@ -866,11 +866,8 @@ const VehicleOrdersList = () => {
                     const variant = vehicleSnapshot?.variant || "";
                     const color = vehicleSnapshot?.color || "-";
                     const statusMeta = getDisplayStatusMeta(booking);
-                    const globalIndex =
-                      total - ((currentPage - 1) * limit + idx);
-                    const vehicleId =
-                      orderData?.orderNumber ||
-                      `VEH-${String(globalIndex).padStart(3, "0")}`;
+                    const vehicleSerial = (currentPage - 1) * limit + idx + 1;
+                    const vehicleId = `VEH${String(vehicleSerial).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
                     return (
@@ -920,7 +917,7 @@ const VehicleOrdersList = () => {
                               <Eye size={14} /> View Details
                             </button>
                           ) : (
-                            <div className="ml-auto grid min-w-[620px] max-w-[720px] grid-cols-[minmax(0,1fr)_max-content] gap-2">
+                            <div className="ml-auto w-full max-w-[560px] space-y-2">
                               <div className="grid grid-cols-2 gap-2">
                                 <button
                                   onClick={() => openDealerModal(booking)}
@@ -956,42 +953,44 @@ const VehicleOrdersList = () => {
                                       : "Allot Client"}
                                   </span>
                                 </button>
-                                <div className="col-span-2 min-h-11">
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="min-w-0 flex-1">
                                   {renderPrimaryAction(booking)}
                                 </div>
-                              </div>
-                              <div className="flex h-full items-end justify-end gap-2">
-                                <button
-                                  onClick={() =>
-                                    navigate(
-                                      `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
-                                    )
-                                  }
-                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-all hover:bg-blue-50 cursor-pointer"
-                                  title="View details"
-                                >
-                                  <Eye size={16} />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    navigate(
-                                      `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
-                                    )
-                                  }
-                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-blue-600 transition-all hover:bg-blue-50 cursor-pointer"
-                                  title="Edit vehicle"
-                                >
-                                  <FilePenLine size={16} />
-                                </button>
-                                {canDeleteBooking(booking) && (
+                                <div className="flex shrink-0 items-center gap-2">
                                   <button
-                                    onClick={() => handleDeleteBooking(booking)}
-                                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 cursor-pointer"
-                                    title="Delete entry"
+                                    onClick={() =>
+                                      navigate(
+                                        `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                                      )
+                                    }
+                                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-all hover:bg-blue-50 cursor-pointer"
+                                    title="View details"
                                   >
-                                    <Trash2 size={16} />
+                                    <Eye size={16} />
                                   </button>
-                                )}
+                                  <button
+                                    onClick={() =>
+                                      navigate(
+                                        `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+                                      )
+                                    }
+                                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-blue-600 transition-all hover:bg-blue-50 cursor-pointer"
+                                    title="Edit vehicle"
+                                  >
+                                    <FilePenLine size={16} />
+                                  </button>
+                                  {canDeleteBooking(booking) && (
+                                    <button
+                                      onClick={() => handleDeleteBooking(booking)}
+                                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 cursor-pointer"
+                                      title="Delete entry"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
