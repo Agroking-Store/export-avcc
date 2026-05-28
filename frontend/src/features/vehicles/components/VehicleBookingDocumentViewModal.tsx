@@ -144,6 +144,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+        
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
             <h2 className="text-xl font-black text-slate-800 tracking-tight">
@@ -156,12 +157,13 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
           <button
             onClick={onClose}
             className="cursor-pointer p-2 hover:bg-slate-200 rounded-full transition-colors"
+            aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="max-h-[70vh] overflow-y-auto p-6">
           {isClient && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <a
