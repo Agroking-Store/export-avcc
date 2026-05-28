@@ -923,6 +923,10 @@ export const uploadBookingDocuments = async (
     updateData["bvCertificate"] = files["bvCertificate"][0].path;
   if (files["dealerInvoice"])
     updateData["dealerInvoice"] = files["dealerInvoice"][0].path;
+  if (files["hblDocument"])
+    updateData["hblDocument"] = files["hblDocument"][0].path;
+  if (files["shippingBill"])
+    updateData["shippingBill"] = files["shippingBill"][0].path;
 
   const newDocs = { ...booking.documents, ...updateData };
   const isCRTMComplete = !!(
@@ -941,6 +945,40 @@ export const uploadBookingDocuments = async (
 
   const saved = await booking.save();
   return getPopulatedBookingWithReadiness(saved._id);
+};
+
+export const uploadClientCorrectionDocument = async (
+  bookingId: string,
+  file: Express.Multer.File,
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  booking.clientCorrections = booking.clientCorrections || [];
+  booking.clientCorrections.push({
+    filePath: file.path,
+    originalName: file.originalname,
+    uploadedAt: new Date(),
+  });
+
+  const saved = await booking.save();
+  return getPopulatedBookingWithReadiness(saved._id);
+};
+
+export const getClientCorrectionFile = async (
+  bookingId: string,
+  correctionId: string,
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const correction = (booking.clientCorrections as any).id(correctionId);
+  if (!correction?.filePath) throw new Error("Correction file not found");
+
+  return {
+    filePath: correction.filePath,
+    originalName: correction.originalName || "client-correction.pdf",
+  };
 };
 
 /**

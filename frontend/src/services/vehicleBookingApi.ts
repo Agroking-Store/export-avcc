@@ -105,7 +105,15 @@ export interface VehicleBookingItem {
     tempRegCert?: string;
     bvCertificate?: string;
     dealerInvoice?: string;
+    hblDocument?: string;
+    shippingBill?: string;
   };
+  clientCorrections?: Array<{
+    _id?: string;
+    filePath: string;
+    originalName: string;
+    uploadedAt: string;
+  }>;
   isCRTMUploaded?: boolean;
   isBVUploaded?: boolean;
   isDealerInvoiceUploaded?: boolean;

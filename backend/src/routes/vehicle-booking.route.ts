@@ -21,7 +21,10 @@ import {
   getBookingByIdHandler,
   getDueRemindersHandler,
   uploadBookingDocumentsHandler,
+  uploadClientCorrectionHandler,
   getBookingFileHandler,
+  getClientCorrectionFileHandler,
+  getClientMergedDocumentsHandler,
   getAllBookingsHandler,
   deleteBookingHandler,
 } from "../controllers/vehicle-booking.controller";
@@ -90,6 +93,8 @@ router.get("/order/:orderId/chassis-reminders", authenticate, getDueRemindersHan
 router.get("/", authenticate, getAllBookingsHandler);
 router.get("/:id", authenticate, getBookingByIdHandler);
 router.get("/:id/files/:field", authenticate, getBookingFileHandler);
+router.get("/:id/client-documents/merged", authenticate, getClientMergedDocumentsHandler);
+router.get("/:id/client-corrections/:correctionId", authenticate, getClientCorrectionFileHandler);
 
 // Admin-only: init booking, payment, approve/reject, client allotment, status update, document upload
 router.post("/init", authenticate, authorize(ROLES.ADMIN), initBooking);
@@ -111,8 +116,17 @@ router.post(
     { name: "tempRegCert", maxCount: 1 },
     { name: "bvCertificate", maxCount: 1 },
     { name: "dealerInvoice", maxCount: 1 },
+    { name: "hblDocument", maxCount: 1 },
+    { name: "shippingBill", maxCount: 1 },
   ]),
   uploadBookingDocumentsHandler,
+);
+router.post(
+  "/:id/client-corrections",
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.CLIENT),
+  documentUpload.single("clientCorrection"),
+  uploadClientCorrectionHandler,
 );
 
 // Admin + Sourcing Team: dealer assignment, quotation upload, chassis-engine update
