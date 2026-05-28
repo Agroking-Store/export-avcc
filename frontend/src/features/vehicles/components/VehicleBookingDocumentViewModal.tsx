@@ -163,7 +163,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent"/>
+        <div className="max-h-[70vh] overflow-y-auto p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
           {isClient && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <a
@@ -365,4 +365,3 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
 };
 
 export default VehicleBookingDocumentViewModal;
-

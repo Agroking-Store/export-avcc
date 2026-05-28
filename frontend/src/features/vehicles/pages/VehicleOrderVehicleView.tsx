@@ -15,7 +15,6 @@ import {
   Upload,
   FileCheck,
   X,
-  Users,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiConfig } from "../../../config/apiConfig";
@@ -246,113 +245,107 @@ const VehicleOrderVehicleView = () => {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          {/* <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            {vehicleName}
-          </p> */}
-          <h1 className="text-2xl font-bold text-slate-900">
-            {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
-          </h1>
-          {/* <p className="mt-1 text-sm text-slate-500">
-            {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color}
-          </p> */}
-          <h2 className="mt-1 font-bold text-slate-700 text-blue-700">
-            {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color}
-          </h2>
-        </div>
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+        {/* Top row: Title left, Edit+Back right */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {order.vehicleSnapshot.brandName} {order.vehicleSnapshot.modelName}
+            </h1>
+            <h2 className="mt-1 font-bold text-blue-700">
+              {order.vehicleSnapshot.variant} · {order.vehicleSnapshot.color}
+            </h2>
+          </div>
 
-        <div className="flex flex-wrap gap-3">
-          {isClient ? (
-            <>
+          {/* Edit + Back — always top-right */}
+          <div className="flex items-center gap-2 shrink-0">
+            {canEditVehicle && (
               <button
-                onClick={() => setIsViewModalOpen(true)}
-                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
+                onClick={() =>
+                  navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)
+                }
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600"
               >
-                <Eye size={14} />
-                VIEW DOCUMENTS
+                <Truck size={16} />
+                Edit
               </button>
-            </>
-          ) : (
+            )}
             <button
-              onClick={() => setIsViewModalOpen(true)}
-              className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 active:scale-95"
-            >
-              <Eye size={14} />
-              VIEW LIBRARY
-            </button>
-          )}
-
-          {!isClient && (
-            <>
-              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
-                <button
-                  onClick={() => setIsDocModalOpen(true)}
-                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
-                >
-                  <Upload size={14} />
-                  UPLOAD
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 bg-purple-50 p-1.5 rounded-2xl border border-purple-200 shadow-sm">
-                <button
-                  onClick={() => setIsDealerInvoiceModalOpen(true)}
-                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
-                >
-                  <Upload size={14} />
-                  DEALER INVOICE
-                </button>
-                <button
-                  onClick={() => setIsDealerInvoiceViewOpen(true)}
-                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-100 active:scale-95"
-                >
-                  <Eye size={14} />
-                  VIEW INVOICE
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 bg-cyan-50 p-1.5 rounded-2xl border border-cyan-200 shadow-sm">
-                <button
-                  onClick={() => setSingleDocModal("hblDocument")}
-                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-cyan-700 hover:shadow-md active:scale-95"
-                >
-                  <Upload size={14} />
-                  HBL DOCUMENT
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 bg-emerald-50 p-1.5 rounded-2xl border border-emerald-200 shadow-sm">
-                <button
-                  onClick={() => setSingleDocModal("shippingBill")}
-                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95"
-                >
-                  <Upload size={14} />
-                  SHIPPING BILL
-                </button>
-              </div>
-            </>
-          )}
-
-          {canEditVehicle && (
-            <button
-              onClick={() =>
-                navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)
-              }
+              onClick={() => navigate(`/vehicles/orders`)}
               className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
             >
-              <Truck size={16} />
-              Edit
+              <ArrowLeft size={16} />
+              Back
             </button>
-          )}
-          <button
-            onClick={() => navigate(`/vehicles/orders`)}
-            className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
+          </div>
         </div>
+
+        {/* Bottom row: Document upload actions */}
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+            {/* View Documents / Library — all roles */}
+            <button
+              onClick={() => setIsViewModalOpen(true)}
+              className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 active:scale-95"
+            >
+              <Eye size={13} />
+              {isClient ? "VIEW DOCUMENTS" : "VIEW LIBRARY"}
+            </button>
+
+            {!isClient && (
+              <>
+                {/* Documents upload */}
+                <div className="flex items-center gap-1.5 bg-slate-50 px-1.5 py-1.5 rounded-2xl border border-slate-200">
+                  <button
+                    onClick={() => setIsDocModalOpen(true)}
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
+                  >
+                    <Upload size={13} />
+                    UPLOAD DOCS
+                  </button>
+                </div>
+
+                {/* Dealer Invoice */}
+                <div className="flex items-center gap-1.5 bg-purple-50 px-1.5 py-1.5 rounded-2xl border border-purple-200">
+                  <button
+                    onClick={() => setIsDealerInvoiceModalOpen(true)}
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
+                  >
+                    <Upload size={13} />
+                    DEALER INVOICE
+                  </button>
+                  <button
+                    onClick={() => setIsDealerInvoiceViewOpen(true)}
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-200 active:scale-95"
+                  >
+                    <Eye size={13} />
+                    VIEW
+                  </button>
+                </div>
+
+                {/* HBL Document */}
+                <div className="flex items-center gap-1.5 bg-cyan-50 px-1.5 py-1.5 rounded-2xl border border-cyan-200">
+                  <button
+                    onClick={() => setSingleDocModal("hblDocument")}
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-cyan-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-cyan-700 hover:shadow-md active:scale-95"
+                  >
+                    <Upload size={13} />
+                    HBL DOC
+                  </button>
+                </div>
+
+                {/* Shipping Bill */}
+                <div className="flex items-center gap-1.5 bg-emerald-50 px-1.5 py-1.5 rounded-2xl border border-emerald-200">
+                  <button
+                    onClick={() => setSingleDocModal("shippingBill")}
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95"
+                  >
+                    <Upload size={13} />
+                    SHIPPING BILL
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
       </div>
 
       {/* INFO CARDS */}
