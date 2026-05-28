@@ -39,7 +39,6 @@ import { piApi } from "../components/piApi";
 import InvoiceTypeModal from "../components/InvoiceTypeModal";
 import { invoiceApi } from "../components/invoiceApi";
 import type { PIInvoiceContext } from "../components/invoice.types";
-import HBLUploadModal from "../components/HBLUploadModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -530,7 +529,6 @@ const PIDetails = () => {
   const [viewingLC, setViewingLC] = useState(false);
   const [showLCModal, setShowLCModal] = useState(false);
   const [showInvoiceTypeModal, setShowInvoiceTypeModal] = useState(false);
-  const [showHBLModal, setShowHBLModal] = useState(false);
 
   const fetchPI = async () => {
     try {
@@ -929,14 +927,9 @@ const PIDetails = () => {
                   <Eye className="w-4 h-4" /> View HBL
                 </Button>
               ) : (
-                <Button
-                  onClick={() => setShowHBLModal(true)}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-2"
-                >
-                  <FileUp className="w-4 h-4" /> Upload HBL
-                </Button>
+                <span className="px-3 py-1 text-xs font-semibold text-zinc-500">
+                  HBL in Vehicle Details
+                </span>
               )}
             </div>
 
@@ -1337,16 +1330,6 @@ const PIDetails = () => {
         />
       )}
 
-      {showHBLModal && id && (
-        <HBLUploadModal
-          piId={id}
-          onClose={() => setShowHBLModal(false)}
-          onSuccess={() => {
-            setShowHBLModal(false);
-            fetchPI();
-          }}
-        />
-      )}
     </div>
   );
 };

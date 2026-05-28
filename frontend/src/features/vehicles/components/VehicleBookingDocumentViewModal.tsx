@@ -1,5 +1,7 @@
-import React from "react";
-import { X, Eye, Download, FileText, AlertCircle, Receipt } from "lucide-react";
+import React, { useState } from "react";
+import { X, Eye, Download, FileText, AlertCircle, Receipt, Upload } from "lucide-react";
+import { toast } from "react-toastify";
+import api from "../../../services/api";
 import { apiConfig } from "@/config/apiConfig";
 import { VehicleBookingItem } from "../../../services/vehicleBookingApi";
 import { useAuth } from "../../../hooks/useAuth";
@@ -12,6 +14,8 @@ interface Props {
 
 const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) => {
   const { isClient } = useAuth();
+  const [correctionFile, setCorrectionFile] = useState<File | null>(null);
+  const [uploadingCorrection, setUploadingCorrection] = useState(false);
 
   if (!isOpen) return null;
 
@@ -21,11 +25,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
     localStorage.getItem("auth_token");
 
   const docs = isClient
-    ? [
-        // Client should only view these
-        { label: "CRTM", key: "tempRegCert" },
-        { label: "BV Certificate", key: "bvCertificate" },
-      ]
+    ? []
     : [
         // Admin / Sourcing team: full document list
         { label: "Form 20", key: "form20" },
@@ -33,36 +33,12 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
         { label: "Form 22", key: "form22" },
         { label: "Temporary Registration", key: "tempRegCert" },
         { label: "BV Certificate", key: "bvCertificate" },
+        { label: "HBL", key: "hblDocument" },
+        { label: "Shipping Bill", key: "shippingBill" },
     ];
 
   const appendToken = (url: string) =>
     token ? `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}` : url;
-
-  const hblPi = booking?.associatedPIs?.find((pi: any) => pi.hblPath);
-  const commercialInvoice = booking?.commercialInvoices?.find(
-    (invoice: any) => invoice.type === "COMMERCIAL",
-  );
-
-  const clientDocs = isClient
-    ? [
-        {
-          label: "HBL",
-          available: !!hblPi,
-          url: hblPi
-            ? appendToken(`${apiConfig.baseURL}/proforma-invoices/${hblPi._id}/hbl/view`)
-            : "",
-          Icon: FileText,
-        },
-        {
-          label: "Commercial Invoice",
-          available: !!commercialInvoice,
-          url: commercialInvoice
-            ? appendToken(`${apiConfig.baseURL}/invoices/${commercialInvoice._id}/download`)
-            : "",
-          Icon: Receipt,
-        },
-      ]
-    : [];
 
   const getFileUrl = (field: string, download = false) => {
     const cleanBaseUrl = apiConfig.baseURL.endsWith("/")
@@ -80,6 +56,85 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
     }
 
     return `${baseUrl}?${params.toString()}`;
+  };
+
+  const commercialInvoice = booking?.commercialInvoices?.find(
+    (invoice: any) => invoice.type === "COMMERCIAL",
+  );
+  const mergedUrl = appendToken(
+    `${apiConfig.baseURL}/vehicle-bookings/${booking._id}/client-documents/merged`,
+  );
+
+  const clientDocs = isClient
+    ? [
+        {
+          label: "Commercial Invoice",
+          available: !!commercialInvoice,
+          url: commercialInvoice
+            ? appendToken(`${apiConfig.baseURL}/invoices/${commercialInvoice._id}/download`)
+            : "",
+          Icon: Receipt,
+        },
+        {
+          label: "HBL",
+          available: !!booking?.documents?.hblDocument,
+          url: booking?.documents?.hblDocument
+            ? getFileUrl("hblDocument", false)
+            : "",
+          Icon: FileText,
+        },
+        {
+          label: "BV Certificate",
+          available: !!booking?.documents?.bvCertificate,
+          url: booking?.documents?.bvCertificate
+            ? getFileUrl("bvCertificate", false)
+            : "",
+          Icon: FileText,
+        },
+        {
+          label: "Shipping Bill",
+          available: !!booking?.documents?.shippingBill,
+          url: booking?.documents?.shippingBill
+            ? getFileUrl("shippingBill", false)
+            : "",
+          Icon: FileText,
+        },
+      ]
+    : [];
+
+  const getCorrectionFileUrl = (correctionId: string, download = false) => {
+    const cleanBaseUrl = apiConfig.baseURL.endsWith("/")
+      ? apiConfig.baseURL.slice(0, -1)
+      : apiConfig.baseURL;
+    const params = new URLSearchParams();
+    if (download) params.append("download", "true");
+    if (token) params.append("token", token);
+
+    return `${cleanBaseUrl}/vehicle-bookings/${booking._id}/client-corrections/${correctionId}?${params.toString()}`;
+  };
+
+  const handleCorrectionUpload = async () => {
+    if (!correctionFile) {
+      toast.error("Please select a correction document");
+      return;
+    }
+
+    try {
+      setUploadingCorrection(true);
+      const formData = new FormData();
+      formData.append("clientCorrection", correctionFile);
+      await api.post(
+        `/vehicle-bookings/${booking._id}/client-corrections`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      toast.success("Correction document uploaded");
+      setCorrectionFile(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to upload correction");
+    } finally {
+      setUploadingCorrection(false);
+    }
   };
 
   const hasAnyDoc =
@@ -107,6 +162,20 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
         </div>
 
         <div className="p-6">
+          {isClient && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <a
+                href={mergedUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-700"
+              >
+                <Eye size={14} />
+                View Merged Documents
+              </a>
+            </div>
+          )}
+
           {!hasAnyDoc ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
               <AlertCircle size={32} className="mb-2 opacity-20" />
@@ -207,6 +276,75 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
                   </div>
                 </div>
               ))}
+              {!isClient && (booking.clientCorrections || []).length > 0 && (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <p className="mb-3 text-xs font-black uppercase tracking-wide text-amber-800">
+                    Client Corrections
+                  </p>
+                  <div className="space-y-2">
+                    {(booking.clientCorrections || []).map((correction, index) => (
+                      <div
+                        key={correction._id || correction.filePath}
+                        className="flex items-center justify-between rounded-xl border border-amber-100 bg-white p-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-slate-700">
+                            {correction.originalName || `Correction ${index + 1}`}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {correction.uploadedAt
+                              ? new Date(correction.uploadedAt).toLocaleString()
+                              : "Uploaded by client"}
+                          </p>
+                        </div>
+                        {correction._id && (
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={getCorrectionFileUrl(correction._id)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                            >
+                              <Eye size={16} />
+                            </a>
+                            <a
+                              href={getCorrectionFileUrl(correction._id, true)}
+                              className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+                            >
+                              <Download size={16} />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {isClient && (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
+                  <p className="mb-3 text-xs font-black uppercase tracking-wide text-slate-700">
+                    Upload Correction
+                  </p>
+                  <label className="mb-3 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-xs text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">
+                    <Upload size={14} />
+                    <span className={`truncate ${correctionFile ? "font-semibold text-indigo-600" : ""}`}>
+                      {correctionFile?.name || "Choose correction document..."}
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => setCorrectionFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  <button
+                    onClick={handleCorrectionUpload}
+                    disabled={uploadingCorrection || !correctionFile}
+                    className="w-full cursor-pointer rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {uploadingCorrection ? "Uploading..." : "Submit Correction"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

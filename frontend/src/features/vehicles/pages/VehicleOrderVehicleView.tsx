@@ -29,6 +29,7 @@ import VehicleBookingDocumentModal from "../components/VehicleBookingDocumentMod
 import VehicleBookingDocumentViewModal from "../components/VehicleBookingDocumentViewModal";
 import VehicleDealerInvoiceModal from "../components/VehicleDealerInvoiceModal";
 import VehicleDealerInvoiceViewModal from "../components/VehicleDealerInvoiceViewModal";
+import VehicleSingleDocumentModal from "../components/VehicleSingleDocumentModal";
 import { useAuth } from "../../../hooks/useAuth";
 
 const API_ORIGIN = apiConfig.baseURL.replace(/\/api\/v1\/?$/, "");
@@ -68,6 +69,9 @@ const VehicleOrderVehicleView = () => {
   const [isDealerInvoiceModalOpen, setIsDealerInvoiceModalOpen] =
     useState(false);
   const [isDealerInvoiceViewOpen, setIsDealerInvoiceViewOpen] = useState(false);
+  const [singleDocModal, setSingleDocModal] = useState<
+    null | "hblDocument" | "shippingBill"
+  >(null);
 
   // Payment Ledger Modal States
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
@@ -307,6 +311,26 @@ const VehicleOrderVehicleView = () => {
                   VIEW INVOICE
                 </button>
               </div>
+
+              <div className="flex items-center gap-2 bg-cyan-50 p-1.5 rounded-2xl border border-cyan-200 shadow-sm">
+                <button
+                  onClick={() => setSingleDocModal("hblDocument")}
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-cyan-700 hover:shadow-md active:scale-95"
+                >
+                  <Upload size={14} />
+                  HBL DOCUMENT
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 bg-emerald-50 p-1.5 rounded-2xl border border-emerald-200 shadow-sm">
+                <button
+                  onClick={() => setSingleDocModal("shippingBill")}
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95"
+                >
+                  <Upload size={14} />
+                  SHIPPING BILL
+                </button>
+              </div>
             </>
           )}
 
@@ -539,6 +563,30 @@ const VehicleOrderVehicleView = () => {
           isOpen={isDealerInvoiceViewOpen}
           onClose={() => setIsDealerInvoiceViewOpen(false)}
           booking={booking}
+        />
+      )}
+
+      {singleDocModal && booking && (
+        <VehicleSingleDocumentModal
+          isOpen={!!singleDocModal}
+          onClose={() => setSingleDocModal(null)}
+          booking={booking}
+          field={singleDocModal}
+          title={
+            singleDocModal === "hblDocument"
+              ? "HBL Document"
+              : "Shipping Bill"
+          }
+          label={
+            singleDocModal === "hblDocument"
+              ? "HBL Document"
+              : "Shipping Bill"
+          }
+          tone={singleDocModal === "hblDocument" ? "cyan" : "emerald"}
+          onSuccess={() => {
+            setSingleDocModal(null);
+            loadData();
+          }}
         />
       )}
 

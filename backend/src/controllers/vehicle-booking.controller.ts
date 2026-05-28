@@ -18,7 +18,9 @@ import {
   getBookingById,
   getReminderDueBookings,
   uploadBookingDocuments,
+  uploadClientCorrectionDocument,
   getBookingFile,
+  getClientCorrectionFile,
   getAllVehicleBookingsService,
   deleteVehicleBooking,
 } from "../services/vehicle-booking.service";
@@ -274,6 +276,27 @@ export const uploadBookingDocumentsHandler = async (req: Request, res: Response)
   }
 };
 
+export const uploadClientCorrectionHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const booking = await uploadClientCorrectionDocument(
+      req.params.id as string,
+      req.file,
+    );
+    return res.json({
+      success: true,
+      message: "Correction document uploaded",
+      data: booking,
+    });
+  } catch (error: any) {
+    console.error("Client correction upload error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getBookingFileHandler = async (req: Request, res: Response) => {
   try {
     const field = Array.isArray(req.params.field)
@@ -292,6 +315,112 @@ export const getBookingFileHandler = async (req: Request, res: Response) => {
     } else {
       return res.sendFile(path.resolve(filePath));
     }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getClientCorrectionFileHandler = async (req: Request, res: Response) => {
+  try {
+    const { download } = req.query;
+    const correction = await getClientCorrectionFile(
+      req.params.id as string,
+      req.params.correctionId as string,
+    );
+
+    if (!fs.existsSync(correction.filePath)) {
+      return res.status(404).json({ message: "File missing on server" });
+    }
+
+    if (download === "true") {
+      return res.download(correction.filePath, correction.originalName);
+    }
+
+    return res.sendFile(path.resolve(correction.filePath));
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getClientMergedDocumentsHandler = async (req: Request, res: Response) => {
+  try {
+    const booking = await getBookingById(req.params.id as string);
+    const token = typeof req.query.token === "string" ? req.query.token : "";
+    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const apiRoot = req.baseUrl.replace(/\/vehicle-bookings$/, "");
+    const bookingBase = `${origin}${req.baseUrl}/${booking._id}`;
+    const apiBase = `${origin}${apiRoot}`;
+
+    const commercialInvoice = booking.commercialInvoices?.find(
+      (invoice: any) => invoice.type === "COMMERCIAL",
+    );
+
+    const docs = [
+      commercialInvoice
+        ? {
+            label: "Commercial Invoice",
+            url: `${apiBase}/invoices/${commercialInvoice._id}/download${tokenParam}`,
+          }
+        : null,
+      booking.documents?.hblDocument
+        ? {
+            label: "HBL",
+            url: `${bookingBase}/files/hblDocument${tokenParam}`,
+          }
+        : null,
+      booking.documents?.bvCertificate
+        ? {
+            label: "BV Certificate",
+            url: `${bookingBase}/files/bvCertificate${tokenParam}`,
+          }
+        : null,
+      booking.documents?.shippingBill
+        ? {
+            label: "Shipping Bill",
+            url: `${bookingBase}/files/shippingBill${tokenParam}`,
+          }
+        : null,
+    ].filter(Boolean) as Array<{ label: string; url: string }>;
+
+    const sections = docs
+      .map(
+        (doc, index) => `
+          <section>
+            <h2>${index + 1}. ${doc.label}</h2>
+            <iframe src="${doc.url}" title="${doc.label}"></iframe>
+          </section>
+        `,
+      )
+      .join("");
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Merged Vehicle Documents</title>
+          <style>
+            body { margin: 0; background: #f8fafc; color: #0f172a; font-family: Arial, sans-serif; }
+            header { position: sticky; top: 0; background: white; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; z-index: 1; }
+            h1 { margin: 0; font-size: 18px; }
+            p { margin: 4px 0 0; color: #64748b; font-size: 12px; }
+            main { padding: 20px; display: grid; gap: 20px; }
+            section { background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+            h2 { margin: 0; padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+            iframe { width: 100%; height: 860px; border: 0; display: block; background: white; }
+            .empty { padding: 48px; text-align: center; color: #64748b; background: white; border: 1px dashed #cbd5e1; border-radius: 16px; }
+          </style>
+        </head>
+        <body>
+          <header>
+            <h1>Merged Vehicle Documents</h1>
+            <p>Commercial Invoice -> HBL -> BV Certificate -> Shipping Bill</p>
+          </header>
+          <main>${sections || '<div class="empty">No client-visible documents uploaded yet.</div>'}</main>
+        </body>
+      </html>
+    `);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

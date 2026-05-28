@@ -85,7 +85,14 @@ export interface IVehicleBooking extends Document {
     tempRegCert?: string;
     bvCertificate?: string;
     dealerInvoice?: string;
+    hblDocument?: string;
+    shippingBill?: string;
   };
+  clientCorrections: Array<{
+    filePath: string;
+    originalName: string;
+    uploadedAt: Date;
+  }>;
   isCRTMUploaded: boolean;
   isBVUploaded: boolean;
   isDealerInvoiceUploaded: boolean;
@@ -244,6 +251,18 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       tempRegCert: { type: String, default: "" },
       bvCertificate: { type: String, default: "" },
       dealerInvoice: { type: String, default: "" },
+      hblDocument: { type: String, default: "" },
+      shippingBill: { type: String, default: "" },
+    },
+    clientCorrections: {
+      type: [
+        {
+          filePath: { type: String, required: true },
+          originalName: { type: String, default: "" },
+          uploadedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
     },
     isCRTMUploaded: { type: Boolean, default: false },
     isBVUploaded: { type: Boolean, default: false },
