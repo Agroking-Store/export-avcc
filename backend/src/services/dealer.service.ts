@@ -11,35 +11,31 @@ const generateDealerId = async (): Promise<string> => {
 export const createDealerService = async (data: any) => {
   const email = data.email ? data.email.toLowerCase().trim() : "";
   const contact = normalizePhone(data.contact);
-  const duplicateChecks: any[] = [{ contact }];
 
+  // Only check duplicate email
   if (email) {
-    duplicateChecks.push({ email });
-  }
+    const existingDealer = await Dealer.findOne({ email });
 
-  const existingDealer = await Dealer.findOne({
-    $or: duplicateChecks,
-  });
-
-  if (existingDealer) {
-    throw new Error(
-      email
-        ? "Dealer already exists with this email or contact"
-        : "Dealer already exists with this contact",
-    );
+    if (existingDealer) {
+      throw new Error("Dealer already exists with this email");
+    }
   }
 
   const dealerId = await generateDealerId();
+
   const dealerData = { ...data };
+
   delete dealerData.password;
   delete dealerData.confirmPassword;
   delete dealerData.email;
+
   const dealer = new Dealer({
     ...dealerData,
     contact,
     ...(email ? { email } : {}),
     dealerId,
   });
+
   return await dealer.save();
 };
 
