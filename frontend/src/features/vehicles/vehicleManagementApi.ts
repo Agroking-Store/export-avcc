@@ -6,6 +6,7 @@ export interface VehicleListItem {
   modelName: string;
   variant: string;
   color: string;
+  engineCapacity?: string;
   commercialHsnCode: string;
   exportHsnCode: string;
   hsnCode?: string;
@@ -34,6 +35,7 @@ export interface VehicleOrderItem {
     modelName: string;
     variant: string;
     color: string;
+    engineCapacity?: string;
     commercialHsnCode: string;
     exportHsnCode: string;
     hsnCode?: string;
@@ -65,6 +67,7 @@ export const vehicleManagementApi = {
     modelName: string;
     variant: string;
     color: string;
+    engineCapacity?: string;
     commercialHsnCode: string;
     exportHsnCode: string;
     quantity?: number;
@@ -82,6 +85,7 @@ export const vehicleManagementApi = {
       modelName: string;
       variant: string;
       color: string;
+      engineCapacity?: string;
       commercialHsnCode: string;
       exportHsnCode: string;
       quantity?: number;
@@ -106,6 +110,7 @@ export const vehicleManagementApi = {
       modelName: string;
       variant: string;
       color: string;
+      engineCapacity: string;
       commercialHsnCode: string;
       exportHsnCode: string;
       quantity: number;

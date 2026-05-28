@@ -47,6 +47,7 @@ type VehicleBookingStatus =
   | "rejected"
   | "payment_done"
   | "chassis_received"
+  | "shipped"
   | "delivered";
 type PIStatus =
   | "draft"
@@ -88,6 +89,7 @@ interface VehicleBookingItem {
   isCRTMUploaded?: boolean;
   isBVUploaded?: boolean;
   isDealerInvoiceUploaded?: boolean;
+  piGenerated?: boolean;
   orderId?:
     | string
     | {
@@ -154,10 +156,10 @@ const BOOKING_FLOW: Array<{
   label: string;
   color: string;
 }> = [
-  { status: "pending", label: "Quotation Pending", color: "#93c5fd" },
+  { status: "pending", label: "Pending", color: "#93c5fd" },
   {
     status: "quotation_details_pending",
-    label: "Costing Pending",
+    label: "Waiting For Approval",
     color: "#60a5fa",
   },
   {
@@ -167,8 +169,9 @@ const BOOKING_FLOW: Array<{
   },
   { status: "approved", label: "Approved", color: "#34d399" },
   { status: "rejected", label: "Rejected", color: "#f87171" },
-  { status: "payment_done", label: "Awaiting Numbers", color: "#60a5fa" },
-  { status: "chassis_received", label: "In Transit", color: "#a78bfa" },
+  { status: "payment_done", label: "Awaiting Engine / Chassis Number", color: "#60a5fa" },
+  { status: "chassis_received", label: "Ready to Ship", color: "#a78bfa" },
+  { status: "shipped", label: "Shipped / In Transit", color: "#22d3ee" },
   { status: "delivered", label: "Delivered", color: "#4ade80" },
 ];
 
@@ -253,6 +256,7 @@ const bookingStatusCls = (s: VehicleBookingStatus) =>
     rejected: "bg-rose-50 text-rose-700 border-rose-200",
     payment_done: "bg-blue-50 text-blue-700 border-blue-200",
     chassis_received: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    shipped: "bg-cyan-50 text-cyan-700 border-cyan-200",
     delivered: "bg-green-50 text-green-700 border-green-200",
   })[s] ?? "bg-slate-50 text-slate-500 border-slate-200";
 
@@ -460,14 +464,20 @@ const Dashboard: React.FC = () => {
         (b.status === "chassis_received" || b.status === "delivered") &&
         (!b.isCRTMUploaded || !b.isBVUploaded || !b.isDealerInvoiceUploaded),
     ).length;
+    const piReady = data.vehicleBookings.filter(
+      (b) => b.engineNumber && b.chassisNumber && !b.piGenerated,
+    ).length;
     return {
       delivered,
+      piReady,
       pipelineValue,
       awaitingLc,
       expiringPi,
       docBacklog,
       inFlight: data.vehicleBookings.filter((b) =>
-        ["approved", "payment_done", "chassis_received"].includes(b.status),
+        ["approved", "payment_done", "chassis_received", "shipped"].includes(
+          b.status,
+        ),
       ).length,
       countries: new Set(
         [
@@ -899,7 +909,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* ADMIN KPI ROW */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 ">
           <SummaryCard
             label="Business Network"
             num={data.clients.length + data.dealers.length}
@@ -916,6 +926,15 @@ const Dashboard: React.FC = () => {
             icon={<CarFront size={18} />}
             g={["#6366f1", "#4f46e5"]}
             dest="/vehicles/dashboard"
+            navigate={navigate}
+          />
+          <SummaryCard
+            label="Cars Ready For PI"
+            num={m.piReady}
+            detail="Engine and chassis filled, PI pending"
+            icon={<ClipboardCheck size={18} />}
+            g={["#059669", "#047857"]}
+            dest="/vehicles/orders"
             navigate={navigate}
           />
           <SummaryCard

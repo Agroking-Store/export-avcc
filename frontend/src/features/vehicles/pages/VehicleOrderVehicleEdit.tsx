@@ -99,6 +99,7 @@ const VehicleOrderVehicleEdit = () => {
     { value: "Diesel", label: "Diesel" },
     { value: "Electric", label: "Electric" },
     { value: "Hybrid", label: "Hybrid" },
+    { value: "Hybrid Petrol", label: "Hybrid Petrol" },
     { value: "CNG", label: "CNG" },
     { value: "LPG", label: "LPG" },
   ];
@@ -138,7 +139,12 @@ const VehicleOrderVehicleEdit = () => {
             ? formatDateToDdMmYyyy(currentBooking.deliveryDate)
             : "",
         );
-        setEngineCapacity(currentBooking?.engineCapacity || "");
+        setEngineCapacity(
+          currentBooking?.engineCapacity ||
+            (currentBooking?.vehicleId as any)?.engineCapacity ||
+            orderRes?.vehicleSnapshot?.engineCapacity ||
+            "",
+        );
         setFuelType(currentBooking?.fuelType || "");
         setCountryOfOrigin(currentBooking?.countryOfOrigin || "");
         setYom(currentBooking?.yom || "");
@@ -572,7 +578,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Hash size={14} className="text-indigo-500" />
-              Commercial HSN
+              Sri Lanka HSN Code
             </label>
             <input
               type="text"
@@ -588,7 +594,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
               <Hash size={14} className="text-sky-500" />
-              Export HSN
+              India HSN Code
             </label>
             <input
               type="text"

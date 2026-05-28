@@ -57,6 +57,7 @@ const VehicleOrderVehicleBooking = () => {
     { value: "Diesel", label: "Diesel" },
     { value: "Electric", label: "Electric" },
     { value: "Hybrid", label: "Hybrid" },
+    { value: "Hybrid Petrol", label: "Hybrid Petrol" },
     { value: "CNG", label: "CNG" },
     { value: "LPG", label: "LPG" },
   ];
@@ -95,26 +96,28 @@ const VehicleOrderVehicleBooking = () => {
       vehicleManagementApi
         .getVehicleOrderById(orderId)
         .then((order) => {
-          if (
-            order?.vehicleSnapshot?.commercialHsnCode ||
-            order?.vehicleSnapshot?.exportHsnCode ||
-            order?.vehicleSnapshot?.hsnCode
-          ) {
+          if (order?.vehicleSnapshot) {
             setVehicle((prev) => ({
               ...prev,
               commercialHsnCode:
                 order.vehicleSnapshot.commercialHsnCode ||
                 order.vehicleSnapshot.hsnCode ||
+                prev.commercialHsnCode ||
                 "",
               exportHsnCode:
                 order.vehicleSnapshot.exportHsnCode ||
                 order.vehicleSnapshot.hsnCode ||
+                prev.exportHsnCode ||
+                "",
+              engineCapacity:
+                order.vehicleSnapshot.engineCapacity ||
+                prev.engineCapacity ||
                 "",
             }));
           }
         })
         .catch(() => {
-          // non-critical: HSN can be entered manually
+          // non-critical: HSN/Specs can be entered manually
         });
     }
   }, [orderId]);
@@ -139,10 +142,10 @@ const VehicleOrderVehicleBooking = () => {
     const newErrors: Record<string, string> = {};
     if (!selectedDealer) newErrors.dealerId = 'Dealer is required';
     if (!vehicle.commercialHsnCode?.trim()) {
-      newErrors.commercialHsnCode = 'Commercial HSN is required';
+      newErrors.commercialHsnCode = 'Sri Lanka HSN Code is required';
     }
     if (!vehicle.exportHsnCode?.trim()) {
-      newErrors.exportHsnCode = 'Export HSN is required';
+      newErrors.exportHsnCode = 'India HSN Code is required';
     }
     if (!vehicle.vehicleName?.trim()) newErrors.vehicleName = 'Vehicle name is required';
     if (!vehicle.exteriorColour?.trim()) newErrors.exteriorColour = 'Color is required';
@@ -369,7 +372,7 @@ const VehicleOrderVehicleBooking = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-emerald-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span>
+                <Hash size={14} className="text-emerald-500" /> Sri Lanka HSN Code <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -385,7 +388,7 @@ const VehicleOrderVehicleBooking = () => {
 
             <div>
               <label className={labelStyle}>
-                <Hash size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span>
+                <Hash size={14} className="text-sky-500" /> India HSN Code <span className="text-red-500 ml-0.5">*</span>
               </label>
               <input
                 type="text"

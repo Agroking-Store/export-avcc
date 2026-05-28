@@ -193,13 +193,13 @@ const VehicleOrderVehicleView = () => {
     },
     {
       icon: Hash,
-      label: "Commercial HSN",
+      label: "Sri Lanka HSN Code",
       value: booking.commercialHsnCode || booking.hsnCode || "-",
       adminOnly: true,
     },
     {
       icon: Hash,
-      label: "Export HSN",
+      label: "India HSN Code",
       value: booking.exportHsnCode || booking.hsnCode || "-",
       adminOnly: true,
     },

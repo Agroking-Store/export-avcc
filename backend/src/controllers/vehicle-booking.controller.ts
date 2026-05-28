@@ -20,6 +20,7 @@ import {
   uploadBookingDocuments,
   getBookingFile,
   getAllVehicleBookingsService,
+  deleteVehicleBooking,
 } from "../services/vehicle-booking.service";
 
 export const getAllBookingsHandler = async (req: Request, res: Response) => {
@@ -188,6 +189,15 @@ export const updateStatusHandler = async (req: Request, res: Response) => {
       status,
     );
     res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteBookingHandler = async (req: Request, res: Response) => {
+  try {
+    await deleteVehicleBooking(req.params.id as string);
+    res.json({ message: "Vehicle entry deleted successfully" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

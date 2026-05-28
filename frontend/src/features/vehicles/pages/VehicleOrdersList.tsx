@@ -10,15 +10,29 @@ import {
   Plus,
   Search,
   Truck,
-  CircleAlert,
-  Calendar,
   Store,
-  FileText,
-  Clock,
-  Zap,
   Ship,
+  Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import api from "../../../services/api";
 import { IClient } from "../../clients/clients.types";
 import {
@@ -26,7 +40,6 @@ import {
   VehicleBookingStatus,
   vehicleBookingApi,
 } from "../../../services/vehicleBookingApi";
-import { dealerApi } from "../../../services/dealerApi";
 import QuotationModal from "../components/QuotationModal";
 import PaymentModal from "../components/PaymentModal";
 import ClientAllotModal from "../components/ClientAllotModal";
@@ -44,7 +57,7 @@ const STATUS_META: Record<
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
   quotation_details_pending: {
-    label: "Costing Details Pending",
+    label: "Waiting for Approval",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   quotation_uploaded: {
@@ -60,7 +73,7 @@ const STATUS_META: Record<
     badge: "bg-rose-100 text-rose-700 border-rose-200",
   },
   payment_done: {
-    label: "Awaiting Chassis/Engine No.",
+    label: "Awaiting Engine / Chassis Number",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
@@ -68,7 +81,7 @@ const STATUS_META: Record<
     badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
   },
   shipped: {
-    label: "Shipped",
+    label: "Shipped / In Transit",
     badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
   },
   delivered: {
@@ -79,15 +92,14 @@ const STATUS_META: Record<
 
 const statusOptions = [
   "All",
-  "Quotation Pending",
-  "Costing Details Pending",
+  "Pending",
   "Waiting for Approval",
   "Approved",
-  "Awaiting Chassis/Engine No.",
+  "Awaiting Engine / Chassis Number",
+  "Make PI",
   "Ready to Ship",
-  "Shipped",
+  "Shipped / In Transit",
   "Delivered",
-  "PI Pending",
 ];
 
 const statusLabelToRaw: Record<
@@ -95,20 +107,21 @@ const statusLabelToRaw: Record<
   VehicleBookingStatus | "All" | "piPending"
 > = {
   All: "All",
-  "Quotation Pending": "pending",
-  "Costing Details Pending": "quotation_details_pending",
+  Pending: "pending",
   "Waiting for Approval": "quotation_uploaded",
   Approved: "approved",
-  "Awaiting Chassis/Engine No.": "payment_done",
+  "Awaiting Engine / Chassis Number": "payment_done",
+  "Make PI": "piPending",
   "Ready to Ship": "chassis_received",
-  Shipped: "shipped",
+  "Shipped / In Transit": "shipped",
   Delivered: "delivered",
-  "PI Pending": "piPending",
 };
 
 interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
 }
+
+type ConfirmationAction = "ship" | "deliver";
 
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
@@ -119,17 +132,22 @@ const VehicleOrdersList = () => {
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [bookingStats, setBookingStats] = useState({
+    deliveredTotal: 0,
+    piReadyTotal: 0,
+    totalAll: 0,
+  });
 
   const rawToStatusLabel: Record<string, string> = {
-    pending: "Quotation Pending",
-    quotation_details_pending: "Costing Details Pending",
+    pending: "Pending",
+    quotation_details_pending: "Waiting for Approval",
     quotation_uploaded: "Waiting for Approval",
     approved: "Approved",
-    payment_done: "Awaiting Chassis/Engine No.",
+    payment_done: "Awaiting Engine / Chassis Number",
     chassis_received: "Ready to Ship",
-    shipped: "Shipped",
+    shipped: "Shipped / In Transit",
     delivered: "Delivered",
-    piPending: "PI Pending",
+    piPending: "Make PI",
     missingClient: "All",
   };
   const incomingFilter = (location.state as any)?.statusFilter;
@@ -157,6 +175,10 @@ const VehicleOrdersList = () => {
   const [clients, setClients] = useState<IClient[]>([]);
   const [dealers, setDealers] = useState<any[]>([]);
   const [dealerModalOpen, setDealerModalOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    action: ConfirmationAction;
+    booking: VehicleBookingItem;
+  } | null>(null);
 
   const statusValue = statusLabelToRaw[statusLabel] || "All";
 
@@ -181,20 +203,27 @@ const VehicleOrdersList = () => {
 
           if (!statusMatches) return false;
 
-          if (!normalizedSearch) return true;
-
           const orderData = (booking as any).orderId;
           const vehicleSnapshot =
             typeof orderData === "object" && orderData !== null
               ? orderData.vehicleSnapshot
               : null;
+
+          if (!normalizedSearch) return true;
+
           const searchValue = [
+            orderData?.orderNumber,
             vehicleSnapshot?.brandName,
             vehicleSnapshot?.modelName,
             vehicleSnapshot?.variant,
             vehicleSnapshot?.color,
+            booking.engineNumber,
+            booking.chassisNumber,
             booking.assignedDealerSnapshot?.name,
-            STATUS_META[booking.status]?.label,
+            booking.assignedClientSnapshot?.name,
+            booking.assignedClientSnapshot?.companyName,
+            getDisplayStatusMeta(booking)?.label,
+            booking.status,
           ]
             .filter(Boolean)
             .join(" ")
@@ -209,6 +238,15 @@ const VehicleOrdersList = () => {
         setBookings(filteredBookings.slice(startIndex, startIndex + limit));
         setTotal(nextTotal);
         setTotalPages(nextTotalPages);
+        setBookingStats({
+          deliveredTotal: filteredBookings.filter(
+            (b) => b.status === "delivered",
+          ).length,
+          piReadyTotal: filteredBookings.filter(
+            (b) => b.engineNumber && b.chassisNumber && !b.piGenerated,
+          ).length,
+          totalAll: filteredBookings.length,
+        });
         return;
       }
 
@@ -222,6 +260,9 @@ const VehicleOrdersList = () => {
       setBookings(res.data || []);
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
+      setBookingStats(
+        res.stats || { deliveredTotal: 0, piReadyTotal: 0, totalAll: 0 },
+      );
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
     } finally {
@@ -349,6 +390,36 @@ const VehicleOrdersList = () => {
     setActiveBooking(null);
   };
 
+  const openShipConfirmation = (booking: VehicleBookingItem) => {
+    const disabledReason = getShipDisabledReason(booking);
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+    setConfirmation({ action: "ship", booking });
+  };
+
+  const openDeliveredConfirmation = (booking: VehicleBookingItem) => {
+    if (!booking.assignedClientId) {
+      toast.error(
+        "Please allot a client before marking this vehicle as delivered.",
+      );
+      return;
+    }
+    setConfirmation({ action: "deliver", booking });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmation) return;
+    const { action, booking } = confirmation;
+    setConfirmation(null);
+    if (action === "ship") {
+      await handleShipVehicle(booking);
+      return;
+    }
+    await handleMarkDelivered(booking);
+  };
+
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
     if (!booking.assignedClientId) {
       toast.error(
@@ -376,8 +447,56 @@ const VehicleOrdersList = () => {
     if (!readiness?.INR) return "Generate INR invoice first.";
     if (!readiness?.USD) return "Generate USD invoice first.";
     if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
-    if (!readiness?.PACKING_LIST) return "Generate packing list first.";
     return "";
+  };
+
+  const hasEngineAndChassis = (booking: VehicleBookingItem) =>
+    !!String(booking.engineNumber || "").trim() &&
+    !!String(booking.chassisNumber || "").trim();
+
+  const hasReadyToShipInvoices = (booking: VehicleBookingItem) =>
+    !!booking.invoiceReadiness?.INR &&
+    !!booking.invoiceReadiness?.USD &&
+    !!booking.invoiceReadiness?.COMMERCIAL;
+
+  const getDisplayStatusMeta = (booking: VehicleBookingItem) => {
+    if (!isClient && hasEngineAndChassis(booking) && !booking.piGenerated) {
+      return {
+        label: "Make PI",
+        badge: "bg-purple-100 text-purple-700 border-purple-200",
+      };
+    }
+    if (booking.status === "chassis_received" && !hasReadyToShipInvoices(booking)) {
+      return {
+        label: isClient ? "Confirmed & Sourcing" : "Awaiting Invoices",
+        badge: isClient
+          ? "bg-blue-100 text-blue-700 border-blue-200"
+          : "bg-amber-100 text-amber-700 border-amber-200",
+      };
+    }
+    return STATUS_META[booking.status];
+  };
+
+  const canDeleteBooking = (booking: VehicleBookingItem) =>
+    isAdmin &&
+    !booking.quotationFile &&
+    ["pending", "rejected"].includes(booking.status);
+
+  const handleDeleteBooking = async (booking: VehicleBookingItem) => {
+    if (
+      !window.confirm(
+        "Delete this vehicle entry? This is allowed only before quotation upload/approval.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await vehicleBookingApi.delete(booking._id);
+      toast.success("Vehicle entry deleted");
+      fetchBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete entry");
+    }
   };
 
   const handleShipVehicle = async (booking: VehicleBookingItem) => {
@@ -420,7 +539,7 @@ const VehicleOrdersList = () => {
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const orderId = getOrderId(booking);
     const primaryActionClass =
-      "cursor-pointer inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0";
+      "cursor-pointer inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap";
 
     switch (booking.status) {
       case "pending":
@@ -458,7 +577,7 @@ const VehicleOrdersList = () => {
           <button
             onClick={() => !isSourcingTeam && openPaymentModal(booking)}
             disabled={isSourcingTeam}
-            className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold transition whitespace-nowrap shrink-0 ${isSourcingTeam ? "bg-slate-400 text-white cursor-not-allowed opacity-60" : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"}`}
+            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition whitespace-nowrap ${isSourcingTeam ? "bg-slate-400 text-white cursor-not-allowed opacity-60" : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"}`}
           >
             Confirm Booking
           </button>
@@ -482,10 +601,10 @@ const VehicleOrdersList = () => {
           const disabledReason = getShipDisabledReason(booking);
           return (
             <button
-              onClick={() => handleShipVehicle(booking)}
+              onClick={() => openShipConfirmation(booking)}
               disabled={!!disabledReason}
               title={disabledReason || "Ship Vehicle"}
-              className={`inline-flex h-10 min-w-[160px] items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition whitespace-nowrap shrink-0 ${
+              className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap ${
                 disabledReason
                   ? "cursor-not-allowed bg-slate-400 opacity-60"
                   : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
@@ -499,7 +618,7 @@ const VehicleOrdersList = () => {
       case "shipped":
         return (
           <button
-            onClick={() => handleMarkDelivered(booking)}
+            onClick={() => openDeliveredConfirmation(booking)}
             className={`${primaryActionClass} bg-[#1e40af] hover:bg-[#1d4ed8]`}
           >
             <Truck size={14} />
@@ -518,10 +637,8 @@ const VehicleOrdersList = () => {
     if (isClient) {
       return [
         {
-          label: "PI Pending",
-          value: bookings.filter(
-            (b) => !b.piGenerated && b.engineNumber && b.chassisNumber,
-          ).length,
+          label: "In Progress",
+          value: bookings.filter((b) => b.status !== "delivered").length,
           tone: "bg-amber-100 text-amber-800",
         },
         {
@@ -546,7 +663,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "Delivered",
-          value: bookings.filter((b) => b.status === "delivered").length,
+          value: bookingStats.deliveredTotal,
           tone: "bg-emerald-100 text-emerald-800",
         },
         {
@@ -561,19 +678,17 @@ const VehicleOrdersList = () => {
     // ORIGINAL ADMIN CARDS
     return [
       {
-        label: "Quotation Pending",
+        label: "Pending",
         value: bookings.filter((b) => b.status === "pending").length,
         tone: "bg-slate-100 text-slate-800",
       },
       {
-        label: "Costing Pending",
-        value: bookings.filter((b) => b.status === "quotation_details_pending")
-          .length,
-        tone: "bg-blue-100 text-blue-800",
-      },
-      {
         label: "Waiting for Approval",
-        value: bookings.filter((b) => b.status === "quotation_uploaded").length,
+        value: bookings.filter((b) =>
+          ["quotation_details_pending", "quotation_uploaded"].includes(
+            b.status,
+          ),
+        ).length,
         tone: "bg-amber-100 text-amber-800",
       },
       {
@@ -582,12 +697,17 @@ const VehicleOrdersList = () => {
         tone: "bg-blue-100 text-blue-800",
       },
       {
+        label: "Make PI",
+        value: bookingStats.piReadyTotal,
+        tone: "bg-purple-100 text-purple-800",
+      },
+      {
         label: "Delivered",
-        value: bookings.filter((b) => b.status === "delivered").length,
+        value: bookingStats.deliveredTotal,
         tone: "bg-emerald-100 text-emerald-800",
       },
     ];
-  }, [bookings, isClient]);
+  }, [bookings, bookingStats, isClient]);
 
   const pageTitle = isClient ? "My Vehicle List" : "Vehicles List";
   const pageDescription = isClient
@@ -631,22 +751,27 @@ const VehicleOrdersList = () => {
 
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
           <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10">
-                <Filter size={16} />
-              </div>
-              <select
-                value={statusLabel}
-                onChange={(e) => setStatusLabel(e.target.value)}
-                className="cursor-pointer appearance-none pl-11 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-blue-600 text-sm font-bold rounded-2xl outline-none transition-all hover:bg-slate-50 dark:hover:bg-gray-800"
+            <Select value={statusLabel} onValueChange={setStatusLabel}>
+              <SelectTrigger className="h-11 min-w-[240px] rounded-xl border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-gray-700 dark:bg-gray-900 dark:text-slate-200">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="inline-flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Filter size={15} />
+                  </span>
+                  <SelectValue placeholder="All Statuses" />
+                </div>
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                position="popper"
+                className="min-w-[240px] rounded-xl p-1"
               >
                 {statusOptions.map((item) => (
-                  <option key={item} value={item}>
+                  <SelectItem key={item} value={item} className="py-2">
                     {item === "All" ? "All Statuses" : item}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="relative">
@@ -657,7 +782,9 @@ const VehicleOrdersList = () => {
             <input
               type="text"
               placeholder={
-                isClient ? "Search your vehicle..." : "Search vehicle..."
+                isClient
+                  ? "Search ID, vehicle, color, status..."
+                  : "Search ID, vehicle, color, dealer, client..."
               }
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -688,35 +815,24 @@ const VehicleOrdersList = () => {
         </div>
 
         <div className="px-8 pb-8">
-          <div className="rounded-2xl border border-slate-200 overflow-x-auto">
-            <table className="min-w-full border-collapse bg-white text-center">
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <table className="w-full table-fixed border-collapse bg-white text-center">
               <thead className="bg-slate-50/80">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="border-b border-slate-200 px-7 py-4 align-middle">
+                  <th className="w-[11%] border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
                   </th>
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle text-left">
+                  <th className="w-[22%] border-b border-slate-200 px-5 py-4 align-middle text-left">
                     Vehicle
                   </th>
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                  <th className="w-[12%] border-b border-slate-200 px-4 py-4 align-middle">
                     Color
                   </th>
-                  {/* CLIENT ONLY COLUMNS */}
-                  {isClient && (
-                    <>
-                      <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                        Engine No
-                      </th>
-                      <th className="border-b border-slate-200 px-5 py-4 align-middle">
-                        Chassis No
-                      </th>
-                    </>
-                  )}
-                  <th className="border-b border-slate-200 px-5 py-4 align-middle">
+                  <th className="w-[17%] border-b border-slate-200 px-4 py-4 align-middle">
                     Status
                   </th>
-                  <th className="border-b border-slate-200 px-6 py-4 align-middle">
-                    {isClient ? "View" : "Actions"}
+                  <th className="w-[38%] border-b border-slate-200 px-5 py-4 align-middle text-center">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -724,7 +840,7 @@ const VehicleOrdersList = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={isClient ? 7 : 5}
+                      colSpan={5}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -733,7 +849,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={isClient ? 7 : 5}
+                      colSpan={5}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       {isClient
@@ -749,10 +865,10 @@ const VehicleOrdersList = () => {
                     const model = vehicleSnapshot?.modelName || "";
                     const variant = vehicleSnapshot?.variant || "";
                     const color = vehicleSnapshot?.color || "-";
-                    const statusMeta = STATUS_META[booking.status];
-                    const globalIndex =
+                    const statusMeta = getDisplayStatusMeta(booking);
+                    const vehicleSerial =
                       total - ((currentPage - 1) * limit + idx);
-                    const vehicleId = `VEH-${String(globalIndex).padStart(3, "0")}`;
+                    const vehicleId = `VEH${String(vehicleSerial).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
                     return (
@@ -781,21 +897,9 @@ const VehicleOrdersList = () => {
                           </span>
                         </td>
 
-                        {/* CLIENT ONLY CELLS */}
-                        {isClient && (
-                          <>
-                            <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
-                              {booking.engineNumber || "—"}
-                            </td>
-                            <td className="border-b border-slate-100 px-5 py-5 align-middle font-mono text-xs text-slate-600">
-                              {booking.chassisNumber || "—"}
-                            </td>
-                          </>
-                        )}
-
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badge}`}
+                            className={`inline-flex max-w-[170px] items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold leading-4 ${statusMeta.badge}`}
                           >
                             {statusMeta.label}
                           </span>
@@ -809,64 +913,86 @@ const VehicleOrdersList = () => {
                                   `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
                                 )
                               }
-                              className="cursor-pointer inline-flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                              className="cursor-pointer inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
                             >
                               <Eye size={14} /> View Details
                             </button>
                           ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="flex flex-col items-center gap-1 min-w-[130px]">
+                            <div className="ml-auto w-full max-w-[560px] space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
                                 <button
                                   onClick={() => openDealerModal(booking)}
-                                  className={`cursor-pointer inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition ${booking.assignedDealerId ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-white"}`}
+                                  className={`cursor-pointer inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition ${booking.assignedDealerId ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+                                  title={
+                                    booking.assignedDealerId
+                                      ? booking.assignedDealerSnapshot?.name
+                                      : "Allot Dealer"
+                                  }
                                 >
                                   <Store size={14} />
-                                  <span className="truncate max-w-[90px]">
+                                  <span className="truncate">
                                     {booking.assignedDealerId
                                       ? booking.assignedDealerSnapshot?.name
                                       : "Allot Dealer"}
                                   </span>
                                 </button>
+                                <button
+                                  onClick={() =>
+                                    !isSourcingTeam && openClientModal(booking)
+                                  }
+                                  className={`inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs cursor-pointer font-semibold transition ${booking.assignedClientId ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+                                  title={
+                                    booking.assignedClientId
+                                      ? getAssignedClientLabel(booking)
+                                      : "Allot Client"
+                                  }
+                                >
+                                  <Check size={14} />
+                                  <span className="truncate">
+                                    {booking.assignedClientId
+                                      ? getAssignedClientLabel(booking)
+                                      : "Allot Client"}
+                                  </span>
+                                </button>
                               </div>
-                              <div className="h-8 w-px bg-slate-200 shrink-0" />
-                              <div className="shrink-0">
-                                {renderPrimaryAction(booking)}
+                              <div className="flex items-center gap-2">
+                                <div className="min-w-0 flex-1">
+                                  {renderPrimaryAction(booking)}
+                                </div>
+                                <div className="flex shrink-0 items-center gap-2">
+                                  <button
+                                    onClick={() =>
+                                      navigate(
+                                        `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                                      )
+                                    }
+                                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-all hover:bg-blue-50 cursor-pointer"
+                                    title="View details"
+                                  >
+                                    <Eye size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      navigate(
+                                        `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
+                                      )
+                                    }
+                                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-blue-600 transition-all hover:bg-blue-50 cursor-pointer"
+                                    title="Edit vehicle"
+                                  >
+                                    <FilePenLine size={16} />
+                                  </button>
+                                  {canDeleteBooking(booking) && (
+                                    <button
+                                      onClick={() => handleDeleteBooking(booking)}
+                                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 cursor-pointer"
+                                      title="Delete entry"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <div className="h-8 w-px bg-slate-200 shrink-0" />
-                              <button
-                                onClick={() =>
-                                  !isSourcingTeam && openClientModal(booking)
-                                }
-                                className={`inline-flex h-9 min-w-[130px] items-center justify-center gap-1.5 rounded-xl border px-3 text-xs cursor-pointer font-semibold transition ${booking.assignedClientId ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white"}`}
-                              >
-                                <Check size={14} />
-                                <span className="truncate max-w-[90px]">
-                                  {booking.assignedClientId
-                                    ? getAssignedClientLabel(booking)
-                                    : "Allot Client"}
-                                </span>
-                              </button>
-                              <div className="h-8 w-px bg-slate-200 shrink-0" />
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
-                                  )
-                                }
-                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:bg-blue-50 transition-all cursor-pointer"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
-                                  )
-                                }
-                                className="h-9 w-9 border border-slate-200 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
-                              >
-                                <FilePenLine size={16} />
-                              </button>
                             </div>
                           )}
                         </td>
@@ -933,6 +1059,46 @@ const VehicleOrdersList = () => {
           onSync={syncBooking}
         />
       )}
+      <AlertDialog
+        open={!!confirmation}
+        onOpenChange={(open) => {
+          if (!open) setConfirmation(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia
+              className={
+                confirmation?.action === "ship"
+                  ? "bg-cyan-50 text-cyan-700"
+                  : "bg-blue-50 text-blue-700"
+              }
+            >
+              {confirmation?.action === "ship" ? (
+                <Ship size={22} />
+              ) : (
+                <Truck size={22} />
+              )}
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              {confirmation?.action === "ship"
+                ? "Ship this vehicle?"
+                : "Mark as delivered?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmation?.action === "ship"
+                ? "This will move the vehicle to shipped / in transit status."
+                : "This will mark the vehicle as delivered for the assigned client."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAction}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -119,12 +119,12 @@ const VehicleItemDetails = () => {
                 <InfoBox label="FOB Amount (USD)" value={vehicle.fobAmount ? `$${Number(vehicle.fobAmount).toLocaleString()}` : "$0"} icon={DollarSign} />
                 <InfoBox label="Freight (USD)" value={vehicle.freight ? `$${Number(vehicle.freight).toLocaleString()}` : "$0"} icon={DollarSign} />
                 <InfoBox
-                  label="Export HSN Code"
+                  label="India HSN Code"
                   value={vehicle.exportHsnCode || "-"}
                   icon={Barcode}
                 />
                 <InfoBox
-                  label="Commercial HSN Code"
+                  label="Sri Lanka HSN Code"
                   value={vehicle.commercialHsnCode || "-"}
                   icon={Barcode}
                 />

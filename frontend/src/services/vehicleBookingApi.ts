@@ -23,6 +23,7 @@ export interface VehicleBookingItem {
           modelName?: string;
           variant?: string;
           color?: string;
+          engineCapacity?: string;
         };
       };
   vehicleId: string;
@@ -173,11 +174,23 @@ export const vehicleBookingApi = {
     status?: string;
     page?: number;
     limit?: number;
+    vehicleId?: string;
+    vehicle?: string;
+    color?: string;
+    engineNumber?: string;
+    chassisNumber?: string;
+    dealer?: string;
+    client?: string;
   }): Promise<{
     data: VehicleBookingItem[];
     total: number;
     page: number;
     totalPages: number;
+    stats?: {
+      deliveredTotal: number;
+      piReadyTotal: number;
+      totalAll: number;
+    };
   }> => {
     const response = await api.get("/vehicle-bookings", { params });
     return response.data;
@@ -263,6 +276,11 @@ export const vehicleBookingApi = {
       status,
     });
     return response.data as VehicleBookingItem;
+  },
+
+  delete: async (bookingId: string) => {
+    const response = await api.delete(`/vehicle-bookings/${bookingId}`);
+    return response.data;
   },
 
   assignClient: async (bookingId: string, clientId: string) => {

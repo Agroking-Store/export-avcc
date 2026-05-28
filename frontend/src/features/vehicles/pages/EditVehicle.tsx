@@ -24,6 +24,7 @@ const EditVehicle = () => {
     modelName: "",
     variant: "",
     color: "",
+    engineCapacity: "",
     commercialHsnCode: "",
     exportHsnCode: "",
     fobAmount: "",
@@ -41,6 +42,7 @@ const EditVehicle = () => {
           modelName: data.modelName || "",
           variant: data.variant || "",
           color: data.color || "",
+          engineCapacity: data.engineCapacity || "",
           commercialHsnCode:
             data.commercialHsnCode || data.hsnCode || "",
           exportHsnCode: data.exportHsnCode || data.hsnCode || "",
@@ -140,6 +142,10 @@ const EditVehicle = () => {
               <input name="color" value={form.color} onChange={handleChange} className={inputStyle} placeholder="White Pearl" />
             </div>
             <div>
+              <label className={labelStyle}><Hash size={14} className="text-indigo-500" /> Engine Capacity</label>
+              <input name="engineCapacity" value={form.engineCapacity} onChange={handleChange} className={inputStyle} placeholder="1498 cc" />
+            </div>
+            <div>
               <label className={labelStyle}><Tag size={14} className="text-violet-500" /> GST Rate <span className="text-red-500 ml-0.5">*</span></label>
               <select
                 name="igstRate"
@@ -153,11 +159,11 @@ const EditVehicle = () => {
               </select>
             </div>
             <div>
-              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> Commercial HSN <span className="text-red-500 ml-0.5">*</span></label>
+              <label className={labelStyle}><Tag size={14} className="text-amber-500" /> Sri Lanka HSN Code <span className="text-red-500 ml-0.5">*</span></label>
               <input name="commercialHsnCode" value={form.commercialHsnCode} onChange={handleChange} className={inputStyle} placeholder="For PI / LC / Commercial Invoice" />
             </div>
             <div>
-              <label className={labelStyle}><Tag size={14} className="text-sky-500" /> Export HSN <span className="text-red-500 ml-0.5">*</span></label>
+              <label className={labelStyle}><Tag size={14} className="text-sky-500" /> India HSN Code <span className="text-red-500 ml-0.5">*</span></label>
               <input name="exportHsnCode" value={form.exportHsnCode} onChange={handleChange} className={inputStyle} placeholder="For Dealer Invoice / INR / USD / Packing List" />
             </div>
           </div>
