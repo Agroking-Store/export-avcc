@@ -27,92 +27,93 @@ const AppNavigationSidebar: React.FC = () => {
 
   const role = user?.role?.toLowerCase();
 
-const defaultMenuItems = [
+  const defaultMenuItems = [
+    {
+      name: "Dashboard",
+      icon: <LayoutDashboard size={20} />,
+      path: "/dashboard",
+    },
+    {
+      name: "Vehicles",
+      icon: <Car size={20} />,
+      path: "/vehicles",
+    },
+    {
+      name: "Clients",
+      icon: <Users size={20} />,
+      path: "/clients",
+    },
+    {
+      name: "Proforma Invoices",
+      icon: <FileText size={20} />,
+      path: "/proforma-invoice",
+    },
+    {
+      name: "Dealers",
+      icon: <Truck size={20} />,
+      path: "/dealers/dashboard",
+    },
+    {
+      name: "Companies",
+      icon: <Users size={20} />,
+      path: "/companies",
+    },
+    {
+      name: "Shipment Plan",
+      icon: <Ship size={20} />,
+      path: "/shipment-planning/dashboard",
+    },
+  ];
 
-  {
-    name: "Dashboard",
-    icon: <LayoutDashboard size={20} />,
-    path: "/dashboard",
-  },
-  {
-    name: "Vehicles",
-    icon: <Car size={20} />,
-    path: "/vehicles",
-  },
-  {
-    name: "Clients",
-    icon: <Users size={20} />,
-    path: "/clients",
-  },
-  {
-    name: "Proforma Invoices",
-    icon: <FileText size={20} />,
-    path: "/proforma-invoice",
-  },
-  {
-    name: "Dealers",
-    icon: <Truck size={20} />,
-    path: "/dealers/dashboard",
-  },
-  {
-    name: "Companies",
-    icon: <Users size={20} />,
-    path: "/companies",
-  },
-  {
-    name: "Shipment Plan",
-    icon: <Ship size={20} />,
-    path: "/shipment-planning/dashboard",
-  },
-];
+  let menuItems =
+    role === "client"
+      ? [
+          {
+            name: "Dashboard",
+            icon: <LayoutDashboard size={20} />,
+            path: "/dashboard",
+          },
+          {
+            name: "Vehicles",
+            icon: <Car size={20} />,
+            path: "/vehicles",
+          },
+          {
+            name: "Shipment Plan",
+            icon: <Ship size={20} />,
+            path: "/shipment-planning/dashboard",
+          },
+        ]
+      : role === "accountant"
+        ? [
+            {
+              name: "Dashboard",
+              icon: <LayoutDashboard size={20} />,
+              path: "/dashboard",
+            },
+            {
+              name: "Proforma Invoices",
+              icon: <FileText size={20} />,
+              path: "/proforma-invoice",
+            },
+          ]
+        : [...defaultMenuItems];
 
+  if (role === "admin") {
+    menuItems.push({
+      name: "User Management",
+      icon: <ShieldCheck size={20} />,
+      path: "/user-management",
+    });
+  }
 
-let menuItems =
-  role === "client"
-    ? [
-        {
-          name: "Dashboard",
-          icon: <LayoutDashboard size={20} />,
-          path: "/dashboard",
-        },
-        {
-          name: "Vehicles",
-          icon: <Car size={20} />,
-          path: "/vehicles",
-        },
-      ]
-    : role === "accountant"
-    ? [
-        {
-          name: "Dashboard",
-          icon: <LayoutDashboard size={20} />,
-          path: "/dashboard",
-        },
-        {
-          name: "Proforma Invoices",
-          icon: <FileText size={20} />,
-          path: "/proforma-invoice",
-        },
-      ]
-    : [...defaultMenuItems];
-
-if (role === "admin") {
-  menuItems.push({
-    name: "User Management",
-    icon: <ShieldCheck size={20} />,
-    path: "/user-management",
-  });
-}
-
-const visibleMenuItems =
-  isClient
+  const visibleMenuItems = isClient
     ? menuItems
     : isSourcingTeam
-    ? menuItems.filter(
-        (item) =>
-          item.name === "Vehicles" || item.name === "Dealers"
-      )
-    : menuItems;
+      ? menuItems.filter(
+          (item) => item.name === "Vehicles" || item.name === "Dealers",
+        )
+      : menuItems;
 
   return (
     <>
@@ -152,7 +153,7 @@ const visibleMenuItems =
                         ? location.pathname.startsWith("/companies")
                         : item.name === "Shipment Plan"
                           ? location.pathname.startsWith("/shipment-planning")
-                        : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
+                          : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
 
               return (
                 <SidebarMenuItem key={item.name}>

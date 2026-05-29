@@ -55,6 +55,8 @@ const AppRoutes: React.FC = () => {
   const canAccessDealers = isAdmin || isSourcingTeam;
   const canAccessCompanies = isAdmin;
   const canAccessInvoiceGeneration = canAccessPI;
+  const canAccessShipment = isAdmin || isClient;
+
 
   return (
     <Routes>
@@ -185,7 +187,7 @@ const AppRoutes: React.FC = () => {
           <Route
             path="/shipment-planning/*"
             element={
-              isAdmin ? (
+              canAccessShipment ? (
                 <ShipmentPlanningModule />
               ) : (
                 <Navigate to="/dashboard" replace />

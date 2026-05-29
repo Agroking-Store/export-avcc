@@ -466,7 +466,10 @@ const VehicleOrdersList = () => {
         badge: "bg-purple-100 text-purple-700 border-purple-200",
       };
     }
-    if (booking.status === "chassis_received" && !hasReadyToShipInvoices(booking)) {
+    if (
+      booking.status === "chassis_received" &&
+      !hasReadyToShipInvoices(booking)
+    ) {
       return {
         label: isClient ? "Confirmed & Sourcing" : "Awaiting Invoices",
         badge: isClient
@@ -507,7 +510,10 @@ const VehicleOrdersList = () => {
     }
 
     try {
-      const updated = await vehicleBookingApi.updateStatus(booking._id, "shipped");
+      const updated = await vehicleBookingApi.updateStatus(
+        booking._id,
+        "shipped",
+      );
       syncBooking(updated);
       toast.success("Vehicle marked as shipped");
     } catch (error: any) {
@@ -596,25 +602,24 @@ const VehicleOrdersList = () => {
             {getNumberActionLabel(booking)}
           </button>
         );
-      case "chassis_received":
-        {
-          const disabledReason = getShipDisabledReason(booking);
-          return (
-            <button
-              onClick={() => openShipConfirmation(booking)}
-              disabled={!!disabledReason}
-              title={disabledReason || "Ship Vehicle"}
-              className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap ${
-                disabledReason
-                  ? "cursor-not-allowed bg-slate-400 opacity-60"
-                  : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
-              }`}
-            >
-              <Ship size={14} />
-              Ship Vehicle
-            </button>
-          );
-        }
+      case "chassis_received": {
+        const disabledReason = getShipDisabledReason(booking);
+        return (
+          <button
+            onClick={() => openShipConfirmation(booking)}
+            disabled={!!disabledReason}
+            title={disabledReason || "Ship Vehicle"}
+            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap ${
+              disabledReason
+                ? "cursor-not-allowed bg-slate-400 opacity-60"
+                : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
+            }`}
+          >
+            <Ship size={14} />
+            Ship Vehicle
+          </button>
+        );
+      }
       case "shipped":
         return (
           <button
@@ -818,7 +823,7 @@ const VehicleOrdersList = () => {
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             <table className="w-full table-fixed border-collapse bg-white text-center">
               <thead className="bg-slate-50/80">
-                <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {/* <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="w-[11%] border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
                   </th>
@@ -834,13 +839,34 @@ const VehicleOrdersList = () => {
                   <th className="w-[38%] border-b border-slate-200 px-5 py-4 align-middle text-center">
                     Actions
                   </th>
+                </tr> */}
+
+                <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="w-[9%] border-b border-slate-200 px-5 py-4 align-middle">
+                    Vehicle ID
+                  </th>
+                  <th className="w-[20%] border-b border-slate-200 px-5 py-4 align-middle text-left">
+                    Vehicle
+                  </th>
+                  <th className="w-[10%] border-b border-slate-200 px-4 py-4 align-middle">
+                    Color
+                  </th>
+                  <th className="w-[8%] border-b border-slate-200 px-4 py-4 align-middle">
+                    Chassis
+                  </th>
+                  <th className="w-[15%] border-b border-slate-200 px-4 py-4 align-middle">
+                    Status
+                  </th>
+                  <th className="w-[38%] border-b border-slate-200 px-5 py-4 align-middle text-center">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white">
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -894,6 +920,14 @@ const VehicleOrdersList = () => {
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <span className="inline-flex max-w-[130px] rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
                             {color}
+                          </span>
+                        </td>
+
+                        <td className="border-b border-slate-100 px-4 py-5 align-middle">
+                          <span className="font-mono text-sm font-semibold text-slate-700 tracking-wider">
+                            {booking.chassisNumber
+                              ? booking.chassisNumber.slice(-4)
+                              : "-"}
                           </span>
                         </td>
 
@@ -984,7 +1018,9 @@ const VehicleOrdersList = () => {
                                   </button>
                                   {canDeleteBooking(booking) && (
                                     <button
-                                      onClick={() => handleDeleteBooking(booking)}
+                                      onClick={() =>
+                                        handleDeleteBooking(booking)
+                                      }
                                       className="flex h-11 w-11 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 cursor-pointer"
                                       title="Delete entry"
                                     >
