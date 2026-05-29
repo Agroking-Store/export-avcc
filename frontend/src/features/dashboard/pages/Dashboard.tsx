@@ -169,7 +169,11 @@ const BOOKING_FLOW: Array<{
   },
   { status: "approved", label: "Approved", color: "#34d399" },
   { status: "rejected", label: "Rejected", color: "#f87171" },
-  { status: "payment_done", label: "Awaiting Engine / Chassis Number", color: "#60a5fa" },
+  {
+    status: "payment_done",
+    label: "Awaiting Engine / Chassis Number",
+    color: "#60a5fa",
+  },
   { status: "chassis_received", label: "Ready to Ship", color: "#a78bfa" },
   { status: "shipped", label: "Shipped / In Transit", color: "#22d3ee" },
   { status: "delivered", label: "Delivered", color: "#4ade80" },
@@ -760,7 +764,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* RECENT ACTIVITY */}
-          <div className="rounded-2xl bg-white p-6 border border-blue-100/50 shadow-sm">
+          {/* <div className="rounded-2xl bg-white p-6 border border-blue-100/50 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-[16px] font-bold text-slate-900 uppercase">
                 Recent Vehicle Movements
@@ -794,7 +798,7 @@ const Dashboard: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     );
