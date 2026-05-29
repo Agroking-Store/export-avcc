@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Anchor,
@@ -18,6 +18,8 @@ import {
   ShippingDetailForm,
 } from "./shipmentData";
 import { shipmentApi } from "../../../services/shipmentApi";
+import { shipmentCustomerApi, type CustomerNameOption } from "../../../services/shipmentCustomerApi";
+
 
 const fieldIcons = {
   customerName: User,
@@ -34,6 +36,26 @@ const AddShipmentDetails = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState<ShippingDetailForm>(emptyShippingDetail);
   const [saving, setSaving] = useState(false);
+
+  const [customerOptions, setCustomerOptions] = useState<CustomerNameOption[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoadingCustomers(true);
+        const list = await shipmentCustomerApi.listCustomerNames();
+        setCustomerOptions(list);
+      } catch (e: any) {
+        toast.error(e?.response?.data?.message || "Failed to load customer list");
+      } finally {
+        setLoadingCustomers(false);
+      }
+    };
+
+    load();
+  }, []);
+
 
   const inputStyle =
     "w-full bg-[#F8F9FB] dark:bg-gray-800 border border-[#F1F3F6] dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-[#4A5568] dark:text-gray-200 placeholder-[#A0AEC0] outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all";
@@ -97,6 +119,41 @@ const AddShipmentDetails = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {shippingFields.map((field) => {
               const Icon = fieldIcons[field.key];
+
+              // Replace customerName input with dropdown
+              if (field.key === "customerName") {
+                return (
+                  <div key={field.key}>
+                    <label className={labelStyle}>
+                      <Icon size={14} className={field.iconTone} /> {field.label}
+                      {field.required && <span className="text-rose-600"> *</span>}
+                    </label>
+
+                    <select
+                      value={form.customerName}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          customerName: event.target.value,
+                        }))
+                      }
+                      className={inputStyle}
+                      required={field.required}
+                      disabled={loadingCustomers}
+                    >
+                      <option value="" disabled>
+                        {loadingCustomers ? "Loading..." : "Select customer"}
+                      </option>
+                      {customerOptions.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
+
               return (
                 <div key={field.key}>
                   <label className={labelStyle}>
@@ -120,6 +177,7 @@ const AddShipmentDetails = () => {
               );
             })}
           </div>
+
         </div>
 
         <div className="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100 dark:border-gray-800">
