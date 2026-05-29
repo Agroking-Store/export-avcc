@@ -8,8 +8,11 @@ import ShippedVehiclesList from "./ShippedVehiclesList";
 import ShippedVehiclesDetails from "./ShippedVehiclesDetails";
 import { Truck } from "lucide-react";
 import ShipmentPlanningNavbar from "./ShipmentPlanningNavbar";
+import { useAuth } from "../../../hooks/useAuth";
 
 const ShipmentPlanningModule: React.FC = () => {
+  const { isClient } = useAuth();
+
   return (
     <div className="min-h-screen w-full bg-[#f8faff] dark:bg-gray-950 p-6">
       <div className="max-w-7xl mx-auto">
@@ -39,10 +42,24 @@ const ShipmentPlanningModule: React.FC = () => {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ShipmentPlanningDashboard />} />
             <Route path="list" element={<ShipmentPlanningList />} />
-            <Route path="add" element={<AddShipmentDetails />} />
+            {/* <Route path="add" element={<AddShipmentDetails />} /> */}
+            <Route
+              path="add"
+              element={
+                isClient ? (
+                  <Navigate to="../list" replace />
+                ) : (
+                  <AddShipmentDetails />
+                )
+              }
+            />
+
             <Route path="view/:shipmentId" element={<ShipmentDetails />} />
             <Route path="shipped-vehicles" element={<ShippedVehiclesList />} />
-            <Route path="shipped-view/:shipmentId" element={<ShippedVehiclesDetails />} />
+            <Route
+              path="shipped-view/:shipmentId"
+              element={<ShippedVehiclesDetails />}
+            />
             <Route
               path="details/:shipmentId"
               element={<Navigate to="../list" replace />}
@@ -56,5 +73,3 @@ const ShipmentPlanningModule: React.FC = () => {
 };
 
 export default ShipmentPlanningModule;
-
-
