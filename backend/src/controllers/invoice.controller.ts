@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import ProformaInvoice from "../models/ProformaInvoice.model";
 import Invoice, { InvoiceDocumentType } from "../models/Invoice.model";
 import LetterOfCredit from "../models/LetterOfCredit.model";
+import { VehicleBooking } from "../models/VehicleBooking.model";
 import { renderInvoicePDF } from "../services/invoicePdf.service";
 import { numberToWordsINR, numberToWordsUSD } from "../utils/numberToWords";
 
@@ -380,8 +381,77 @@ const populatePI = async (piId: string) => {
   return pi;
 };
 
-const normalizeVehicle = (pi: any, line: any, index: number) => {
-  const booking = pi.vehicleBookingIds?.[index] as any;
+const normalizeLookupKey = (value: unknown) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const buildVehicleBookingFallbacks = async (vehicleDetails: any[]) => {
+  const chassisNumbers = vehicleDetails
+    .map((line) => String(line.chassisNo || "").trim())
+    .filter(Boolean);
+  const engineNumbers = vehicleDetails
+    .map((line) => String(line.engineNo || "").trim())
+    .filter(Boolean);
+
+  if (!chassisNumbers.length && !engineNumbers.length) {
+    return new Map<string, any>();
+  }
+
+  const bookings = await VehicleBooking.find({
+    $or: [
+      ...(chassisNumbers.length
+        ? [{ chassisNumber: { $in: chassisNumbers } }]
+        : []),
+      ...(engineNumbers.length ? [{ engineNumber: { $in: engineNumbers } }] : []),
+    ],
+  })
+    .populate(
+      "vehicleId",
+      "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+    )
+    .populate("orderId", "vehicleSnapshot")
+    .lean();
+
+  return bookings.reduce<Map<string, any>>((lookup, booking: any) => {
+    const chassis = normalizeLookupKey(booking.chassisNumber);
+    const engine = normalizeLookupKey(booking.engineNumber);
+
+    if (chassis) {
+      lookup.set(`chassis:${chassis}`, booking);
+    }
+
+    if (engine) {
+      lookup.set(`engine:${engine}`, booking);
+    }
+
+    return lookup;
+  }, new Map<string, any>());
+};
+
+const getFallbackBookingForLine = (
+  line: any,
+  fallbackBookings: Map<string, any>,
+) => {
+  const chassis = normalizeLookupKey(line.chassisNo);
+  const engine = normalizeLookupKey(line.engineNo);
+
+  return (
+    (chassis && fallbackBookings.get(`chassis:${chassis}`)) ||
+    (engine && fallbackBookings.get(`engine:${engine}`)) ||
+    null
+  );
+};
+
+const normalizeVehicle = (
+  pi: any,
+  line: any,
+  index: number,
+  fallbackBookings: Map<string, any>,
+) => {
+  const booking =
+    (pi.vehicleBookingIds?.[index] as any) ||
+    getFallbackBookingForLine(line, fallbackBookings);
   const lineVehicleRef =
     line?.vehicle_id && typeof line.vehicle_id === "object"
       ? (line.vehicle_id as any)
@@ -505,9 +575,12 @@ const buildPIInvoiceContext = async (piId: string) => {
     )
     .lean();
   const sharedLC = getSharedLCFromInvoices(invoices);
+  const fallbackBookings = await buildVehicleBookingFallbacks(
+    pi.vehicleDetails || [],
+  );
 
   const vehicles = (pi.vehicleDetails || []).map((line: any, index: number) =>
-    normalizeVehicle(pi, line, index),
+    normalizeVehicle(pi, line, index, fallbackBookings),
   );
 
   const invoiceLookup = invoices.reduce<Record<string, Record<string, any>>>(
