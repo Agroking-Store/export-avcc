@@ -197,7 +197,8 @@ const buildInitialForm = (
     buyerOrderDate: manual.buyerOrderDate || "",
     otherReference: manual.otherReference || context.piNumber || "",
     termsOfDelivery: manual.termsOfDelivery || context.termsOfDelivery || "",
-    termsOfPayment: manual.termsOfPayment || "",
+    termsOfPayment:
+      manual.termsOfPayment || (invoiceType === "USD" ? "Immediate" : ""),
     drawbackScheme: manual.drawbackScheme || "RODTEP",
     rodtepSchemeCode: manual.rodtepSchemeCode || "",
     endUseCode: manual.endUseCode || "",
@@ -277,6 +278,39 @@ const EditableField = ({
       placeholder={placeholder}
       onChange={(e) => onChange(name, e.target.value)}
       className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+    />
+  </div>
+);
+
+const EditableTextArea = ({
+  label,
+  name,
+  value,
+  onChange,
+  required = false,
+  placeholder,
+  rows = 4,
+  className = "",
+}: {
+  label: string;
+  name: keyof InvoiceManualFields;
+  value: string | undefined;
+  onChange: (name: keyof InvoiceManualFields, value: string) => void;
+  required?: boolean;
+  placeholder?: string;
+  rows?: number;
+  className?: string;
+}) => (
+  <div className={`space-y-2 ${className}`}>
+    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <textarea
+      value={value || ""}
+      placeholder={placeholder}
+      rows={rows}
+      onChange={(e) => onChange(name, e.target.value)}
+      className="w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
     />
   </div>
 );
@@ -599,13 +633,17 @@ export default function InvoiceFormPage() {
               )}
               {showUsdOnlyFields && (
                 <>
-                  <EditableField
-                    label="Terms of Delivery"
+                  <EditableTextArea
+                    label="Terms of Delivery and Origin Details"
                     name="termsOfDelivery"
                     value={form.termsOfDelivery}
                     onChange={handleFieldChange}
                     required
-                    placeholder="DDU / CFR"
+                    placeholder={`DDU / CFR
+State of Origin of Goods - Maharashtra - 27
+District of Origin of Goods - Pune - 411009`}
+                    rows={5}
+                    className="md:col-span-2"
                   />
                   <EditableField
                     label="Terms of Payment"
@@ -697,6 +735,22 @@ export default function InvoiceFormPage() {
                     onChange={handleFieldChange}
                     required
                     placeholder="ABC / 30 Days"
+                  />
+                  <EditableField
+                    label="RODTEP Scheme Code"
+                    name="rodtepSchemeCode"
+                    value={form.rodtepSchemeCode}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="60 / 61"
+                  />
+                  <EditableField
+                    label="End Use Code"
+                    name="endUseCode"
+                    value={form.endUseCode}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="GNX100"
                   />
                   <EditableField
                     label="Custom Exchange Rate"

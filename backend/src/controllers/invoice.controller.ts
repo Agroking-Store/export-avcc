@@ -140,6 +140,12 @@ const formatCurrency = (value: number, currency: "USD" | "INR") => {
 
 const roundCurrency = (value: number) => Number(value.toFixed(2));
 
+const splitMultiline = (value: unknown) =>
+  String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
 const deriveExchangeRate = (
   vehicle: any,
   manualFields: Record<string, any>,
@@ -678,7 +684,13 @@ const getMissingFields = (
     Exclude<InvoiceDocumentType, "PACKING_LIST">,
     string[]
   > = {
-    INR: ["placeOfSupply", "termsOfPayment", "customExchangeRate"],
+    INR: [
+      "placeOfSupply",
+      "termsOfPayment",
+      "rodtepSchemeCode",
+      "endUseCode",
+      "customExchangeRate",
+    ],
     USD: [
       "termsOfDelivery",
       "termsOfPayment",
@@ -763,11 +775,16 @@ const buildTemplateData = ({
       : vehicle.exportHsnCode || vehicle.hsnCode || "";
   const amountWordsUSD = numberToWordsUSD(totalUSD);
   const amountWordsINR = numberToWordsINR(totalINR);
+  const displayVehicle = { ...vehicle, hsnCode: resolvedHsnCode, srNo: 1 };
   const descriptionLines = buildVehicleDescription(
-    { ...vehicle, hsnCode: resolvedHsnCode },
+    displayVehicle,
     type,
     manualFields,
   );
+  const termsOfDeliveryAndPaymentLines = [
+    ...splitMultiline(manualFields.termsOfDelivery),
+    ...splitMultiline(manualFields.termsOfPayment),
+  ];
 
   const base = {
     exporter: EXPORTER,
@@ -793,10 +810,11 @@ const buildTemplateData = ({
     containerNo: manualFields.containerNo || "",
     stateOfOrigin: EXPORTER.stateCode,
     districtOfOrigin: EXPORTER.districtOfOrigin,
-    vehicle: { ...vehicle, hsnCode: resolvedHsnCode },
+    vehicle: displayVehicle,
     descriptionLines,
     totalQty: vehicle.quantity || 1,
     remarksUSD: manualFields.termsOfDelivery || "",
+    termsOfDeliveryAndPaymentLines,
     amountWordsUSD,
     amountWordsINR,
     values: {
