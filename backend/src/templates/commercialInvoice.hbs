@@ -67,27 +67,31 @@
     </tr>
 
     <tr>
-      <td colspan="2" rowspan="5" class="header-cell">
+      <td colspan="2" rowspan="3" class="header-cell">
         <div class="label">Exporter</div>
         <div class="company">{{exporter.companyName}}</div>
         {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
         <div><span class="label">GSTIN/UIN:</span> {{exporter.gstin}}</div>
         <div>State Name : Maharashtra, Code : 27</div>
       </td>
-      <td colspan="2" class="muted-label">INVOICE NO</td>
-      <td colspan="3" class="muted-label">Dated</td>
+      <td colspan="2">
+        <div class="muted-label">INVOICE NO</div>
+        <div class="label">{{invoiceNumber}}</div>
+      </td>
+      <td colspan="3">
+        <div class="muted-label">Dated</div>
+        <div class="label">{{invoiceDate}}</div>
+      </td>
     </tr>
     <tr>
-      <td colspan="2" class="label">{{invoiceNumber}}</td>
-      <td colspan="3" class="label">{{invoiceDate}}</td>
-    </tr>
-    <tr>
-      <td colspan="2" class="muted-label">Buyer's Ref./Order No.</td>
-      <td colspan="3" class="muted-label">Other References</td>
-    </tr>
-    <tr>
-      <td colspan="2">{{buyerOrderDate}}</td>
-      <td colspan="3">LC NO :-{{lcNumber}} Dt {{lcDate}}</td>
+      <td colspan="2">
+        <div class="muted-label">Buyer's Ref./Order No.</div>
+        <div>{{buyerOrderDate}}</div>
+      </td>
+      <td colspan="3">
+        <div class="muted-label">Other References</div>
+        <div>LC NO :-{{lcNumber}} Dt {{lcDate}}</div>
+      </td>
     </tr>
     <tr>
       <td colspan="2">
@@ -175,17 +179,16 @@
       <td class="right label nowrap">${{values.totalUSD}}</td>
     </tr>
 
-    <tr>
-      <td colspan="5" style="vertical-align:top; padding:2px 5px;">
+    <tr class="amount-row">
+      <td colspan="5">
         <div class="muted-label">Amount Chargeable (in words)</div>
+        <div class="label">{{amountWordsUSD}}</div>
       </td>
-      <td colspan="2" class="right" style="vertical-align:top; padding:2px 5px;">E. &amp; O.E</td>
+      <td colspan="2" class="right">E. &amp; O.E</td>
     </tr>
 
     <tr class="sign-row">
-      <td colspan="3" style="vertical-align:bottom;">
-        <div class="label">{{amountWordsUSD}}</div>
-      </td>
+      <td colspan="3"></td>
       <td colspan="4" style="vertical-align:top; text-align:center;">
         <div class="label">for {{exporter.companyName}}</div>
         <div class="label" style="position:relative; top:14mm;">Authorised Signatory</div>
