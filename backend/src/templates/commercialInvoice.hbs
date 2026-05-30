@@ -166,21 +166,30 @@
     </tr>
 
     <tr class="amount-row">
-      <td colspan="6" class="right label">Total</td>
-      <td class="right label">${{values.totalUSD}}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td class="right label">Total</td>
+      <td class="right label nowrap">${{values.totalUSD}}</td>
     </tr>
 
-    <tr class="amount-row">
-      <td colspan="5">
+    <tr>
+      <td colspan="5" style="vertical-align:top; padding:2px 5px;">
         <div class="muted-label">Amount Chargeable (in words)</div>
-        <div class="label">{{amountWordsUSD}}</div>
       </td>
-      <td colspan="2" class="right">E. &amp; O.E</td>
+      <td colspan="2" class="right" style="vertical-align:top; padding:2px 5px;">E. &amp; O.E</td>
     </tr>
 
     <tr class="sign-row">
-      <td colspan="5" class="center label">for {{exporter.companyName}}</td>
-      <td colspan="2" class="center label">Authorised Signatory</td>
+      <td colspan="3" style="vertical-align:bottom;">
+        <div class="label">{{amountWordsUSD}}</div>
+      </td>
+      <td colspan="4" style="vertical-align:top; text-align:center;">
+        <div class="label">for {{exporter.companyName}}</div>
+        <div class="label" style="position:relative; top:14mm;">Authorised Signatory</div>
+      </td>
     </tr>
 
     <tr>
