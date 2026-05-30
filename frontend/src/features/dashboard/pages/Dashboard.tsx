@@ -1042,7 +1042,7 @@ const Dashboard: React.FC = () => {
                 onChange={(e) =>
                   setMomentumMonths(Number(e.target.value) as 3 | 6)
                 }
-                className="text-[11px] font-bold border rounded-lg px-2 py-1 outline-none"
+                className="text-[11px] font-bold border rounded-lg px-2 py-1 outline-none cursor-pointer"
               >
                 <option value={3}>3 Months</option>
                 <option value={6}>6 Months</option>
@@ -1206,7 +1206,7 @@ const FlowCard: React.FC<{
       </div>
       <button
         onClick={() => navigate(action.dest)}
-        className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full uppercase hover:bg-blue-100 transition-colors"
+        className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full uppercase hover:bg-blue-100 transition-colors cursor-pointer"
       >
         {action.label}
       </button>

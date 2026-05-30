@@ -12,15 +12,6 @@ export const createDealerService = async (data: any) => {
   const email = data.email ? data.email.toLowerCase().trim() : "";
   const contact = normalizePhone(data.contact);
 
-  // Only check duplicate email
-  if (email) {
-    const existingDealer = await Dealer.findOne({ email });
-
-    if (existingDealer) {
-      throw new Error("Dealer already exists with this email");
-    }
-  }
-
   const dealerId = await generateDealerId();
 
   const dealerData = { ...data };
