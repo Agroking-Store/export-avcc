@@ -5,31 +5,61 @@
   <title>Commercial Invoice</title>
   <style>
     @page { size: A4 portrait; margin: 10mm 12mm; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 7.55px; line-height: 1.08; color: #000; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.4px;
+      line-height: 1.28;
+      color: #000;
+    }
     * { box-sizing: border-box; }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    td, th { border: 0.5px solid #000; padding: 1.5px 2.2px; vertical-align: top; font-weight: 400; }
-    .title { font-size: 8.9px; font-weight: 700; text-align: center; }
-    .section { font-weight: 700; }
-    .company { font-weight: 700; }
+    td, th {
+      border: 0.7px solid #000;
+      padding: 4px 5px;
+      vertical-align: top;
+      font-weight: 400;
+      word-break: break-word;
+    }
+    .invoice { min-height: 205mm; }
+    .title {
+      font-size: 14px;
+      line-height: 1.2;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0;
+      padding: 6px 0;
+    }
+    .label { font-weight: 700; }
+    .company { font-weight: 700; font-size: 10px; }
     .center { text-align: center; }
     .right { text-align: right; }
-    .small { font-size: 6.95px; line-height: 1.08; }
-    .goods-cell { height: 118px; }
-    .desc-line { margin: 0 0 2px; }
-    .sign-block { height: 36px; vertical-align: bottom; }
+    .nowrap { white-space: nowrap; }
+    .muted-label { font-size: 8.6px; font-weight: 700; }
+    .header-cell { min-height: 16mm; }
+    .party-cell { height: 30mm; }
+    .terms-cell { height: 30mm; }
+    .goods-head td { text-align: center; font-weight: 700; vertical-align: middle; height: 10mm; }
+    .goods-cell { height: 70mm; }
+    .desc-line { margin: 0 0 3px; }
+    .desc-line:first-child { font-weight: 700; margin-bottom: 5px; }
+    .clause-cell { height: 42mm; padding: 6px 8px; line-height: 1.32; }
+    .clause-line { margin: 0 0 4px; }
+    .amount-row td { height: 11mm; vertical-align: middle; }
+    .sign-row td { height: 24mm; vertical-align: bottom; }
+    .small { font-size: 8px; line-height: 1.2; }
   </style>
 </head>
 <body>
-  <table>
+  <table class="invoice">
     <colgroup>
+      <col style="width:6%">
+      <col style="width:45%">
+      <col style="width:13%">
+      <col style="width:12%">
+      <col style="width:12%">
       <col style="width:5%">
-      <col style="width:49%">
-      <col style="width:11%">
-      <col style="width:11%">
-      <col style="width:11%">
-      <col style="width:5%">
-      <col style="width:8%">
+      <col style="width:7%">
     </colgroup>
 
     <tr>
@@ -37,41 +67,52 @@
     </tr>
 
     <tr>
-      <td colspan="2" rowspan="5">
+      <td colspan="2" rowspan="3" class="header-cell">
+        <div class="label">Exporter</div>
         <div class="company">{{exporter.companyName}}</div>
         {{#each exporter.addressLines}}<div>{{this}}</div>{{/each}}
-        <div>GSTIN/UIN: {{exporter.gstin}}</div>
+        <div><span class="label">GSTIN/UIN:</span> {{exporter.gstin}}</div>
         <div>State Name : Maharashtra, Code : 27</div>
       </td>
-      <td colspan="2">INVOICE NO</td>
-      <td colspan="3">Dated</td>
+      <td colspan="2">
+        <div class="muted-label">INVOICE NO</div>
+        <div class="label">{{invoiceNumber}}</div>
+      </td>
+      <td colspan="3">
+        <div class="muted-label">Dated</div>
+        <div class="label">{{invoiceDate}}</div>
+      </td>
     </tr>
     <tr>
-      <td colspan="2">{{invoiceNumber}}</td>
-      <td colspan="3">{{invoiceDate}}</td>
+      <td colspan="2">
+        <div class="muted-label">Buyer's Ref./Order No.</div>
+        <div>{{buyerOrderDate}}</div>
+      </td>
+      <td colspan="3">
+        <div class="muted-label">Other References</div>
+        <div>LC NO :-{{lcNumber}} Dt {{lcDate}}</div>
+      </td>
     </tr>
     <tr>
-      <td colspan="2">Buyer's Ref./Order No.</td>
-      <td colspan="3">Other References</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td colspan="3">LC NO :-{{lcNumber}} Dt {{lcDate}}</td>
-    </tr>
-    <tr>
-      <td colspan="2">Dispatched through<br>Country:</td>
-      <td colspan="3">Destination<br>{{buyerCountry}}</td>
+      <td colspan="2">
+        <div class="muted-label">Dispatched through</div>
+        <div class="label">{{dispatchedThrough}}</div>
+      </td>
+      <td colspan="3">
+        <div class="muted-label">Destination</div>
+        <div class="label">{{destination}}</div>
+      </td>
     </tr>
 
     <tr>
-      <td colspan="2">
-        <div class="section">Consignee (Ship to)</div>
-        <div>{{buyerName}}</div>
-        <div>{{buyerAddress}}</div>
-        <div>{{buyerCountry}}</div>
+      <td colspan="2" class="party-cell">
+        <div class="label">Consignee (Ship to)</div>
+        <div class="label" style="margin-top:3px;">{{commercialConsignee.name}}</div>
+        <div>{{commercialConsignee.addressLine1}}</div>
+        <div>{{commercialConsignee.addressLine2}}</div>
       </td>
-      <td colspan="5">
-        <div class="section">Terms of Delivery</div>
+      <td colspan="5" class="terms-cell">
+        <div class="label">Terms of Delivery</div>
         <div>1) Delivery Term: {{scheme.termsOfDelivery}}</div>
         <div>2) Port of Loading: {{portOfLoading}}, India</div>
         <div>3) Port of Discharge: {{portOfDischarge}}, {{buyerCountry}}</div>
@@ -79,27 +120,27 @@
     </tr>
 
     <tr>
-      <td colspan="2">
-        <div class="section">Buyer (Bill to)</div>
-        <div>{{buyerName}}</div>
+      <td colspan="2" class="party-cell">
+        <div class="label">Buyer (Bill to)</div>
+        <div class="label" style="margin-top:3px;">{{buyerName}}</div>
         <div>{{buyerAddress}}</div>
         <div>{{buyerCountry}}</div>
       </td>
       <td colspan="5"></td>
     </tr>
 
-    <tr>
-      <td class="center section">Sl No.</td>
-      <td class="center section">Description of Goods</td>
-      <td class="center section">HSN/SAC</td>
-      <td class="center section">FOB</td>
-      <td class="center section">FREIGHT per</td>
-      <td class="center section"></td>
-      <td class="center section">Amount</td>
+    <tr class="goods-head">
+      <td>Sl<br>No.</td>
+      <td>Description of Goods</td>
+      <td>HSN/SAC</td>
+      <td>FOB</td>
+      <td>FREIGHT</td>
+      <td>per</td>
+      <td>Amount</td>
     </tr>
 
     <tr>
-      <td class="goods-cell center">1</td>
+      <td class="goods-cell center label">1</td>
       <td class="goods-cell">
         {{#each descriptionLines}}
           <div class="desc-line">{{this}}</div>
@@ -113,33 +154,45 @@
     </tr>
 
     <tr>
-      <td colspan="7">
-        <div>WE HEREBY CERTIFY THAT THIS SHIPMENT CONFIRMS TO PROFORMA INVOICE NO. {{piNumber}} DT {{piDate}}</div>
-        <div style="margin-top:4px;">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE HAVE THE FOLLOWING ACCESSORIES INSTALLED</div>
-        <div style="margin-top:4px;">A) AUTOMATIC TRANSMISSION</div>
-        <div>B) ANTI-LOCK BRAKING SYSTEM</div>
-        <div>C) DRIVER &amp; FRONT PASSENGER HAVE STANDARD AIRBAGS</div>
-        <div>D) DRIVER &amp; FRONT PASSENGER HAVE THREE POINT SEAT BELT &amp; OTHER PASSENGERS HAVE MINIMUM TWO POINT SEAT BELT WHERE APPLICABLE.</div>
-        <div style="margin-top:4px;">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.</div>
+      <td colspan="7" class="clause-cell">
+        {{#if commercialClauseLines}}
+          {{#each commercialClauseLines}}<div class="clause-line">{{this}}</div>{{/each}}
+        {{else}}
+          <div class="clause-line">WE HEREBY CERTIFY THAT THIS SHIPMENT CONFIRMS TO PROFORMA INVOICE NO. {{piNumber}} DT {{piDate}}</div>
+          <div class="clause-line">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE HAVE THE FOLLOWING ACCESSORIES INSTALLED</div>
+          <div class="clause-line">A) AUTOMATIC TRANSMISSION</div>
+          <div class="clause-line">B) ANTI-LOCK BRAKING SYSTEM</div>
+          <div class="clause-line">C) DRIVER &amp; FRONT PASSENGER HAVE STANDARD AIRBAGS</div>
+          <div class="clause-line">D) DRIVER &amp; FRONT PASSENGER HAVE THREE POINT SEAT BELT &amp; OTHER PASSENGERS HAVE MINIMUM TWO POINT SEAT BELT WHERE APPLICABLE.</div>
+          <div class="clause-line">WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.</div>
+        {{/if}}
       </td>
     </tr>
 
-    <tr>
-      <td colspan="6" class="right">Total</td>
-      <td class="right">${{values.totalUSD}}</td>
+    <tr class="amount-row">
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td class="right label">Total</td>
+      <td class="right label nowrap">${{values.totalUSD}}</td>
     </tr>
 
-    <tr>
-      <td colspan="5">Amount Chargeable (in words)<br>{{amountWordsUSD}}</td>
+    <tr class="amount-row">
+      <td colspan="5">
+        <div class="muted-label">Amount Chargeable (in words)</div>
+        <div class="label">{{amountWordsUSD}}</div>
+      </td>
       <td colspan="2" class="right">E. &amp; O.E</td>
     </tr>
 
-    <tr>
-      <td colspan="5" class="sign-block center">for {{exporter.companyName}}</td>
-      <td colspan="2" rowspan="2" class="center sign-block">Authorised Signatory</td>
-    </tr>
-    <tr>
-      <td colspan="5"></td>
+    <tr class="sign-row">
+      <td colspan="3"></td>
+      <td colspan="4" style="vertical-align:top; text-align:center;">
+        <div class="label">for {{exporter.companyName}}</div>
+        <div class="label" style="position:relative; top:14mm;">Authorised Signatory</div>
+      </td>
     </tr>
 
     <tr>

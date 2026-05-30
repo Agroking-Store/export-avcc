@@ -171,6 +171,14 @@ const getSharedVehicleInvoiceNumber = (vehicle: PIInvoiceVehicle) => {
   return "";
 };
 
+const DEFAULT_COMMERCIAL_CLAUSES = `WE HEREBY CERTIFY THAT THIS SHIPMENT CONFIRMS TO PROFORMA INVOICE NO. {{PI_NUMBER}} DT {{PI_DATE}}
+WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE HAVE THE FOLLOWING ACCESSORIES INSTALLED
+A) AUTOMATIC TRANSMISSION
+B) ANTI-LOCK BRAKING SYSTEM
+C) DRIVER & FRONT PASSENGER HAVE STANDARD AIRBAGS
+D) DRIVER & FRONT PASSENGER HAVE THREE POINT SEAT BELT & OTHER PASSENGERS HAVE MINIMUM TWO POINT SEAT BELT WHERE APPLICABLE.
+WE HEREBY CONFIRM THAT ALL VEHICLES ON THIS INVOICE ARE NOT MORE THAN 3 YEARS OLD AT THE TIME OF SHIPMENT.`;
+
 const buildInitialForm = (
   context: PIInvoiceContext,
   vehicle: PIInvoiceVehicle,
@@ -199,6 +207,18 @@ const buildInitialForm = (
     termsOfDelivery: manual.termsOfDelivery || context.termsOfDelivery || "",
     termsOfPayment:
       manual.termsOfPayment || (invoiceType === "USD" ? "Immediate" : ""),
+    dispatchedThrough: manual.dispatchedThrough || "By Sea",
+    destination: manual.destination || context.buyerCountry || "Sri Lanka",
+    commercialConsigneeName:
+      manual.commercialConsigneeName || manual.termsOfPayment || "",
+    commercialConsigneeAddressLine1:
+      manual.commercialConsigneeAddressLine1 || "Colombo",
+    commercialConsigneeAddressLine2:
+      manual.commercialConsigneeAddressLine2 || "Sri Lanka",
+    commercialClauses:
+      manual.commercialClauses ||
+      DEFAULT_COMMERCIAL_CLAUSES.replace("{{PI_NUMBER}}", context.piNumber)
+        .replace("{{PI_DATE}}", context.piDate),
     drawbackScheme: manual.drawbackScheme || "RODTEP",
     rodtepSchemeCode: manual.rodtepSchemeCode || "",
     endUseCode: manual.endUseCode || "",
@@ -680,22 +700,52 @@ District of Origin of Goods - Pune - 411009`}
                 </>
               )}
               {showCommercialFields && (
-                <EditableField
-                  label="Vehicle Description Suffix"
-                  name="vehicleDescriptionPrefix"
-                  value={form.vehicleDescriptionPrefix}
-                  onChange={handleFieldChange}
-                  placeholder="e.g. TOYOTA GT 1.0T 7DCT HTX"
-                />
+                <>
+                  <EditableField
+                    label="Dispatched Through"
+                    name="dispatchedThrough"
+                    value={form.dispatchedThrough}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="By Sea"
+                  />
+                  <EditableField
+                    label="Destination"
+                    name="destination"
+                    value={form.destination}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="Sri Lanka"
+                  />
+                </>
               )}
               {showCommercialFields && (
-                <EditableField
-                  label="Type of Vehicle"
-                  name="typeOfVehicle"
-                  value={form.typeOfVehicle}
-                  onChange={handleFieldChange}
-                  placeholder="SUV"
-                />
+                <>
+                  <EditableField
+                    label="Consignee Name"
+                    name="commercialConsigneeName"
+                    value={form.commercialConsigneeName}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="TO THE ORDER SAMPATH BANK PLC"
+                  />
+                  <EditableField
+                    label="Consignee Address Line 1"
+                    name="commercialConsigneeAddressLine1"
+                    value={form.commercialConsigneeAddressLine1}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="Colombo"
+                  />
+                  <EditableField
+                    label="Consignee Address Line 2"
+                    name="commercialConsigneeAddressLine2"
+                    value={form.commercialConsigneeAddressLine2}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="Sri Lanka"
+                  />
+                </>
               )}
 
               {showCommercialFields && (
@@ -708,13 +758,15 @@ District of Origin of Goods - Pune - 411009`}
                     required
                     placeholder="CFR any port in Sri Lanka"
                   />
-                  <EditableField
-                    label="Consignee Bank Name"
-                    name="termsOfPayment"
-                    value={form.termsOfPayment}
+                  <EditableTextArea
+                    label="Bank / LC Clauses"
+                    name="commercialClauses"
+                    value={form.commercialClauses}
                     onChange={handleFieldChange}
                     required
-                    placeholder="SAMPATH BANK PLC"
+                    rows={7}
+                    className="md:col-span-2 xl:col-span-3"
+                    placeholder="Paste Sampath / Commercial Bank / Hatton Bank clauses here"
                   />
                 </>
               )}

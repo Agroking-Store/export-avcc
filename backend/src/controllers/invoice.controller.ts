@@ -698,7 +698,15 @@ const getMissingFields = (
       "rodtepSchemeCode",
       "endUseCode",
     ],
-    COMMERCIAL: ["termsOfDelivery", "termsOfPayment"],
+    COMMERCIAL: [
+      "termsOfDelivery",
+      "dispatchedThrough",
+      "destination",
+      "commercialConsigneeName",
+      "commercialConsigneeAddressLine1",
+      "commercialConsigneeAddressLine2",
+      "commercialClauses",
+    ],
   };
 
   return [...common, ...requiredByType[type]].filter((field) => {
@@ -727,7 +735,7 @@ const buildVehicleDescription = (
       `MONTH/YEAR OF FIRST REGISTRATION: ${vehicle.monthYearFirstReg || "-"}`,
       `MAKE: ${vehicle.make || "-"}`,
       `MODEL: ${[vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim() || "-"}`,
-      "TYPE OF VEHICLE: SUV",
+      `TYPE OF VEHICLE: ${vehicle.typeOfVehicle || "SUV"}`,
       "COUNTRY OF ORIGIN : INDIA",
       `EXPORT INSPECTION CERTIFICATE NO: ${vehicle.exportInspCertNo || "-"}`,
       `EXPORT INSPECTION CERTIFICATE DATE: ${vehicle.exportInspCertDate || "-"}`,
@@ -785,6 +793,7 @@ const buildTemplateData = ({
     ...splitMultiline(manualFields.termsOfDelivery),
     ...splitMultiline(manualFields.termsOfPayment),
   ];
+  const commercialClauseLines = splitMultiline(manualFields.commercialClauses);
 
   const base = {
     exporter: EXPORTER,
@@ -799,6 +808,17 @@ const buildTemplateData = ({
     buyerAddress: pi.buyerAddress,
     buyerCity: (pi.buyerCity || "").toUpperCase(),
     buyerCountry: pi.buyerCountry,
+    commercialConsignee: {
+      name:
+        manualFields.commercialConsigneeName ||
+        manualFields.termsOfPayment ||
+        pi.buyerName,
+      addressLine1: manualFields.commercialConsigneeAddressLine1 || "Colombo",
+      addressLine2:
+        manualFields.commercialConsigneeAddressLine2 ||
+        pi.buyerCountry ||
+        "Sri Lanka",
+    },
     lcNumber: manualFields.lcNumber || pi.lcNumber,
     lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
     portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
@@ -807,6 +827,9 @@ const buildTemplateData = ({
     placeOfReceipt: pi.placeOfReceipt || "Narhe, Pune",
     preCarriage: "Road",
     vesselFlight: "SEA",
+    dispatchedThrough: manualFields.dispatchedThrough || "By Sea",
+    destination:
+      manualFields.destination || pi.placeOfDelivery || pi.buyerCountry || "",
     containerNo: manualFields.containerNo || "",
     stateOfOrigin: EXPORTER.stateCode,
     districtOfOrigin: EXPORTER.districtOfOrigin,
@@ -815,6 +838,7 @@ const buildTemplateData = ({
     totalQty: vehicle.quantity || 1,
     remarksUSD: manualFields.termsOfDelivery || "",
     termsOfDeliveryAndPaymentLines,
+    commercialClauseLines,
     amountWordsUSD,
     amountWordsINR,
     values: {
