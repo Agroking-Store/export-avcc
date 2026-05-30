@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import { generateProformaInvoicePDF } from "../services/pdf.service";
 import { getPIByIdService } from "../services/proforma-invoice.service";
-import { VehicleBooking } from "../models/VehicleBooking.model";
 import { preparePIDataForService } from "../utils/pi-pdf-helper";
-import path from "path";
-import fs from "fs";
 
 const formatDate = (dateString: string | Date) => {
   const d = new Date(dateString);
@@ -139,37 +136,11 @@ export const getProformaInvoiceData = async (req: Request, res: Response) => {
 
     const pi = await getPIByIdService(id as string);
 
-    if (pi?.vehicleBookingIds?.length) {
-      const bookings = await VehicleBooking.find({
-        _id: { $in: pi.vehicleBookingIds },
-      });
-
-      pi.vehicleDetails = pi.vehicleDetails.map((v: any, i: number) => {
-        const b: any = bookings[i];
-
-        return {
-          ...v,
-          yom: v.yom || b?.yom || "",
-          fuelType: b?.fuelType || v.fuelType || "",
-          countryOfOrigin: v.countryOfOrigin || b?.countryOfOrigin || "",
-          engineCapacity: b?.engineCapacity || v.engineCapacity || "",
-          hsn:
-            v.commercialHsn ||
-            v.hsn ||
-            b?.commercialHsnCode ||
-            b?.hsnCode ||
-            "",
-          engineNo: v.engineNo || b?.engineNumber || "",
-          chassisNo: v.chassisNo || b?.chassisNumber || "",
-        };
-      });
-    }
-
     if (!pi) {
       return res.status(404).json({ success: false, message: "PI not found" });
     }
 
-    const formattedData = preparePIData(pi);
+    const formattedData = preparePIDataForService(pi);
     res.status(200).json({ success: true, data: formattedData });
   } catch (error) {
     console.error("Error fetching PI Data:", error);
@@ -185,15 +156,11 @@ export const downloadProformaInvoice = async (req: Request, res: Response) => {
     const pi = await getPIByIdService(id as string);
 
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `${req.query.download === "true" ? "attachment" : "inline"}; filename="${pi.piNumber}.pdf"`,
+    );
 
-    if (pi.pdfPath) {
-      const absolutePath = path.resolve(process.cwd(), pi.pdfPath);
-      if (fs.existsSync(absolutePath)) {
-        return res.sendFile(absolutePath);
-      }
-    }
-
-    // const invoiceData = preparePIData(pi);
     const invoiceData = preparePIDataForService(pi);
 
     const pdfBuffer = await generateProformaInvoicePDF(invoiceData);

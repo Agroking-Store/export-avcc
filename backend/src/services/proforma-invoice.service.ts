@@ -344,9 +344,27 @@ export const createPIService = async (data: any) => {
 
   try {
     // Populate to get full names for the PDF
-    const fullPI = await ProformaInvoice.findById(savedPI._id).populate(
-      "client_id company_id",
-    );
+    const fullPI = await ProformaInvoice.findById(savedPI._id)
+      .populate("client_id company_id")
+      .populate({
+        path: "vehicleDetails.vehicle_id",
+        select:
+          "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+      })
+      .populate({
+        path: "vehicleBookingIds",
+        populate: [
+          {
+            path: "vehicleId",
+            select:
+              "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+          },
+          {
+            path: "orderId",
+            select: "vehicleSnapshot",
+          },
+        ],
+      });
     const pdfData = preparePIDataForService(fullPI);
     const relativePath = await savePIPdfToDisk(pdfData);
 
@@ -1622,7 +1640,25 @@ export const getPIsService = async (query: any) => {
 export const getPIByIdService = async (id: string) => {
   const pi = await ProformaInvoice.findById(id)
     .populate("order_id", "orderNumber")
-    .populate("vehicleBookingIds") // Order model se orderId field fetch karne ke liye
+    .populate({
+      path: "vehicleDetails.vehicle_id",
+      select:
+        "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+    })
+    .populate({
+      path: "vehicleBookingIds",
+      populate: [
+        {
+          path: "vehicleId",
+          select:
+            "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+        },
+        {
+          path: "orderId",
+          select: "vehicleSnapshot",
+        },
+      ],
+    }) // Order model se orderId field fetch karne ke liye
     .populate(
       "client_id", // Populate client_id to get original details if no snapshot
       "name clientCode email phone country address companyName", // Select fields to populate
@@ -1689,7 +1725,26 @@ export const updatePIService = async (id: string, data: any) => {
   try {
     // Refetch populated data
     const fullPI = await ProformaInvoice.findById(updated._id)
-      .populate("client_id company_id");
+      .populate("client_id company_id")
+      .populate({
+        path: "vehicleDetails.vehicle_id",
+        select:
+          "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+      })
+      .populate({
+        path: "vehicleBookingIds",
+        populate: [
+          {
+            path: "vehicleId",
+            select:
+              "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+          },
+          {
+            path: "orderId",
+            select: "vehicleSnapshot",
+          },
+        ],
+      });
 
     const pdfData = preparePIDataForService(fullPI);
 

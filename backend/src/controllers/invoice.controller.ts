@@ -349,12 +349,17 @@ const asParamString = (value: string | string[] | undefined) =>
 const populatePI = async (piId: string) => {
   const pi = await ProformaInvoice.findById(piId)
     .populate({
+      path: "vehicleDetails.vehicle_id",
+      select:
+        "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
+    })
+    .populate({
       path: "vehicleBookingIds",
       populate: [
         {
           path: "vehicleId",
           select:
-            "brandName modelName variant color commercialHsnCode exportHsnCode hsnCode fobAmount freight",
+            "brandName modelName variant color engineCapacity commercialHsnCode exportHsnCode hsnCode fobAmount freight igstRate",
         },
         {
           path: "orderId",
@@ -377,7 +382,11 @@ const populatePI = async (piId: string) => {
 
 const normalizeVehicle = (pi: any, line: any, index: number) => {
   const booking = pi.vehicleBookingIds?.[index] as any;
-  const vehicleRef = booking?.vehicleId as any;
+  const lineVehicleRef =
+    line?.vehicle_id && typeof line.vehicle_id === "object"
+      ? (line.vehicle_id as any)
+      : null;
+  const vehicleRef = (booking?.vehicleId || lineVehicleRef || {}) as any;
   const orderRef = booking?.orderId as any;
   const orderVehicle = orderRef?.vehicleSnapshot || {};
 
@@ -447,7 +456,12 @@ const normalizeVehicle = (pi: any, line: any, index: number) => {
     colour,
     chassisNo: line.chassisNo || booking?.chassisNumber || "",
     engineNo: line.engineNo || booking?.engineNumber || "",
-    engineCapacity: booking?.engineCapacity || line.engineCapacity || "",
+    engineCapacity:
+      booking?.engineCapacity ||
+      line.engineCapacity ||
+      vehicleRef?.engineCapacity ||
+      orderVehicle?.engineCapacity ||
+      "",
     fuelType: booking?.fuelType || line.fuelType || "",
     yearOfManufacture: line.yom || booking?.yom || "",
     monthYearFirstReg: formatMonthYearRegistration(

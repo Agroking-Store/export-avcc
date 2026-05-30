@@ -35,29 +35,117 @@ export const formatAddress = (addr: any) => {
   return addressParts.join("\n"); // Joins with new lines, no braces!
 };
 
+const firstFilled = (...values: Array<unknown>): string => {
+  for (const value of values) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+      continue;
+    }
+
+    return String(value);
+  }
+
+  return "";
+};
+
+const vehicleLabel = ({
+  line,
+  vehicleRef,
+  orderVehicle,
+}: {
+  line: any;
+  vehicleRef: any;
+  orderVehicle: any;
+}) => {
+  const make = firstFilled(vehicleRef?.brandName, orderVehicle?.brandName);
+  const model = firstFilled(
+    vehicleRef?.modelName,
+    orderVehicle?.modelName,
+    line.model,
+  );
+  const variant = firstFilled(
+    line.variant,
+    vehicleRef?.variant,
+    orderVehicle?.variant,
+  );
+  const existingModel = String(line.model || "").trim();
+
+  if (
+    existingModel &&
+    variant &&
+    existingModel.toLowerCase().includes(String(variant).toLowerCase())
+  ) {
+    return existingModel;
+  }
+
+  return [make, model, variant].filter(Boolean).join(" ").trim() || "N/A";
+};
+
+const formatEngineCapacity = (...values: Array<unknown>) => {
+  const value = firstFilled(...values);
+
+  if (!value) {
+    return "";
+  }
+
+  return /cc$/i.test(value) ? value : `${value}cc`;
+};
+
 export const preparePIDataForService = (pi: any) => {
   const clientForPdf: any = pi.clientSnapshot || pi.client_id;
   const companyForPdf: any = pi.companySnapshot || pi.company_id;
 
   const items = pi.vehicleDetails.map((v: any, index: number) => {
+    const booking = pi.vehicleBookingIds?.[index] || {};
+    const vehicleRef = booking?.vehicleId || v.vehicle_id || {};
+    const orderVehicle = booking?.orderId?.vehicleSnapshot || {};
     const unitPrice = (Number(v.fob) || 0) + (Number(v.freight) || 0);
+    const commercialHsn = firstFilled(
+      v.commercialHsn,
+      v.hsn,
+      booking?.commercialHsnCode,
+      booking?.hsnCode,
+      vehicleRef?.commercialHsnCode,
+      vehicleRef?.hsnCode,
+      orderVehicle?.commercialHsnCode,
+      orderVehicle?.hsnCode,
+    );
+    const countryOfOrigin = firstFilled(
+      v.countryOfOrigin,
+      booking?.countryOfOrigin,
+      orderVehicle?.countryOfOrigin,
+      "INDIA",
+    );
+
     return {
       slNo: index + 1,
-      description: v.model || "N/A",
-      hsn: v.commercialHsn || v.hsn || "",
-      qty: v.quantity,
+      description: vehicleLabel({ line: v, vehicleRef, orderVehicle }),
+      hsn: commercialHsn,
+      qty: v.quantity || 1,
       rate: unitPrice.toFixed(2),
       per: "No",
-      amount: (v.quantity * unitPrice).toFixed(2),
+      amount: ((v.quantity || 1) * unitPrice).toFixed(2),
       specs: {
-        color: v.color,
-        chassisNo: v.chassisNo,
-        engineNo: v.engineNo,
-        yom: v.yom,
-        fuelType: v.fuelType,
-        countryOfOrigin: v.countryOfOrigin,
-        engineCapacity: v.engineCapacity ? `${v.engineCapacity}cc` : "",
-        hsn: v.commercialHsn || v.hsn,
+        color: firstFilled(v.color, orderVehicle?.color, vehicleRef?.color),
+        chassisNo: firstFilled(v.chassisNo, booking?.chassisNumber),
+        engineNo: firstFilled(v.engineNo, booking?.engineNumber),
+        yom: firstFilled(v.yom, booking?.yom),
+        fuelType: firstFilled(v.fuelType, booking?.fuelType),
+        countryOfOrigin,
+        engineCapacity: formatEngineCapacity(
+          v.engineCapacity,
+          booking?.engineCapacity,
+          vehicleRef?.engineCapacity,
+          orderVehicle?.engineCapacity,
+        ),
+        hsn: commercialHsn,
         fob: (Number(v.fob) || 0).toFixed(2),
         freight: (Number(v.freight) || 0).toFixed(2),
       },
