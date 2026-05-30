@@ -172,6 +172,9 @@ export const getPIById = async (req: Request, res: Response) => {
 
     const formattedResponse = {
       ...piData,
+      vehicleBookingIds: (piData.vehicleBookingIds || []).map((id: any) =>
+        id?._id?.toString?.() || id?.toString?.() || id,
+      ),
       hblPath: piData.hblPath,
       assignedClientSnapshot: piData.clientSnapshot,
       documents: {

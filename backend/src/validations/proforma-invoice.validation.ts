@@ -57,6 +57,14 @@ const companySnapshotSchema = Joi.object({
 export const createPIValidationSchema = Joi.object({
   piNumber: Joi.string().allow("").optional(),
   order_id: Joi.string().allow(null, "").optional(), // Added missing order_id
+  vehicleBookingIds: Joi.array()
+    .items(Joi.any())
+    .custom((value: any[]) =>
+      value
+        .map((id) => (typeof id === "string" ? id : id?._id))
+        .filter(Boolean),
+    )
+    .optional(),
   client_id: Joi.string().required(),
   company_id: Joi.string().optional().allow(null, ""), // Renamed from dealer_id
   paymentTerms: Joi.string().allow("").optional(),
