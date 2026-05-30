@@ -4,6 +4,8 @@ import { VehicleBooking } from "../models/VehicleBooking.model";
 import ProformaInvoice from "../models/ProformaInvoice.model";
 import LetterOfCredit from "../models/LetterOfCredit.model";
 import Invoice from "../models/Invoice.model";
+import { Client } from "../models/Client.model";
+
 
 const shipmentPopulate = [
   {
@@ -59,9 +61,23 @@ export const listShipments = async (query: any) => {
   };
 };
 
+export const getCustomerNamesService = async () => {
+  // Small, lightweight list for dropdown
+  const clients = await Client.find({ isActive: true })
+    .select({ name: 1 })
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+
+  return clients
+    .map((c: any) => ({ id: String(c._id), name: cleanString(c.name) }))
+    .filter((c: any) => c.name);
+};
+
 export const createShipment = async (payload: any) => {
   const customerName = cleanString(payload.customerName);
   const destinationCountry = cleanString(payload.destinationCountry);
+
 
   if (!customerName) {
     throw new Error("Customer name is required");

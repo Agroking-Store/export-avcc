@@ -11,12 +11,16 @@ import {
   listShipmentsHandler,
   getShippedVehicleDetailsHandler,
 } from "../controllers/shipment.controller";
+import { getCustomerNamesHandler } from "../controllers/shipmentCustomer.controller";
+
 
 const router = Router();
 
 router.get("/", authenticate, listShipmentsHandler);
 router.post("/", authenticate, authorize(ROLES.ADMIN), createShipmentHandler);
 router.get("/available-vehicles", authenticate, availableShipmentVehiclesHandler);
+router.get("/customer-names", authenticate, getCustomerNamesHandler);
+
 router.get("/:id", authenticate, getShipmentHandler);
 router.get("/:id/shipped-details", authenticate, getShippedVehicleDetailsHandler);
 router.post(

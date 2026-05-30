@@ -8,6 +8,8 @@ import {
   listShipments,
   getShippedVehicleDetailsForShipment,
 } from "../services/shipment.service";
+import { getCustomerNamesHandler } from "./shipmentCustomer.controller";
+
 
 export const listShipmentsHandler = async (req: Request, res: Response) => {
   try {
