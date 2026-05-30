@@ -321,8 +321,6 @@
         <div>{{buyerAddress}}</div>
         {{/if}}
         <div>{{buyerCountry}}</div>
-        <div style="margin-top:10px;">Atte :</div>
-        <div>Tel :</div>
       </td>
       <td colspan="6" class="no-line-box" style="height:100px;">
         <div class="b">DRAWBACK SHIPMENT</div>
@@ -357,10 +355,16 @@
       <td rowspan="2" colspan="1" class="sh-rs2-l">Vessel/Flight No.</td>
       <td rowspan="2" colspan="2" class="sh-rs2">{{vesselFlight}}</td>
       <td colspan="3" class="sh-l">Port of Loading</td>
-      <td colspan="6" rowspan="2"
+      <td colspan="6" rowspan="4"
         style="border-bottom:none !important; font-weight:bold; vertical-align:top; padding:4px;">
         <div class="sh-l" style="border:none !important; padding:0;">Terms of Delivery and Payment</div>
-        <div style="margin-top:5px;">{{remarksUSD}}</div>
+        <div style="margin-top:5px;">
+          {{#if termsOfDeliveryAndPaymentLines}}
+            {{#each termsOfDeliveryAndPaymentLines}}<div>{{this}}</div>{{/each}}
+          {{else}}
+            <div>{{remarksUSD}}</div>
+          {{/if}}
+        </div>
       </td>
     </tr>
     <tr>
@@ -370,7 +374,6 @@
     <tr>
       <td colspan="3" class="sh-l">Port of Discharge</td>
       <td colspan="3" class="sh-l">Final Destination</td>
-      <td colspan="6" rowspan="2" style="border-top:none !important;"></td>
     </tr>
     <tr>
       <td colspan="3" class="sh-v">{{portOfDischarge}}</td>
