@@ -82,6 +82,12 @@ export interface InvoiceManualFields {
   otherReference?: string;
   termsOfDelivery?: string;
   termsOfPayment?: string;
+  dispatchedThrough?: string;
+  destination?: string;
+  commercialConsigneeName?: string;
+  commercialConsigneeAddressLine1?: string;
+  commercialConsigneeAddressLine2?: string;
+  commercialClauses?: string;
   drawbackScheme?: string;
   rodtepSchemeCode?: string;
   endUseCode?: string;
