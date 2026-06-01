@@ -10,6 +10,7 @@ import {
   Hash,
   IndianRupee,
   Package,
+  Ship,
   ShieldCheck,
   Truck,
   Upload,
@@ -40,8 +41,8 @@ const STATUS_LABELS: Record<VehicleBookingStatus, string> = {
   approved: "Approved",
   rejected: "Rejected",
   payment_done: "Awaiting Chassis/Engine No.",
-  chassis_received: "Ready to Ship",
-  shipped: "Shipped",
+  chassis_received: "In Progress",
+  shipped: "In Progress",
   delivered: "Delivered",
 };
 
@@ -59,6 +60,7 @@ const VehicleOrderVehicleView = () => {
   const showSensitiveInfo = !isClient; // Hide HSN, Country of Origin, etc for client
 
   const [loading, setLoading] = useState(true);
+  const [savingStatus, setSavingStatus] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [booking, setBooking] = useState<VehicleBookingItem | null>(null);
 
@@ -137,6 +139,28 @@ const VehicleOrderVehicleView = () => {
       toast.error(err.response?.data?.message || "Failed to record payment");
     } finally {
       setRecordingPayment(false);
+    }
+  };
+
+  const handleShipVehicle = async () => {
+    if (!booking) return;
+    if (!String(booking.chassisNumber || "").trim()) {
+      toast.error("Chassis not received");
+      return;
+    }
+
+    try {
+      setSavingStatus(true);
+      const updated = await vehicleBookingApi.updateStatus(
+        booking._id,
+        "shipped",
+      );
+      setBooking(updated);
+      toast.success("Vehicle marked as shipped");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to ship vehicle");
+    } finally {
+      setSavingStatus(false);
     }
   };
 
@@ -332,6 +356,17 @@ const VehicleOrderVehicleView = () => {
                     HBL DOC
                   </button>
                 </div>
+
+                {booking.status !== "shipped" && booking.status !== "delivered" && (
+                  <button
+                    onClick={handleShipVehicle}
+                    disabled={savingStatus}
+                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-slate-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Ship size={13} />
+                    SHIP VEHICLE
+                  </button>
+                )}
 
                 {/* Shipping Bill */}
                 <div className="flex items-center gap-1.5 bg-emerald-50 px-1.5 py-1.5 rounded-2xl border border-emerald-200">
