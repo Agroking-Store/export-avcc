@@ -556,37 +556,40 @@ const Dashboard: React.FC = () => {
   const clientStats = useMemo(() => {
     if (!clientProfile) return null;
     const orders = clientProfile.vehicleOrders || [];
-
-    // Abstracted counts for client flow
-    const safeCounts: any = {
-      processing: 0,
-      action: 0,
-      confirmed: 0,
-      transit: 0,
-      delivered: 0,
-    };
-    orders.forEach((o) => {
-      CLIENT_SAFE_FLOW.forEach((f) => {
-        if (f.statuses.includes(o.status)) safeCounts[f.key]++;
-      });
-    });
+    const hasChassis = (order: VehicleBookingItem) =>
+      !!String(order.chassisNumber || "").trim();
+    const scheduledVehicles = orders
+      .filter((order) => order.deliveryDate)
+      .sort(
+        (a, b) =>
+          new Date(a.deliveryDate || 0).getTime() -
+          new Date(b.deliveryDate || 0).getTime(),
+      );
+    const nextEstimatedCollection = scheduledVehicles[0]?.deliveryDate;
 
     return {
       total: clientProfile.totalVehicleOrders,
-      safeCounts,
-      delivered: safeCounts.delivered,
-      inTransit: safeCounts.transit + safeCounts.confirmed,
-      actionRequired: safeCounts.action,
-      docBacklog: orders.filter(
-        (o) =>
-          o.status !== "delivered" && (!o.isCRTMUploaded || !o.isBVUploaded),
+      ordersPlaced: orders.length,
+      booked: orders.filter(
+        (order) =>
+          !!order.assignedDealerId &&
+          !hasChassis(order) &&
+          order.status !== "delivered",
       ).length,
-      completion:
-        clientProfile.totalVehicleOrders > 0
-          ? Math.round(
-              (safeCounts.delivered / clientProfile.totalVehicleOrders) * 100,
-            )
-          : 0,
+      estimatedCollectionDate: nextEstimatedCollection
+        ? fmtDate(nextEstimatedCollection)
+        : "-",
+      estimatedCollectionCount: scheduledVehicles.length,
+      carsPendingLc: orders.filter(
+        (order) =>
+          hasChassis(order) &&
+          !["shipped", "delivered"].includes(order.status),
+      ).length,
+      carsInTransit: orders.filter((order) => order.status === "shipped")
+        .length,
+      carsDelivered: orders.filter((order) => order.status === "delivered")
+        .length,
+      scheduledVehicles,
     };
   }, [clientProfile]);
 
@@ -604,201 +607,157 @@ const Dashboard: React.FC = () => {
      CLIENT DASHBOARD VIEW (IMPROVISED & ABSTRACTED)
      ══════════════════════════════════════════════════════════ */
   if (isClient && clientProfile && clientStats) {
+    const clientCards = [
+      {
+        label: "ORDERS PLACED",
+        value: clientStats.ordersPlaced,
+        detail: "Required vehicles placed by you or our team",
+        icon: <CarFront size={20} />,
+        tone: "bg-blue-50 text-blue-700 border-blue-100",
+      },
+      {
+        label: "BOOKED",
+        value: clientStats.booked,
+        detail: "Dealer allotted, chassis number pending",
+        icon: <Store size={20} />,
+        tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
+      },
+      {
+        label: "ESTIMATED COLLECTION DATE",
+        value: clientStats.estimatedCollectionDate,
+        detail: `${clientStats.estimatedCollectionCount} car${clientStats.estimatedCollectionCount === 1 ? "" : "s"} scheduled`,
+        icon: <Clock3 size={20} />,
+        tone: "bg-sky-50 text-sky-700 border-sky-100",
+      },
+      {
+        label: "CARS PENDING LC",
+        value: clientStats.carsPendingLc,
+        detail: "Chassis number received",
+        icon: <FileText size={20} />,
+        tone: "bg-amber-50 text-amber-700 border-amber-100",
+      },
+      {
+        label: "CARS IN TRANSIT",
+        value: clientStats.carsInTransit,
+        detail: "Shipped and on the way to Sri Lanka",
+        icon: <Truck size={20} />,
+        tone: "bg-cyan-50 text-cyan-700 border-cyan-100",
+      },
+      {
+        label: "CARS DELIVERED",
+        value: clientStats.carsDelivered,
+        detail: "Delivered vehicles",
+        icon: <PackageCheck size={20} />,
+        tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      },
+    ];
+
     return (
-      <div
-        className="min-h-screen"
-        style={{
-          background:
-            "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)",
-        }}
-      >
-        <div
-          className="fixed inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle,#bfdbfe 1px,transparent 1px)",
-            backgroundSize: "30px 30px",
-            opacity: 0.28,
-          }}
-        />
-
-        <div
-          className="relative max-w-[1600px] mx-auto px-6 py-8 space-y-6"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? "translateY(0)" : "translateY(14px)",
-            transition: "all 0.5s ease",
-          }}
-        >
-          {/* PREMIUM HERO */}
-          <div
-            className="relative overflow-hidden rounded-[32px] bg-slate-900 shadow-2xl"
-            style={{
-              background:
-                "linear-gradient(135deg, #0f2d6e 0%, #1648b8 30%, #1e6fcc 58%, #0e4fa8 80%, #0a3580 100%)",
-              minHeight: 260,
-            }}
-          >
-            <ParticleCanvas />
-            <div className="relative px-8 py-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+      <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-[1500px] px-6 py-8 space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <div
-                  className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 mb-5"
-                  style={{
-                    background: "rgba(255,255,255,0.1)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-300 opacity-80" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                  </span>
-                  <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
-                    Active Portfolio
-                  </span>
-                </div>
-                <h1 className="text-[32px] font-bold text-white mb-2 uppercase tracking-tight">
-                  Welcome, {clientProfile.client.companyName}
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">
+                  Client Dashboard
+                </p>
+                <h1 className="mt-2 text-2xl font-bold text-slate-900">
+                  {clientProfile.client.companyName}
                 </h1>
-                <p className="text-[14px] text-blue-100/70 max-w-md">
-                  Your real-time export tracking and documentation portal.
+                <p className="mt-1 text-sm text-slate-500">
+                  Vehicle order, booking, LC, transit, and delivery status.
                 </p>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 xl:min-w-[460px]">
-                <HeroKpi
-                  label="Total Portfolio"
-                  value={clientStats.total}
-                  sub="Lifetime units"
-                  icon={<CarFront size={17} />}
-                  accent="#60a5fa"
-                />
-                <HeroKpi
-                  label="In Transit"
-                  value={clientStats.inTransit}
-                  sub="Sourcing & Dispatch"
-                  icon={<Truck size={17} />}
-                  accent="#a78bfa"
-                />
-                <HeroKpi
-                  label="Completion"
-                  value={`${clientStats.completion}%`}
-                  sub="Delivered units"
-                  icon={<PackageCheck size={17} />}
-                  accent="#34d399"
-                />
-                <HeroKpi
-                  label="Needs Review"
-                  value={clientStats.actionRequired}
-                  sub="Pending your approval"
-                  icon={<ClipboardCheck size={17} />}
-                  accent="#fbbf24"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SummaryCard
-              label="Units Booked"
-              num={clientStats.total}
-              icon={<CarFront size={20} />}
-              g={["#2563eb", "#1d4ed8"]}
-            />
-            <SummaryCard
-              label="In Progress"
-              num={clientStats.inTransit}
-              icon={<Truck size={20} />}
-              g={["#6366f1", "#4f46e5"]}
-            />
-            <SummaryCard
-              label="Delivered"
-              num={clientStats.delivered}
-              icon={<PackageCheck size={20} />}
-              g={["#0284c7", "#0369a1"]}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
-            {/* ABSTRACTED FLOW */}
-            <FlowCard
-              title="Order Pipeline Status"
-              subtitle="Simplified execution tracker"
-              accentColors={["#2563eb", "#6366f1"]}
-              rows={CLIENT_SAFE_FLOW.map((f) => ({
-                label: f.label,
-                value: clientStats.safeCounts[f.key],
-                total: clientStats.total,
-                color: f.color,
-              }))}
-              action={{ label: "View Orders", dest: "/profile" }}
-              navigate={navigate}
-            />
-
-            {/* CLIENT WATCHLIST */}
-            <div className="rounded-2xl bg-white border border-blue-100/50 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 pt-5 pb-3 border-b border-blue-50">
-                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
-                  Account Actions
-                </p>
-                <h2 className="text-[16px] font-bold text-slate-900 uppercase">
-                  Attention Required
-                </h2>
-              </div>
-              <div className="p-3 space-y-1.5 flex-1">
-                {/* <WatchButton
-                  label="Quotations Ready for Review"
-                  value={clientStats.actionRequired}
-                  urgent={clientStats.actionRequired > 0}
-                  icon={<ClipboardCheck size={13} />}
-                /> */}
-                <WatchButton
-                  label="Units Missing Documents"
-                  value={clientStats.docBacklog}
-                  urgent={clientStats.docBacklog > 0}
-                  icon={<AlertTriangle size={13} />}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* RECENT ACTIVITY */}
-          {/* <div className="rounded-2xl bg-white p-6 border border-blue-100/50 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[16px] font-bold text-slate-900 uppercase">
-                Recent Vehicle Movements
-              </h2>
               <button
-                onClick={() => navigate("/profile")}
-                className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full uppercase"
+                onClick={() => navigate("/vehicles/orders")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
-                View Profile
+                View Vehicle List
+                <ArrowRight size={16} />
               </button>
             </div>
-            <div className="space-y-2.5">
-              {clientProfile.vehicleOrders.slice(0, 5).map((o) => (
-                <div
-                  key={o._id}
-                  className="flex items-center justify-between p-4 rounded-xl border border-blue-50 bg-blue-50/30"
-                >
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {clientCards.map((card) => (
+              <div
+                key={card.label}
+                className={`rounded-2xl border bg-white p-5 shadow-sm ${card.tone}`}
+              >
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[13px] font-bold text-slate-800 uppercase">
-                      {getVehicleName(o)}
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em]">
+                      {card.label}
                     </p>
-                    <p className="text-[11px] text-slate-400 uppercase mt-0.5">
-                      {fmtDate(o.updatedAt)}
+                    <p className="mt-3 text-3xl font-bold tabular-nums text-slate-950">
+                      {card.value}
                     </p>
                   </div>
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase ${bookingStatusCls(o.status)}`}
-                  >
-                    {o.status.replace(/_/g, " ")}
-                  </span>
+                  <div className="rounded-xl bg-white/70 p-2">{card.icon}</div>
                 </div>
-              ))}
+                <p className="mt-3 text-sm text-slate-500">{card.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Estimated Collection Dates
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Dates entered by the team as the expected collection date from the dealership.
+                </p>
+              </div>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                {clientStats.estimatedCollectionCount} scheduled
+              </span>
             </div>
-          </div> */}
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4">Vehicle</th>
+                    <th className="px-6 py-4">Chassis</th>
+                    <th className="px-6 py-4">Estimated Collection Date</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clientStats.scheduledVehicles.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400">
+                        No estimated collection dates added yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    clientStats.scheduledVehicles.slice(0, 8).map((order) => (
+                      <tr key={order._id} className="border-t border-slate-100">
+                        <td className="px-6 py-4 font-semibold text-slate-900">
+                          {getVehicleName(order)}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-600">
+                          {order.chassisNumber || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {fmtDate(order.deliveryDate)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase ${bookingStatusCls(order.status)}`}
+                          >
+                            {order.status.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     );

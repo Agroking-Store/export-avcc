@@ -555,6 +555,17 @@ const VehicleOrdersList = () => {
     return "Review Numbers";
   };
 
+  const formatEstimatedCollectionDate = (value?: string) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const orderId = getOrderId(booking);
     const primaryActionClass =
@@ -817,7 +828,7 @@ const VehicleOrdersList = () => {
                   <th className="w-[9%] border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
                   </th>
-                  <th className="w-[20%] border-b border-slate-200 px-5 py-4 align-middle text-left">
+                  <th className={`${isClient ? "w-[18%]" : "w-[20%]"} border-b border-slate-200 px-5 py-4 align-middle text-left`}>
                     Vehicle
                   </th>
                   <th className="w-[10%] border-b border-slate-200 px-4 py-4 align-middle">
@@ -829,7 +840,12 @@ const VehicleOrdersList = () => {
                   <th className="w-[15%] border-b border-slate-200 px-4 py-4 align-middle">
                     Status
                   </th>
-                  <th className="w-[38%] border-b border-slate-200 px-5 py-4 align-middle text-center">
+                  {isClient && (
+                    <th className="w-[16%] border-b border-slate-200 px-4 py-4 align-middle">
+                      Estimated Collection Date
+                    </th>
+                  )}
+                  <th className={`${isClient ? "w-[24%]" : "w-[38%]"} border-b border-slate-200 px-5 py-4 align-middle text-center`}>
                     Actions
                   </th>
                 </tr>
@@ -838,7 +854,7 @@ const VehicleOrdersList = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={isClient ? 7 : 6}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       Loading vehicles...
@@ -847,7 +863,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={isClient ? 7 : 6}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       {isClient
@@ -910,6 +926,14 @@ const VehicleOrdersList = () => {
                             {statusMeta.label}
                           </span>
                         </td>
+
+                        {isClient && (
+                          <td className="border-b border-slate-100 px-4 py-5 align-middle">
+                            <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                              {formatEstimatedCollectionDate(booking.deliveryDate)}
+                            </span>
+                          </td>
+                        )}
 
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           {isClient ? (

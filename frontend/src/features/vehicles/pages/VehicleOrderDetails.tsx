@@ -662,7 +662,7 @@ const VehicleOrderDetails = () => {
               <CircleAlert size={18} className="mt-0.5 text-rose-600" />
               <div className="w-full">
                 <p className="font-semibold text-rose-900">
-                  Delivery overdue
+                  Estimated collection overdue
                 </p>
                 <div className="mt-2 space-y-2">
                   {overdueDeliveryAlerts.map(({ unitNo, diffDays, booking }) => (
@@ -691,7 +691,7 @@ const VehicleOrderDetails = () => {
               <Calendar size={18} className="mt-0.5 text-blue-600" />
               <div className="w-full">
                 <p className="font-semibold text-blue-900">
-                  Upcoming delivery reminders
+                  Upcoming estimated collection reminders
                 </p>
                 <div className="mt-2 space-y-2">
                   {upcomingDeliveryReminders.map(({ unitNo, diffDays, booking }) => (

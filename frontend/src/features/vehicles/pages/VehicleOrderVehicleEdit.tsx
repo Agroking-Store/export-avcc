@@ -707,7 +707,7 @@ const VehicleOrderVehicleEdit = () => {
           <div>
             <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Calendar size={16} />
-              Date of Delivery (DD/MM/YYYY)
+              Estimated Collection Date (DD/MM/YYYY)
             </label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
