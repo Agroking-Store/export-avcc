@@ -4,10 +4,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { formatDate, ShippingDetail } from "./shipmentData";
 import { shipmentApi } from "../../../services/shipmentApi";
+import { useAuth } from "../../../hooks/useAuth";
 
 const ShipmentPlanningList = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isClient } = useAuth();
   const [shippingDetails, setShippingDetails] = useState<ShippingDetail[]>([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,13 +59,15 @@ const ShipmentPlanningList = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => navigate("/shipment-planning/add")}
-            className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
-          >
-            <Plus size={18} strokeWidth={3} />
-            Add Details
-          </button>
+          {!isClient && (
+            <button
+              onClick={() => navigate("/shipment-planning/add")}
+              className="cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#5c67ff] to-[#3a47ff] hover:brightness-110 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-200 transition-all active:scale-95"
+            >
+              <Plus size={18} strokeWidth={3} />
+              Add Details
+            </button>
+          )}
         </div>
 
         <hr className="border-slate-100 dark:border-gray-800" />

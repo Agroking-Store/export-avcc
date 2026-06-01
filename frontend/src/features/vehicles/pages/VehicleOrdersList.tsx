@@ -11,7 +11,6 @@ import {
   Search,
   Truck,
   Store,
-  Ship,
   Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -77,12 +76,12 @@ const STATUS_META: Record<
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
-    label: "Ready to Ship",
-    badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    label: "In Progress",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   shipped: {
-    label: "Shipped / In Transit",
-    badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
+    label: "In Progress",
+    badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   delivered: {
     label: "Delivered",
@@ -97,8 +96,6 @@ const statusOptions = [
   "Approved",
   "Awaiting Engine / Chassis Number",
   "Make PI",
-  "Ready to Ship",
-  "Shipped / In Transit",
   "Delivered",
 ];
 
@@ -112,8 +109,6 @@ const statusLabelToRaw: Record<
   Approved: "approved",
   "Awaiting Engine / Chassis Number": "payment_done",
   "Make PI": "piPending",
-  "Ready to Ship": "chassis_received",
-  "Shipped / In Transit": "shipped",
   Delivered: "delivered",
 };
 
@@ -121,7 +116,7 @@ interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
 }
 
-type ConfirmationAction = "ship" | "deliver";
+type ConfirmationAction = "deliver";
 
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
@@ -136,6 +131,13 @@ const VehicleOrdersList = () => {
     deliveredTotal: 0,
     piReadyTotal: 0,
     totalAll: 0,
+    pendingTotal: 0,
+    approvalTotal: 0,
+    awaitingNumbersTotal: 0,
+    inProgressTotal: 0,
+    lcPendingTotal: 0,
+    sourcingTotal: 0,
+    awaitingVinTotal: 0,
   });
 
   const rawToStatusLabel: Record<string, string> = {
@@ -144,8 +146,8 @@ const VehicleOrdersList = () => {
     quotation_uploaded: "Waiting for Approval",
     approved: "Approved",
     payment_done: "Awaiting Engine / Chassis Number",
-    chassis_received: "Ready to Ship",
-    shipped: "Shipped / In Transit",
+    chassis_received: "All",
+    shipped: "All",
     delivered: "Delivered",
     piPending: "Make PI",
     missingClient: "All",
@@ -246,6 +248,34 @@ const VehicleOrdersList = () => {
             (b) => b.engineNumber && b.chassisNumber && !b.piGenerated,
           ).length,
           totalAll: filteredBookings.length,
+          pendingTotal: filteredBookings.filter((b) => b.status === "pending")
+            .length,
+          approvalTotal: filteredBookings.filter((b) =>
+            ["quotation_details_pending", "quotation_uploaded"].includes(
+              b.status,
+            ),
+          ).length,
+          awaitingNumbersTotal: filteredBookings.filter(
+            (b) => b.status === "payment_done",
+          ).length,
+          inProgressTotal: filteredBookings.filter(
+            (b) => b.status !== "delivered",
+          ).length,
+          lcPendingTotal: filteredBookings.filter(
+            (b) => b.status === "approved" || b.status === "quotation_uploaded",
+          ).length,
+          sourcingTotal: filteredBookings.filter((b) =>
+            [
+              "pending",
+              "quotation_details_pending",
+              "quotation_uploaded",
+              "approved",
+              "payment_done",
+            ].includes(b.status),
+          ).length,
+          awaitingVinTotal: filteredBookings.filter(
+            (b) => !b.chassisNumber && b.status !== "delivered",
+          ).length,
         });
         return;
       }
@@ -260,9 +290,19 @@ const VehicleOrdersList = () => {
       setBookings(res.data || []);
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
-      setBookingStats(
-        res.stats || { deliveredTotal: 0, piReadyTotal: 0, totalAll: 0 },
-      );
+      const stats = res.stats;
+      setBookingStats({
+        deliveredTotal: stats?.deliveredTotal || 0,
+        piReadyTotal: stats?.piReadyTotal || 0,
+        totalAll: stats?.totalAll || 0,
+        pendingTotal: stats?.pendingTotal || 0,
+        approvalTotal: stats?.approvalTotal || 0,
+        awaitingNumbersTotal: stats?.awaitingNumbersTotal || 0,
+        inProgressTotal: stats?.inProgressTotal || 0,
+        lcPendingTotal: stats?.lcPendingTotal || 0,
+        sourcingTotal: stats?.sourcingTotal || 0,
+        awaitingVinTotal: stats?.awaitingVinTotal || 0,
+      });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
     } finally {
@@ -390,16 +430,11 @@ const VehicleOrdersList = () => {
     setActiveBooking(null);
   };
 
-  const openShipConfirmation = (booking: VehicleBookingItem) => {
-    const disabledReason = getShipDisabledReason(booking);
-    if (disabledReason) {
-      toast.error(disabledReason);
+  const openDeliveredConfirmation = (booking: VehicleBookingItem) => {
+    if (booking.status !== "shipped") {
+      toast.error("Not shipped yet");
       return;
     }
-    setConfirmation({ action: "ship", booking });
-  };
-
-  const openDeliveredConfirmation = (booking: VehicleBookingItem) => {
     if (!booking.assignedClientId) {
       toast.error(
         "Please allot a client before marking this vehicle as delivered.",
@@ -411,16 +446,16 @@ const VehicleOrdersList = () => {
 
   const handleConfirmAction = async () => {
     if (!confirmation) return;
-    const { action, booking } = confirmation;
+    const { booking } = confirmation;
     setConfirmation(null);
-    if (action === "ship") {
-      await handleShipVehicle(booking);
-      return;
-    }
     await handleMarkDelivered(booking);
   };
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
+    if (booking.status !== "shipped") {
+      toast.error("Not shipped yet");
+      return;
+    }
     if (!booking.assignedClientId) {
       toast.error(
         "Please allot a client before marking this vehicle as delivered.",
@@ -437,17 +472,6 @@ const VehicleOrdersList = () => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update status");
     }
-  };
-
-  const getShipDisabledReason = (booking: VehicleBookingItem) => {
-    const readiness = booking.invoiceReadiness;
-    if (!booking.chassisNumber || !booking.engineNumber) {
-      return "Engine and chassis numbers are required before shipping.";
-    }
-    if (!readiness?.INR) return "Generate INR invoice first.";
-    if (!readiness?.USD) return "Generate USD invoice first.";
-    if (!readiness?.COMMERCIAL) return "Generate commercial invoice first.";
-    return "";
   };
 
   const hasEngineAndChassis = (booking: VehicleBookingItem) =>
@@ -499,25 +523,6 @@ const VehicleOrdersList = () => {
       fetchBookings();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete entry");
-    }
-  };
-
-  const handleShipVehicle = async (booking: VehicleBookingItem) => {
-    const disabledReason = getShipDisabledReason(booking);
-    if (disabledReason) {
-      toast.error(disabledReason);
-      return;
-    }
-
-    try {
-      const updated = await vehicleBookingApi.updateStatus(
-        booking._id,
-        "shipped",
-      );
-      syncBooking(updated);
-      toast.success("Vehicle marked as shipped");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to ship vehicle");
     }
   };
 
@@ -603,20 +608,13 @@ const VehicleOrdersList = () => {
           </button>
         );
       case "chassis_received": {
-        const disabledReason = getShipDisabledReason(booking);
         return (
           <button
-            onClick={() => openShipConfirmation(booking)}
-            disabled={!!disabledReason}
-            title={disabledReason || "Ship Vehicle"}
-            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap ${
-              disabledReason
-                ? "cursor-not-allowed bg-slate-400 opacity-60"
-                : "cursor-pointer bg-cyan-600 hover:bg-cyan-700"
-            }`}
+            onClick={() => openDeliveredConfirmation(booking)}
+            className={`${primaryActionClass} bg-[#1e40af] hover:bg-[#1d4ed8]`}
           >
-            <Ship size={14} />
-            Ship Vehicle
+            <Truck size={14} />
+            Mark Delivered
           </button>
         );
       }
@@ -643,27 +641,17 @@ const VehicleOrdersList = () => {
       return [
         {
           label: "In Progress",
-          value: bookings.filter((b) => b.status !== "delivered").length,
+          value: bookingStats.inProgressTotal,
           tone: "bg-amber-100 text-amber-800",
         },
         {
           label: "LC Pending",
-          value: bookings.filter(
-            (b) => b.status === "approved" || b.status === "quotation_uploaded",
-          ).length, // Example Logic
+          value: bookingStats.lcPendingTotal,
           tone: "bg-blue-100 text-blue-800",
         },
         {
           label: "Sourcing",
-          value: bookings.filter((b) =>
-            [
-              "pending",
-              "quotation_details_pending",
-              "quotation_uploaded",
-              "approved",
-              "payment_done",
-            ].includes(b.status),
-          ).length,
+          value: bookingStats.sourcingTotal,
           tone: "bg-slate-100 text-slate-800",
         },
         {
@@ -673,9 +661,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "Awaiting VIN",
-          value: bookings.filter(
-            (b) => !b.chassisNumber && b.status !== "delivered",
-          ).length,
+          value: bookingStats.awaitingVinTotal,
           tone: "bg-rose-100 text-rose-800",
         },
       ];
@@ -684,21 +670,17 @@ const VehicleOrdersList = () => {
     return [
       {
         label: "Pending",
-        value: bookings.filter((b) => b.status === "pending").length,
+        value: bookingStats.pendingTotal,
         tone: "bg-slate-100 text-slate-800",
       },
       {
         label: "Waiting for Approval",
-        value: bookings.filter((b) =>
-          ["quotation_details_pending", "quotation_uploaded"].includes(
-            b.status,
-          ),
-        ).length,
+        value: bookingStats.approvalTotal,
         tone: "bg-amber-100 text-amber-800",
       },
       {
         label: "Awaiting Numbers",
-        value: bookings.filter((b) => b.status === "payment_done").length,
+        value: bookingStats.awaitingNumbersTotal,
         tone: "bg-blue-100 text-blue-800",
       },
       {
@@ -712,7 +694,7 @@ const VehicleOrdersList = () => {
         tone: "bg-emerald-100 text-emerald-800",
       },
     ];
-  }, [bookings, bookingStats, isClient]);
+  }, [bookingStats, isClient]);
 
   const pageTitle = isClient ? "My Vehicle List" : "Vehicles List";
   const pageDescription = isClient
@@ -823,24 +805,6 @@ const VehicleOrdersList = () => {
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             <table className="w-full table-fixed border-collapse bg-white text-center">
               <thead className="bg-slate-50/80">
-                {/* <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="w-[11%] border-b border-slate-200 px-5 py-4 align-middle">
-                    Vehicle ID
-                  </th>
-                  <th className="w-[22%] border-b border-slate-200 px-5 py-4 align-middle text-left">
-                    Vehicle
-                  </th>
-                  <th className="w-[12%] border-b border-slate-200 px-4 py-4 align-middle">
-                    Color
-                  </th>
-                  <th className="w-[17%] border-b border-slate-200 px-4 py-4 align-middle">
-                    Status
-                  </th>
-                  <th className="w-[38%] border-b border-slate-200 px-5 py-4 align-middle text-center">
-                    Actions
-                  </th>
-                </tr> */}
-
                 <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="w-[9%] border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
@@ -875,7 +839,7 @@ const VehicleOrdersList = () => {
                 ) : bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center py-20 text-slate-400 italic"
                     >
                       {isClient
@@ -1103,28 +1067,12 @@ const VehicleOrdersList = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogMedia
-              className={
-                confirmation?.action === "ship"
-                  ? "bg-cyan-50 text-cyan-700"
-                  : "bg-blue-50 text-blue-700"
-              }
-            >
-              {confirmation?.action === "ship" ? (
-                <Ship size={22} />
-              ) : (
-                <Truck size={22} />
-              )}
+            <AlertDialogMedia className="bg-blue-50 text-blue-700">
+              <Truck size={22} />
             </AlertDialogMedia>
-            <AlertDialogTitle>
-              {confirmation?.action === "ship"
-                ? "Ship this vehicle?"
-                : "Mark as delivered?"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Mark as delivered?</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmation?.action === "ship"
-                ? "This will move the vehicle to shipped / in transit status."
-                : "This will mark the vehicle as delivered for the assigned client."}
+              This will mark the vehicle as delivered for the assigned client.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

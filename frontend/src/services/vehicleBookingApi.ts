@@ -198,6 +198,13 @@ export const vehicleBookingApi = {
       deliveredTotal: number;
       piReadyTotal: number;
       totalAll: number;
+      pendingTotal?: number;
+      approvalTotal?: number;
+      awaitingNumbersTotal?: number;
+      inProgressTotal?: number;
+      lcPendingTotal?: number;
+      sourcingTotal?: number;
+      awaitingVinTotal?: number;
     };
   }> => {
     const response = await api.get("/vehicle-bookings", { params });

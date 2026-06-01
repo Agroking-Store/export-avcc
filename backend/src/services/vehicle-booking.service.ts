@@ -784,31 +784,20 @@ export const updateBookingStatus = async (
   const targetIndex = BOOKING_STATUS_ORDER.indexOf(status);
   const isForwardMove = targetIndex > currentIndex;
 
-  if (status === "delivered" && !booking.assignedClientId) {
-    throw new Error(
-      "Please allot a client before marking this vehicle as delivered.",
-    );
-  }
-
   if (isForwardMove && status === "shipped") {
-    if (booking.status !== "chassis_received") {
-      throw new Error("Vehicle can only be shipped after chassis/engine numbers are received.");
-    }
-
-    const readinessByBookingId = await getInvoiceReadinessByBookingIds([
-      String(booking._id),
-    ]);
-    const readiness = readinessByBookingId[String(booking._id)];
-
-    if (!hasReadyToShipInvoices(readiness)) {
-      throw new Error(
-        "Generate INR, USD and commercial invoice before shipping this vehicle.",
-      );
+    if (!String(booking.chassisNumber || "").trim()) {
+      throw new Error("Chassis not received");
     }
   }
 
   if (isForwardMove && status === "delivered" && booking.status !== "shipped") {
-    throw new Error("Vehicle must be shipped before marking it as delivered.");
+    throw new Error("Not shipped yet");
+  }
+
+  if (status === "delivered" && !booking.assignedClientId) {
+    throw new Error(
+      "Please allot a client before marking this vehicle as delivered.",
+    );
   }
 
   booking.status = status;
@@ -1202,6 +1191,77 @@ export const getAllVehicleBookingsService = async (query: any) => {
             ],
           },
         },
+        pendingTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
+        },
+        approvalTotal: {
+          $sum: {
+            $cond: [
+              {
+                $in: [
+                  "$status",
+                  ["quotation_details_pending", "quotation_uploaded"],
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        awaitingNumbersTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "payment_done"] }, 1, 0] },
+        },
+        inProgressTotal: {
+          $sum: { $cond: [{ $ne: ["$status", "delivered"] }, 1, 0] },
+        },
+        lcPendingTotal: {
+          $sum: {
+            $cond: [
+              { $in: ["$status", ["approved", "quotation_uploaded"]] },
+              1,
+              0,
+            ],
+          },
+        },
+        sourcingTotal: {
+          $sum: {
+            $cond: [
+              {
+                $in: [
+                  "$status",
+                  [
+                    "pending",
+                    "quotation_details_pending",
+                    "quotation_uploaded",
+                    "approved",
+                    "payment_done",
+                  ],
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        awaitingVinTotal: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$status", "delivered"] },
+                  {
+                    $or: [
+                      { $eq: ["$chassisNumber", ""] },
+                      { $eq: ["$chassisNumber", null] },
+                    ],
+                  },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
         totalAll: { $sum: 1 },
       },
     },
@@ -1230,6 +1290,13 @@ export const getAllVehicleBookingsService = async (query: any) => {
   const stats = statsResult[0] || {
     deliveredTotal: 0,
     piReadyTotal: 0,
+    pendingTotal: 0,
+    approvalTotal: 0,
+    awaitingNumbersTotal: 0,
+    inProgressTotal: 0,
+    lcPendingTotal: 0,
+    sourcingTotal: 0,
+    awaitingVinTotal: 0,
     totalAll: 0,
   };
 
@@ -1251,6 +1318,13 @@ export const getAllVehicleBookingsService = async (query: any) => {
     stats: {
       deliveredTotal: stats.deliveredTotal || 0,
       piReadyTotal: stats.piReadyTotal || 0,
+      pendingTotal: stats.pendingTotal || 0,
+      approvalTotal: stats.approvalTotal || 0,
+      awaitingNumbersTotal: stats.awaitingNumbersTotal || 0,
+      inProgressTotal: stats.inProgressTotal || 0,
+      lcPendingTotal: stats.lcPendingTotal || 0,
+      sourcingTotal: stats.sourcingTotal || 0,
+      awaitingVinTotal: stats.awaitingVinTotal || 0,
       totalAll: stats.totalAll || 0,
     },
   };
