@@ -794,6 +794,30 @@ export const updateBookingStatus = async (
     throw new Error("Not shipped yet");
   }
 
+  if (status === "delivered") {
+    const ProformaInvoice = mongoose.model("ProformaInvoice");
+    const piMatch: any[] = [
+      { vehicleBookingIds: booking._id },
+      { vehicleBookingIds: String(booking._id) },
+    ];
+    const chassis = String(booking.chassisNumber || "").trim().toUpperCase();
+    const engine = String(booking.engineNumber || "").trim().toUpperCase();
+
+    if (chassis) {
+      piMatch.push({ "vehicleDetails.chassisNo": chassis });
+    }
+    if (engine) {
+      piMatch.push({ "vehicleDetails.engineNo": engine });
+    }
+
+    const existingPI = await ProformaInvoice.findOne({ $or: piMatch }).select(
+      "_id",
+    );
+    if (!existingPI) {
+      throw new Error("PI not created");
+    }
+  }
+
   if (status === "delivered" && !booking.assignedClientId) {
     throw new Error(
       "Please allot a client before marking this vehicle as delivered.",

@@ -458,6 +458,10 @@ const VehicleOrderDetails = () => {
       toast.error("Not shipped yet");
       return;
     }
+    if (!booking.piGenerated) {
+      toast.error("PI not created");
+      return;
+    }
     if (!booking.assignedClientId) {
       toast.error("Please allot a client before marking this vehicle as delivered.");
       return;

@@ -435,6 +435,10 @@ const VehicleOrdersList = () => {
       toast.error("Not shipped yet");
       return;
     }
+    if (!booking.piGenerated) {
+      toast.error("PI not created");
+      return;
+    }
     if (!booking.assignedClientId) {
       toast.error(
         "Please allot a client before marking this vehicle as delivered.",
@@ -454,6 +458,10 @@ const VehicleOrdersList = () => {
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
     if (booking.status !== "shipped") {
       toast.error("Not shipped yet");
+      return;
+    }
+    if (!booking.piGenerated) {
+      toast.error("PI not created");
       return;
     }
     if (!booking.assignedClientId) {

@@ -1,4 +1,4 @@
-import type { InvoiceType } from "./invoice.types";
+import type { InvoiceAssetType } from "./invoice.types";
 
 const STEPS = [
   "Invoice Type",
@@ -7,9 +7,10 @@ const STEPS = [
   "Generate",
 ];
 
-const prettyType = (type: InvoiceType) => {
+const prettyType = (type: InvoiceAssetType) => {
   if (type === "INR") return "INR Invoice";
   if (type === "USD") return "USD Invoice";
+  if (type === "PACKING_LIST") return "Packing List";
   return "Commercial Invoice";
 };
 
@@ -18,7 +19,7 @@ export default function InvoiceStepBar({
   type,
 }: {
   activeStep: number;
-  type: InvoiceType;
+  type: InvoiceAssetType;
 }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
