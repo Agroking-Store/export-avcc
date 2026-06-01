@@ -373,6 +373,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [momentumMonths, setMomentumMonths] = useState<3 | 6>(6);
   const [mounted, setMounted] = useState(false);
+  const [collectionFilter, setCollectionFilter] = useState<"1d" | "1w" | "1m" | "all">("all");
 
   useEffect(() => {
     let alive = true;
@@ -556,40 +557,56 @@ const Dashboard: React.FC = () => {
   const clientStats = useMemo(() => {
     if (!clientProfile) return null;
     const orders = clientProfile.vehicleOrders || [];
-
-    // Abstracted counts for client flow
-    const safeCounts: any = {
-      processing: 0,
-      action: 0,
-      confirmed: 0,
-      transit: 0,
-      delivered: 0,
-    };
-    orders.forEach((o) => {
-      CLIENT_SAFE_FLOW.forEach((f) => {
-        if (f.statuses.includes(o.status)) safeCounts[f.key]++;
-      });
-    });
+    const hasChassis = (order: VehicleBookingItem) =>
+      !!String(order.chassisNumber || "").trim();
+    const scheduledVehicles = orders
+      .filter((order) => order.deliveryDate)
+      .sort(
+        (a, b) =>
+          new Date(a.deliveryDate || 0).getTime() -
+          new Date(b.deliveryDate || 0).getTime(),
+      );
+    const nextEstimatedCollection = scheduledVehicles[0]?.deliveryDate;
 
     return {
       total: clientProfile.totalVehicleOrders,
-      safeCounts,
-      delivered: safeCounts.delivered,
-      inTransit: safeCounts.transit + safeCounts.confirmed,
-      actionRequired: safeCounts.action,
-      docBacklog: orders.filter(
-        (o) =>
-          o.status !== "delivered" && (!o.isCRTMUploaded || !o.isBVUploaded),
+      ordersPlaced: orders.length,
+      booked: orders.filter(
+        (order) =>
+          !!order.assignedDealerId &&
+          !hasChassis(order) &&
+          order.status !== "delivered",
       ).length,
-      completion:
-        clientProfile.totalVehicleOrders > 0
-          ? Math.round(
-              (safeCounts.delivered / clientProfile.totalVehicleOrders) * 100,
-            )
-          : 0,
+      estimatedCollectionDate: nextEstimatedCollection
+        ? fmtDate(nextEstimatedCollection)
+        : "-",
+      estimatedCollectionCount: scheduledVehicles.length,
+      carsPendingLc: orders.filter(
+        (order) =>
+          hasChassis(order) &&
+          !["shipped", "delivered"].includes(order.status),
+      ).length,
+      carsInTransit: orders.filter((order) => order.status === "shipped")
+        .length,
+      carsDelivered: orders.filter((order) => order.status === "delivered")
+        .length,
+      scheduledVehicles,
     };
   }, [clientProfile]);
 
+  const filteredScheduledVehicles = useMemo(() => {
+    const vehicles = clientStats?.scheduledVehicles ?? [];
+    if (collectionFilter === "all") return vehicles;
+    const now = Date.now();
+    const ms = collectionFilter === "1d" ? 86_400_000 : collectionFilter === "1w" ? 7 * 86_400_000 : 30 * 86_400_000;
+    return vehicles.filter((v) => {
+      if (!v.deliveryDate) return false;
+      const diff = new Date(v.deliveryDate).getTime() - now;
+      return diff >= 0 && diff <= ms;
+    });
+  }, [clientStats, collectionFilter]);
+
+  const greeting = (() => { const h = new Date().getHours(); if (h < 12) return "Good Morning"; if (h < 17) return "Good Afternoon"; return "Good Evening"; })();
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -604,49 +621,85 @@ const Dashboard: React.FC = () => {
      CLIENT DASHBOARD VIEW (IMPROVISED & ABSTRACTED)
      ══════════════════════════════════════════════════════════ */
   if (isClient && clientProfile && clientStats) {
+    const clientCards = [
+      {
+        label: "ORDERS PLACED",
+        value: clientStats.ordersPlaced,
+        detail: "Required vehicles placed by you or our team",
+        icon: <CarFront size={20} />,
+        tone: "bg-blue-50 text-blue-700 border-blue-100",
+      },
+      {
+        label: "BOOKED",
+        value: clientStats.booked,
+        detail: "Dealer allotted, chassis number pending",
+        icon: <Store size={20} />,
+        tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
+      },
+      {
+        label: "CARS PENDING LC",
+        value: clientStats.carsPendingLc,
+        detail: "Chassis number received",
+        icon: <FileText size={20} />,
+        tone: "bg-amber-50 text-amber-700 border-amber-100",
+      },
+      {
+        label: "CARS IN TRANSIT",
+        value: clientStats.carsInTransit,
+        detail: "Shipped and on the way to Sri Lanka",
+        icon: <Truck size={20} />,
+        tone: "bg-cyan-50 text-cyan-700 border-cyan-100",
+      },
+      {
+        label: "CARS DELIVERED",
+        value: clientStats.carsDelivered,
+        detail: "Delivered vehicles",
+        icon: <PackageCheck size={20} />,
+        tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      },
+    ];
+
+
     return (
       <div
         className="min-h-screen"
-        style={{
-          background:
-            "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)",
-        }}
+        style={{ background: "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)" }}
       >
+        {/* subtle dot grid */}
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
-            backgroundImage:
-              "radial-gradient(circle,#bfdbfe 1px,transparent 1px)",
+            backgroundImage: "radial-gradient(circle,#bfdbfe 1px,transparent 1px)",
             backgroundSize: "30px 30px",
-            opacity: 0.28,
+            opacity: 0.22,
           }}
         />
 
-        <div
-          className="relative max-w-[1600px] mx-auto px-6 py-8 space-y-6"
-          style={{
-            opacity: mounted ? 1 : 0,
-            transform: mounted ? "translateY(0)" : "translateY(14px)",
-            transition: "all 0.5s ease",
-          }}
-        >
-          {/* PREMIUM HERO */}
+        <div className="relative mx-auto max-w-[1500px] px-6 py-8 space-y-6">
+
+          {/* ── WELCOME HERO ── */}
           <div
-            className="relative overflow-hidden rounded-[32px] bg-slate-900 shadow-2xl"
+            className="relative overflow-hidden rounded-3xl"
             style={{
-              background:
-                "linear-gradient(135deg, #0f2d6e 0%, #1648b8 30%, #1e6fcc 58%, #0e4fa8 80%, #0a3580 100%)",
-              minHeight: 260,
+              background: "linear-gradient(135deg, #0f2d6e 0%, #1648b8 35%, #1e6fcc 62%, #0e4fa8 82%, #0a3580 100%)",
+              boxShadow: "0 24px 80px -12px rgba(14,45,110,0.50)",
+              minHeight: 200,
             }}
           >
             <ParticleCanvas />
-            <div className="relative px-8 py-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-              <div>
+            {/* decorative rings */}
+            <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full border border-white/10" />
+            <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full border border-white/10" />
+            <div className="absolute right-24 bottom-[-40px] w-80 h-80 rounded-full border border-white/5" />
+
+            <div className="relative px-8 py-9 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="max-w-xl">
+                {/* live badge */}
                 <div
                   className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 mb-5"
                   style={{
-                    background: "rgba(255,255,255,0.1)",
-                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(255,255,255,0.10)",
+                    border: "1px solid rgba(255,255,255,0.18)",
                     backdropFilter: "blur(10px)",
                   }}
                 >
@@ -654,151 +707,148 @@ const Dashboard: React.FC = () => {
                     <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-300 opacity-80" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                   </span>
-                  <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
-                    Active Portfolio
+                  <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/85">
+                    {greeting}
                   </span>
                 </div>
-                <h1 className="text-[32px] font-bold text-white mb-2 uppercase tracking-tight">
-                  Welcome, {clientProfile.client.companyName}
+
+                <h1 className="text-[30px] font-bold leading-tight tracking-tight text-white">
+                  {clientProfile.client.companyName}
                 </h1>
-                <p className="text-[14px] text-blue-100/70 max-w-md">
-                  Your real-time export tracking and documentation portal.
+                <p className="mt-2 text-[14px] text-blue-100/75 max-w-sm leading-relaxed">
+                  Track your vehicle orders, shipments, LC status, and deliveries — all in one place.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 xl:min-w-[460px]">
-                <HeroKpi
-                  label="Total Portfolio"
-                  value={clientStats.total}
-                  sub="Lifetime units"
-                  icon={<CarFront size={17} />}
-                  accent="#60a5fa"
-                />
-                <HeroKpi
-                  label="In Transit"
-                  value={clientStats.inTransit}
-                  sub="Sourcing & Dispatch"
-                  icon={<Truck size={17} />}
-                  accent="#a78bfa"
-                />
-                <HeroKpi
-                  label="Completion"
-                  value={`${clientStats.completion}%`}
-                  sub="Delivered units"
-                  icon={<PackageCheck size={17} />}
-                  accent="#34d399"
-                />
-                <HeroKpi
-                  label="Needs Review"
-                  value={clientStats.actionRequired}
-                  sub="Pending your approval"
-                  icon={<ClipboardCheck size={17} />}
-                  accent="#fbbf24"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <SummaryCard
-              label="Units Booked"
-              num={clientStats.total}
-              icon={<CarFront size={20} />}
-              g={["#2563eb", "#1d4ed8"]}
-            />
-            <SummaryCard
-              label="In Progress"
-              num={clientStats.inTransit}
-              icon={<Truck size={20} />}
-              g={["#6366f1", "#4f46e5"]}
-            />
-            <SummaryCard
-              label="Delivered"
-              num={clientStats.delivered}
-              icon={<PackageCheck size={20} />}
-              g={["#0284c7", "#0369a1"]}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
-            {/* ABSTRACTED FLOW */}
-            <FlowCard
-              title="Order Pipeline Status"
-              subtitle="Simplified execution tracker"
-              accentColors={["#2563eb", "#6366f1"]}
-              rows={CLIENT_SAFE_FLOW.map((f) => ({
-                label: f.label,
-                value: clientStats.safeCounts[f.key],
-                total: clientStats.total,
-                color: f.color,
-              }))}
-              action={{ label: "View Orders", dest: "/profile" }}
-              navigate={navigate}
-            />
-
-            {/* CLIENT WATCHLIST */}
-            <div className="rounded-2xl bg-white border border-blue-100/50 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 pt-5 pb-3 border-b border-blue-50">
-                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
-                  Account Actions
-                </p>
-                <h2 className="text-[16px] font-bold text-slate-900 uppercase">
-                  Attention Required
-                </h2>
-              </div>
-              <div className="p-3 space-y-1.5 flex-1">
-                {/* <WatchButton
-                  label="Quotations Ready for Review"
-                  value={clientStats.actionRequired}
-                  urgent={clientStats.actionRequired > 0}
-                  icon={<ClipboardCheck size={13} />}
-                /> */}
-                <WatchButton
-                  label="Units Missing Documents"
-                  value={clientStats.docBacklog}
-                  urgent={clientStats.docBacklog > 0}
-                  icon={<AlertTriangle size={13} />}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* RECENT ACTIVITY */}
-          {/* <div className="rounded-2xl bg-white p-6 border border-blue-100/50 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[16px] font-bold text-slate-900 uppercase">
-                Recent Vehicle Movements
-              </h2>
               <button
-                onClick={() => navigate("/profile")}
-                className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full uppercase"
-              >
-                View Profile
-              </button>
-            </div>
-            <div className="space-y-2.5">
-              {clientProfile.vehicleOrders.slice(0, 5).map((o) => (
-                <div
-                  key={o._id}
-                  className="flex items-center justify-between p-4 rounded-xl border border-blue-50 bg-blue-50/30"
+                  onClick={() => navigate("/vehicles/orders")}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[13px] font-bold text-white transition-all hover:scale-[1.03] cursor-pointer"
+                  style={{
+                    background: "rgba(255,255,255,0.18)",
+                    border: "1px solid rgba(255,255,255,0.28)",
+                    backdropFilter: "blur(12px)",
+                  }}
                 >
-                  <div>
-                    <p className="text-[13px] font-bold text-slate-800 uppercase">
-                      {getVehicleName(o)}
+                  View Vehicle List
+                  <ArrowRight size={15} />
+                </button>
+            </div>
+          </div>
+
+          {/* ── STAT CARDS (5 cards, without Estimated Collection Date) ── */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {clientCards.map((card) => (
+              <div
+                key={card.label}
+                className="group relative rounded-2xl border bg-white p-5 shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+              >
+                {/* subtle accent line at top */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl opacity-60"
+                  style={{
+                    background: card.tone.includes("blue")
+                      ? "linear-gradient(90deg,#3b82f6,#6366f1)"
+                      : card.tone.includes("indigo")
+                        ? "linear-gradient(90deg,#6366f1,#8b5cf6)"
+                        : card.tone.includes("amber")
+                          ? "linear-gradient(90deg,#f59e0b,#f97316)"
+                          : card.tone.includes("cyan")
+                            ? "linear-gradient(90deg,#06b6d4,#3b82f6)"
+                            : "linear-gradient(90deg,#10b981,#06b6d4)",
+                  }}
+                />
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${card.tone.split(" ").find(c => c.startsWith("text-"))}`}>
+                      {card.label}
                     </p>
-                    <p className="text-[11px] text-slate-400 uppercase mt-0.5">
-                      {fmtDate(o.updatedAt)}
+                    <p className="mt-3 text-3xl font-bold tabular-nums text-slate-900 leading-none">
+                      {card.value}
                     </p>
                   </div>
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase ${bookingStatusCls(o.status)}`}
-                  >
-                    {o.status.replace(/_/g, " ")}
-                  </span>
+                  <div className={`rounded-xl p-2.5 ${card.tone.split(" ").filter(c => c.startsWith("bg-") || c.startsWith("text-")).join(" ")}`} style={{ background: "rgba(255,255,255,0.7)" }}>
+                    {card.icon}
+                  </div>
                 </div>
-              ))}
+                <p className="mt-3 text-[12px] text-slate-400">{card.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* ── ESTIMATED COLLECTION DATES TABLE ── */}
+          <div className="rounded-3xl border border-blue-100/60 bg-white shadow-sm overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Estimated Collection Dates
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Dates entered by the team as the expected collection date from the dealership.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
+                  {filteredScheduledVehicles.length} scheduled
+                </span>
+                {/* Time-range dropdown */}
+                <select
+                  value={collectionFilter}
+                  onChange={(e) => setCollectionFilter(e.target.value as any)}
+                  className="text-[12px] font-semibold border border-slate-200 rounded-xl px-3 py-2 outline-none cursor-pointer bg-white text-slate-700 hover:border-blue-300 transition-colors"
+                >
+                  <option value="1d">Next 1 Day</option>
+                  <option value="1w">Next 1 Week</option>
+                  <option value="1m">Next 1 Month</option>
+                  <option value="all">All Time</option>
+                </select>
+              </div>
             </div>
-          </div> */}
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4">Vehicle</th>
+                    <th className="px-6 py-4">Chassis</th>
+                    <th className="px-6 py-4">Estimated Collection Date</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredScheduledVehicles.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400">
+                        {collectionFilter === "all"
+                          ? "No estimated collection dates added yet."
+                          : `No vehicles scheduled in the selected time range.`}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredScheduledVehicles.slice(0, 8).map((order) => (
+                      <tr key={order._id} className="border-t border-slate-100 hover:bg-blue-50/30 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-slate-900">
+                          {getVehicleName(order)}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-600">
+                          {order.chassisNumber || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {fmtDate(order.deliveryDate)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase ${bookingStatusCls(order.status)}`}
+                          >
+                            {order.status.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     );
