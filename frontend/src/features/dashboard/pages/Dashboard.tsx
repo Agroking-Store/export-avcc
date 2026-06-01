@@ -720,51 +720,7 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
 
-              {/* mini KPI pills */}
-              <div className="flex flex-wrap gap-3 lg:flex-nowrap lg:flex-col xl:flex-row">
-                <div
-                  className="flex items-center gap-3 rounded-2xl px-5 py-3.5"
-                  style={{
-                    background: "rgba(255,255,255,0.10)",
-                    border: "1px solid rgba(255,255,255,0.16)",
-                    backdropFilter: "blur(12px)",
-                  }}
-                >
-                  <div className="p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.15)" }}>
-                    <PackageCheck size={18} className="text-emerald-300" />
-                  </div>
-                  <div>
-                    <p className="text-[22px] font-bold text-white tabular-nums leading-none">
-                      {clientStats.carsDelivered}
-                    </p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100/60 mt-0.5">
-                      Delivered
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className="flex items-center gap-3 rounded-2xl px-5 py-3.5"
-                  style={{
-                    background: "rgba(255,255,255,0.10)",
-                    border: "1px solid rgba(255,255,255,0.16)",
-                    backdropFilter: "blur(12px)",
-                  }}
-                >
-                  <div className="p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.15)" }}>
-                    <Truck size={18} className="text-cyan-300" />
-                  </div>
-                  <div>
-                    <p className="text-[22px] font-bold text-white tabular-nums leading-none">
-                      {clientStats.carsInTransit}
-                    </p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100/60 mt-0.5">
-                      In Transit
-                    </p>
-                  </div>
-                </div>
-
-                <button
+              <button
                   onClick={() => navigate("/vehicles/orders")}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[13px] font-bold text-white transition-all hover:scale-[1.03] cursor-pointer"
                   style={{
@@ -776,7 +732,6 @@ const Dashboard: React.FC = () => {
                   View Vehicle List
                   <ArrowRight size={15} />
                 </button>
-              </div>
             </div>
           </div>
 
