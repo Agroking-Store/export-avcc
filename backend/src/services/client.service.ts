@@ -8,6 +8,21 @@ import {
   normalizePhone,
 } from "./profile-sync.service";
 import { attachShipmentReadiness } from "./vehicle-booking.service";
+import ProformaInvoice from "../models/ProformaInvoice.model";
+
+// ─── LC STATS: Helper to calculate LC pending count for a client ───
+// Counts all PIs for this client, then subtracts the ones with "lc_received" status
+const getLCStatsForClient = async (clientId: any) => {
+  const pis = await ProformaInvoice.find({ client_id: clientId })
+    .select("status")
+    .lean();
+
+  const totalPIs = pis.length;
+  const lcReceived = pis.filter((pi) => pi.status === "lc_received").length;
+  const lcPending = totalPIs - lcReceived; // e.g. 10 PIs - 2 LC received = 8 LC pending
+
+  return { totalPIs, lcReceived, lcPending };
+};
 
 export const createClientService = async (data: CreateClientDto) => {
   const email = data.email.toLowerCase().trim();
@@ -130,6 +145,8 @@ export const getClientByIdService = async (id: string) => {
     };
   });
 
+  const lcStats = await getLCStatsForClient(client._id);
+
   return {
     client,
     vehicleOrders: vehicleOrdersWithDisplayId,
@@ -138,6 +155,7 @@ export const getClientByIdService = async (id: string) => {
       vehicleOrdersWithDisplayId.length > 0
         ? vehicleOrdersWithDisplayId[0].createdAt
         : null,
+    lcStats,
   };
 };
 
@@ -179,6 +197,8 @@ export const getClientByEmailService = async (email: string) => {
     };
   });
 
+  const lcStats = await getLCStatsForClient(client._id);
+
   return {
     client,
     vehicleOrders: vehicleOrdersWithDisplayId,
@@ -187,6 +207,7 @@ export const getClientByEmailService = async (email: string) => {
       vehicleOrdersWithDisplayId.length > 0
         ? vehicleOrdersWithDisplayId[0].createdAt
         : null,
+    lcStats,
   };
 };
 
@@ -198,12 +219,11 @@ export const updateClientService = async (
   return updated;
 };
 
-export const getLatestClientsService = async()=>{
+export const getLatestClientsService = async () => {
   try {
-    const latestClients = await Client.find().sort({createdAt : -1}).limit(5)
-  return latestClients
+    const latestClients = await Client.find().sort({ createdAt: -1 }).limit(5);
+    return latestClients;
   } catch (error) {
     throw new Error("Client not recived from backend");
   }
-  
-}
+};

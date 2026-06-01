@@ -114,6 +114,11 @@ const statusLabelToRaw: Record<
 
 interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
+  lcStats?: {
+    totalPIs: number;
+    lcReceived: number;
+    lcPending: number;
+  };
 }
 
 type ConfirmationAction = "deliver";
@@ -261,9 +266,11 @@ const VehicleOrdersList = () => {
           inProgressTotal: filteredBookings.filter(
             (b) => b.status !== "delivered",
           ).length,
-          lcPendingTotal: filteredBookings.filter(
-            (b) => b.status === "approved" || b.status === "quotation_uploaded",
-          ).length,
+          // lcPendingTotal: filteredBookings.filter(
+          //   (b) => b.status === "approved" || b.status === "quotation_uploaded",
+          // ).length,
+          lcPendingTotal: response.data?.lcStats?.lcPending ?? 0,
+
           sourcingTotal: filteredBookings.filter((b) =>
             [
               "pending",
@@ -828,7 +835,9 @@ const VehicleOrdersList = () => {
                   <th className="w-[9%] border-b border-slate-200 px-5 py-4 align-middle">
                     Vehicle ID
                   </th>
-                  <th className={`${isClient ? "w-[18%]" : "w-[20%]"} border-b border-slate-200 px-5 py-4 align-middle text-left`}>
+                  <th
+                    className={`${isClient ? "w-[18%]" : "w-[20%]"} border-b border-slate-200 px-5 py-4 align-middle text-left`}
+                  >
                     Vehicle
                   </th>
                   <th className="w-[10%] border-b border-slate-200 px-4 py-4 align-middle">
@@ -845,7 +854,9 @@ const VehicleOrdersList = () => {
                       Estimated Collection Date
                     </th>
                   )}
-                  <th className={`${isClient ? "w-[24%]" : "w-[38%]"} border-b border-slate-200 px-5 py-4 align-middle text-center`}>
+                  <th
+                    className={`${isClient ? "w-[24%]" : "w-[38%]"} border-b border-slate-200 px-5 py-4 align-middle text-center`}
+                  >
                     Actions
                   </th>
                 </tr>
@@ -930,7 +941,9 @@ const VehicleOrdersList = () => {
                         {isClient && (
                           <td className="border-b border-slate-100 px-4 py-5 align-middle">
                             <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                              {formatEstimatedCollectionDate(booking.deliveryDate)}
+                              {formatEstimatedCollectionDate(
+                                booking.deliveryDate,
+                              )}
                             </span>
                           </td>
                         )}
