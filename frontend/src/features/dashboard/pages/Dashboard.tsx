@@ -373,6 +373,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [momentumMonths, setMomentumMonths] = useState<3 | 6>(6);
   const [mounted, setMounted] = useState(false);
+  const [collectionFilter, setCollectionFilter] = useState<"1d" | "1w" | "1m" | "all">("all");
 
   useEffect(() => {
     let alive = true;
@@ -593,6 +594,19 @@ const Dashboard: React.FC = () => {
     };
   }, [clientProfile]);
 
+  const filteredScheduledVehicles = useMemo(() => {
+    const vehicles = clientStats?.scheduledVehicles ?? [];
+    if (collectionFilter === "all") return vehicles;
+    const now = Date.now();
+    const ms = collectionFilter === "1d" ? 86_400_000 : collectionFilter === "1w" ? 7 * 86_400_000 : 30 * 86_400_000;
+    return vehicles.filter((v) => {
+      if (!v.deliveryDate) return false;
+      const diff = new Date(v.deliveryDate).getTime() - now;
+      return diff >= 0 && diff <= ms;
+    });
+  }, [clientStats, collectionFilter]);
+
+  const greeting = (() => { const h = new Date().getHours(); if (h < 12) return "Good Morning"; if (h < 17) return "Good Afternoon"; return "Good Evening"; })();
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -623,13 +637,6 @@ const Dashboard: React.FC = () => {
         tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
       },
       {
-        label: "ESTIMATED COLLECTION DATE",
-        value: clientStats.estimatedCollectionDate,
-        detail: `${clientStats.estimatedCollectionCount} car${clientStats.estimatedCollectionCount === 1 ? "" : "s"} scheduled`,
-        icon: <Clock3 size={20} />,
-        tone: "bg-sky-50 text-sky-700 border-sky-100",
-      },
-      {
         label: "CARS PENDING LC",
         value: clientStats.carsPendingLc,
         detail: "Chassis number received",
@@ -652,55 +659,169 @@ const Dashboard: React.FC = () => {
       },
     ];
 
+
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1500px] px-6 py-8 space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">
-                  Client Dashboard
-                </p>
-                <h1 className="mt-2 text-2xl font-bold text-slate-900">
+      <div
+        className="min-h-screen"
+        style={{ background: "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)" }}
+      >
+        {/* subtle dot grid */}
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(circle,#bfdbfe 1px,transparent 1px)",
+            backgroundSize: "30px 30px",
+            opacity: 0.22,
+          }}
+        />
+
+        <div className="relative mx-auto max-w-[1500px] px-6 py-8 space-y-6">
+
+          {/* ── WELCOME HERO ── */}
+          <div
+            className="relative overflow-hidden rounded-3xl"
+            style={{
+              background: "linear-gradient(135deg, #0f2d6e 0%, #1648b8 35%, #1e6fcc 62%, #0e4fa8 82%, #0a3580 100%)",
+              boxShadow: "0 24px 80px -12px rgba(14,45,110,0.50)",
+              minHeight: 200,
+            }}
+          >
+            <ParticleCanvas />
+            {/* decorative rings */}
+            <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full border border-white/10" />
+            <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full border border-white/10" />
+            <div className="absolute right-24 bottom-[-40px] w-80 h-80 rounded-full border border-white/5" />
+
+            <div className="relative px-8 py-9 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="max-w-xl">
+                {/* live badge */}
+                <div
+                  className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 mb-5"
+                  style={{
+                    background: "rgba(255,255,255,0.10)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-300 opacity-80" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/85">
+                    {greeting}
+                  </span>
+                </div>
+
+                <h1 className="text-[30px] font-bold leading-tight tracking-tight text-white">
                   {clientProfile.client.companyName}
                 </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  Vehicle order, booking, LC, transit, and delivery status.
+                <p className="mt-2 text-[14px] text-blue-100/75 max-w-sm leading-relaxed">
+                  Track your vehicle orders, shipments, LC status, and deliveries — all in one place.
                 </p>
               </div>
-              <button
-                onClick={() => navigate("/vehicles/orders")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                View Vehicle List
-                <ArrowRight size={16} />
-              </button>
+
+              {/* mini KPI pills */}
+              <div className="flex flex-wrap gap-3 lg:flex-nowrap lg:flex-col xl:flex-row">
+                <div
+                  className="flex items-center gap-3 rounded-2xl px-5 py-3.5"
+                  style={{
+                    background: "rgba(255,255,255,0.10)",
+                    border: "1px solid rgba(255,255,255,0.16)",
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  <div className="p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.15)" }}>
+                    <PackageCheck size={18} className="text-emerald-300" />
+                  </div>
+                  <div>
+                    <p className="text-[22px] font-bold text-white tabular-nums leading-none">
+                      {clientStats.carsDelivered}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100/60 mt-0.5">
+                      Delivered
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className="flex items-center gap-3 rounded-2xl px-5 py-3.5"
+                  style={{
+                    background: "rgba(255,255,255,0.10)",
+                    border: "1px solid rgba(255,255,255,0.16)",
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  <div className="p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.15)" }}>
+                    <Truck size={18} className="text-cyan-300" />
+                  </div>
+                  <div>
+                    <p className="text-[22px] font-bold text-white tabular-nums leading-none">
+                      {clientStats.carsInTransit}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-100/60 mt-0.5">
+                      In Transit
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => navigate("/vehicles/orders")}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[13px] font-bold text-white transition-all hover:scale-[1.03] cursor-pointer"
+                  style={{
+                    background: "rgba(255,255,255,0.18)",
+                    border: "1px solid rgba(255,255,255,0.28)",
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  View Vehicle List
+                  <ArrowRight size={15} />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {/* ── STAT CARDS (5 cards, without Estimated Collection Date) ── */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {clientCards.map((card) => (
               <div
                 key={card.label}
-                className={`rounded-2xl border bg-white p-5 shadow-sm ${card.tone}`}
+                className="group relative rounded-2xl border bg-white p-5 shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
               >
+                {/* subtle accent line at top */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl opacity-60"
+                  style={{
+                    background: card.tone.includes("blue")
+                      ? "linear-gradient(90deg,#3b82f6,#6366f1)"
+                      : card.tone.includes("indigo")
+                        ? "linear-gradient(90deg,#6366f1,#8b5cf6)"
+                        : card.tone.includes("amber")
+                          ? "linear-gradient(90deg,#f59e0b,#f97316)"
+                          : card.tone.includes("cyan")
+                            ? "linear-gradient(90deg,#06b6d4,#3b82f6)"
+                            : "linear-gradient(90deg,#10b981,#06b6d4)",
+                  }}
+                />
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em]">
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${card.tone.split(" ").find(c => c.startsWith("text-"))}`}>
                       {card.label}
                     </p>
-                    <p className="mt-3 text-3xl font-bold tabular-nums text-slate-950">
+                    <p className="mt-3 text-3xl font-bold tabular-nums text-slate-900 leading-none">
                       {card.value}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-white/70 p-2">{card.icon}</div>
+                  <div className={`rounded-xl p-2.5 ${card.tone.split(" ").filter(c => c.startsWith("bg-") || c.startsWith("text-")).join(" ")}`} style={{ background: "rgba(255,255,255,0.7)" }}>
+                    {card.icon}
+                  </div>
                 </div>
-                <p className="mt-3 text-sm text-slate-500">{card.detail}</p>
+                <p className="mt-3 text-[12px] text-slate-400">{card.detail}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+          {/* ── ESTIMATED COLLECTION DATES TABLE ── */}
+          <div className="rounded-3xl border border-blue-100/60 bg-white shadow-sm overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
@@ -710,9 +831,22 @@ const Dashboard: React.FC = () => {
                   Dates entered by the team as the expected collection date from the dealership.
                 </p>
               </div>
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                {clientStats.estimatedCollectionCount} scheduled
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
+                  {filteredScheduledVehicles.length} scheduled
+                </span>
+                {/* Time-range dropdown */}
+                <select
+                  value={collectionFilter}
+                  onChange={(e) => setCollectionFilter(e.target.value as any)}
+                  className="text-[12px] font-semibold border border-slate-200 rounded-xl px-3 py-2 outline-none cursor-pointer bg-white text-slate-700 hover:border-blue-300 transition-colors"
+                >
+                  <option value="1d">Next 1 Day</option>
+                  <option value="1w">Next 1 Week</option>
+                  <option value="1m">Next 1 Month</option>
+                  <option value="all">All Time</option>
+                </select>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -726,15 +860,17 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {clientStats.scheduledVehicles.length === 0 ? (
+                  {filteredScheduledVehicles.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-10 text-center text-slate-400">
-                        No estimated collection dates added yet.
+                        {collectionFilter === "all"
+                          ? "No estimated collection dates added yet."
+                          : `No vehicles scheduled in the selected time range.`}
                       </td>
                     </tr>
                   ) : (
-                    clientStats.scheduledVehicles.slice(0, 8).map((order) => (
-                      <tr key={order._id} className="border-t border-slate-100">
+                    filteredScheduledVehicles.slice(0, 8).map((order) => (
+                      <tr key={order._id} className="border-t border-slate-100 hover:bg-blue-50/30 transition-colors">
                         <td className="px-6 py-4 font-semibold text-slate-900">
                           {getVehicleName(order)}
                         </td>
