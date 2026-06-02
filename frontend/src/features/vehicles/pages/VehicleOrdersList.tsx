@@ -56,7 +56,7 @@ const STATUS_META: Record<
   { label: string; badge: string }
 > = {
   pending: {
-    label: "Pending",
+    label: "Awaiting approval",
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
   quotation_details_pending: {
@@ -80,11 +80,11 @@ const STATUS_META: Record<
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
-    label: "In Progress",
+    label: "Awaiting Engine / Chassis Number",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   shipped: {
-    label: "In Progress",
+    label: "Awaiting Engine / Chassis Number",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   delivered: {
