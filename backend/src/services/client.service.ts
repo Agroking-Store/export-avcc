@@ -8,6 +8,60 @@ import {
   normalizePhone,
 } from "./profile-sync.service";
 import { attachShipmentReadiness } from "./vehicle-booking.service";
+import ProformaInvoice from "../models/ProformaInvoice.model";
+
+const getLCStatsForClient = async (clientId: any) => {
+  const pis = await ProformaInvoice.find({ client_id: clientId })
+    .select("status")
+    .lean();
+
+  const totalPIs = pis.length;
+  const lcReceived = pis.filter((pi) => pi.status === "lc_received").length;
+  const lcPending = totalPIs - lcReceived;
+
+  const pendingPiIds = pis
+    .filter((pi) => pi.status !== "lc_received")
+    .map((pi) => pi._id.toString());
+
+  let lcPendingBookingIds: string[] = [];
+
+  if (pendingPiIds.length > 0) {
+    const matchedByAssociated = await VehicleBooking.find({
+      assignedClientId: clientId,
+      "associatedPIs._id": { $in: pendingPiIds },
+    })
+      .select("_id")
+      .lean();
+
+    lcPendingBookingIds = matchedByAssociated.map((b) => b._id.toString());
+
+    if (lcPendingBookingIds.length === 0) {
+      const pisWithBookings = await ProformaInvoice.find({
+        _id: { $in: pendingPiIds },
+        vehicleBookingIds: { $exists: true, $ne: [] },
+      })
+        .select("vehicleBookingIds")
+        .lean();
+
+      const bookingIds = pisWithBookings.flatMap((pi) =>
+        (pi.vehicleBookingIds || []).map((id: any) => id.toString()),
+      );
+
+      if (bookingIds.length > 0) {
+        const matchedByBookingId = await VehicleBooking.find({
+          assignedClientId: clientId,
+          _id: { $in: bookingIds },
+        })
+          .select("_id")
+          .lean();
+
+        lcPendingBookingIds = matchedByBookingId.map((b) => b._id.toString());
+      }
+    }
+  }
+
+  return { totalPIs, lcReceived, lcPending, lcPendingBookingIds };
+};
 
 export const createClientService = async (data: CreateClientDto) => {
   const email = data.email.toLowerCase().trim();
@@ -130,6 +184,8 @@ export const getClientByIdService = async (id: string) => {
     };
   });
 
+  const lcStats = await getLCStatsForClient(client._id);
+
   return {
     client,
     vehicleOrders: vehicleOrdersWithDisplayId,
@@ -138,6 +194,7 @@ export const getClientByIdService = async (id: string) => {
       vehicleOrdersWithDisplayId.length > 0
         ? vehicleOrdersWithDisplayId[0].createdAt
         : null,
+    lcStats,
   };
 };
 
@@ -179,6 +236,8 @@ export const getClientByEmailService = async (email: string) => {
     };
   });
 
+  const lcStats = await getLCStatsForClient(client._id);
+
   return {
     client,
     vehicleOrders: vehicleOrdersWithDisplayId,
@@ -187,6 +246,7 @@ export const getClientByEmailService = async (email: string) => {
       vehicleOrdersWithDisplayId.length > 0
         ? vehicleOrdersWithDisplayId[0].createdAt
         : null,
+    lcStats,
   };
 };
 
@@ -198,12 +258,11 @@ export const updateClientService = async (
   return updated;
 };
 
-export const getLatestClientsService = async()=>{
+export const getLatestClientsService = async () => {
   try {
-    const latestClients = await Client.find().sort({createdAt : -1}).limit(5)
-  return latestClients
+    const latestClients = await Client.find().sort({ createdAt: -1 }).limit(5);
+    return latestClients;
   } catch (error) {
     throw new Error("Client not recived from backend");
   }
-  
-}
+};

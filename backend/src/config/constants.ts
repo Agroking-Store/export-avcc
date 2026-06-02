@@ -7,7 +7,7 @@ export const ROLES = {
 } as const;
 
 // export type UserRole = (typeof ROLES)[keyof typeof ROLES];
-export type UserRole = typeof ROLES[keyof typeof ROLES];
+export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const VEHICLE_STATUS = {
   PENDING: "pending",
@@ -48,3 +48,5 @@ export const VERIFICATION_STATUS = {
   REJECTED: "rejected",
   DISCREPANCY: "discrepancy",
 } as const;
+
+export const INVOICE_SEQUENCE_START_NUMBER = 30;
