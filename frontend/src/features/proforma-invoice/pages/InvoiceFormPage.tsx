@@ -383,8 +383,6 @@ export default function InvoiceFormPage() {
           ),
         );
 
-        // Safety: if engineNo is missing for this selected vehicle,
-        // show toast on the form page.
         const engineNoMissing = !selectedVehicle.engineNo || !selectedVehicle.engineNo.trim();
         if (engineNoMissing) {
           toast.error(
