@@ -104,9 +104,8 @@ const clientStatusOptions = [
 
 const adminStatusOptions = [
   "All",
-  "Pending",
+  "Awaiting Approval",
   "Waiting for Approval",
-  "Approved",
   "Awaiting Engine / Chassis Number",
   "Make PI",
   "Delivered",
@@ -114,9 +113,8 @@ const adminStatusOptions = [
 
 const statusLabelToRaw: Record<string, string> = {
   All: "All",
-  Pending: "pending",
+  "Awaiting Approval": "pending",
   "Waiting for Approval": "approvalPending",
-  Approved: "approved",
   "Awaiting Engine / Chassis Number": "awaitingNumbers",
   "Make PI": "piPending",
   Delivered: "delivered",
@@ -167,11 +165,10 @@ const VehicleOrdersList = () => {
   });
 
   const rawToStatusLabel: Record<string, string> = {
-    pending: "Pending",
+    pending: "Awaiting Approval",
     approvalPending: "Waiting for Approval",
     quotation_details_pending: "Waiting for Approval",
     quotation_uploaded: "Waiting for Approval",
-    approved: "Approved",
     awaitingNumbers: "Awaiting Engine / Chassis Number",
     payment_done: "Awaiting Engine / Chassis Number",
     chassis_received: "All",
