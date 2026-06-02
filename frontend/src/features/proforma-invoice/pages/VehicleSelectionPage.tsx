@@ -159,13 +159,20 @@ export default function VehicleSelectionPage() {
           <Button
             className="bg-blue-600 text-white hover:bg-blue-700"
             disabled={!selectedVehicleId}
-            onClick={() =>
-              navigate(`/invoices/generate/${piId}/${invoiceType}/${selectedVehicleId}`)
-            }
+            onClick={() => {
+              if (!selectedVehicle) return;
+              const engineNoMissing = !selectedVehicle.engineNo || !selectedVehicle.engineNo.trim();
+              if (engineNoMissing) {
+                toast.error("Engine No not got. Please update engine number for this vehicle.");
+                return;
+              }
+              navigate(`/invoices/generate/${piId}/${invoiceType}/${selectedVehicleId}`);
+            }}
           >
             Next
             <ArrowRight className="h-4 w-4" />
           </Button>
+
         </div>
       </div>
     </div>

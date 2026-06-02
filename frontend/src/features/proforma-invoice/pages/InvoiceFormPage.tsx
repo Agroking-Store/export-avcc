@@ -382,6 +382,16 @@ export default function InvoiceFormPage() {
             currentInvoice as any,
           ),
         );
+
+        // Safety: if engineNo is missing for this selected vehicle,
+        // show toast on the form page.
+        const engineNoMissing = !selectedVehicle.engineNo || !selectedVehicle.engineNo.trim();
+        if (engineNoMissing) {
+          toast.error(
+            "Engine No not got. Please update engine number for this vehicle.",
+          );
+        }
+
       } catch (error: any) {
         toast.error(
           error.response?.data?.message || "Failed to load invoice form",

@@ -110,15 +110,20 @@ export default function InvoiceTypeModal({
     (v) => !v.engineNo || !v.engineNo.trim(),
   );
 
-  const isDataIncomplete = vehiclesMissingData.length > 0;
+  // Enable generation as long as at least ONE vehicle has Engine No.
+  // (User requirement: if 3 vehicles in PI and only 2 have engineNo,
+  // allow generating invoice for the 2 that are valid.)
+  const isDataIncomplete = vehiclesMissingData.length === context.vehicles.length;
+
 
   const handleGenerate = (type: InvoiceType) => {
     if (isDataIncomplete) {
       toast.error(
-        `Cannot generate ${type} Invoice. ${vehiclesMissingData.length} vehicle(s) are missing Engine numbers.`,
+        `Cannot generate ${type} Invoice. No vehicles in this PI have Engine numbers.`,
       );
       return;
     }
+
     onOpenChange(false);
     navigate(`/invoices/generate/${context._id}/${type}`);
   };
