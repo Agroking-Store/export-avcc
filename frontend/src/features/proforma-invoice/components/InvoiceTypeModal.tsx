@@ -110,9 +110,7 @@ export default function InvoiceTypeModal({
     (v) => !v.engineNo || !v.engineNo.trim(),
   );
 
-  // Enable generation as long as at least ONE vehicle has Engine No.
-  // (User requirement: if 3 vehicles in PI and only 2 have engineNo,
-  // allow generating invoice for the 2 that are valid.)
+  
   const isDataIncomplete = vehiclesMissingData.length === context.vehicles.length;
 
 
