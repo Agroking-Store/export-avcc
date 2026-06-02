@@ -1027,10 +1027,49 @@ export const getAllVehicleBookingsService = async (query: any) => {
 
   const match: any = {};
   const isPiPendingFilter = status === "piPending";
+  const isApprovalFilter = status === "approvalPending";
+  const isAwaitingNumbersFilter = status === "awaitingNumbers";
 
-  if (status && status !== "All" && !isPiPendingFilter) {
+  if (
+    status &&
+    status !== "All" &&
+    !isPiPendingFilter &&
+    !isApprovalFilter &&
+    !isAwaitingNumbersFilter
+  ) {
     match.status = status;
   }
+
+  const filledTextExpr = (field: string) => ({
+    $gt: [
+      {
+        $strLenCP: {
+          $trim: {
+            input: { $ifNull: [`$${field}`, ""] },
+          },
+        },
+      },
+      0,
+    ],
+  });
+  const hasEngineAndChassisExpr = {
+    $and: [filledTextExpr("engineNumber"), filledTextExpr("chassisNumber")],
+  };
+  const missingEngineOrChassisExpr = {
+    $or: [
+      { $not: [filledTextExpr("engineNumber")] },
+      { $not: [filledTextExpr("chassisNumber")] },
+    ],
+  };
+  const piReadyExpr = {
+    $and: [{ $eq: ["$piGenerated", false] }, hasEngineAndChassisExpr],
+  };
+  const awaitingNumbersExpr = {
+    $and: [
+      { $eq: ["$status", "payment_done"] },
+      missingEngineOrChassisExpr,
+    ],
+  };
 
   const trimmedSearch = String(search || "").trim();
 
@@ -1097,11 +1136,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
       "make pi".includes(normalizedSearch) ||
       "pi pending".includes(normalizedSearch)
     ) {
-      match.$or.push({
-        piGenerated: false,
-        engineNumber: { $exists: true, $nin: ["", null] },
-        chassisNumber: { $exists: true, $nin: ["", null] },
-      });
+      match.$or.push({ $expr: piReadyExpr });
     }
   }
 
@@ -1200,19 +1235,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
         },
         piReadyTotal: {
           $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ["$piGenerated", false] },
-                  { $ne: ["$engineNumber", ""] },
-                  { $ne: ["$engineNumber", null] },
-                  { $ne: ["$chassisNumber", ""] },
-                  { $ne: ["$chassisNumber", null] },
-                ],
-              },
-              1,
-              0,
-            ],
+            $cond: [piReadyExpr, 1, 0],
           },
         },
         pendingTotal: {
@@ -1233,7 +1256,9 @@ export const getAllVehicleBookingsService = async (query: any) => {
           },
         },
         awaitingNumbersTotal: {
-          $sum: { $cond: [{ $eq: ["$status", "payment_done"] }, 1, 0] },
+          $sum: {
+            $cond: [awaitingNumbersExpr, 1, 0],
+          },
         },
         inProgressTotal: {
           $sum: { $cond: [{ $ne: ["$status", "delivered"] }, 1, 0] },
@@ -1293,11 +1318,21 @@ export const getAllVehicleBookingsService = async (query: any) => {
 
   if (isPiPendingFilter) {
     pipeline.push({
+      $match: { $expr: piReadyExpr },
+    });
+  }
+
+  if (isApprovalFilter) {
+    pipeline.push({
       $match: {
-        piGenerated: false,
-        engineNumber: { $exists: true, $nin: ["", null] },
-        chassisNumber: { $exists: true, $nin: ["", null] },
+        status: { $in: ["quotation_details_pending", "quotation_uploaded"] },
       },
+    });
+  }
+
+  if (isAwaitingNumbersFilter) {
+    pipeline.push({
+      $match: { $expr: awaitingNumbersExpr },
     });
   }
 

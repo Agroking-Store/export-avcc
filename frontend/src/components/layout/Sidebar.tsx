@@ -14,6 +14,7 @@ type MenuItem = {
   name: string;
   icon: React.ReactNode;
   path: string;
+  activePaths?: string[];
 };
 
 const AppSidebar: React.FC = () => {
@@ -24,6 +25,12 @@ const AppSidebar: React.FC = () => {
 
   const isAdmin = role === "admin";
   const isAccountant = role === "accountant";
+  const isPathActive = (prefixes: string[]) =>
+    prefixes.some(
+      (prefix) =>
+        location.pathname === prefix ||
+        location.pathname.startsWith(`${prefix}/`),
+    );
 
   let menuItems: MenuItem[] = [];
 
@@ -34,36 +41,47 @@ const AppSidebar: React.FC = () => {
         name: "Dashboard",
         icon: <LayoutDashboard size={20} />,
         path: "/dashboard",
+        activePaths: ["/dashboard"],
       },
       {
         name: "Vehicles",
         icon: <Car size={20} />,
         path: "/vehicles",
+        activePaths: ["/vehicles"],
       },
       {
         name: "Clients",
         icon: <Users size={20} />,
         path: "/clients",
+        activePaths: ["/clients", "/orders"],
       },
       {
         name: "Proforma Invoices",
         icon: <FileText size={20} />,
         path: "/proforma-invoice",
+        activePaths: [
+          "/proforma-invoice",
+          "/invoices/generate",
+          "/packing-list/generate",
+        ],
       },
       {
         name: "Dealers",
         icon: <Truck size={20} />,
         path: "/dealers",
+        activePaths: ["/dealers"],
       },
       {
         name: "Companies",
         icon: <Users size={20} />,
         path: "/companies",
+        activePaths: ["/companies"],
       },
       {
         name: "User Management",
         icon: <ShieldCheck size={20} />,
         path: "/user-management",
+        activePaths: ["/user-management"],
       },
     ];
   }
@@ -75,11 +93,17 @@ const AppSidebar: React.FC = () => {
         name: "Dashboard",
         icon: <LayoutDashboard size={20} />,
         path: "/dashboard",
+        activePaths: ["/dashboard"],
       },
       {
         name: "Proforma Invoices",
         icon: <FileText size={20} />,
         path: "/proforma-invoice",
+        activePaths: [
+          "/proforma-invoice",
+          "/invoices/generate",
+          "/packing-list/generate",
+        ],
       },
     ];
   }
@@ -91,6 +115,7 @@ const AppSidebar: React.FC = () => {
         name: "Dashboard",
         icon: <LayoutDashboard size={20} />,
         path: "/dashboard",
+        activePaths: ["/dashboard"],
       },
     ];
   }
@@ -104,7 +129,7 @@ const AppSidebar: React.FC = () => {
 
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
-          const isActive = location.pathname.startsWith(item.path);
+          const isActive = isPathActive(item.activePaths || [item.path]);
 
           return (
             <Link

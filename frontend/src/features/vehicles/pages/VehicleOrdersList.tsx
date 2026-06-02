@@ -115,9 +115,9 @@ const adminStatusOptions = [
 const statusLabelToRaw: Record<string, string> = {
   All: "All",
   Pending: "pending",
-  "Waiting for Approval": "quotation_uploaded",
+  "Waiting for Approval": "approvalPending",
   Approved: "approved",
-  "Awaiting Engine / Chassis Number": "payment_done",
+  "Awaiting Engine / Chassis Number": "awaitingNumbers",
   "Make PI": "piPending",
   Delivered: "delivered",
   "ORDERS PLACED": "orders_placed",
@@ -168,9 +168,11 @@ const VehicleOrdersList = () => {
 
   const rawToStatusLabel: Record<string, string> = {
     pending: "Pending",
+    approvalPending: "Waiting for Approval",
     quotation_details_pending: "Waiting for Approval",
     quotation_uploaded: "Waiting for Approval",
     approved: "Approved",
+    awaitingNumbers: "Awaiting Engine / Chassis Number",
     payment_done: "Awaiting Engine / Chassis Number",
     chassis_received: "All",
     shipped: "All",
@@ -209,6 +211,44 @@ const VehicleOrdersList = () => {
   } | null>(null);
 
   const statusValue = statusLabelToRaw[statusLabel] || "All";
+
+  // ─────────────────────────────────────────────────────────────
+  // Client status bucket mapping (used for BOTH cards & table)
+  // ─────────────────────────────────────────────────────────────
+  const getClientBucket = (b: VehicleBookingItem) => {
+    const hasChassis = !!String(b.chassisNumber || "").trim();
+
+    // ORDERS PLACED
+    // In this UI it means: order exists but booking is not yet in "BOOKED" state.
+    // (Existing behavior kept to match current screenshots expectations.)
+    // If dealer is not allotted yet OR booking is already delivered, keep it out of BOOKED.
+
+    // BOOKED
+    // Dealer allotted, chassis number pending (not delivered)
+    if (!!b.assignedDealerId && !hasChassis && b.status !== "delivered") {
+      return "BOOKED";
+    }
+
+    // PENDING LC
+    // PI exists but LC not received
+    if (
+      Array.isArray((b as any).associatedPIs) &&
+      (b as any).associatedPIs.length > 0
+    ) {
+      const isPendingLC = !(b as any).associatedPIs.some(
+        (pi: any) => pi?.status === "lc_received",
+      );
+      if (isPendingLC) return "PENDING LC";
+    }
+
+    // CARS IN TRANSIT
+    if (b.status === "shipped") return "CARS IN TRANSIT";
+
+    // CARS DELIVERED
+    if (b.status === "delivered") return "CARS DELIVERED";
+
+    return "OTHER";
+  };
 
   const fetchBookings = async () => {
     try {
@@ -754,6 +794,7 @@ const VehicleOrdersList = () => {
       return [
         {
           label: "ORDERS PLACED",
+          filterLabel: "ORDERS PLACED",
           value: bookingStats.ordersPlaced,
           detail: "Required vehicles placed by you or our team",
           icon: <CarFront size={20} />,
@@ -761,6 +802,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "BOOKED",
+          filterLabel: "BOOKED",
           value: bookingStats.booked,
           detail: "Dealer allotted, chassis number pending",
           icon: <Store size={20} />,
@@ -768,6 +810,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "PENDING LC",
+          filterLabel: "PENDING LC",
           value: bookingStats.carsPendingLc,
           detail: "PI created but LC not received",
           icon: <FileText size={20} />,
@@ -775,6 +818,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "CARS IN TRANSIT",
+          filterLabel: "CARS IN TRANSIT",
           value: bookingStats.carsInTransit,
           detail: "Shipped and on the way to Sri Lanka",
           icon: <Truck size={20} />,
@@ -782,6 +826,7 @@ const VehicleOrdersList = () => {
         },
         {
           label: "CARS DELIVERED",
+          filterLabel: "CARS DELIVERED",
           value: bookingStats.carsDelivered,
           detail: "Delivered vehicles",
           icon: <PackageCheck size={20} />,
@@ -794,26 +839,31 @@ const VehicleOrdersList = () => {
     return [
       {
         label: "Pending",
+        filterLabel: "Pending",
         value: bookingStats.pendingTotal,
         tone: "bg-slate-100 text-slate-800",
       },
       {
         label: "Waiting for Approval",
+        filterLabel: "Waiting for Approval",
         value: bookingStats.approvalTotal,
         tone: "bg-amber-100 text-amber-800",
       },
       {
         label: "Awaiting Numbers",
+        filterLabel: "Awaiting Engine / Chassis Number",
         value: bookingStats.awaitingNumbersTotal,
         tone: "bg-blue-100 text-blue-800",
       },
       {
         label: "Make PI",
+        filterLabel: "Make PI",
         value: bookingStats.piReadyTotal,
         tone: "bg-purple-100 text-purple-800",
       },
       {
         label: "Delivered",
+        filterLabel: "Delivered",
         value: bookingStats.deliveredTotal,
         tone: "bg-emerald-100 text-emerald-800",
       },
@@ -913,9 +963,15 @@ const VehicleOrdersList = () => {
         <div className="px-8 pb-4">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {summaryCards.map((card: any) => (
-              <div
+              <button
                 key={card.label}
-                className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
+                type="button"
+                onClick={() => setStatusLabel(card.filterLabel)}
+                className={`cursor-pointer rounded-[24px] border p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                  statusLabel === card.filterLabel
+                    ? "border-blue-300 bg-blue-50/70 ring-2 ring-blue-100"
+                    : "border-slate-200 bg-white"
+                }`}
               >
                 {/* ─── CLIENT STATUS: Show icon ─── */}
                 {card.icon && (
@@ -939,7 +995,7 @@ const VehicleOrdersList = () => {
                 >
                   {card.value} vehicles
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

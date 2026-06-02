@@ -26,42 +26,59 @@ const AppNavigationSidebar: React.FC = () => {
   const { user, isSourcingTeam, isClient } = useAuth();
 
   const role = user?.role?.toLowerCase();
+  const isPathActive = (prefixes: string[]) =>
+    prefixes.some(
+      (prefix) =>
+        location.pathname === prefix ||
+        location.pathname.startsWith(`${prefix}/`),
+    );
 
   const defaultMenuItems = [
     {
       name: "Dashboard",
       icon: <LayoutDashboard size={20} />,
       path: "/dashboard",
+      activePaths: ["/dashboard"],
     },
     {
       name: "Vehicles",
       icon: <Car size={20} />,
       path: "/vehicles",
+      activePaths: ["/vehicles"],
     },
     {
       name: "Clients",
       icon: <Users size={20} />,
       path: "/clients",
+      activePaths: ["/clients", "/orders"],
     },
     {
       name: "Proforma Invoices",
       icon: <FileText size={20} />,
       path: "/proforma-invoice",
+      activePaths: [
+        "/proforma-invoice",
+        "/invoices/generate",
+        "/packing-list/generate",
+      ],
     },
     {
       name: "Dealers",
       icon: <Truck size={20} />,
       path: "/dealers/dashboard",
+      activePaths: ["/dealers"],
     },
     {
       name: "Companies",
       icon: <Users size={20} />,
       path: "/companies",
+      activePaths: ["/companies"],
     },
     {
       name: "Shipment Plan",
       icon: <Ship size={20} />,
       path: "/shipment-planning/dashboard",
+      activePaths: ["/shipment-planning"],
     },
   ];
 
@@ -72,16 +89,19 @@ const AppNavigationSidebar: React.FC = () => {
             name: "Dashboard",
             icon: <LayoutDashboard size={20} />,
             path: "/dashboard",
+            activePaths: ["/dashboard"],
           },
           {
             name: "Vehicles",
             icon: <Car size={20} />,
             path: "/vehicles",
+            activePaths: ["/vehicles"],
           },
           {
             name: "Shipment Plan",
             icon: <Ship size={20} />,
             path: "/shipment-planning/dashboard",
+            activePaths: ["/shipment-planning"],
           },
         ]
       : role === "accountant"
@@ -90,11 +110,17 @@ const AppNavigationSidebar: React.FC = () => {
               name: "Dashboard",
               icon: <LayoutDashboard size={20} />,
               path: "/dashboard",
+              activePaths: ["/dashboard"],
             },
             {
               name: "Proforma Invoices",
               icon: <FileText size={20} />,
               path: "/proforma-invoice",
+              activePaths: [
+                "/proforma-invoice",
+                "/invoices/generate",
+                "/packing-list/generate",
+              ],
             },
           ]
         : [...defaultMenuItems];
@@ -104,6 +130,7 @@ const AppNavigationSidebar: React.FC = () => {
       name: "User Management",
       icon: <ShieldCheck size={20} />,
       path: "/user-management",
+      activePaths: ["/user-management"],
     });
   }
 
@@ -141,19 +168,7 @@ const AppNavigationSidebar: React.FC = () => {
             {" "}
             {/* gap-2 for vertical spacing between menu items */}
             {visibleMenuItems.map((item) => {
-              const isActive =
-                item.name === "Vehicles"
-                  ? location.pathname.startsWith("/vehicles")
-                  : item.name === "Dealers"
-                    ? location.pathname.startsWith("/dealers")
-                    : item.name === "Clients"
-                      ? location.pathname.startsWith("/clients") ||
-                        location.pathname.startsWith("/orders") // This condition is fine
-                      : item.name === "Companies"
-                        ? location.pathname.startsWith("/companies")
-                        : item.name === "Shipment Plan"
-                          ? location.pathname.startsWith("/shipment-planning")
-                          : location.pathname.startsWith(item.path); // Changed to startsWith for PI module
+              const isActive = isPathActive(item.activePaths || [item.path]);
 
               return (
                 <SidebarMenuItem key={item.name}>
