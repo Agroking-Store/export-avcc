@@ -10,8 +10,6 @@ import {
 import { attachShipmentReadiness } from "./vehicle-booking.service";
 import ProformaInvoice from "../models/ProformaInvoice.model";
 
-// ─── LC STATS: Helper to calculate LC pending count for a client ───
-// Counts all PIs for this client, then subtracts the ones with "lc_received" status
 const getLCStatsForClient = async (clientId: any) => {
   const pis = await ProformaInvoice.find({ client_id: clientId })
     .select("status")
@@ -19,9 +17,50 @@ const getLCStatsForClient = async (clientId: any) => {
 
   const totalPIs = pis.length;
   const lcReceived = pis.filter((pi) => pi.status === "lc_received").length;
-  const lcPending = totalPIs - lcReceived; // e.g. 10 PIs - 2 LC received = 8 LC pending
+  const lcPending = totalPIs - lcReceived;
 
-  return { totalPIs, lcReceived, lcPending };
+  const pendingPiIds = pis
+    .filter((pi) => pi.status !== "lc_received")
+    .map((pi) => pi._id.toString());
+
+  let lcPendingBookingIds: string[] = [];
+
+  if (pendingPiIds.length > 0) {
+    const matchedByAssociated = await VehicleBooking.find({
+      assignedClientId: clientId,
+      "associatedPIs._id": { $in: pendingPiIds },
+    })
+      .select("_id")
+      .lean();
+
+    lcPendingBookingIds = matchedByAssociated.map((b) => b._id.toString());
+
+    if (lcPendingBookingIds.length === 0) {
+      const pisWithBookings = await ProformaInvoice.find({
+        _id: { $in: pendingPiIds },
+        vehicleBookingIds: { $exists: true, $ne: [] },
+      })
+        .select("vehicleBookingIds")
+        .lean();
+
+      const bookingIds = pisWithBookings.flatMap((pi) =>
+        (pi.vehicleBookingIds || []).map((id: any) => id.toString()),
+      );
+
+      if (bookingIds.length > 0) {
+        const matchedByBookingId = await VehicleBooking.find({
+          assignedClientId: clientId,
+          _id: { $in: bookingIds },
+        })
+          .select("_id")
+          .lean();
+
+        lcPendingBookingIds = matchedByBookingId.map((b) => b._id.toString());
+      }
+    }
+  }
+
+  return { totalPIs, lcReceived, lcPending, lcPendingBookingIds };
 };
 
 export const createClientService = async (data: CreateClientDto) => {
