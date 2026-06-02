@@ -916,23 +916,6 @@ const PIDetails = () => {
               )}
             </div>
 
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800 ml-2">
-              {pi?.hblPath ? (
-                <Button
-                  onClick={handleViewHBL}
-                  variant="ghost"
-                  size="sm"
-                  className="text-emerald-600 h-8 gap-2"
-                >
-                  <Eye className="w-4 h-4" /> View HBL
-                </Button>
-              ) : (
-                <span className="px-3 py-1 text-xs font-semibold text-zinc-500">
-                  HBL in Vehicle Details
-                </span>
-              )}
-            </div>
-
             <div className="flex items-center gap-2 ml-2">
               <Button
                 onClick={() => handlePdfAction("view")}
@@ -1329,7 +1312,6 @@ const PIDetails = () => {
           }}
         />
       )}
-
     </div>
   );
 };

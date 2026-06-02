@@ -189,7 +189,7 @@ export const preparePIDataForService = (pi: any) => {
     },
 
     // Delivery fields
-    paymentTerms: pi.paymentTerms || "Advance",
+    paymentTerms: pi.paymentTerms || "",
     termsOfDelivery: pi.termsOfDelivery || "",
     incoterm: pi.incoterm || "",
     portOfLoading: pi.portOfLoading || "",
