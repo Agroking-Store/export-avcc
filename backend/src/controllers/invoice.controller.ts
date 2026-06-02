@@ -147,6 +147,28 @@ const splitMultiline = (value: unknown) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+const splitAddressLinesForPdf = (value: unknown) =>
+  String(value || "")
+    .split(/\r?\n|,\s*/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+const formatPackingDate = (value?: string | Date | null) =>
+  formatDisplayDate(value).replace(/\//g, "-");
+
+const parseMeasure = (value: unknown) => {
+  const parsed = Number(String(value || "").replace(/,/g, "").trim());
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formatMeasure = (value: number | null) => {
+  if (value === null || !Number.isFinite(value)) {
+    return "";
+  }
+
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+};
+
 const deriveExchangeRate = (
   vehicle: any,
   manualFields: Record<string, any>,
@@ -777,6 +799,20 @@ const buildVehicleDescription = (
   ];
 };
 
+const buildPackingListDescription = (vehicle: any) => {
+  const model = [vehicle.model, vehicle.variant].filter(Boolean).join(" ");
+
+  return [
+    { text: (model || vehicle.displayModel || "-").toUpperCase(), isTitle: true },
+    { text: `EXTERIOR COLOUR: ${vehicle.colour || "-"}` },
+    { text: `CHASSIS NO: ${vehicle.chassisNo || "-"}` },
+    { text: `ENGINE NO: ${vehicle.engineNo || "-"}` },
+    { text: `ENGINE CAPACITY: ${vehicle.engineCapacity || "-"}` },
+    { text: `FUEL TYPE ${vehicle.fuelType || "-"}` },
+    { text: "COUNTRY OF ORIGIN: INDIA" },
+  ];
+};
+
 const buildTemplateData = ({
   pi,
   vehicle,
@@ -828,6 +864,7 @@ const buildTemplateData = ({
     piDate: pi.piDate,
     buyerName: pi.buyerName,
     buyerAddress: pi.buyerAddress,
+    buyerAddressLines: splitAddressLinesForPdf(pi.buyerAddress),
     buyerCity: (pi.buyerCity || "").toUpperCase(),
     buyerCountry: pi.buyerCountry,
     commercialConsignee: {
@@ -937,6 +974,30 @@ const applyVehicleOverrides = (
     String(manualFields.igstRate).trim() !== ""
   ) {
     merged.igstRate = Number(manualFields.igstRate || 0);
+  }
+
+  return merged;
+};
+
+const applyPackingListOverrides = (
+  vehicle: Record<string, any>,
+  manualFields: Record<string, any>,
+  selectedCount: number,
+) => {
+  const merged = { ...vehicle };
+  const fields = ["netWeightKg", "grossWeightKg", "dimensionsCm"];
+
+  for (const field of fields) {
+    const manualValue = manualFields[field];
+
+    if (
+      manualValue !== undefined &&
+      manualValue !== null &&
+      String(manualValue).trim() !== "" &&
+      (selectedCount === 1 || !merged[field])
+    ) {
+      merged[field] = manualValue;
+    }
   }
 
   return merged;
@@ -1366,8 +1427,15 @@ export const generatePackingList = async (req: Request, res: Response) => {
       return jsonError(res, 404, { message: "PI not found" });
     }
 
-    const selectedVehicles = context.vehicles.filter((v: any) =>
+    const selectedVehicleCandidates = context.vehicles.filter((v: any) =>
       vehicleIds.includes(v.vehicleId),
+    );
+    const selectedVehicles = selectedVehicleCandidates.map((vehicle: any) =>
+      applyPackingListOverrides(
+        vehicle,
+        manualFields,
+        selectedVehicleCandidates.length,
+      ),
     );
 
     if (selectedVehicles.length === 0) {
@@ -1392,8 +1460,51 @@ export const generatePackingList = async (req: Request, res: Response) => {
       manualFields: resolvedManualFields,
     });
 
-    (templateData as any).selectedVehicles = selectedVehicles;
-    (templateData as any).totalVehicles = selectedVehicles.length;
+    const packingRows = selectedVehicles.map((vehicle: any, index: number) => ({
+      cartonNo: index + 1,
+      quantity: Number(vehicle.quantity || 1),
+      descriptionLines: buildPackingListDescription(vehicle),
+      netWeightKg: vehicle.netWeightKg || "",
+      grossWeightKg: vehicle.grossWeightKg || "",
+      dimensionsCm: vehicle.dimensionsCm || "",
+      netWeightValue: parseMeasure(vehicle.netWeightKg),
+      grossWeightValue: parseMeasure(vehicle.grossWeightKg),
+    }));
+    const totalQty = packingRows.reduce(
+      (sum, row) => sum + Number(row.quantity || 0),
+      0,
+    );
+    const hasNetWeight = packingRows.some((row) => row.netWeightValue !== null);
+    const hasGrossWeight = packingRows.some(
+      (row) => row.grossWeightValue !== null,
+    );
+    const totalNetWeight = packingRows.reduce(
+      (sum, row) =>
+        row.netWeightValue === null
+          ? sum
+          : sum + row.netWeightValue * Number(row.quantity || 1),
+      0,
+    );
+    const totalGrossWeight = packingRows.reduce(
+      (sum, row) =>
+        row.grossWeightValue === null
+          ? sum
+          : sum + row.grossWeightValue * Number(row.quantity || 1),
+      0,
+    );
+
+    Object.assign(templateData as any, {
+      selectedVehicles,
+      totalVehicles: selectedVehicles.length,
+      packingRows,
+      totalQty,
+      totalNetWeightKg: hasNetWeight ? formatMeasure(totalNetWeight) : "",
+      totalGrossWeightKg: hasGrossWeight ? formatMeasure(totalGrossWeight) : "",
+      invoiceDate: formatPackingDate(resolvedManualFields.invoiceDate),
+      piDate: formatPackingDate(context.piDate),
+      lcDate: formatPackingDate(resolvedManualFields.lcDate || context.lcDate),
+      buyerAddressLines: splitAddressLinesForPdf(context.buyerAddress),
+    });
 
     const packingListPdfBuffer = await renderInvoicePDF({
       templateName: "packingList",
