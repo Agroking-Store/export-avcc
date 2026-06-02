@@ -5,7 +5,10 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import InvoiceStepBar from "../components/InvoiceStepBar";
 import { invoiceApi } from "../components/invoiceApi";
-import type { InvoiceType, PIInvoiceContext } from "../components/invoice.types";
+import type {
+  InvoiceType,
+  PIInvoiceContext,
+} from "../components/invoice.types";
 
 const prettyType = (type: InvoiceType) =>
   type === "COMMERCIAL" ? "Commercial" : type;
@@ -26,7 +29,9 @@ export default function VehicleSelectionPage() {
         const data = await invoiceApi.getPIContext(piId);
         setContext(data);
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load PI vehicles");
+        toast.error(
+          error.response?.data?.message || "Failed to load PI vehicles",
+        );
       } finally {
         setLoading(false);
       }
@@ -36,7 +41,10 @@ export default function VehicleSelectionPage() {
   }, [piId]);
 
   const selectedVehicle = useMemo(
-    () => context?.vehicles.find((vehicle) => vehicle.vehicleId === selectedVehicleId),
+    () =>
+      context?.vehicles.find(
+        (vehicle) => vehicle.vehicleId === selectedVehicleId,
+      ),
     [context, selectedVehicleId],
   );
 
@@ -80,10 +88,12 @@ export default function VehicleSelectionPage() {
 
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-6 py-5">
-          <h2 className="text-lg font-bold text-slate-900">Vehicles in this PI</h2>
+          <h2 className="text-lg font-bold text-slate-900">
+            Vehicles in this PI
+          </h2>
           <p className="mt-1 text-sm text-slate-500">
-            One vehicle can generate one invoice of each type. Existing generated badges are
-            shown so you know what is already available.
+            One vehicle can generate one invoice of each type. Existing
+            generated badges are shown so you know what is already available.
           </p>
         </div>
 
@@ -104,7 +114,9 @@ export default function VehicleSelectionPage() {
                 <tr
                   key={vehicle.vehicleId}
                   className={`border-t border-slate-200 ${
-                    selectedVehicleId === vehicle.vehicleId ? "bg-blue-50/70" : "bg-white"
+                    selectedVehicleId === vehicle.vehicleId
+                      ? "bg-blue-50/70"
+                      : "bg-white"
                   }`}
                 >
                   <td className="px-6 py-4">
@@ -120,28 +132,41 @@ export default function VehicleSelectionPage() {
                     {vehicle.chassisNo || "—"}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-semibold text-slate-900">{vehicle.model || "—"}</div>
-                    <div className="mt-1 text-xs text-slate-500">{vehicle.make || "—"}</div>
+                    <div className="font-semibold text-slate-900">
+                      {vehicle.model || "—"}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {vehicle.make || "—"}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-slate-700">{vehicle.variant || "—"}</td>
+                  <td className="px-6 py-4 text-slate-700">
+                    {vehicle.variant || "—"}
+                  </td>
                   <td className="px-6 py-4 font-medium text-slate-900">
-                    USD {vehicle.totalUSD.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    USD{" "}
+                    {vehicle.totalUSD.toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                    })}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-2">
-                      {(["INR", "USD", "COMMERCIAL"] as InvoiceType[]).map((badgeType) => (
-                        <span
-                          key={badgeType}
-                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] ${
-                            vehicle.invoices[badgeType]
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          {vehicle.invoices[badgeType] && <CheckCircle2 className="h-3 w-3" />}
-                          {badgeType === "COMMERCIAL" ? "COM" : badgeType}
-                        </span>
-                      ))}
+                      {(["INR", "USD", "COMMERCIAL"] as InvoiceType[]).map(
+                        (badgeType) => (
+                          <span
+                            key={badgeType}
+                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] ${
+                              vehicle.invoices[badgeType]
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            {vehicle.invoices[badgeType] && (
+                              <CheckCircle2 className="h-3 w-3" />
+                            )}
+                            {badgeType === "COMMERCIAL" ? "COM" : badgeType}
+                          </span>
+                        ),
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -159,9 +184,20 @@ export default function VehicleSelectionPage() {
           <Button
             className="bg-blue-600 text-white hover:bg-blue-700"
             disabled={!selectedVehicleId}
-            onClick={() =>
-              navigate(`/invoices/generate/${piId}/${invoiceType}/${selectedVehicleId}`)
-            }
+            onClick={() => {
+              if (!selectedVehicle) return;
+              const engineNoMissing =
+                !selectedVehicle.engineNo || !selectedVehicle.engineNo.trim();
+              if (engineNoMissing) {
+                toast.error(
+                  "Vehicle doesn't have Engine Number. Please add engine number for this vehicle.",
+                );
+                return;
+              }
+              navigate(
+                `/invoices/generate/${piId}/${invoiceType}/${selectedVehicleId}`,
+              );
+            }}
           >
             Next
             <ArrowRight className="h-4 w-4" />

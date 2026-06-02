@@ -217,8 +217,10 @@ const buildInitialForm = (
       manual.commercialConsigneeAddressLine2 || "Sri Lanka",
     commercialClauses:
       manual.commercialClauses ||
-      DEFAULT_COMMERCIAL_CLAUSES.replace("{{PI_NUMBER}}", context.piNumber)
-        .replace("{{PI_DATE}}", context.piDate),
+      DEFAULT_COMMERCIAL_CLAUSES.replace(
+        "{{PI_NUMBER}}",
+        context.piNumber,
+      ).replace("{{PI_DATE}}", context.piDate),
     drawbackScheme: manual.drawbackScheme || "RODTEP",
     rodtepSchemeCode: manual.rodtepSchemeCode || "",
     endUseCode: manual.endUseCode || "",
@@ -382,6 +384,14 @@ export default function InvoiceFormPage() {
             currentInvoice as any,
           ),
         );
+
+        const engineNoMissing =
+          !selectedVehicle.engineNo || !selectedVehicle.engineNo.trim();
+        if (engineNoMissing) {
+          toast.error(
+            "Vehicle Doesn't have Engine Number. Please add engine number for this vehicle.",
+          );
+        }
       } catch (error: any) {
         toast.error(
           error.response?.data?.message || "Failed to load invoice form",
@@ -435,7 +445,9 @@ export default function InvoiceFormPage() {
     if (!form) return;
 
     if (!form.lcSharedConfirmed) {
-      toast.error("Please confirm the LC number and date are same for all invoices");
+      toast.error(
+        "Please confirm the LC number and date are same for all invoices",
+      );
       return;
     }
 
