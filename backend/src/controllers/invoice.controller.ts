@@ -7,6 +7,7 @@ import LetterOfCredit from "../models/LetterOfCredit.model";
 import { VehicleBooking } from "../models/VehicleBooking.model";
 import { renderInvoicePDF } from "../services/invoicePdf.service";
 import { numberToWordsINR, numberToWordsUSD } from "../utils/numberToWords";
+import { INVOICE_SEQUENCE_START_NUMBER } from "../config/constants";
 
 const EXPORTER = {
   companyName: "ANANYATA TRADELINK LLP",
@@ -276,6 +277,24 @@ const getFinancialYear = (value = new Date()) => {
   return `${String(year - 1).slice(2)}-${String(year).slice(2)}`;
 };
 
+// const buildInvoiceNumber = async () => {
+//   const prefix = `AN/EX/${getFinancialYear()}/`;
+//   const invoices = await Invoice.find({
+//     invoiceNumber: { $regex: `^${prefix.replace(/\//g, "\\/")}\\d+$` },
+//   }).select("invoiceNumber");
+
+//   let maxSequence = 0;
+
+//   for (const invoice of invoices) {
+//     const sequence = Number(invoice.invoiceNumber.split("/").pop());
+//     if (Number.isFinite(sequence) && sequence > maxSequence) {
+//       maxSequence = sequence;
+//     }
+//   }
+
+//   return `${prefix}${maxSequence + 1}`;
+// };
+
 const buildInvoiceNumber = async () => {
   const prefix = `AN/EX/${getFinancialYear()}/`;
   const invoices = await Invoice.find({
@@ -291,7 +310,8 @@ const buildInvoiceNumber = async () => {
     }
   }
 
-  return `${prefix}${maxSequence + 1}`;
+  const nextSequence = Math.max(maxSequence + 1, INVOICE_SEQUENCE_START_NUMBER);
+  return `${prefix}${nextSequence}`;
 };
 
 const getSharedVehicleInvoiceNumber = (vehicle: any) => {
@@ -409,7 +429,9 @@ const buildVehicleBookingFallbacks = async (vehicleDetails: any[]) => {
       ...(chassisNumbers.length
         ? [{ chassisNumber: { $in: chassisNumbers } }]
         : []),
-      ...(engineNumbers.length ? [{ engineNumber: { $in: engineNumbers } }] : []),
+      ...(engineNumbers.length
+        ? [{ engineNumber: { $in: engineNumbers } }]
+        : []),
     ],
   })
     .populate(
@@ -1138,7 +1160,10 @@ export const generateInvoice = async (req: Request, res: Response) => {
       });
     }
 
-    const resolvedVehicle = applyVehicleOverrides(vehicle, resolvedManualFields);
+    const resolvedVehicle = applyVehicleOverrides(
+      vehicle,
+      resolvedManualFields,
+    );
 
     const { templateData, computedFields } = buildTemplateData({
       pi: context,

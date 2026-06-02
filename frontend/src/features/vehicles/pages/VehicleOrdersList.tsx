@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 import {
+  CarFront,
   ChevronLeft,
   ChevronRight,
   Check,
   Eye,
   FilePenLine,
+  FileText,
   Filter,
+  PackageCheck,
   Plus,
   Search,
   Truck,
@@ -89,7 +93,16 @@ const STATUS_META: Record<
   },
 };
 
-const statusOptions = [
+const clientStatusOptions = [
+  "All",
+  "ORDERS PLACED",
+  "BOOKED",
+  "PENDING LC",
+  "CARS IN TRANSIT",
+  "CARS DELIVERED",
+];
+
+const adminStatusOptions = [
   "All",
   "Pending",
   "Waiting for Approval",
@@ -99,10 +112,7 @@ const statusOptions = [
   "Delivered",
 ];
 
-const statusLabelToRaw: Record<
-  string,
-  VehicleBookingStatus | "All" | "piPending"
-> = {
+const statusLabelToRaw: Record<string, string> = {
   All: "All",
   Pending: "pending",
   "Waiting for Approval": "quotation_uploaded",
@@ -110,6 +120,11 @@ const statusLabelToRaw: Record<
   "Awaiting Engine / Chassis Number": "payment_done",
   "Make PI": "piPending",
   Delivered: "delivered",
+  "ORDERS PLACED": "orders_placed",
+  BOOKED: "booked",
+  "PENDING LC": "pending_lc",
+  "CARS IN TRANSIT": "in_transit",
+  "CARS DELIVERED": "delivered_client",
 };
 
 interface ClientOrdersResponse {
@@ -143,6 +158,12 @@ const VehicleOrdersList = () => {
     lcPendingTotal: 0,
     sourcingTotal: 0,
     awaitingVinTotal: 0,
+    // ─── CLIENT STATUS: Card stats ───
+    ordersPlaced: 0,
+    booked: 0,
+    carsPendingLc: 0,
+    carsInTransit: 0,
+    carsDelivered: 0,
   });
 
   const rawToStatusLabel: Record<string, string> = {
@@ -192,21 +213,54 @@ const VehicleOrdersList = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
+
       if (isClient) {
         const response = await api.get<ClientOrdersResponse>("/clients/me");
         const clientBookings = Array.isArray(response.data?.vehicleOrders)
           ? response.data.vehicleOrders
           : [];
+
+        const hasChassis = (b: VehicleBookingItem) =>
+          !!String(b.chassisNumber || "").trim();
+
+        const isPendingLC = (b: VehicleBookingItem) => {
+          const pis = (b as any).associatedPIs;
+          if (!Array.isArray(pis) || pis.length === 0) return false;
+          return !pis.some((pi: any) => pi.status === "lc_received");
+        };
+
+        const ordersPlaced = clientBookings.length;
+        const booked = clientBookings.filter(
+          (b) =>
+            !!b.assignedDealerId && !hasChassis(b) && b.status !== "delivered",
+        ).length;
+        const carsPendingLc = clientBookings.filter(isPendingLC).length;
+        const carsInTransit = clientBookings.filter(
+          (b) => b.status === "shipped",
+        ).length;
+        const carsDelivered = clientBookings.filter(
+          (b) => b.status === "delivered",
+        ).length;
+
         const normalizedSearch = search.trim().toLowerCase();
         const filteredBookings = clientBookings.filter((booking) => {
-          const hasNumbers =
-            !!String(booking.engineNumber || "").trim() &&
-            !!String(booking.chassisNumber || "").trim();
-          const statusMatches =
-            statusValue === "All" ||
-            (statusValue === "piPending"
-              ? hasNumbers && !booking.piGenerated
-              : booking.status === statusValue);
+          let statusMatches = false;
+          if (statusValue === "All" || statusValue === "orders_placed") {
+            statusMatches = true;
+          } else if (statusValue === "booked") {
+            statusMatches =
+              !!booking.assignedDealerId &&
+              !hasChassis(booking) &&
+              booking.status !== "delivered";
+          } else if (statusValue === "pending_lc") {
+            statusMatches = isPendingLC(booking);
+          } else if (statusValue === "in_transit") {
+            statusMatches = booking.status === "shipped";
+          } else if (statusValue === "delivered_client") {
+            statusMatches = booking.status === "delivered";
+          } else {
+            statusMatches = booking.status === statusValue;
+          }
 
           if (!statusMatches) return false;
 
@@ -238,6 +292,7 @@ const VehicleOrdersList = () => {
 
           return searchValue.includes(normalizedSearch);
         });
+
         const nextTotal = filteredBookings.length;
         const nextTotalPages = Math.max(1, Math.ceil(nextTotal / limit));
         const startIndex = (currentPage - 1) * limit;
@@ -246,32 +301,27 @@ const VehicleOrdersList = () => {
         setTotal(nextTotal);
         setTotalPages(nextTotalPages);
         setBookingStats({
-          deliveredTotal: filteredBookings.filter(
-            (b) => b.status === "delivered",
-          ).length,
-          piReadyTotal: filteredBookings.filter(
+          deliveredTotal: clientBookings.filter((b) => b.status === "delivered")
+            .length,
+          piReadyTotal: clientBookings.filter(
             (b) => b.engineNumber && b.chassisNumber && !b.piGenerated,
           ).length,
-          totalAll: filteredBookings.length,
-          pendingTotal: filteredBookings.filter((b) => b.status === "pending")
+          totalAll: clientBookings.length,
+          pendingTotal: clientBookings.filter((b) => b.status === "pending")
             .length,
-          approvalTotal: filteredBookings.filter((b) =>
+          approvalTotal: clientBookings.filter((b) =>
             ["quotation_details_pending", "quotation_uploaded"].includes(
               b.status,
             ),
           ).length,
-          awaitingNumbersTotal: filteredBookings.filter(
+          awaitingNumbersTotal: clientBookings.filter(
             (b) => b.status === "payment_done",
           ).length,
-          inProgressTotal: filteredBookings.filter(
+          inProgressTotal: clientBookings.filter(
             (b) => b.status !== "delivered",
           ).length,
-          // lcPendingTotal: filteredBookings.filter(
-          //   (b) => b.status === "approved" || b.status === "quotation_uploaded",
-          // ).length,
-          lcPendingTotal: response.data?.lcStats?.lcPending ?? 0,
-
-          sourcingTotal: filteredBookings.filter((b) =>
+          lcPendingTotal: carsPendingLc,
+          sourcingTotal: clientBookings.filter((b) =>
             [
               "pending",
               "quotation_details_pending",
@@ -280,9 +330,14 @@ const VehicleOrdersList = () => {
               "payment_done",
             ].includes(b.status),
           ).length,
-          awaitingVinTotal: filteredBookings.filter(
+          awaitingVinTotal: clientBookings.filter(
             (b) => !b.chassisNumber && b.status !== "delivered",
           ).length,
+          ordersPlaced,
+          booked,
+          carsPendingLc,
+          carsInTransit,
+          carsDelivered,
         });
         return;
       }
@@ -309,6 +364,11 @@ const VehicleOrdersList = () => {
         lcPendingTotal: stats?.lcPendingTotal || 0,
         sourcingTotal: stats?.sourcingTotal || 0,
         awaitingVinTotal: stats?.awaitingVinTotal || 0,
+        ordersPlaced: 0,
+        booked: 0,
+        carsPendingLc: 0,
+        carsInTransit: 0,
+        carsDelivered: 0,
       });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
@@ -499,7 +559,36 @@ const VehicleOrdersList = () => {
     !!booking.invoiceReadiness?.COMMERCIAL;
 
   const getDisplayStatusMeta = (booking: VehicleBookingItem) => {
-    if (!isClient && hasEngineAndChassis(booking) && !booking.piGenerated) {
+    // ─── CLIENT STATUS: Show abstracted labels for client ───
+    if (isClient) {
+      if (booking.status === "delivered") {
+        return {
+          label: "Delivered",
+          badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        };
+      }
+      if (booking.status === "shipped") {
+        return {
+          label: "In Transit",
+          badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
+        };
+      }
+      if (
+        !!booking.assignedDealerId &&
+        !String(booking.chassisNumber || "").trim() &&
+        booking.status !== ("delivered" as VehicleBookingStatus)
+      ) {
+        return {
+          label: "Booked",
+          badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+        };
+      }
+      // Default fallback to original status
+      return STATUS_META[booking.status];
+    }
+
+    // Admin logic (unchanged)
+    if (hasEngineAndChassis(booking) && !booking.piGenerated) {
       return {
         label: "Make PI",
         badge: "bg-purple-100 text-purple-700 border-purple-200",
@@ -510,10 +599,8 @@ const VehicleOrdersList = () => {
       !hasReadyToShipInvoices(booking)
     ) {
       return {
-        label: isClient ? "Confirmed & Sourcing" : "Awaiting Invoices",
-        badge: isClient
-          ? "bg-blue-100 text-blue-700 border-blue-200"
-          : "bg-amber-100 text-amber-700 border-amber-200",
+        label: "Awaiting Invoices",
+        badge: "bg-amber-100 text-amber-700 border-amber-200",
       };
     }
     return STATUS_META[booking.status];
@@ -666,32 +753,43 @@ const VehicleOrdersList = () => {
     if (isClient) {
       return [
         {
-          label: "In Progress",
-          value: bookingStats.inProgressTotal,
-          tone: "bg-amber-100 text-amber-800",
+          label: "ORDERS PLACED",
+          value: bookingStats.ordersPlaced,
+          detail: "Required vehicles placed by you or our team",
+          icon: <CarFront size={20} />,
+          tone: "bg-blue-50 text-blue-700 border-blue-100",
         },
         {
-          label: "LC Pending",
-          value: bookingStats.lcPendingTotal,
-          tone: "bg-blue-100 text-blue-800",
+          label: "BOOKED",
+          value: bookingStats.booked,
+          detail: "Dealer allotted, chassis number pending",
+          icon: <Store size={20} />,
+          tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
         },
         {
-          label: "Sourcing",
-          value: bookingStats.sourcingTotal,
-          tone: "bg-slate-100 text-slate-800",
+          label: "PENDING LC",
+          value: bookingStats.carsPendingLc,
+          detail: "PI created but LC not received",
+          icon: <FileText size={20} />,
+          tone: "bg-amber-50 text-amber-700 border-amber-100",
         },
         {
-          label: "Delivered",
-          value: bookingStats.deliveredTotal,
-          tone: "bg-emerald-100 text-emerald-800",
+          label: "CARS IN TRANSIT",
+          value: bookingStats.carsInTransit,
+          detail: "Shipped and on the way to Sri Lanka",
+          icon: <Truck size={20} />,
+          tone: "bg-cyan-50 text-cyan-700 border-cyan-100",
         },
         {
-          label: "Awaiting VIN",
-          value: bookingStats.awaitingVinTotal,
-          tone: "bg-rose-100 text-rose-800",
+          label: "CARS DELIVERED",
+          value: bookingStats.carsDelivered,
+          detail: "Delivered vehicles",
+          icon: <PackageCheck size={20} />,
+          tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
         },
       ];
     }
+
     // ORIGINAL ADMIN CARDS
     return [
       {
@@ -773,16 +871,20 @@ const VehicleOrdersList = () => {
                   <SelectValue placeholder="All Statuses" />
                 </div>
               </SelectTrigger>
+
               <SelectContent
                 align="start"
                 position="popper"
                 className="min-w-[240px] rounded-xl p-1"
               >
-                {statusOptions.map((item) => (
-                  <SelectItem key={item} value={item} className="py-2">
-                    {item === "All" ? "All Statuses" : item}
-                  </SelectItem>
-                ))}
+                {/* ─── CLIENT STATUS: Use client-specific dropdown options ─── */}
+                {(isClient ? clientStatusOptions : adminStatusOptions).map(
+                  (item) => (
+                    <SelectItem key={item} value={item} className="py-2">
+                      {item === "All" ? "All Statuses" : item}
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -807,16 +909,31 @@ const VehicleOrdersList = () => {
         </div>
 
         {/* Summary Cards */}
+
         <div className="px-8 pb-4">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {summaryCards.map((card) => (
+            {summaryCards.map((card: any) => (
               <div
                 key={card.label}
                 className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
               >
+                {/* ─── CLIENT STATUS: Show icon ─── */}
+                {card.icon && (
+                  <div
+                    className={`rounded-xl p-2.5 mb-3 inline-flex ${card.tone}`}
+                  >
+                    {card.icon}
+                  </div>
+                )}
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {card.label}
                 </p>
+                {/* ─── CLIENT STATUS: Show detail text ─── */}
+                {card.detail && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {card.detail}
+                  </p>
+                )}
                 <div
                   className={`mt-3 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${card.tone}`}
                 >

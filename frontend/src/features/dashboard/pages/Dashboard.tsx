@@ -373,7 +373,9 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [momentumMonths, setMomentumMonths] = useState<3 | 6>(6);
   const [mounted, setMounted] = useState(false);
-  const [collectionFilter, setCollectionFilter] = useState<"1d" | "1w" | "1m" | "all">("all");
+  const [collectionFilter, setCollectionFilter] = useState<
+    "1d" | "1w" | "1m" | "all"
+  >("all");
 
   useEffect(() => {
     let alive = true;
@@ -568,6 +570,12 @@ const Dashboard: React.FC = () => {
       );
     const nextEstimatedCollection = scheduledVehicles[0]?.deliveryDate;
 
+    const isPendingLC = (order: VehicleBookingItem) => {
+      const pis = (order as any).associatedPIs;
+      if (!Array.isArray(pis) || pis.length === 0) return false;
+      return !pis.some((pi: any) => pi.status === "lc_received");
+    };
+
     return {
       total: clientProfile.totalVehicleOrders,
       ordersPlaced: orders.length,
@@ -581,11 +589,7 @@ const Dashboard: React.FC = () => {
         ? fmtDate(nextEstimatedCollection)
         : "-",
       estimatedCollectionCount: scheduledVehicles.length,
-      carsPendingLc: orders.filter(
-        (order) =>
-          hasChassis(order) &&
-          !["shipped", "delivered"].includes(order.status),
-      ).length,
+      carsPendingLc: orders.filter(isPendingLC).length,
       carsInTransit: orders.filter((order) => order.status === "shipped")
         .length,
       carsDelivered: orders.filter((order) => order.status === "delivered")
@@ -598,7 +602,12 @@ const Dashboard: React.FC = () => {
     const vehicles = clientStats?.scheduledVehicles ?? [];
     if (collectionFilter === "all") return vehicles;
     const now = Date.now();
-    const ms = collectionFilter === "1d" ? 86_400_000 : collectionFilter === "1w" ? 7 * 86_400_000 : 30 * 86_400_000;
+    const ms =
+      collectionFilter === "1d"
+        ? 86_400_000
+        : collectionFilter === "1w"
+          ? 7 * 86_400_000
+          : 30 * 86_400_000;
     return vehicles.filter((v) => {
       if (!v.deliveryDate) return false;
       const diff = new Date(v.deliveryDate).getTime() - now;
@@ -606,7 +615,12 @@ const Dashboard: React.FC = () => {
     });
   }, [clientStats, collectionFilter]);
 
-  const greeting = (() => { const h = new Date().getHours(); if (h < 12) return "Good Morning"; if (h < 17) return "Good Afternoon"; return "Good Evening"; })();
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good Morning";
+    if (h < 17) return "Good Afternoon";
+    return "Good Evening";
+  })();
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -639,10 +653,11 @@ const Dashboard: React.FC = () => {
       {
         label: "CARS PENDING LC",
         value: clientStats.carsPendingLc,
-        detail: "Chassis number received",
+        detail: "PI created but LC not received",
         icon: <FileText size={20} />,
         tone: "bg-amber-50 text-amber-700 border-amber-100",
       },
+
       {
         label: "CARS IN TRANSIT",
         value: clientStats.carsInTransit,
@@ -659,29 +674,32 @@ const Dashboard: React.FC = () => {
       },
     ];
 
-
     return (
       <div
         className="min-h-screen"
-        style={{ background: "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)" }}
+        style={{
+          background:
+            "linear-gradient(160deg,#f0f6ff 0%,#f7faff 50%,#eaf3ff 100%)",
+        }}
       >
         {/* subtle dot grid */}
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
-            backgroundImage: "radial-gradient(circle,#bfdbfe 1px,transparent 1px)",
+            backgroundImage:
+              "radial-gradient(circle,#bfdbfe 1px,transparent 1px)",
             backgroundSize: "30px 30px",
             opacity: 0.22,
           }}
         />
 
         <div className="relative mx-auto max-w-[1500px] px-6 py-8 space-y-6">
-
           {/* ── WELCOME HERO ── */}
           <div
             className="relative overflow-hidden rounded-3xl"
             style={{
-              background: "linear-gradient(135deg, #0f2d6e 0%, #1648b8 35%, #1e6fcc 62%, #0e4fa8 82%, #0a3580 100%)",
+              background:
+                "linear-gradient(135deg, #0f2d6e 0%, #1648b8 35%, #1e6fcc 62%, #0e4fa8 82%, #0a3580 100%)",
               boxShadow: "0 24px 80px -12px rgba(14,45,110,0.50)",
               minHeight: 200,
             }}
@@ -716,22 +734,23 @@ const Dashboard: React.FC = () => {
                   {clientProfile.client.companyName}
                 </h1>
                 <p className="mt-2 text-[14px] text-blue-100/75 max-w-sm leading-relaxed">
-                  Track your vehicle orders, shipments, LC status, and deliveries — all in one place.
+                  Track your vehicle orders, shipments, LC status, and
+                  deliveries — all in one place.
                 </p>
               </div>
 
               <button
-                  onClick={() => navigate("/vehicles/orders")}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[13px] font-bold text-white transition-all hover:scale-[1.03] cursor-pointer"
-                  style={{
-                    background: "rgba(255,255,255,0.18)",
-                    border: "1px solid rgba(255,255,255,0.28)",
-                    backdropFilter: "blur(12px)",
-                  }}
-                >
-                  View Vehicle List
-                  <ArrowRight size={15} />
-                </button>
+                onClick={() => navigate("/vehicles/orders")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-[13px] font-bold text-white transition-all hover:scale-[1.03] cursor-pointer"
+                style={{
+                  background: "rgba(255,255,255,0.18)",
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  backdropFilter: "blur(12px)",
+                }}
+              >
+                View Vehicle List
+                <ArrowRight size={15} />
+              </button>
             </div>
           </div>
 
@@ -759,14 +778,24 @@ const Dashboard: React.FC = () => {
                 />
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${card.tone.split(" ").find(c => c.startsWith("text-"))}`}>
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-[0.16em] ${card.tone.split(" ").find((c) => c.startsWith("text-"))}`}
+                    >
                       {card.label}
                     </p>
                     <p className="mt-3 text-3xl font-bold tabular-nums text-slate-900 leading-none">
                       {card.value}
                     </p>
                   </div>
-                  <div className={`rounded-xl p-2.5 ${card.tone.split(" ").filter(c => c.startsWith("bg-") || c.startsWith("text-")).join(" ")}`} style={{ background: "rgba(255,255,255,0.7)" }}>
+                  <div
+                    className={`rounded-xl p-2.5 ${card.tone
+                      .split(" ")
+                      .filter(
+                        (c) => c.startsWith("bg-") || c.startsWith("text-"),
+                      )
+                      .join(" ")}`}
+                    style={{ background: "rgba(255,255,255,0.7)" }}
+                  >
                     {card.icon}
                   </div>
                 </div>
@@ -783,7 +812,8 @@ const Dashboard: React.FC = () => {
                   Estimated Collection Dates
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Dates entered by the team as the expected collection date from the dealership.
+                  Dates entered by the team as the expected collection date from
+                  the dealership.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -811,13 +841,15 @@ const Dashboard: React.FC = () => {
                     <th className="px-6 py-4">Vehicle</th>
                     <th className="px-6 py-4">Chassis</th>
                     <th className="px-6 py-4">Estimated Collection Date</th>
-                    <th className="px-6 py-4">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredScheduledVehicles.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400">
+                      <td
+                        colSpan={4}
+                        className="px-6 py-10 text-center text-slate-400"
+                      >
                         {collectionFilter === "all"
                           ? "No estimated collection dates added yet."
                           : `No vehicles scheduled in the selected time range.`}
@@ -825,7 +857,10 @@ const Dashboard: React.FC = () => {
                     </tr>
                   ) : (
                     filteredScheduledVehicles.slice(0, 8).map((order) => (
-                      <tr key={order._id} className="border-t border-slate-100 hover:bg-blue-50/30 transition-colors">
+                      <tr
+                        key={order._id}
+                        className="border-t border-slate-100 hover:bg-blue-50/30 transition-colors"
+                      >
                         <td className="px-6 py-4 font-semibold text-slate-900">
                           {getVehicleName(order)}
                         </td>
@@ -834,13 +869,6 @@ const Dashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-slate-700">
                           {fmtDate(order.deliveryDate)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase ${bookingStatusCls(order.status)}`}
-                          >
-                            {order.status.replace(/_/g, " ")}
-                          </span>
                         </td>
                       </tr>
                     ))
