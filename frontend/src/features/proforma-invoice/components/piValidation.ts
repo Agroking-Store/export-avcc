@@ -20,7 +20,7 @@ export const defaultPIForm: PIForm = {
   termsOfDelivery: "",
   incoterm: "CFR",
   portOfLoading: "Any Port in India",
-  portOfDischarge: "Any Port in Sri Lanka",
+  portOfDischarge: "COLOMBO",
   buyersRef: "",
   otherRef: "",
   dispatchedThrough: "",
@@ -35,7 +35,7 @@ export const getAmount = (v: VehicleLineItem) =>
   getRate(v) * (Number(v.quantity) || 0);
 
 export const validatePIForm = (
-  form: PIForm
+  form: PIForm,
 ): {
   isValid: boolean;
   errors: Record<string, string>;
@@ -46,7 +46,7 @@ export const validatePIForm = (
   if (!form.client_id) errors.client_id = "Client is required";
 
   const includedVehicles = form.vehicleDetails.filter(
-    (v) => v.selected !== false
+    (v) => v.selected !== false,
   );
 
   if (includedVehicles.length === 0) {
