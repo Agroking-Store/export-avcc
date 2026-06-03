@@ -1052,9 +1052,6 @@ export const getAllVehicleBookingsService = async (query: any) => {
       0,
     ],
   });
-  const hasEngineAndChassisExpr = {
-    $and: [filledTextExpr("engineNumber"), filledTextExpr("chassisNumber")],
-  };
   const missingEngineOrChassisExpr = {
     $or: [
       { $not: [filledTextExpr("engineNumber")] },
@@ -1064,28 +1061,13 @@ export const getAllVehicleBookingsService = async (query: any) => {
   const piReadyExpr = {
     $and: [
       { $eq: ["$piGenerated", false] },
-      hasEngineAndChassisExpr,
-      // Ensure "Make PI" bucket does NOT include already delivered vehicles.
-      { $ne: ["$status", "delivered"] },
-      // Ensure "Make PI" bucket does NOT include payment_done (awaiting chassis) vehicles.
-      { $ne: ["$status", "payment_done"] },
+      { $in: ["$status", ["payment_done", "chassis_received", "shipped"]] },
     ],
   };
   const awaitingNumbersExpr = {
     $and: [
       { $eq: ["$status", "payment_done"] },
       missingEngineOrChassisExpr,
-      // Keep this bucket exclusive from "Make PI" candidates.
-      // "Make PI" = piGenerated:false + engine+chassis + status != delivered.
-      {
-        $not: {
-          $and: [
-            { $eq: ["$piGenerated", false] },
-            hasEngineAndChassisExpr,
-            { $ne: ["$status", "delivered"] },
-          ],
-        },
-      },
     ],
   };
 

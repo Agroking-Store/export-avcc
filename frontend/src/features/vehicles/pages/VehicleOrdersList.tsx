@@ -551,7 +551,7 @@ const VehicleOrdersList = () => {
       toast.error("Not shipped yet");
       return;
     }
-    if (!booking.piGenerated) {
+    if (!hasGeneratedPI(booking)) {
       toast.error("PI not created");
       return;
     }
@@ -576,7 +576,7 @@ const VehicleOrdersList = () => {
       toast.error("Not shipped yet");
       return;
     }
-    if (!booking.piGenerated) {
+    if (!hasGeneratedPI(booking)) {
       toast.error("PI not created");
       return;
     }
@@ -598,9 +598,12 @@ const VehicleOrdersList = () => {
     }
   };
 
-  const hasEngineAndChassis = (booking: VehicleBookingItem) =>
-    !!String(booking.engineNumber || "").trim() &&
-    !!String(booking.chassisNumber || "").trim();
+  const hasGeneratedPI = (booking: VehicleBookingItem) =>
+    booking.piGenerated ||
+    (Array.isArray(booking.associatedPIs) && booking.associatedPIs.length > 0);
+
+  const isPostBookingFlow = (booking: VehicleBookingItem) =>
+    ["payment_done", "chassis_received", "shipped"].includes(booking.status);
 
   const hasReadyToShipInvoices = (booking: VehicleBookingItem) =>
     !!booking.invoiceReadiness?.INR &&
@@ -636,31 +639,36 @@ const VehicleOrdersList = () => {
       return STATUS_META[booking.status];
     }
 
-    // Admin logic
-    // If chassis comes but engine doesn't, show awaiting engine (new requirement)
-    const hasChassisOnly =
-      !!String(booking.chassisNumber || "").trim() &&
-      !String(booking.engineNumber || "").trim();
-    if (booking.status === "payment_done" && hasChassisOnly) {
-      return {
-        label: "Awaiting Engine",
-        badge: "bg-blue-100 text-blue-700 border-blue-200",
-      };
-    }
+    const hasEngine = !!String(booking.engineNumber || "").trim();
+    const hasChassis = !!String(booking.chassisNumber || "").trim();
+    const hasPI = hasGeneratedPI(booking);
 
-    if (hasEngineAndChassis(booking) && !booking.piGenerated) {
+    if (isPostBookingFlow(booking) && !hasPI) {
       return {
         label: "Make PI",
         badge: "bg-purple-100 text-purple-700 border-purple-200",
       };
     }
-    if (
-      booking.status === "chassis_received" &&
-      !hasReadyToShipInvoices(booking)
-    ) {
+
+    if (booking.status === "payment_done" && hasPI) {
+      if (hasChassis && !hasEngine) {
+        return {
+          label: "Awaiting Engine",
+          badge: "bg-blue-100 text-blue-700 border-blue-200",
+        };
+      }
+      if (hasEngine && !hasChassis) {
+        return {
+          label: "Awaiting Chassis",
+          badge: "bg-blue-100 text-blue-700 border-blue-200",
+        };
+      }
+    }
+
+    if (booking.status === "chassis_received" && hasPI) {
       return {
-        label: "Awaiting Invoices",
-        badge: "bg-amber-100 text-amber-700 border-amber-200",
+        label: "PI Created",
+        badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
       };
     }
     return STATUS_META[booking.status];
@@ -898,6 +906,9 @@ const VehicleOrdersList = () => {
     booking.assignedClientSnapshot?.companyName ||
     booking.assignedClientSnapshot?.name ||
     "Allot Client";
+  const confirmationMissingInvoices =
+    confirmation?.action === "deliver" &&
+    !hasReadyToShipInvoices(confirmation.booking);
 
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
@@ -1310,7 +1321,9 @@ const VehicleOrdersList = () => {
             </AlertDialogMedia>
             <AlertDialogTitle>Mark as delivered?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark the vehicle as delivered for the assigned client.
+              {confirmationMissingInvoices
+                ? "⚠️ Invoices not generated for this vehicle. Are you sure you want to mark as delivered?"
+                : "This will mark the vehicle as delivered for the assigned client."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -85,16 +85,19 @@ const STATUS_META: Record<
   },
 };
 
+const hasGeneratedPI = (booking: VehicleBookingItem) =>
+  booking.piGenerated ||
+  (Array.isArray(booking.associatedPIs) && booking.associatedPIs.length > 0);
+
+const isPostBookingFlow = (booking: VehicleBookingItem) =>
+  ["payment_done", "chassis_received", "shipped"].includes(booking.status);
+
 const Vehicles: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const hasEngineAndChassis = (booking: VehicleBookingItem) =>
-    !!String(booking.engineNumber || "").trim() &&
-    !!String(booking.chassisNumber || "").trim();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,7 +135,7 @@ const Vehicles: React.FC = () => {
     ).length;
     const missingClient = bookings.filter((b) => !b.assignedClientId).length;
     const piPending = bookings.filter(
-      (b) => hasEngineAndChassis(b) && !b.piGenerated,
+      (b) => isPostBookingFlow(b) && !hasGeneratedPI(b),
     ).length;
 
     return {
@@ -165,7 +168,7 @@ const Vehicles: React.FC = () => {
   );
 
   const piPendingBookings = useMemo(
-    () => bookings.filter((b) => hasEngineAndChassis(b) && !b.piGenerated),
+    () => bookings.filter((b) => isPostBookingFlow(b) && !hasGeneratedPI(b)),
     [bookings],
   );
 
