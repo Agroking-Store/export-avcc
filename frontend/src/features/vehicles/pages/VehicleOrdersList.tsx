@@ -56,19 +56,19 @@ const STATUS_META: Record<
   { label: string; badge: string }
 > = {
   pending: {
-    label: "Awaiting approval",
+    label: "Action Required ",
     badge: "bg-slate-100 text-slate-700 border-slate-200",
   },
   quotation_details_pending: {
-    label: "Waiting for Approval",
+    label: "Awaiting Approval",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   quotation_uploaded: {
-    label: "Waiting for Approval",
+    label: "Awaiting Approval",
     badge: "bg-amber-100 text-amber-700 border-amber-200",
   },
   approved: {
-    label: "Approved",
+    label: "Awaiting Booking",
     badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
   },
   rejected: {
@@ -80,11 +80,11 @@ const STATUS_META: Record<
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   chassis_received: {
-    label: "Awaiting Engine / Chassis Number",
+    label: "Awaiting Engine Number",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   shipped: {
-    label: "Awaiting Engine / Chassis Number",
+    label: "Shipped",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
   },
   delivered: {
@@ -106,8 +106,8 @@ const clientStatusOptions = [
 
 const adminStatusOptions = [
   "All",
+  "Action Required",
   "Awaiting Approval",
-  "Waiting for Approval",
   "Awaiting Engine / Chassis Number",
   "Make PI",
   "Delivered",
@@ -115,8 +115,8 @@ const adminStatusOptions = [
 
 const statusLabelToRaw: Record<string, string> = {
   All: "All",
-  "Awaiting Approval": "pending",
-  "Waiting for Approval": "approvalPending",
+  "Action Required": "pending",
+  "Awaiting Approval": "approvalPending",
   "Awaiting Engine / Chassis Number": "awaitingNumbers",
   "Make PI": "piPending",
   Delivered: "delivered",
@@ -169,10 +169,10 @@ const VehicleOrdersList = () => {
   });
 
   const rawToStatusLabel: Record<string, string> = {
-    pending: "Awaiting Approval",
-    approvalPending: "Waiting for Approval",
-    quotation_details_pending: "Waiting for Approval",
-    quotation_uploaded: "Waiting for Approval",
+    pending: "Action Required",
+    approvalPending: "Awaiting Approval",
+    quotation_details_pending: "Awaiting Approval",
+    quotation_uploaded: "Awaiting Approval",
     awaitingNumbers: "Awaiting Engine / Chassis Number",
     payment_done: "Awaiting Engine / Chassis Number",
     chassis_received: "All",
@@ -847,14 +847,14 @@ const VehicleOrdersList = () => {
     // ORIGINAL ADMIN CARDS
     return [
       {
-        label: "Pending",
-        filterLabel: "Pending",
+        label: "Action Required",
+        filterLabel: "Action Required",
         value: bookingStats.pendingTotal,
         tone: "bg-slate-100 text-slate-800",
       },
       {
-        label: "Waiting for Approval",
-        filterLabel: "Waiting for Approval",
+        label: "Awaiting Approval",
+        filterLabel: "Awaiting Approval",
         value: bookingStats.approvalTotal,
         tone: "bg-amber-100 text-amber-800",
       },
