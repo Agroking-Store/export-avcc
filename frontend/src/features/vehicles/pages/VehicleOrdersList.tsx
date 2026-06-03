@@ -813,7 +813,7 @@ const VehicleOrdersList = () => {
           label: "BOOKED",
           filterLabel: "BOOKED",
           value: bookingStats.booked,
-          detail: "Dealer allotted, chassis number pending",
+          detail: "Booked vehicles",
           icon: <Store size={20} />,
           tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
         },
