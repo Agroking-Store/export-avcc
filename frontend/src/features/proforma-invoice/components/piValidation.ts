@@ -19,7 +19,7 @@ export const defaultPIForm: PIForm = {
   validityDate: getTodayIsoDate(),
   termsOfDelivery: "",
   incoterm: "CFR",
-  portOfLoading: "Any Port in India",
+  portOfLoading: "",
   portOfDischarge: "COLOMBO",
   buyersRef: "",
   otherRef: "",
