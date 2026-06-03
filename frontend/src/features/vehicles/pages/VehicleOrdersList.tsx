@@ -98,9 +98,11 @@ const clientStatusOptions = [
   "ORDERS PLACED",
   "BOOKED",
   "PENDING LC",
+  "LC RECEIVED",
   "CARS IN TRANSIT",
   "CARS DELIVERED",
 ];
+
 
 const adminStatusOptions = [
   "All",
@@ -213,39 +215,39 @@ const VehicleOrdersList = () => {
   // Client status bucket mapping (used for BOTH cards & table)
   // ─────────────────────────────────────────────────────────────
   const getClientBucket = (b: VehicleBookingItem) => {
-    const hasChassis = !!String(b.chassisNumber || "").trim();
+    const pis = Array.isArray((b as any).associatedPIs)
+      ? ((b as any).associatedPIs as Array<{ status?: string }>)
+      : [];
 
-    // ORDERS PLACED
-    // In this UI it means: order exists but booking is not yet in "BOOKED" state.
-    // (Existing behavior kept to match current screenshots expectations.)
-    // If dealer is not allotted yet OR booking is already delivered, keep it out of BOOKED.
+    const hasPI = pis.length > 0;
+    const hasLcReceived = pis.some((pi) => pi?.status === "lc_received");
 
-    // BOOKED
-    // Dealer allotted, chassis number pending (not delivered)
-    if (!!b.assignedDealerId && !hasChassis && b.status !== "delivered") {
-      return "BOOKED";
+    const isDelivered = b.status === "delivered";
+    const isInTransit = b.status === "shipped";
+    const isBooked = !!b.assignedDealerId && !hasPI && !isDelivered;
+
+    // orders placed = booked + pending LC + LC received + in transit + delivered
+    if (isBooked) return "BOOKED";
+
+    // pending LC = PI exists but LC not received
+    if (hasPI && !hasLcReceived && !isDelivered && !isInTransit) {
+      return "PENDING LC";
     }
 
-    // PENDING LC
-    // PI exists but LC not received
-    if (
-      Array.isArray((b as any).associatedPIs) &&
-      (b as any).associatedPIs.length > 0
-    ) {
-      const isPendingLC = !(b as any).associatedPIs.some(
-        (pi: any) => pi?.status === "lc_received",
-      );
-      if (isPendingLC) return "PENDING LC";
+    // LC RECEIVED = LC uploaded/received for this vehicle (via PI),
+    // but it is not shipped yet.
+    // (Even if chassis number exists, this bucket is still valid.)
+    if (hasPI && hasLcReceived && !isDelivered && !isInTransit) {
+      return "LC RECEIVED";
     }
 
-    // CARS IN TRANSIT
-    if (b.status === "shipped") return "CARS IN TRANSIT";
 
-    // CARS DELIVERED
-    if (b.status === "delivered") return "CARS DELIVERED";
+    if (isInTransit) return "CARS IN TRANSIT";
+    if (isDelivered) return "CARS DELIVERED";
 
     return "OTHER";
   };
+
 
   const fetchBookings = async () => {
     try {
