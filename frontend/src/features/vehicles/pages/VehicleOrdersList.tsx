@@ -636,7 +636,18 @@ const VehicleOrdersList = () => {
       return STATUS_META[booking.status];
     }
 
-    // Admin logic (unchanged)
+    // Admin logic
+    // If chassis comes but engine doesn't, show awaiting engine (new requirement)
+    const hasChassisOnly =
+      !!String(booking.chassisNumber || "").trim() &&
+      !String(booking.engineNumber || "").trim();
+    if (booking.status === "payment_done" && hasChassisOnly) {
+      return {
+        label: "Awaiting Engine",
+        badge: "bg-blue-100 text-blue-700 border-blue-200",
+      };
+    }
+
     if (hasEngineAndChassis(booking) && !booking.piGenerated) {
       return {
         label: "Make PI",
