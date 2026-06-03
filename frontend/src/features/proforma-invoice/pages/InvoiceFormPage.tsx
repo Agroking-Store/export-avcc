@@ -202,6 +202,7 @@ const buildInitialForm = (
     lcDate: toDateInputValue(manual.lcDate || context.lcDate),
     lcSharedConfirmed: manual.lcSharedConfirmed === true,
     containerNo: manual.containerNo || "",
+    portOfLoading: manual.portOfLoading || context.portOfLoading || "",
     buyerOrderDate: manual.buyerOrderDate || "",
     otherReference: manual.otherReference || context.piNumber || "",
     termsOfDelivery: manual.termsOfDelivery || context.termsOfDelivery || "",
@@ -553,9 +554,13 @@ export default function InvoiceFormPage() {
                 label="Buyer Address"
                 value={context.buyerAddress}
               />
-              <ReadOnlyField
+              <EditableField
                 label="Port of Loading"
-                value={context.portOfLoading}
+                name="portOfLoading"
+                value={form.portOfLoading}
+                onChange={handleFieldChange}
+                placeholder="Enter port of loading"
+                required
               />
               <ReadOnlyField
                 label="Port of Discharge"

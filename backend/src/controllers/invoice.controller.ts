@@ -157,7 +157,11 @@ const formatPackingDate = (value?: string | Date | null) =>
   formatDisplayDate(value).replace(/\//g, "-");
 
 const parseMeasure = (value: unknown) => {
-  const parsed = Number(String(value || "").replace(/,/g, "").trim());
+  const parsed = Number(
+    String(value || "")
+      .replace(/,/g, "")
+      .trim(),
+  );
   return Number.isFinite(parsed) ? parsed : null;
 };
 
@@ -803,7 +807,10 @@ const buildPackingListDescription = (vehicle: any) => {
   const model = [vehicle.model, vehicle.variant].filter(Boolean).join(" ");
 
   return [
-    { text: (model || vehicle.displayModel || "-").toUpperCase(), isTitle: true },
+    {
+      text: (model || vehicle.displayModel || "-").toUpperCase(),
+      isTitle: true,
+    },
     { text: `EXTERIOR COLOUR: ${vehicle.colour || "-"}` },
     { text: `CHASSIS NO: ${vehicle.chassisNo || "-"}` },
     { text: `ENGINE NO: ${vehicle.engineNo || "-"}` },
@@ -880,7 +887,8 @@ const buildTemplateData = ({
     },
     lcNumber: manualFields.lcNumber || pi.lcNumber,
     lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
-    portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
+    // portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
+    portOfLoading: manualFields.portOfLoading || pi.portOfLoading,
     portOfDischarge: pi.portOfDischarge,
     placeOfDelivery: pi.placeOfDelivery,
     placeOfReceipt: pi.placeOfReceipt || "Narhe, Pune",
