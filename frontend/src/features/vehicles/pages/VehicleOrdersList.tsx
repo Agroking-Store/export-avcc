@@ -123,9 +123,11 @@ const statusLabelToRaw: Record<string, string> = {
   "ORDERS PLACED": "orders_placed",
   BOOKED: "booked",
   "PENDING LC": "pending_lc",
+  "LC RECEIVED": "lc_received",
   "CARS IN TRANSIT": "in_transit",
   "CARS DELIVERED": "delivered_client",
 };
+
 
 interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
@@ -211,6 +213,7 @@ const VehicleOrdersList = () => {
 
   const statusValue = statusLabelToRaw[statusLabel] || "All";
 
+
   // ─────────────────────────────────────────────────────────────
   // Client status bucket mapping (used for BOTH cards & table)
   // ─────────────────────────────────────────────────────────────
@@ -293,8 +296,15 @@ const VehicleOrdersList = () => {
               booking.status !== "delivered";
           } else if (statusValue === "pending_lc") {
             statusMatches = isPendingLC(booking);
+          } else if (statusValue === "lc_received") {
+            const pis = (booking as any).associatedPIs;
+            const hasPI = Array.isArray(pis) && pis.length > 0;
+            const hasLcReceived =
+              hasPI && pis.some((pi: any) => pi?.status === "lc_received");
+            statusMatches = hasLcReceived;
           } else if (statusValue === "in_transit") {
             statusMatches = booking.status === "shipped";
+
           } else if (statusValue === "delivered_client") {
             statusMatches = booking.status === "delivered";
           } else {
