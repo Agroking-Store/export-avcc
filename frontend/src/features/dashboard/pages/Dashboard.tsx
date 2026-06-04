@@ -883,9 +883,6 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
-                  {filteredScheduledVehicles.length} scheduled
-                </span>
                 {/* Time-range dropdown */}
                 <select
                   value={collectionFilter}
