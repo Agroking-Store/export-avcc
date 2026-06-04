@@ -785,11 +785,33 @@ export const updateChassisEngine = async (
   if (!booking) throw new Error("Booking not found");
 
   if (data.chassisNumber !== undefined) {
-    booking.chassisNumber = data.chassisNumber.trim();
+    const trimmedChassis = data.chassisNumber.trim();
+
+    // Only check for duplicates if a chassis number is actually provided
+    if (trimmedChassis) {
+      // Check if another booking already has this chassis number (case-insensitive to be safe)
+      const existingBooking = await VehicleBooking.findOne({
+        chassisNumber: { $regex: new RegExp(`^${trimmedChassis}$`, "i") },
+        _id: { $ne: bookingId }, // Exclude the current booking from the check
+      });
+
+      if (existingBooking) {
+        throw new Error(
+          "This chassis number is already assigned to another vehicle.",
+        );
+      }
+    }
+
+    // Optionally normalize to uppercase to prevent case-sensitive duplicates
+    booking.chassisNumber = trimmedChassis.toUpperCase() || undefined;
   }
+
   if (data.engineNumber !== undefined) {
-    booking.engineNumber = data.engineNumber.trim() || undefined;
+    const trimmedEngine = data.engineNumber.trim();
+    // Optionally normalize engine number as well
+    booking.engineNumber = trimmedEngine.toUpperCase() || undefined;
   }
+
   if (data.deliveryDate !== undefined) {
     booking.deliveryDate = data.deliveryDate
       ? new Date(data.deliveryDate)
@@ -842,6 +864,8 @@ export const updateChassisEngine = async (
   const saved = await booking.save();
   return getPopulatedBookingWithReadiness(saved._id);
 };
+
+// ... existing code ...
 
 /**
  * Update status manually (e.g. mark as delivered)

@@ -232,6 +232,12 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
       type: String,
       default: "",
       trim: true,
+      index: {
+        unique: true,
+        partialFilterExpression: {
+          chassisNumber: { $type: "string", $ne: "" },
+        },
+      },
     },
     deliveryDate: {
       type: Date,
