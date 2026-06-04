@@ -12,6 +12,8 @@ import {
 import { shipmentApi } from "../../../services/shipmentApi";
 import type { ShippingDetail } from "./shipmentData";
 import { formatDate } from "./shipmentData";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 
 const API_LIMIT_FOR_KPIS = 50;
 const RECENT_LIMIT = 8;
@@ -19,6 +21,8 @@ const RECENT_LIMIT = 8;
 type TimeRangeKey = "all" | "thisMonth" | "lastMonth";
 
 const ShipmentPlanningDashboard: React.FC = () => {
+  const { isClient } = useAuth();
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -158,6 +162,10 @@ const ShipmentPlanningDashboard: React.FC = () => {
         return "All";
     }
   }, [timeRange]);
+
+  if (isClient) {
+    return <Navigate to="/shipment-planning/list" replace />;
+  }
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500 bg-[#f8faff] dark:bg-gray-950">

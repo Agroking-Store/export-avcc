@@ -1,9 +1,11 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Package, Ship } from "lucide-react";
+import { useAuth } from "../../../hooks/useAuth"; // ✅ Import your hook
 
 const ShipmentPlanningNavbar: React.FC = () => {
   const location = useLocation();
+  const { isClient } = useAuth(); // ✅ Get the client role check
 
   const tabs = [
     {
@@ -26,6 +28,14 @@ const ShipmentPlanningNavbar: React.FC = () => {
     },
   ];
 
+  // FILTER: Remove the dashboard tab if the logged-in user is a client
+  const visibleTabs = tabs.filter((tab) => {
+    if (tab.key === "dashboard" && isClient) {
+      return false;
+    }
+    return true;
+  });
+
   const isActiveTab = (tabKey: string) => {
     const p = location.pathname;
     if (tabKey === "dashboard") return p === "/shipment-planning/dashboard";
@@ -45,7 +55,8 @@ const ShipmentPlanningNavbar: React.FC = () => {
 
   return (
     <div className="flex items-center gap-1.5 p-1 bg-slate-50/50 rounded-[18px] w-fit">
-      {tabs.map((tab) => {
+      {/* Map over visibleTabs instead of tabs */}
+      {visibleTabs.map((tab) => {
         const isActive = isActiveTab(tab.key);
         return (
           <Link
@@ -57,7 +68,9 @@ const ShipmentPlanningNavbar: React.FC = () => {
                 : "text-slate-500 hover:text-[#005A9C] hover:bg-[#005A9C]/5"
             }`}
           >
-            <div className={isActive ? "text-white" : "text-slate-400"}>{tab.icon}</div>
+            <div className={isActive ? "text-white" : "text-slate-400"}>
+              {tab.icon}
+            </div>
             <span className="tracking-tight">{tab.label}</span>
           </Link>
         );
