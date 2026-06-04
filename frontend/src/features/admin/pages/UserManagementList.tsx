@@ -61,7 +61,7 @@ const UserManagementList = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* KPI CARDS - Matching CompanyDashboard */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Users"
           value={stats.total}
@@ -86,7 +86,7 @@ const UserManagementList = () => {
           icon={<Truck size={20} />}
           color="bg-orange-50 text-orange-600"
         />
-      </div>
+      </div> */}
 
       {/* DATA TABLE */}
       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
