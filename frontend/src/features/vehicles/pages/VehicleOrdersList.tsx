@@ -161,24 +161,54 @@ const hasAnyPI = (b: VehicleBookingItem): boolean => {
 // CLIENT BUCKET
 // ═══════════════════════════════════════════════════════════════════
 //
-// ORDERS PLACED = BOOKED + PENDING LC + LC RECEIVED + CARS IN TRANSIT + CARS DELIVERED
-// BOOKED        = approved/booked, no PI created yet
-// PENDING LC    = PI created, LC not received
-// LC RECEIVED   = LC received, not yet shipped
-// CARS IN TRANSIT = LC received + shipped
-// CARS DELIVERED  = delivered
-//
-const getClientBucket = (b: VehicleBookingItem): string => {
-  if (b.status === "delivered") return "CARS DELIVERED";
-  if (b.status === "shipped" && hasLcReceived(b)) return "CARS IN TRANSIT";
-  if (hasLcReceived(b) && b.status !== "shipped") return "LC RECEIVED";
-  if (hasAnyPI(b) && !hasLcReceived(b)) return "PENDING LC";
-  if (
-    ["approved", "payment_done", "chassis_received"].includes(b.status) &&
-    !hasGeneratedPI(b)
-  )
-    return "BOOKED";
-  return "OTHER";
+
+// const getClientBucket = (b: VehicleBookingItem): string => {
+//   if (b.status === "delivered") return "CARS DELIVERED";
+//   if (b.status === "shipped" && hasLcReceived(b)) return "CARS IN TRANSIT";
+//   if (hasLcReceived(b) && b.status !== "shipped") return "LC RECEIVED";
+//   if (hasAnyPI(b) && !hasLcReceived(b)) return "PENDING LC";
+//   if (
+//     ["approved", "payment_done", "chassis_received"].includes(b.status) &&
+//     !hasGeneratedPI(b)
+//   )
+//     return "BOOKED";
+//   return "OTHER";
+// };
+
+const getClientCards = (b: VehicleBookingItem): string[] => {
+  const cards: string[] = ["ORDERS PLACED"];
+
+  if (b.status === "delivered") {
+    cards.push("CARS DELIVERED");
+    return cards;
+  }
+
+  if (b.status === "shipped") {
+    cards.push("CARS IN TRANSIT");
+    if (!hasLcReceived(b)) {
+      cards.push("PENDING LC");
+    }
+    return cards;
+  }
+
+  if (hasLcReceived(b)) {
+    cards.push("LC RECEIVED");
+    return cards;
+  }
+
+  if (hasGeneratedPI(b)) {
+    cards.push("PENDING LC");
+    return cards;
+  }
+
+  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
+    cards.push("BOOKED");
+    return cards;
+  }
+
+  // pending, quotation_details_pending, quotation_uploaded, rejected
+  // → only in ORDERS PLACED
+  return cards;
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -350,43 +380,46 @@ const getAdminDisplayStatus = (
 // ═══════════════════════════════════════════════════════════════════
 // CLIENT DISPLAY STATUS
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// CLIENT DISPLAY STATUS (badge in table row)
+// ═══════════════════════════════════════════════════════════════════
 const getClientDisplayStatus = (
   b: VehicleBookingItem,
 ): { label: string; badge: string } => {
-  const bucket = getClientBucket(b);
-
-  switch (bucket) {
-    case "CARS DELIVERED":
-      return {
-        label: "Delivered",
-        badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      };
-    case "CARS IN TRANSIT":
-      return {
-        label: "In Transit",
-        badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
-      };
-    case "LC RECEIVED":
-      return {
-        label: "LC Received",
-        badge: "bg-green-100 text-green-700 border-green-200",
-      };
-    case "PENDING LC":
-      return {
-        label: "Pending LC",
-        badge: "bg-amber-100 text-amber-700 border-amber-200",
-      };
-    case "BOOKED":
-      return {
-        label: "Booked",
-        badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
-      };
-    default:
-      return {
-        label: "Processing",
-        badge: "bg-slate-100 text-slate-700 border-slate-200",
-      };
+  if (b.status === "delivered") {
+    return {
+      label: "Delivered",
+      badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    };
   }
+  if (b.status === "shipped") {
+    return {
+      label: "In Transit",
+      badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
+    };
+  }
+  if (hasLcReceived(b)) {
+    return {
+      label: "LC Received",
+      badge: "bg-green-100 text-green-700 border-green-200",
+    };
+  }
+  if (hasGeneratedPI(b)) {
+    return {
+      label: "Pending LC",
+      badge: "bg-amber-100 text-amber-700 border-amber-200",
+    };
+  }
+  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
+    return {
+      label: "Booked",
+      badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    };
+  }
+  return {
+    label: "Processing",
+    badge: "bg-slate-100 text-slate-700 border-slate-200",
+  };
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -483,38 +516,36 @@ const VehicleOrdersList = () => {
           ? response.data.vehicleOrders
           : [];
 
-        // Compute bucket counts
-        const bucketCounts: Record<string, number> = {
+        // Compute card counts (multi-card: a vehicle can be in multiple cards)
+        const cardCounts: Record<string, number> = {
+          "ORDERS PLACED": 0,
           BOOKED: 0,
           "PENDING LC": 0,
           "LC RECEIVED": 0,
           "CARS IN TRANSIT": 0,
           "CARS DELIVERED": 0,
-          OTHER: 0,
         };
         clientBookings.forEach((b) => {
-          const bucket = getClientBucket(b);
-          bucketCounts[bucket] = (bucketCounts[bucket] || 0) + 1;
+          const cards = getClientCards(b);
+          cards.forEach((card) => {
+            cardCounts[card] = (cardCounts[card] || 0) + 1;
+          });
         });
 
-        const ordersPlaced =
-          bucketCounts["BOOKED"] +
-          bucketCounts["PENDING LC"] +
-          bucketCounts["LC RECEIVED"] +
-          bucketCounts["CARS IN TRANSIT"] +
-          bucketCounts["CARS DELIVERED"];
-
-        // Filter
+        // Filter bookings based on selected status
         const normalizedSearch = search.trim().toLowerCase();
         const filteredBookings = clientBookings.filter((booking) => {
+          // Status filter
           let statusMatches = false;
           if (filterValue === "All" || filterValue === "orders_placed") {
             statusMatches = true;
           } else {
-            statusMatches = getClientBucket(booking) === filterValue;
+            const cards = getClientCards(booking);
+            statusMatches = cards.includes(filterValue);
           }
           if (!statusMatches) return false;
 
+          // Search filter
           if (!normalizedSearch) return true;
 
           const orderData = (booking as any).orderId;
@@ -559,12 +590,12 @@ const VehicleOrdersList = () => {
           makePiTotal: 0,
           shippedTotal: 0,
           deliveredTotal: 0,
-          ordersPlaced,
-          booked: bucketCounts["BOOKED"],
-          pendingLc: bucketCounts["PENDING LC"],
-          lcReceived: bucketCounts["LC RECEIVED"],
-          carsInTransit: bucketCounts["CARS IN TRANSIT"],
-          carsDelivered: bucketCounts["CARS DELIVERED"],
+          ordersPlaced: cardCounts["ORDERS PLACED"],
+          booked: cardCounts["BOOKED"],
+          pendingLc: cardCounts["PENDING LC"],
+          lcReceived: cardCounts["LC RECEIVED"],
+          carsInTransit: cardCounts["CARS IN TRANSIT"],
+          carsDelivered: cardCounts["CARS DELIVERED"],
         });
         return;
       }
