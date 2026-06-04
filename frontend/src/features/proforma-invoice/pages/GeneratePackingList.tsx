@@ -52,12 +52,18 @@ const getSharedPackingInvoiceNumber = (context: PIInvoiceContext) => {
   return context.suggestedInvoiceNumber;
 };
 
-const buildInitialForm = (context: PIInvoiceContext): InvoiceManualFields => {
-  const existing = context.existingInvoices.find(
-    (invoice) => invoice.type === "PACKING_LIST",
+const buildInitialForm = (
+  context: PIInvoiceContext,
+  selectedVehicleId?: string,
+): InvoiceManualFields => {
+  const selectedVehicle = context.vehicles.find(
+    (vehicle) => vehicle.vehicleId === selectedVehicleId,
   );
+  const existing =
+    selectedVehicle?.invoices.PACKING_LIST ||
+    context.existingInvoices.find((invoice) => invoice.type === "PACKING_LIST");
   const manual = (existing?.manualFields || {}) as Partial<InvoiceManualFields>;
-  const firstVehicle = context.vehicles[0];
+  const firstVehicle = selectedVehicle || context.vehicles[0];
 
   return {
     invoiceNumber:
@@ -191,6 +197,11 @@ export default function GeneratePackingList() {
     load();
   }, [piId]);
 
+  useEffect(() => {
+    if (!context || selectedVehicles.length !== 1) return;
+    setForm(buildInitialForm(context, selectedVehicles[0]));
+  }, [context, selectedVehicles]);
+
   const selectedVehicleRows = useMemo(
     () =>
       context?.vehicles.filter((vehicle) =>
@@ -219,20 +230,14 @@ export default function GeneratePackingList() {
     setForm((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
-  const toggleVehicle = (vehicleId: string) => {
-    setSelectedVehicles((prev) =>
-      prev.includes(vehicleId)
-        ? prev.filter((id) => id !== vehicleId)
-        : [...prev, vehicleId],
-    );
-  };
-
-  const selectAll = () => {
-    if (!context) return;
-    setSelectedVehicles(context.vehicles.map((vehicle) => vehicle.vehicleId));
+  const selectVehicle = (vehicleId: string) => {
+    setSelectedVehicles([vehicleId]);
   };
 
   const clearSelection = () => setSelectedVehicles([]);
+
+  const selectedVehicle = selectedVehicleRows[0];
+  const selectedVehiclePackingList = selectedVehicle?.invoices.PACKING_LIST;
 
   const handleGenerate = async () => {
     if (!form) return;
@@ -300,6 +305,96 @@ export default function GeneratePackingList() {
 
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-5">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Vehicles in this PI
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Select a vehicle first. Existing packing lists are marked and will be replaced for that vehicle only.
+                </p>
+              </div>
+              <Button variant="outline" onClick={clearSelection}>
+                Clear
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4">Select</th>
+                    <th className="px-6 py-4">VIN</th>
+                    <th className="px-6 py-4">Model</th>
+                    <th className="px-6 py-4">Variant</th>
+                    <th className="px-6 py-4">Value</th>
+                    <th className="px-6 py-4">Existing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {context.vehicles.map((vehicle) => {
+                    const checked = selectedVehicles.includes(vehicle.vehicleId);
+
+                    return (
+                      <tr
+                        key={vehicle.vehicleId}
+                        className={`border-t border-slate-200 ${
+                          checked ? "bg-blue-50/70" : "bg-white"
+                        }`}
+                      >
+                        <td className="px-6 py-4">
+                          <input
+                            type="radio"
+                            name="packingVehicle"
+                            checked={checked}
+                            onChange={() => selectVehicle(vehicle.vehicleId)}
+                            className="h-4 w-4 accent-blue-600"
+                          />
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-700">
+                          {vehicle.chassisNo || "-"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-slate-900">
+                            {vehicle.model || "-"}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {vehicle.make || "-"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {vehicle.variant || "-"}
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-900">
+                          USD{" "}
+                          {vehicle.totalUSD.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] ${
+                              vehicle.invoices.PACKING_LIST
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            {vehicle.invoices.PACKING_LIST && (
+                              <CheckCircle2 className="h-3 w-3" />
+                            )}
+                            {vehicle.invoices.PACKING_LIST?.invoiceNumber ||
+                              "Packing"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900">
               PI & Shipment Data
@@ -316,10 +411,7 @@ export default function GeneratePackingList() {
               <ReadOnlyField label="Port of Discharge" value={context.portOfDischarge} />
               <ReadOnlyField label="Place of Delivery" value={context.placeOfDelivery} />
               <ReadOnlyField label="Vehicle Count" value={context.vehicles.length} />
-              <ReadOnlyField
-                label="Selected Vehicles"
-                value={selectedVehicles.length}
-              />
+              <ReadOnlyField label="Selected Vehicle" value={selectedVehicle?.chassisNo || "-"} />
             </div>
           </div>
 
@@ -445,97 +537,6 @@ export default function GeneratePackingList() {
               />
             </div>
           </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-6 py-5">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Vehicles in this PI
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Select one or more vehicles to include in this packing list.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={selectAll}>
-                  Select All
-                </Button>
-                <Button variant="outline" onClick={clearSelection}>
-                  Clear
-                </Button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  <tr>
-                    <th className="px-6 py-4">Select</th>
-                    <th className="px-6 py-4">VIN</th>
-                    <th className="px-6 py-4">Model</th>
-                    <th className="px-6 py-4">Variant</th>
-                    <th className="px-6 py-4">Value</th>
-                    <th className="px-6 py-4">Existing</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {context.vehicles.map((vehicle) => {
-                    const checked = selectedVehicles.includes(vehicle.vehicleId);
-
-                    return (
-                      <tr
-                        key={vehicle.vehicleId}
-                        className={`border-t border-slate-200 ${
-                          checked ? "bg-blue-50/70" : "bg-white"
-                        }`}
-                      >
-                        <td className="px-6 py-4">
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={() => toggleVehicle(vehicle.vehicleId)}
-                          />
-                        </td>
-                        <td className="px-6 py-4 font-mono text-xs text-slate-700">
-                          {vehicle.chassisNo || "-"}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-slate-900">
-                            {vehicle.model || "-"}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {vehicle.make || "-"}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-700">
-                          {vehicle.variant || "-"}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-slate-900">
-                          USD{" "}
-                          {vehicle.totalUSD.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] ${
-                              vehicle.invoices.PACKING_LIST
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-slate-100 text-slate-500"
-                            }`}
-                          >
-                            {vehicle.invoices.PACKING_LIST && (
-                              <CheckCircle2 className="h-3 w-3" />
-                            )}
-                            Packing
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-6">
@@ -592,7 +593,9 @@ export default function GeneratePackingList() {
                   Generating Packing List...
                 </>
               ) : (
-                "Generate Packing List"
+                selectedVehiclePackingList
+                  ? "Replace Packing List"
+                  : "Generate Packing List"
               )}
             </Button>
           </div>
