@@ -855,7 +855,7 @@ const buildTemplateData = ({
       ? vehicle.commercialHsnCode || vehicle.hsnCode || ""
       : vehicle.exportHsnCode || vehicle.hsnCode || "";
   const amountWordsUSD = numberToWordsUSD(totalUSD);
-  const amountWordsINR = numberToWordsINR(totalINR);
+  const amountWordsINR = numberToWordsINR(exShowroomINR); // 2705 Amount In (Rs.) only, excludes IGST
   const displayVehicle = { ...vehicle, hsnCode: resolvedHsnCode, srNo: 1 };
   const descriptionLines = buildVehicleDescription(
     displayVehicle,
