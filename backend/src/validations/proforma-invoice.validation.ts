@@ -43,6 +43,7 @@ const bankDetailsSchema = Joi.object({
   bankName: Joi.string().allow("").optional(),
   accountNo: Joi.string().allow("").optional(),
   branchIfsc: Joi.string().allow("").optional(),
+  swiftCode: Joi.string().allow("").optional(),
 });
 
 const companySnapshotSchema = Joi.object({

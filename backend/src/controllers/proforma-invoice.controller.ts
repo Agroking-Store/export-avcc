@@ -248,28 +248,29 @@ export const getPIPdf = async (req: Request, res: Response) => {
     }
 
     // ── 2. On-the-fly generation (pdfPath missing or file deleted) ──
-    const company = pi.company_id as any;
+    const company = pi.companySnapshot || pi.company_id || {};
     const buyer   = pi.clientSnapshot || pi.client_id || {};
 
     const bankDetails = {
-      bankName:   company?.bankDetails?.bankName   || "",
-      accountNo:  company?.bankDetails?.accountNo  || "",
-      branchIfsc: company?.bankDetails?.branchIfsc || "",
-      swiftCode:  company?.bankDetails?.swiftCode  || "",  // ✅ swiftCode included
+      bankName:   company?.bankDetails?.bankName   || pi.company_id?.bankDetails?.bankName   || "",
+      accountNo:  company?.bankDetails?.accountNo  || pi.company_id?.bankDetails?.accountNo  || "",
+      branchIfsc: company?.bankDetails?.branchIfsc || pi.company_id?.bankDetails?.branchIfsc || "",
+      swiftCode:  company?.bankDetails?.swiftCode  || pi.company_id?.bankDetails?.swiftCode  || "",
     };
 
+    const compAddress = company?.address || pi.company_id?.address || {};
     const exporter = {
-      name:      company?.name      || "",
+      name:      company?.name      || pi.company_id?.name || "",
       address:   [
-        company?.address?.houseBuilding,
-        company?.address?.streetArea,
-        company?.address?.cityTown && company?.address?.state
-          ? `${company.address.cityTown}, ${company.address.state}${company.address.pincode ? " - " + company.address.pincode : ""}`
-          : company?.address?.cityTown || company?.address?.state,
-        company?.address?.country,
+        compAddress?.houseBuilding,
+        compAddress?.streetArea,
+        compAddress?.cityTown && compAddress?.state
+          ? `${compAddress.cityTown}, ${compAddress.state}${compAddress.pincode ? " - " + compAddress.pincode : ""}`
+          : compAddress?.cityTown || compAddress?.state,
+        compAddress?.country,
       ].filter(Boolean).join("\n"),
-      gstin:     company?.gstNumber || "",
-      state:     company?.address?.state || "",
+      gstin:     company?.gstNumber || pi.company_id?.gstNumber || "",
+      state:     compAddress?.state || "",
       stateCode: "",
     };
 
