@@ -88,10 +88,11 @@ const ShipmentPlanningDashboard: React.FC = () => {
   }, [shipments, timeRange]);
 
   const kpis = useMemo(() => {
-    const total = filteredForInsights.length;
+    const total = shipments.length; // Always show all fetched shipments regardless of time range filter
     const destinations = new Set<string>();
     let upcomingArrivals = 0;
     let missingVesselOrLine = 0;
+
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
