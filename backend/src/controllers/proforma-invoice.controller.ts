@@ -19,9 +19,12 @@ import {
 
 import LetterOfCredit from "../models/LetterOfCredit.model";
 import ProformaInvoice from "../models/ProformaInvoice.model";
+import { Company } from "../models/Company.model";
 
 import path from "path";
 import fs from "fs";
+import handlebars from "handlebars";
+import puppeteer from "puppeteer";
 
 // CREATE PI
 export const createPI = async (req: Request, res: Response) => {
@@ -218,37 +221,142 @@ export const updatePIStatus = async (req: Request, res: Response) => {
 export const getPIPdf = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const pi = await ProformaInvoice.findById(id);
 
-    if (!pi || !pi.pdfPath) {
-      return res
-        .status(404)
-        .json({ message: "Proforma Invoice PDF not found" });
+    // ── 1. Try serving from disk first ──────────────────────────────
+    const pi = await ProformaInvoice.findById(id)
+      .populate("company_id", "name gstNumber address bankDetails")
+      .populate("client_id", "name companyName address")
+      .lean() as any;
+
+    if (!pi) {
+      return res.status(404).json({ message: "Proforma Invoice not found" });
     }
 
-    const absolutePath = path.join(process.cwd(), pi.pdfPath);
+    const absolutePath = pi.pdfPath
+      ? path.join(process.cwd(), pi.pdfPath)
+      : null;
 
-    if (!fs.existsSync(absolutePath)) {
-      return res
-        .status(404)
-        .json({ message: "PDF file missing on server disk" });
+    if (absolutePath && fs.existsSync(absolutePath)) {
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        req.query.download === "true"
+          ? `attachment; filename="${pi.piNumber}.pdf"`
+          : `inline; filename="${pi.piNumber}.pdf"`,
+      );
+      return res.sendFile(absolutePath);
     }
+
+    // ── 2. On-the-fly generation (pdfPath missing or file deleted) ──
+    const company = pi.company_id as any;
+    const buyer   = pi.clientSnapshot || pi.client_id || {};
+
+    const bankDetails = {
+      bankName:   company?.bankDetails?.bankName   || "",
+      accountNo:  company?.bankDetails?.accountNo  || "",
+      branchIfsc: company?.bankDetails?.branchIfsc || "",
+      swiftCode:  company?.bankDetails?.swiftCode  || "",  // ✅ swiftCode included
+    };
+
+    const exporter = {
+      name:      company?.name      || "",
+      address:   [
+        company?.address?.houseBuilding,
+        company?.address?.streetArea,
+        company?.address?.cityTown && company?.address?.state
+          ? `${company.address.cityTown}, ${company.address.state}${company.address.pincode ? " - " + company.address.pincode : ""}`
+          : company?.address?.cityTown || company?.address?.state,
+        company?.address?.country,
+      ].filter(Boolean).join("\n"),
+      gstin:     company?.gstNumber || "",
+      state:     company?.address?.state || "",
+      stateCode: "",
+    };
+
+    const consignee = {
+      name:    (buyer as any).companyName || (buyer as any).name || "",
+      address: [
+        (buyer as any).address?.houseBuilding,
+        (buyer as any).address?.streetArea,
+        (buyer as any).address?.cityTown,
+        (buyer as any).address?.state,
+        (buyer as any).address?.pincode,
+      ].filter(Boolean).join(", "),
+      state: (buyer as any).address?.state || (buyer as any).address?.country || "",
+    };
+
+    const items = (pi.vehicleDetails || []).map((v: any, i: number) => ({
+      slNo:        i + 1,
+      description: [v.make, v.model, v.variant].filter(Boolean).join(" ") || "Vehicle",
+      specs: {
+        hsn:           v.exportHsn || v.commercialHsn || v.hsn || "",
+        color:         v.color     || "",
+        chassisNo:     v.chassisNo || "",
+        engineCapacity: v.engineCapacity || "",
+        fuelType:      v.fuelType  || "",
+        countryOfOrigin: "INDIA",
+        yom:           v.yom       || "",
+        fob:           v.fob       || "",
+        freight:       v.freight   || "",
+      },
+      qty:    v.quantity || 1,
+      per:    "No",
+      rate:   `$${(Number(v.fob || 0) + Number(v.freight || 0)).toFixed(2)}`,
+      amount: `$${((v.quantity || 1) * (Number(v.fob || 0) + Number(v.freight || 0))).toFixed(2)}`,
+    }));
+
+    const totalAmount = (pi.vehicleDetails || []).reduce(
+      (sum: number, v: any) =>
+        sum + (v.quantity || 1) * (Number(v.fob || 0) + Number(v.freight || 0)),
+      0,
+    );
+
+    const templateData = {
+      exporter,
+      consignee,
+      buyer: consignee,
+      bankDetails,
+      invoiceNumber:    pi.piNumber || "",
+      date:             pi.createdAt
+        ? new Date(pi.createdAt).toLocaleDateString("en-IN")
+        : "",
+      paymentTerms:     pi.paymentTerms     || "",
+      buyersRef:        pi.buyersRef        || "",
+      otherRef:         pi.otherRef         || "",
+      dispatchedThrough: pi.dispatchedThrough || "",
+      destination:      pi.destination      || "",
+      termsOfDelivery:  pi.termsOfDelivery  || "",
+      incoterm:         pi.incoterm         || "",
+      portOfLoading:    pi.portOfLoading    || "",
+      portOfDischarge:  pi.portOfDischarge  || "",
+      items,
+      totalQty:         items.reduce((s: number, i: any) => s + Number(i.qty), 0),
+      totalAmount:      totalAmount.toFixed(2),
+      amountInWords:    pi.amountInWords    || "",
+    };
+
+    const templatePath = path.join(process.cwd(), "src/templates/proforma-invoice.hbs");
+    const templateHtml = fs.readFileSync(templatePath, "utf8");
+    const compiled     = handlebars.compile(templateHtml);
+    const html         = compiled(templateData);
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({ format: "A4", printBackground: false });
+    await browser.close();
 
     res.setHeader("Content-Type", "application/pdf");
-
-    if (req.query.download === "true") {
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${pi.piNumber}.pdf"`,
-      );
-    } else {
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${pi.piNumber}.pdf"`,
-      );
-    }
-
-    res.sendFile(absolutePath);
+    res.setHeader(
+      "Content-Disposition",
+      req.query.download === "true"
+        ? `attachment; filename="${pi.piNumber}.pdf"`
+        : `inline; filename="${pi.piNumber}.pdf"`,
+    );
+    return res.send(Buffer.from(pdfBuffer));
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

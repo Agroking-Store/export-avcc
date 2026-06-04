@@ -687,6 +687,8 @@ const buildPIInvoiceContext = async (piId: string) => {
     {},
   );
 
+  const company: any = (pi.companySnapshot || pi.company_id || {}) as any;
+
   return {
     _id: pi._id,
     piNumber: pi.piNumber,
@@ -708,6 +710,27 @@ const buildPIInvoiceContext = async (piId: string) => {
       pi.destination || buyer.address?.country || buyer.country || "",
     placeOfReceipt: "Narhe, Pune",
     termsOfDelivery: pi.termsOfDelivery || "",
+    // Company (Exporter) data — dynamic from PI's company_id
+    companyName: company.name || "",
+    companyGstin: company.gstNumber || "",
+    companyIecNo: company.iecNo || "",
+    companyAdCode: company.adCode || "",
+    companyPan: company.pan || "",
+    companyAddressLines: Array.isArray(company.address?.addressLines)
+      ? company.address.addressLines
+      : [
+          company.address?.houseBuilding,
+          company.address?.streetArea,
+          company.address?.cityTown && company.address?.state
+            ? `${company.address.cityTown}, ${company.address.state}${company.address.pincode ? " - " + company.address.pincode : ""}${company.address.country ? ", " + company.address.country : ""}`
+            : company.address?.country,
+        ].filter(Boolean),
+    companyBankDetails: {
+      bankName: company.bankDetails?.bankName || "",
+      accountNo: company.bankDetails?.accountNo || "",
+      branchIfsc: company.bankDetails?.branchIfsc || "",
+      swiftCode: company.bankDetails?.swiftCode || "",
+    },
     vehicles: vehicles.map((vehicle) => ({
       ...vehicle,
       invoices: invoiceLookup[vehicle.vehicleId] || {},
@@ -868,8 +891,26 @@ const buildTemplateData = ({
   ];
   const commercialClauseLines = splitMultiline(manualFields.commercialClauses);
 
+  // Build dynamic exporter from PI's company data
+  const dynamicExporter = {
+    companyName: pi.companyName || EXPORTER.companyName,
+    addressLines: pi.companyAddressLines?.length
+      ? pi.companyAddressLines
+      : EXPORTER.addressLines,
+    gstin: pi.companyGstin || EXPORTER.gstin,
+    iecNo: pi.companyIecNo || EXPORTER.iecNo,
+    adCode: pi.companyAdCode || EXPORTER.adCode,
+    pan: pi.companyPan || EXPORTER.pan,
+    bankName: pi.companyBankDetails?.bankName || EXPORTER.bankName,
+    accountNo: pi.companyBankDetails?.accountNo || EXPORTER.accountNo,
+    ifsc: pi.companyBankDetails?.branchIfsc || EXPORTER.ifsc,
+    swift: pi.companyBankDetails?.swiftCode || EXPORTER.swift,
+    stateCode: EXPORTER.stateCode,
+    districtOfOrigin: EXPORTER.districtOfOrigin,
+  };
+
   const base = {
-    exporter: EXPORTER,
+    exporter: dynamicExporter,
     staticText: STATIC_TEXT,
     invoiceNumber: manualFields.invoiceNumber,
     invoiceDate,
@@ -906,8 +947,8 @@ const buildTemplateData = ({
     destination:
       manualFields.destination || pi.placeOfDelivery || pi.buyerCountry || "",
     containerNo: manualFields.containerNo || "",
-    stateOfOrigin: EXPORTER.stateCode,
-    districtOfOrigin: EXPORTER.districtOfOrigin,
+    stateOfOrigin: dynamicExporter.stateCode,
+    districtOfOrigin: dynamicExporter.districtOfOrigin,
     vehicle: displayVehicle,
     descriptionLines,
     totalQty: vehicle.quantity || 1,
@@ -931,7 +972,7 @@ const buildTemplateData = ({
       endUseCode: manualFields.endUseCode || "",
       igstPaymentStatus: "YES",
       shipmentExportUnderIgstPaid: "SHIPMENT EXPORT UNDER IGST PAID",
-      placeOfSupply: manualFields.placeOfSupply || EXPORTER.stateCode,
+      placeOfSupply: manualFields.placeOfSupply || dynamicExporter.stateCode,
       termsOfDelivery: manualFields.termsOfDelivery || pi.termsOfDelivery || "",
       termsOfPayment: manualFields.termsOfPayment || "",
       typeOfVehicle: manualFields.typeOfVehicle || "SUV",

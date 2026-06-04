@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -348,6 +347,16 @@ const CreateCompany: React.FC = () => {
                 placeholder="e.g. HDFC0001234"
               />
               {errors.bankDetails_branchIfsc && <p className={errorStyle}>{errors.bankDetails_branchIfsc}</p>}
+            </div>
+            <div>
+              <label className={labelStyle}><Globe size={14} className="text-emerald-500" /> SWIFT Code</label>
+              <input
+                name="bankDetails.swiftCode"
+                value={(bankDetails as any).swiftCode ?? ""}
+                onChange={handleChange}
+                className={inputStyle + " bg-white"}
+                placeholder="e.g. IDFBINBBMUM"
+              />
             </div>
           </div>
         </div>

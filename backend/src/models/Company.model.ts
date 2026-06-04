@@ -19,6 +19,7 @@ export interface ICompany extends Document {
     bankName?: string;
     accountNo?: string;
     branchIfsc?: string;
+    swiftCode?: string;
   };
 
   __v?: number; // Mongoose version key
@@ -55,6 +56,7 @@ const companySchema = new Schema<ICompany>(
       bankName: { type: String, trim: true },
       accountNo: { type: String, trim: true },
       branchIfsc: { type: String, trim: true },
+      swiftCode: { type: String, trim: true },
     },
     isActive: {
       type: Boolean,
