@@ -16,6 +16,11 @@ import {
   Truck,
   Store,
   Trash2,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  Hash,
+  FileCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -51,49 +56,21 @@ import { useAuth } from "../../../hooks/useAuth";
 import axios from "axios";
 import { apiConfig } from "@/config/apiConfig";
 
-const STATUS_META: Record<
-  VehicleBookingStatus,
-  { label: string; badge: string }
-> = {
-  pending: {
-    label: "Action Required ",
-    badge: "bg-slate-100 text-slate-700 border-slate-200",
-  },
-  quotation_details_pending: {
-    label: "Awaiting Approval",
-    badge: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  quotation_uploaded: {
-    label: "Awaiting Approval",
-    badge: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  approved: {
-    label: "Awaiting Booking",
-    badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  },
-  rejected: {
-    label: "Rejected",
-    badge: "bg-rose-100 text-rose-700 border-rose-200",
-  },
-  payment_done: {
-    label: "Awaiting Engine / Chassis Number",
-    badge: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  chassis_received: {
-    label: "Awaiting Engine Number",
-    badge: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  shipped: {
-    label: "Shipped",
-    badge: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  delivered: {
-    label: "Delivered",
-    badge: "bg-green-100 text-green-700 border-green-200",
-  },
-};
+// ═══════════════════════════════════════════════════════════════════
+// DROPDOWN OPTIONS
+// ═══════════════════════════════════════════════════════════════════
+const ADMIN_STATUS_OPTIONS = [
+  "All",
+  "Action Required",
+  "Awaiting Approval",
+  "Awaiting Booking",
+  "Awaiting Numbers",
+  "Make PI",
+  "Shipped",
+  "Delivered",
+];
 
-const clientStatusOptions = [
+const CLIENT_STATUS_OPTIONS = [
   "All",
   "ORDERS PLACED",
   "BOOKED",
@@ -103,32 +80,318 @@ const clientStatusOptions = [
   "CARS DELIVERED",
 ];
 
-
-const adminStatusOptions = [
-  "All",
-  "Action Required",
-  "Awaiting Approval",
-  "Awaiting Engine / Chassis Number",
-  "Make PI",
-  "Delivered",
-];
-
-const statusLabelToRaw: Record<string, string> = {
+// ═══════════════════════════════════════════════════════════════════
+// FILTER MAPPINGS: dropdown label → API / bucket value
+// ═══════════════════════════════════════════════════════════════════
+const adminFilterMap: Record<string, string> = {
   All: "All",
   "Action Required": "pending",
   "Awaiting Approval": "approvalPending",
-  "Awaiting Engine / Chassis Number": "awaitingNumbers",
-  "Make PI": "piPending",
+  "Awaiting Booking": "approved",
+  "Awaiting Numbers": "awaitingNumbers",
+  "Make PI": "makePI",
+  Shipped: "shipped",
   Delivered: "delivered",
-  "ORDERS PLACED": "orders_placed",
-  BOOKED: "booked",
-  "PENDING LC": "pending_lc",
-  "LC RECEIVED": "lc_received",
-  "CARS IN TRANSIT": "in_transit",
-  "CARS DELIVERED": "delivered_client",
 };
 
+const clientFilterMap: Record<string, string> = {
+  All: "All",
+  "ORDERS PLACED": "orders_placed",
+  BOOKED: "BOOKED",
+  "PENDING LC": "PENDING LC",
+  "LC RECEIVED": "LC RECEIVED",
+  "CARS IN TRANSIT": "CARS IN TRANSIT",
+  "CARS DELIVERED": "CARS DELIVERED",
+};
 
+// ═══════════════════════════════════════════════════════════════════
+// INCOMING NAVIGATION FILTER: raw status → dropdown label
+// ═══════════════════════════════════════════════════════════════════
+const rawToAdminLabel: Record<string, string> = {
+  pending: "Action Required",
+  quotation_details_pending: "Awaiting Approval",
+  quotation_uploaded: "Awaiting Approval",
+  approved: "Awaiting Booking",
+  payment_done: "Awaiting Numbers",
+  chassis_received: "Awaiting Numbers",
+  shipped: "Shipped",
+  delivered: "Delivered",
+};
+
+const rawToClientLabel: Record<string, string> = {
+  pending: "All",
+  quotation_details_pending: "All",
+  quotation_uploaded: "All",
+  approved: "BOOKED",
+  payment_done: "BOOKED",
+  chassis_received: "BOOKED",
+  shipped: "CARS IN TRANSIT",
+  delivered: "CARS DELIVERED",
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════
+const hasGeneratedPI = (b: VehicleBookingItem): boolean =>
+  b.piGenerated ||
+  (Array.isArray((b as any).associatedPIs) &&
+    (b as any).associatedPIs.length > 0);
+
+const hasChassis = (b: VehicleBookingItem): boolean =>
+  !!String(b.chassisNumber || "").trim();
+
+const hasEngine = (b: VehicleBookingItem): boolean =>
+  !!String(b.engineNumber || "").trim();
+
+const hasLcReceived = (b: VehicleBookingItem): boolean => {
+  const pis = Array.isArray((b as any).associatedPIs)
+    ? (b as any).associatedPIs
+    : [];
+  return pis.length > 0 && pis.some((pi: any) => pi?.status === "lc_received");
+};
+
+const hasAnyPI = (b: VehicleBookingItem): boolean => {
+  const pis = Array.isArray((b as any).associatedPIs)
+    ? (b as any).associatedPIs
+    : [];
+  return pis.length > 0;
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// CLIENT BUCKET
+// ═══════════════════════════════════════════════════════════════════
+//
+// ORDERS PLACED = BOOKED + PENDING LC + LC RECEIVED + CARS IN TRANSIT + CARS DELIVERED
+// BOOKED        = approved/booked, no PI created yet
+// PENDING LC    = PI created, LC not received
+// LC RECEIVED   = LC received, not yet shipped
+// CARS IN TRANSIT = LC received + shipped
+// CARS DELIVERED  = delivered
+//
+const getClientBucket = (b: VehicleBookingItem): string => {
+  if (b.status === "delivered") return "CARS DELIVERED";
+  if (b.status === "shipped" && hasLcReceived(b)) return "CARS IN TRANSIT";
+  if (hasLcReceived(b) && b.status !== "shipped") return "LC RECEIVED";
+  if (hasAnyPI(b) && !hasLcReceived(b)) return "PENDING LC";
+  if (
+    ["approved", "payment_done", "chassis_received"].includes(b.status) &&
+    !hasGeneratedPI(b)
+  )
+    return "BOOKED";
+  return "OTHER";
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ADMIN CARD MEMBERSHIP
+// ═══════════════════════════════════════════════════════════════════
+//
+// A vehicle can belong to MULTIPLE cards simultaneously.
+//
+// Action Required   = raw status === pending
+// Awaiting Approval = raw status in [quotation_details_pending, quotation_uploaded]
+// Awaiting Booking  = raw status === approved
+// Awaiting Numbers  = raw status in [payment_done, chassis_received, shipped]
+//                     AND (missing chassis OR missing engine)
+// Make PI           = raw status in [payment_done, chassis_received]
+//                     AND has chassis AND no PI generated
+// Shipped           = raw status === shipped
+// Delivered         = raw status === delivered
+//
+// Overlap examples:
+//   chassis received, no engine, no PI → ["Awaiting Numbers", "Make PI"]
+//   chassis received, no engine, PI made → ["Awaiting Numbers"]
+//   both received, no PI → ["Make PI"] (NOT "Awaiting Numbers")
+//   shipped, no engine → ["Awaiting Numbers", "Shipped"]
+//
+const getAdminCards = (b: VehicleBookingItem): string[] => {
+  const cards: string[] = [];
+
+  if (b.status === "pending") cards.push("Action Required");
+
+  if (["quotation_details_pending", "quotation_uploaded"].includes(b.status))
+    cards.push("Awaiting Approval");
+
+  if (b.status === "approved") cards.push("Awaiting Booking");
+
+  const isPostBookingOrShipped = [
+    "payment_done",
+    "chassis_received",
+    "shipped",
+  ].includes(b.status);
+
+  if (isPostBookingOrShipped && (!hasChassis(b) || !hasEngine(b))) {
+    cards.push("Awaiting Numbers");
+  }
+
+  const isPostBooking = ["payment_done", "chassis_received"].includes(b.status);
+  if (isPostBooking && hasChassis(b) && !hasGeneratedPI(b)) {
+    cards.push("Make PI");
+  }
+
+  if (b.status === "shipped") cards.push("Shipped");
+
+  if (b.status === "delivered") cards.push("Delivered");
+
+  return cards;
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ADMIN DISPLAY STATUS (badge in table row — NOT the card)
+// ═══════════════════════════════════════════════════════════════════
+//
+// pending                  → "Action Required"
+// quotation_*              → "Awaiting Approval"
+// approved                 → "Awaiting Booking"
+// rejected                 → "Rejected"
+//
+// payment_done / chassis_received:
+//   has PI                → "PI Created"
+//   has chassis + engine  → "Make PI"              (case 2: both at once)
+//   has chassis, no engine→ "Awaiting Engine Number"
+//   no chassis, has engine→ "Awaiting Chassis Number"
+//   no chassis, no engine → "Awaiting Chassis/Engine Number"
+//
+// shipped                  → "Shipped"
+// delivered                → "Delivered"
+//
+const getAdminDisplayStatus = (
+  b: VehicleBookingItem,
+): { label: string; badge: string } => {
+  switch (b.status) {
+    case "pending":
+      return {
+        label: "Action Required",
+        badge: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+
+    case "quotation_details_pending":
+    case "quotation_uploaded":
+      return {
+        label: "Awaiting Approval",
+        badge: "bg-amber-100 text-amber-700 border-amber-200",
+      };
+
+    case "approved":
+      return {
+        label: "Awaiting Booking",
+        badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      };
+
+    case "rejected":
+      return {
+        label: "Rejected",
+        badge: "bg-rose-100 text-rose-700 border-rose-200",
+      };
+
+    case "payment_done":
+    case "chassis_received": {
+      const c = hasChassis(b);
+      const e = hasEngine(b);
+      const pi = hasGeneratedPI(b);
+
+      // Both numbers present → check PI
+      if (c && e) {
+        if (pi) {
+          return {
+            label: "PI Created",
+            badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+          };
+        }
+        return {
+          label: "Make PI",
+          badge: "bg-purple-100 text-purple-700 border-purple-200",
+        };
+      }
+
+      // Chassis present, engine missing → ALWAYS "Awaiting Engine Number"
+      // regardless of PI status (engine is optional but if missing, show it)
+      if (c && !e) {
+        return {
+          label: "Awaiting Engine Number",
+          badge: "bg-blue-100 text-blue-700 border-blue-200",
+        };
+      }
+
+      // Engine present, chassis missing
+      if (!c && e) {
+        return {
+          label: "Awaiting Chassis Number",
+          badge: "bg-blue-100 text-blue-700 border-blue-200",
+        };
+      }
+
+      // Neither present
+      return {
+        label: "Awaiting Chassis/Engine Number",
+        badge: "bg-blue-100 text-blue-700 border-blue-200",
+      };
+    }
+
+    case "shipped":
+      return {
+        label: "Shipped",
+        badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
+      };
+
+    case "delivered":
+      return {
+        label: "Delivered",
+        badge: "bg-green-100 text-green-700 border-green-200",
+      };
+
+    default:
+      return {
+        label: b.status,
+        badge: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// CLIENT DISPLAY STATUS
+// ═══════════════════════════════════════════════════════════════════
+const getClientDisplayStatus = (
+  b: VehicleBookingItem,
+): { label: string; badge: string } => {
+  const bucket = getClientBucket(b);
+
+  switch (bucket) {
+    case "CARS DELIVERED":
+      return {
+        label: "Delivered",
+        badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      };
+    case "CARS IN TRANSIT":
+      return {
+        label: "In Transit",
+        badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
+      };
+    case "LC RECEIVED":
+      return {
+        label: "LC Received",
+        badge: "bg-green-100 text-green-700 border-green-200",
+      };
+    case "PENDING LC":
+      return {
+        label: "Pending LC",
+        badge: "bg-amber-100 text-amber-700 border-amber-200",
+      };
+    case "BOOKED":
+      return {
+        label: "Booked",
+        badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
+      };
+    default:
+      return {
+        label: "Processing",
+        badge: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// RESPONSE TYPES
+// ═══════════════════════════════════════════════════════════════════
 interface ClientOrdersResponse {
   vehicleOrders?: VehicleBookingItem[];
   lcStats?: {
@@ -140,51 +403,43 @@ interface ClientOrdersResponse {
 
 type ConfirmationAction = "deliver";
 
+// ═══════════════════════════════════════════════════════════════════
+// COMPONENT
+// ═══════════════════════════════════════════════════════════════════
 const VehicleOrdersList = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isSourcingTeam, isClient, isAdmin, isDealer } = useAuth();
   const canManageBookings = isAdmin || isDealer || isClient;
 
+  // ─── STATE ──────────────────────────────────────────────────────
   const [bookings, setBookings] = useState<VehicleBookingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [bookingStats, setBookingStats] = useState({
-    deliveredTotal: 0,
-    piReadyTotal: 0,
-    totalAll: 0,
+    // Admin stats
     pendingTotal: 0,
     approvalTotal: 0,
+    approvedTotal: 0,
     awaitingNumbersTotal: 0,
-    inProgressTotal: 0,
-    lcPendingTotal: 0,
-    sourcingTotal: 0,
-    awaitingVinTotal: 0,
-    // ─── CLIENT STATUS: Card stats ───
+    makePiTotal: 0,
+    shippedTotal: 0,
+    deliveredTotal: 0,
+    // Client stats
     ordersPlaced: 0,
     booked: 0,
-    carsPendingLc: 0,
+    pendingLc: 0,
+    lcReceived: 0,
     carsInTransit: 0,
     carsDelivered: 0,
   });
 
-  const rawToStatusLabel: Record<string, string> = {
-    pending: "Action Required",
-    approvalPending: "Awaiting Approval",
-    quotation_details_pending: "Awaiting Approval",
-    quotation_uploaded: "Awaiting Approval",
-    awaitingNumbers: "Awaiting Engine / Chassis Number",
-    payment_done: "Awaiting Engine / Chassis Number",
-    chassis_received: "All",
-    shipped: "All",
-    delivered: "Delivered",
-    piPending: "Make PI",
-    missingClient: "All",
-  };
   const incomingFilter = (location.state as any)?.statusFilter;
   const [statusLabel, setStatusLabel] = useState<string>(
-    incomingFilter && rawToStatusLabel[incomingFilter]
-      ? rawToStatusLabel[incomingFilter]
+    incomingFilter
+      ? isClient
+        ? rawToClientLabel[incomingFilter] || "All"
+        : rawToAdminLabel[incomingFilter] || "All"
       : "All",
   );
   const [currentPage, setCurrentPage] = useState(1);
@@ -211,115 +466,62 @@ const VehicleOrdersList = () => {
     booking: VehicleBookingItem;
   } | null>(null);
 
-  const statusValue = statusLabelToRaw[statusLabel] || "All";
+  // ─── DERIVED FILTER VALUE ───────────────────────────────────────
+  const filterValue = isClient
+    ? clientFilterMap[statusLabel] || "All"
+    : adminFilterMap[statusLabel] || "All";
 
-
-  // ─────────────────────────────────────────────────────────────
-  // Client status bucket mapping (used for BOTH cards & table)
-  // ─────────────────────────────────────────────────────────────
-  const getClientBucket = (b: VehicleBookingItem) => {
-    const pis = Array.isArray((b as any).associatedPIs)
-      ? ((b as any).associatedPIs as Array<{ status?: string }>)
-      : [];
-
-    const hasPI = pis.length > 0;
-    const hasLcReceived = pis.some((pi) => pi?.status === "lc_received");
-
-    const isDelivered = b.status === "delivered";
-    const isInTransit = b.status === "shipped";
-    const isBooked = !!b.assignedDealerId && !hasPI && !isDelivered;
-
-    // orders placed = booked + pending LC + LC received + in transit + delivered
-    if (isBooked) return "BOOKED";
-
-    // pending LC = PI exists but LC not received
-    if (hasPI && !hasLcReceived && !isDelivered && !isInTransit) {
-      return "PENDING LC";
-    }
-
-    // LC RECEIVED = LC uploaded/received for this vehicle (via PI),
-    // but it is not shipped yet.
-    // (Even if chassis number exists, this bucket is still valid.)
-    if (hasPI && hasLcReceived && !isDelivered && !isInTransit) {
-      return "LC RECEIVED";
-    }
-
-
-    if (isInTransit) return "CARS IN TRANSIT";
-    if (isDelivered) return "CARS DELIVERED";
-
-    return "OTHER";
-  };
-
-
+  // ─── FETCH BOOKINGS ─────────────────────────────────────────────
   const fetchBookings = async () => {
     try {
       setLoading(true);
 
+      // ─── CLIENT PATH ──────────────────────────────────────────
       if (isClient) {
         const response = await api.get<ClientOrdersResponse>("/clients/me");
         const clientBookings = Array.isArray(response.data?.vehicleOrders)
           ? response.data.vehicleOrders
           : [];
 
-        const hasChassis = (b: VehicleBookingItem) =>
-          !!String(b.chassisNumber || "").trim();
-
-        const isPendingLC = (b: VehicleBookingItem) => {
-          const pis = (b as any).associatedPIs;
-          if (!Array.isArray(pis) || pis.length === 0) return false;
-          return !pis.some((pi: any) => pi.status === "lc_received");
+        // Compute bucket counts
+        const bucketCounts: Record<string, number> = {
+          BOOKED: 0,
+          "PENDING LC": 0,
+          "LC RECEIVED": 0,
+          "CARS IN TRANSIT": 0,
+          "CARS DELIVERED": 0,
+          OTHER: 0,
         };
+        clientBookings.forEach((b) => {
+          const bucket = getClientBucket(b);
+          bucketCounts[bucket] = (bucketCounts[bucket] || 0) + 1;
+        });
 
-        const ordersPlaced = clientBookings.length;
-        const booked = clientBookings.filter(
-          (b) =>
-            !!b.assignedDealerId && !hasChassis(b) && b.status !== "delivered",
-        ).length;
-        const carsPendingLc = clientBookings.filter(isPendingLC).length;
-        const carsInTransit = clientBookings.filter(
-          (b) => b.status === "shipped",
-        ).length;
-        const carsDelivered = clientBookings.filter(
-          (b) => b.status === "delivered",
-        ).length;
+        const ordersPlaced =
+          bucketCounts["BOOKED"] +
+          bucketCounts["PENDING LC"] +
+          bucketCounts["LC RECEIVED"] +
+          bucketCounts["CARS IN TRANSIT"] +
+          bucketCounts["CARS DELIVERED"];
 
+        // Filter
         const normalizedSearch = search.trim().toLowerCase();
         const filteredBookings = clientBookings.filter((booking) => {
           let statusMatches = false;
-          if (statusValue === "All" || statusValue === "orders_placed") {
+          if (filterValue === "All" || filterValue === "orders_placed") {
             statusMatches = true;
-          } else if (statusValue === "booked") {
-            statusMatches =
-              !!booking.assignedDealerId &&
-              !hasChassis(booking) &&
-              booking.status !== "delivered";
-          } else if (statusValue === "pending_lc") {
-            statusMatches = isPendingLC(booking);
-          } else if (statusValue === "lc_received") {
-            const pis = (booking as any).associatedPIs;
-            const hasPI = Array.isArray(pis) && pis.length > 0;
-            const hasLcReceived =
-              hasPI && pis.some((pi: any) => pi?.status === "lc_received");
-            statusMatches = hasLcReceived;
-          } else if (statusValue === "in_transit") {
-            statusMatches = booking.status === "shipped";
-
-          } else if (statusValue === "delivered_client") {
-            statusMatches = booking.status === "delivered";
           } else {
-            statusMatches = booking.status === statusValue;
+            statusMatches = getClientBucket(booking) === filterValue;
           }
-
           if (!statusMatches) return false;
+
+          if (!normalizedSearch) return true;
 
           const orderData = (booking as any).orderId;
           const vehicleSnapshot =
             typeof orderData === "object" && orderData !== null
               ? orderData.vehicleSnapshot
               : null;
-
-          if (!normalizedSearch) return true;
 
           const searchValue = [
             orderData?.orderNumber,
@@ -332,7 +534,7 @@ const VehicleOrdersList = () => {
             booking.assignedDealerSnapshot?.name,
             booking.assignedClientSnapshot?.name,
             booking.assignedClientSnapshot?.companyName,
-            getDisplayStatusMeta(booking)?.label,
+            getClientDisplayStatus(booking)?.label,
             booking.status,
           ]
             .filter(Boolean)
@@ -350,50 +552,27 @@ const VehicleOrdersList = () => {
         setTotal(nextTotal);
         setTotalPages(nextTotalPages);
         setBookingStats({
-          deliveredTotal: clientBookings.filter((b) => b.status === "delivered")
-            .length,
-          piReadyTotal: clientBookings.filter(
-            (b) => b.engineNumber && b.chassisNumber && !b.piGenerated,
-          ).length,
-          totalAll: clientBookings.length,
-          pendingTotal: clientBookings.filter((b) => b.status === "pending")
-            .length,
-          approvalTotal: clientBookings.filter((b) =>
-            ["quotation_details_pending", "quotation_uploaded"].includes(
-              b.status,
-            ),
-          ).length,
-          awaitingNumbersTotal: clientBookings.filter(
-            (b) => b.status === "payment_done",
-          ).length,
-          inProgressTotal: clientBookings.filter(
-            (b) => b.status !== "delivered",
-          ).length,
-          lcPendingTotal: carsPendingLc,
-          sourcingTotal: clientBookings.filter((b) =>
-            [
-              "pending",
-              "quotation_details_pending",
-              "quotation_uploaded",
-              "approved",
-              "payment_done",
-            ].includes(b.status),
-          ).length,
-          awaitingVinTotal: clientBookings.filter(
-            (b) => !b.chassisNumber && b.status !== "delivered",
-          ).length,
+          pendingTotal: 0,
+          approvalTotal: 0,
+          approvedTotal: 0,
+          awaitingNumbersTotal: 0,
+          makePiTotal: 0,
+          shippedTotal: 0,
+          deliveredTotal: 0,
           ordersPlaced,
-          booked,
-          carsPendingLc,
-          carsInTransit,
-          carsDelivered,
+          booked: bucketCounts["BOOKED"],
+          pendingLc: bucketCounts["PENDING LC"],
+          lcReceived: bucketCounts["LC RECEIVED"],
+          carsInTransit: bucketCounts["CARS IN TRANSIT"],
+          carsDelivered: bucketCounts["CARS DELIVERED"],
         });
         return;
       }
 
+      // ─── ADMIN PATH ───────────────────────────────────────────
       const res = await vehicleBookingApi.getAllBookings({
         search,
-        status: statusValue === "All" ? undefined : statusValue,
+        status: filterValue === "All" ? undefined : filterValue,
         page: currentPage,
         limit,
       });
@@ -401,21 +580,20 @@ const VehicleOrdersList = () => {
       setBookings(res.data || []);
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
+
       const stats = res.stats;
       setBookingStats({
-        deliveredTotal: stats?.deliveredTotal || 0,
-        piReadyTotal: stats?.piReadyTotal || 0,
-        totalAll: stats?.totalAll || 0,
         pendingTotal: stats?.pendingTotal || 0,
         approvalTotal: stats?.approvalTotal || 0,
+        approvedTotal: stats?.approvedTotal || 0,
         awaitingNumbersTotal: stats?.awaitingNumbersTotal || 0,
-        inProgressTotal: stats?.inProgressTotal || 0,
-        lcPendingTotal: stats?.lcPendingTotal || 0,
-        sourcingTotal: stats?.sourcingTotal || 0,
-        awaitingVinTotal: stats?.awaitingVinTotal || 0,
+        makePiTotal: stats?.makePiTotal || 0,
+        shippedTotal: stats?.shippedTotal || 0,
+        deliveredTotal: stats?.deliveredTotal || 0,
         ordersPlaced: 0,
         booked: 0,
-        carsPendingLc: 0,
+        pendingLc: 0,
+        lcReceived: 0,
         carsInTransit: 0,
         carsDelivered: 0,
       });
@@ -426,6 +604,7 @@ const VehicleOrdersList = () => {
     }
   };
 
+  // ─── EFFECTS ────────────────────────────────────────────────────
   useEffect(() => {
     fetchBookings();
   }, [currentPage, isClient, search, statusLabel]);
@@ -433,7 +612,8 @@ const VehicleOrdersList = () => {
   useEffect(() => {
     const pendingCount = bookings.filter(
       (b) =>
-        b.status === "payment_done" && (!b.engineNumber || !b.chassisNumber),
+        ["payment_done", "chassis_received"].includes(b.status) &&
+        (!b.engineNumber || !b.chassisNumber),
     ).length;
 
     if (pendingCount > 0 && pendingCount !== lastReminderCount.current) {
@@ -495,6 +675,7 @@ const VehicleOrdersList = () => {
     fetchDealers();
   }, [isClient]);
 
+  // ─── HANDLERS ───────────────────────────────────────────────────
   const syncBooking = (updated: VehicleBookingItem) => {
     setBookings((current) =>
       current.map((item) => {
@@ -510,49 +691,47 @@ const VehicleOrdersList = () => {
     setActiveBooking(booking);
     setQuotationModalOpen(true);
   };
-
   const openPaymentModal = (booking: VehicleBookingItem) => {
     setActiveBooking(booking);
     setPaymentModalOpen(true);
   };
-
   const openClientModal = (booking: VehicleBookingItem) => {
     setActiveBooking(booking);
     setClientModalOpen(true);
   };
-
   const closeQuotationModal = () => {
     setQuotationModalOpen(false);
     setActiveBooking(null);
   };
-
   const closePaymentModal = () => {
     setPaymentModalOpen(false);
     setActiveBooking(null);
   };
-
   const closeClientModal = () => {
     setClientModalOpen(false);
     setActiveBooking(null);
   };
-
   const openDealerModal = (booking: VehicleBookingItem) => {
     setActiveBooking(booking);
     setDealerModalOpen(true);
   };
-
   const closeDealerModal = () => {
     setDealerModalOpen(false);
     setActiveBooking(null);
   };
 
+  const hasReadyToShipInvoices = (booking: VehicleBookingItem) =>
+    !!booking.invoiceReadiness?.INR &&
+    !!booking.invoiceReadiness?.USD &&
+    !!booking.invoiceReadiness?.COMMERCIAL;
+
   const openDeliveredConfirmation = (booking: VehicleBookingItem) => {
     if (booking.status !== "shipped") {
-      toast.error("Not shipped yet");
+      toast.error("Vehicle must be shipped before marking as delivered");
       return;
     }
     if (!hasGeneratedPI(booking)) {
-      toast.error("PI not created");
+      toast.error("PI must be created before marking as delivered");
       return;
     }
     if (!booking.assignedClientId) {
@@ -573,11 +752,11 @@ const VehicleOrdersList = () => {
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
     if (booking.status !== "shipped") {
-      toast.error("Not shipped yet");
+      toast.error("Vehicle must be shipped before marking as delivered");
       return;
     }
     if (!hasGeneratedPI(booking)) {
-      toast.error("PI not created");
+      toast.error("PI must be created before marking as delivered");
       return;
     }
     if (!booking.assignedClientId) {
@@ -596,82 +775,6 @@ const VehicleOrdersList = () => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update status");
     }
-  };
-
-  const hasGeneratedPI = (booking: VehicleBookingItem) =>
-    booking.piGenerated ||
-    (Array.isArray(booking.associatedPIs) && booking.associatedPIs.length > 0);
-
-  const isPostBookingFlow = (booking: VehicleBookingItem) =>
-    ["payment_done", "chassis_received", "shipped"].includes(booking.status);
-
-  const hasReadyToShipInvoices = (booking: VehicleBookingItem) =>
-    !!booking.invoiceReadiness?.INR &&
-    !!booking.invoiceReadiness?.USD &&
-    !!booking.invoiceReadiness?.COMMERCIAL;
-
-  const getDisplayStatusMeta = (booking: VehicleBookingItem) => {
-    // ─── CLIENT STATUS: Show abstracted labels for client ───
-    if (isClient) {
-      if (booking.status === "delivered") {
-        return {
-          label: "Delivered",
-          badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
-        };
-      }
-      if (booking.status === "shipped") {
-        return {
-          label: "In Transit",
-          badge: "bg-cyan-100 text-cyan-700 border-cyan-200",
-        };
-      }
-      if (
-        !!booking.assignedDealerId &&
-        !String(booking.chassisNumber || "").trim() &&
-        booking.status !== ("delivered" as VehicleBookingStatus)
-      ) {
-        return {
-          label: "Booked",
-          badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
-        };
-      }
-      // Default fallback to original status
-      return STATUS_META[booking.status];
-    }
-
-    const hasEngine = !!String(booking.engineNumber || "").trim();
-    const hasChassis = !!String(booking.chassisNumber || "").trim();
-    const hasPI = hasGeneratedPI(booking);
-
-    if (isPostBookingFlow(booking) && !hasPI) {
-      return {
-        label: "Make PI",
-        badge: "bg-purple-100 text-purple-700 border-purple-200",
-      };
-    }
-
-    if (booking.status === "payment_done" && hasPI) {
-      if (hasChassis && !hasEngine) {
-        return {
-          label: "Awaiting Engine",
-          badge: "bg-blue-100 text-blue-700 border-blue-200",
-        };
-      }
-      if (hasEngine && !hasChassis) {
-        return {
-          label: "Awaiting Chassis",
-          badge: "bg-blue-100 text-blue-700 border-blue-200",
-        };
-      }
-    }
-
-    if (booking.status === "chassis_received" && hasPI) {
-      return {
-        label: "PI Created",
-        badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      };
-    }
-    return STATUS_META[booking.status];
   };
 
   const canDeleteBooking = (booking: VehicleBookingItem) =>
@@ -696,6 +799,7 @@ const VehicleOrdersList = () => {
     }
   };
 
+  // ─── TABLE HELPERS ──────────────────────────────────────────────
   const getOrderId = (booking: VehicleBookingItem) => {
     const oid = (booking as any).orderId;
     return typeof oid === "string" ? oid : oid?._id || "";
@@ -709,8 +813,8 @@ const VehicleOrdersList = () => {
   };
 
   const getNumberActionLabel = (booking: VehicleBookingItem) => {
-    const missingEngine = !String(booking.engineNumber || "").trim();
-    const missingChassis = !String(booking.chassisNumber || "").trim();
+    const missingEngine = !hasEngine(booking);
+    const missingChassis = !hasChassis(booking);
     if (missingEngine && missingChassis) return "Add Engine/Chassis";
     if (missingEngine) return "Enter Engine";
     if (missingChassis) return "Enter Chassis";
@@ -728,9 +832,42 @@ const VehicleOrdersList = () => {
     });
   };
 
+  const getAssignedClientLabel = (booking: VehicleBookingItem) =>
+    booking.assignedClientSnapshot?.companyName ||
+    booking.assignedClientSnapshot?.name ||
+    "Allot Client";
+
+  // ─── UNIFIED DISPLAY STATUS ─────────────────────────────────────
+  const getDisplayStatusMeta = (booking: VehicleBookingItem) => {
+    if (isClient) return getClientDisplayStatus(booking);
+    return getAdminDisplayStatus(booking);
+  };
+
+  const handleShip = async (booking: VehicleBookingItem) => {
+    if (!hasChassis(booking)) {
+      toast.error("Chassis number is required for shipping");
+      return;
+    }
+    if (!hasGeneratedPI(booking)) {
+      toast.error("PI must be created before shipping");
+      return;
+    }
+    try {
+      const updated = await vehicleBookingApi.updateStatus(
+        booking._id,
+        "shipped",
+      );
+      syncBooking(updated);
+      toast.success("Vehicle marked as shipped");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to ship vehicle");
+    }
+  };
+
+  // ─── PRIMARY ACTION BUTTON (admin only) ─────────────────────────
   const renderPrimaryAction = (booking: VehicleBookingItem) => {
     const orderId = getOrderId(booking);
-    const primaryActionClass =
+    const cls =
       "cursor-pointer inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition whitespace-nowrap";
 
     switch (booking.status) {
@@ -743,11 +880,12 @@ const VehicleOrdersList = () => {
                 ? openQuotationModal(booking)
                 : toast.error("Please allot a dealer first")
             }
-            className={`${primaryActionClass} ${booking.assignedDealerId ? "bg-slate-900 hover:bg-slate-700" : "bg-slate-400 opacity-60 cursor-not-allowed"}`}
+            className={`${cls} ${booking.assignedDealerId ? "bg-slate-900 hover:bg-slate-700" : "bg-slate-400 opacity-60 cursor-not-allowed"}`}
           >
             Upload Quotation
           </button>
         );
+
       case "quotation_details_pending":
       case "quotation_uploaded":
         return (
@@ -757,13 +895,14 @@ const VehicleOrdersList = () => {
                 ? openQuotationModal(booking)
                 : toast.error("Please allot a dealer first")
             }
-            className={`${primaryActionClass} ${booking.assignedDealerId ? (booking.status === "quotation_details_pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-500 hover:bg-amber-600") : "bg-slate-400 opacity-60 cursor-not-allowed"}`}
+            className={`${cls} ${booking.assignedDealerId ? (booking.status === "quotation_details_pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-500 hover:bg-amber-600") : "bg-slate-400 opacity-60 cursor-not-allowed"}`}
           >
             {booking.status === "quotation_details_pending"
               ? "Add Costing"
               : "Review Quotation"}
           </button>
         );
+
       case "approved":
         return (
           <button
@@ -774,7 +913,43 @@ const VehicleOrdersList = () => {
             Confirm Booking
           </button>
         );
-      case "payment_done":
+
+      case "payment_done": {
+        const c = hasChassis(booking);
+        const pi = hasGeneratedPI(booking);
+
+        // Chassis + PI → can ship (engine optional)
+        if (c && pi) {
+          return (
+            <button
+              onClick={() => handleShip(booking)}
+              className={`${cls} bg-cyan-600 hover:bg-cyan-700`}
+            >
+              <Truck size={14} />
+              Ship Vehicle
+            </button>
+          );
+        }
+
+        // Chassis present, no PI → create PI
+        if (c && !pi) {
+          return (
+            <button
+              onClick={() =>
+                // navigate(
+                //   `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                // )
+                navigate(`/proforma-invoice/list`)
+              }
+              className={`${cls} bg-purple-600 hover:bg-purple-700`}
+            >
+              <FileText size={14} />
+              Create PI
+            </button>
+          );
+        }
+
+        // No chassis → enter numbers
         return (
           <button
             onClick={() =>
@@ -782,41 +957,84 @@ const VehicleOrdersList = () => {
                 `/vehicles/orders/${orderId}/unit-edit/${booking.vehicleIndex}`,
               )
             }
-            className={`${primaryActionClass} bg-blue-600 hover:bg-blue-700`}
+            className={`${cls} bg-blue-600 hover:bg-blue-700`}
           >
             <FilePenLine size={14} />
             {getNumberActionLabel(booking)}
           </button>
         );
+      }
+
       case "chassis_received": {
+        const pi = hasGeneratedPI(booking);
+
+        // PI created → can ship (chassis is always present at this status)
+        if (pi) {
+          return (
+            <button
+              onClick={() => handleShip(booking)}
+              className={`${cls} bg-cyan-600 hover:bg-cyan-700`}
+            >
+              <Truck size={14} />
+              Ship Vehicle
+            </button>
+          );
+        }
+
+        // No PI, engine missing → create PI (vehicle is in "Make PI" card)
+        if (!hasEngine(booking)) {
+          return (
+            <button
+              onClick={() =>
+                // navigate(
+                //   `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+                // )
+                navigate(`/proforma-invoice/list`)
+              }
+              className={`${cls} bg-purple-600 hover:bg-purple-700`}
+            >
+              <FileText size={14} />
+              Create PI
+            </button>
+          );
+        }
+
+        // Both numbers present, no PI → create PI
         return (
           <button
-            onClick={() => openDeliveredConfirmation(booking)}
-            className={`${primaryActionClass} bg-[#1e40af] hover:bg-[#1d4ed8]`}
+            onClick={() =>
+              // navigate(
+              //   `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+              // )
+              navigate(`/proforma-invoice/list`)
+            }
+            className={`${cls} bg-purple-600 hover:bg-purple-700`}
           >
-            <Truck size={14} />
-            Mark Delivered
+            <FileText size={14} />
+            Create PI
           </button>
         );
       }
+
       case "shipped":
         return (
           <button
             onClick={() => openDeliveredConfirmation(booking)}
-            className={`${primaryActionClass} bg-[#1e40af] hover:bg-[#1d4ed8]`}
+            className={`${cls} bg-[#1e40af] hover:bg-[#1d4ed8]`}
           >
             <Truck size={14} />
             Mark Delivered
           </button>
         );
+
       default:
         return null;
     }
   };
 
-  /* ══════════════════════════════════════════════════════════
-     SUMMARY CARDS LOGIC (CONDITIONAL FOR CLIENT)
-     ══════════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════════════════
+     SUMMARY CARDS
+     ══════════════════════════════════════════════════════════════════ */
   const summaryCards = useMemo(() => {
     if (isClient) {
       return [
@@ -824,7 +1042,7 @@ const VehicleOrdersList = () => {
           label: "ORDERS PLACED",
           filterLabel: "ORDERS PLACED",
           value: bookingStats.ordersPlaced,
-          detail: "Required vehicles placed by you or our team",
+          detail: "Total vehicles placed by you or our team",
           icon: <CarFront size={20} />,
           tone: "bg-blue-50 text-blue-700 border-blue-100",
         },
@@ -832,23 +1050,31 @@ const VehicleOrdersList = () => {
           label: "BOOKED",
           filterLabel: "BOOKED",
           value: bookingStats.booked,
-          detail: "Booked vehicles",
+          detail: "Approved/booked, PI not yet created",
           icon: <Store size={20} />,
           tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
         },
         {
           label: "PENDING LC",
           filterLabel: "PENDING LC",
-          value: bookingStats.carsPendingLc,
-          detail: "PI created but LC not received",
+          value: bookingStats.pendingLc,
+          detail: "PI created, LC not yet received",
           icon: <FileText size={20} />,
           tone: "bg-amber-50 text-amber-700 border-amber-100",
+        },
+        {
+          label: "LC RECEIVED",
+          filterLabel: "LC RECEIVED",
+          value: bookingStats.lcReceived,
+          detail: "LC received, awaiting shipment",
+          icon: <FileCheck size={20} />,
+          tone: "bg-green-50 text-green-700 border-green-100",
         },
         {
           label: "CARS IN TRANSIT",
           filterLabel: "CARS IN TRANSIT",
           value: bookingStats.carsInTransit,
-          detail: "Shipped and on the way to Sri Lanka",
+          detail: "LC received and shipped",
           icon: <Truck size={20} />,
           tone: "bg-cyan-50 text-cyan-700 border-cyan-100",
         },
@@ -863,56 +1089,84 @@ const VehicleOrdersList = () => {
       ];
     }
 
-    // ORIGINAL ADMIN CARDS
+    // ADMIN CARDS (7 cards)
     return [
       {
         label: "Action Required",
         filterLabel: "Action Required",
         value: bookingStats.pendingTotal,
-        tone: "bg-slate-100 text-slate-800",
+        detail: "Vehicles added, no action performed",
+        icon: <AlertCircle size={20} />,
+        tone: "bg-slate-100 text-slate-800 border-slate-200",
       },
       {
         label: "Awaiting Approval",
         filterLabel: "Awaiting Approval",
         value: bookingStats.approvalTotal,
-        tone: "bg-amber-100 text-amber-800",
+        detail: "Dealer allotted, quotation uploaded, costing added",
+        icon: <Clock size={20} />,
+        tone: "bg-amber-100 text-amber-800 border-amber-200",
+      },
+      {
+        label: "Awaiting Booking",
+        filterLabel: "Awaiting Booking",
+        value: bookingStats.approvedTotal,
+        detail: "Approved but not yet booked",
+        icon: <CheckCircle size={20} />,
+        tone: "bg-emerald-100 text-emerald-800 border-emerald-200",
       },
       {
         label: "Awaiting Numbers",
-        filterLabel: "Awaiting Engine / Chassis Number",
+        filterLabel: "Awaiting Numbers",
         value: bookingStats.awaitingNumbersTotal,
-        tone: "bg-blue-100 text-blue-800",
+        detail: "Booked, chassis/engine still pending",
+        icon: <Hash size={20} />,
+        tone: "bg-blue-100 text-blue-800 border-blue-200",
       },
       {
         label: "Make PI",
         filterLabel: "Make PI",
-        value: bookingStats.piReadyTotal,
-        tone: "bg-purple-100 text-purple-800",
+        value: bookingStats.makePiTotal,
+        detail: "Chassis received, ready for PI creation",
+        icon: <FileText size={20} />,
+        tone: "bg-purple-100 text-purple-800 border-purple-200",
+      },
+      {
+        label: "Shipped",
+        filterLabel: "Shipped",
+        value: bookingStats.shippedTotal,
+        detail: "PI created, vehicle shipped",
+        icon: <Truck size={20} />,
+        tone: "bg-cyan-100 text-cyan-800 border-cyan-200",
       },
       {
         label: "Delivered",
         filterLabel: "Delivered",
         value: bookingStats.deliveredTotal,
-        tone: "bg-emerald-100 text-emerald-800",
+        detail: "Vehicle delivered to client",
+        icon: <PackageCheck size={20} />,
+        tone: "bg-green-100 text-green-800 border-green-200",
       },
     ];
   }, [bookingStats, isClient]);
 
+  // ─── PAGE META ──────────────────────────────────────────────────
   const pageTitle = isClient ? "My Vehicle List" : "Vehicles List";
   const pageDescription = isClient
     ? "View the vehicle orders assigned to your account"
     : "Track and manage vehicle list unit-wise";
-  const getAssignedClientLabel = (booking: VehicleBookingItem) =>
-    booking.assignedClientSnapshot?.companyName ||
-    booking.assignedClientSnapshot?.name ||
-    "Allot Client";
+
   const confirmationMissingInvoices =
     confirmation?.action === "deliver" &&
     !hasReadyToShipInvoices(confirmation.booking);
 
+  // ══════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-[#f8faff] dark:bg-gray-950">
       <div className="bg-white dark:bg-gray-900 rounded-[20px] shadow-sm border border-slate-200 dark:border-gray-800 overflow-hidden">
+        {/* ─── HEADER ─── */}
         <div className="px-8 py-6 flex justify-between items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#0f172a] dark:text-white">
@@ -922,7 +1176,6 @@ const VehicleOrdersList = () => {
               {pageDescription}
             </p>
           </div>
-
           <div className="flex items-center gap-3">
             <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg font-bold text-sm">
               {total} {total === 1 ? "Vehicle" : "Vehicles"}
@@ -941,6 +1194,7 @@ const VehicleOrdersList = () => {
 
         <hr className="border-slate-100 dark:border-gray-800" />
 
+        {/* ─── FILTER BAR ─── */}
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
           <div className="flex items-center gap-4">
             <Select value={statusLabel} onValueChange={setStatusLabel}>
@@ -952,14 +1206,12 @@ const VehicleOrdersList = () => {
                   <SelectValue placeholder="All Statuses" />
                 </div>
               </SelectTrigger>
-
               <SelectContent
                 align="start"
                 position="popper"
                 className="min-w-[240px] rounded-xl p-1"
               >
-                {/* ─── CLIENT STATUS: Use client-specific dropdown options ─── */}
-                {(isClient ? clientStatusOptions : adminStatusOptions).map(
+                {(isClient ? CLIENT_STATUS_OPTIONS : ADMIN_STATUS_OPTIONS).map(
                   (item) => (
                     <SelectItem key={item} value={item} className="py-2">
                       {item === "All" ? "All Statuses" : item}
@@ -969,7 +1221,6 @@ const VehicleOrdersList = () => {
               </SelectContent>
             </Select>
           </div>
-
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -989,10 +1240,11 @@ const VehicleOrdersList = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
-
+        {/* ─── SUMMARY CARDS ─── */}
         <div className="px-8 pb-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div
+            className={`grid gap-4 grid-cols-2 md:grid-cols-3 ${isClient ? "xl:grid-cols-6" : "lg:grid-cols-4 xl:grid-cols-7"}`}
+          >
             {summaryCards.map((card: any) => (
               <button
                 key={card.label}
@@ -1004,7 +1256,6 @@ const VehicleOrdersList = () => {
                     : "border-slate-200 bg-white"
                 }`}
               >
-                {/* ─── CLIENT STATUS: Show icon ─── */}
                 {card.icon && (
                   <div
                     className={`rounded-xl p-2.5 mb-3 inline-flex ${card.tone}`}
@@ -1015,7 +1266,6 @@ const VehicleOrdersList = () => {
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {card.label}
                 </p>
-                {/* ─── CLIENT STATUS: Show detail text ─── */}
                 {card.detail && (
                   <p className="mt-1 text-[11px] text-slate-400">
                     {card.detail}
@@ -1031,6 +1281,7 @@ const VehicleOrdersList = () => {
           </div>
         </div>
 
+        {/* ─── TABLE ─── */}
         <div className="px-8 pb-8">
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             <table className="w-full table-fixed border-collapse bg-white text-center">
@@ -1055,7 +1306,7 @@ const VehicleOrdersList = () => {
                   </th>
                   {isClient && (
                     <th className="w-[16%] border-b border-slate-200 px-4 py-4 align-middle">
-                      Estimated Collection Date
+                      Est. Collection Date
                     </th>
                   )}
                   <th
@@ -1110,7 +1361,6 @@ const VehicleOrdersList = () => {
                             {vehicleId}
                           </div>
                         </td>
-
                         <td className="border-b border-slate-100 px-5 py-5 align-middle text-left">
                           <p className="truncate max-w-[180px] font-semibold text-slate-900">
                             {brand} {model}
@@ -1119,13 +1369,11 @@ const VehicleOrdersList = () => {
                             {variant}
                           </p>
                         </td>
-
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <span className="inline-flex max-w-[130px] rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
                             {color}
                           </span>
                         </td>
-
                         <td className="border-b border-slate-100 px-4 py-5 align-middle">
                           <span className="font-mono text-sm font-semibold text-slate-700 tracking-wider">
                             {booking.chassisNumber
@@ -1133,7 +1381,6 @@ const VehicleOrdersList = () => {
                               : "-"}
                           </span>
                         </td>
-
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <span
                             className={`inline-flex max-w-[170px] items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold leading-4 ${statusMeta.badge}`}
@@ -1141,7 +1388,6 @@ const VehicleOrdersList = () => {
                             {statusMeta.label}
                           </span>
                         </td>
-
                         {isClient && (
                           <td className="border-b border-slate-100 px-4 py-5 align-middle">
                             <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -1151,7 +1397,6 @@ const VehicleOrdersList = () => {
                             </span>
                           </td>
                         )}
-
                         <td className="border-b border-slate-100 px-6 py-5 align-middle">
                           {isClient ? (
                             <button
@@ -1254,6 +1499,7 @@ const VehicleOrdersList = () => {
           </div>
         </div>
 
+        {/* ─── PAGINATION ─── */}
         <div className="px-8 py-5 flex justify-between items-center bg-white dark:bg-gray-900 border-t border-slate-100">
           <span className="text-sm font-medium text-slate-500">
             Page <span className="text-[#0f172a]">{currentPage}</span> of{" "}
@@ -1278,6 +1524,7 @@ const VehicleOrdersList = () => {
         </div>
       </div>
 
+      {/* ─── MODALS ─── */}
       <QuotationModal
         isOpen={quotationModalOpen}
         onClose={closeQuotationModal}
@@ -1308,6 +1555,8 @@ const VehicleOrdersList = () => {
           onSync={syncBooking}
         />
       )}
+
+      {/* ─── DELIVERED CONFIRMATION ─── */}
       <AlertDialog
         open={!!confirmation}
         onOpenChange={(open) => {
@@ -1322,8 +1571,8 @@ const VehicleOrdersList = () => {
             <AlertDialogTitle>Mark as delivered?</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmationMissingInvoices
-                ? "⚠️ Invoices not generated for this vehicle. Are you sure you want to mark as delivered?"
-                : "This will mark the vehicle as delivered for the assigned client."}
+                ? "Invoices aren't created for this vehicle. Are you sure you want to mark it as delivered?"
+                : "Are you sure you want to mark this vehicle as delivered?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
