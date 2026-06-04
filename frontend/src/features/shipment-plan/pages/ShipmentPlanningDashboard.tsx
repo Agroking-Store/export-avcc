@@ -97,7 +97,8 @@ const ShipmentPlanningDashboard: React.FC = () => {
     today.setHours(0, 0, 0, 0);
 
     for (const s of filteredForInsights) {
-      if (s.destinationCountry) destinations.add(String(s.destinationCountry).trim());
+      if (s.destinationCountry)
+        destinations.add(String(s.destinationCountry).trim());
 
       if (s.arrivalDate) {
         const ad = new Date(s.arrivalDate);
@@ -143,24 +144,6 @@ const ShipmentPlanningDashboard: React.FC = () => {
         value: kpis.total,
         icon: <Package size={16} className="opacity-80" />,
       },
-      {
-        key: "dest",
-        label: "Unique Destinations",
-        value: kpis.destinationsCount,
-        icon: <Globe size={16} className="opacity-80" />,
-      },
-      {
-        key: "upcoming",
-        label: "Upcoming Arrivals",
-        value: kpis.upcomingArrivals,
-        icon: <Calendar size={16} className="opacity-80" />,
-      },
-      {
-        key: "missing",
-        label: "Incomplete (Vessel/Line)",
-        value: kpis.missingVesselOrLine,
-        icon: <Info size={16} className="opacity-80" />,
-      },
     ],
     [kpis],
   );
@@ -188,34 +171,6 @@ const ShipmentPlanningDashboard: React.FC = () => {
             Shipment readiness & container readiness insights.
           </p>
         </div>
-
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setLoading(true);
-              }}
-              placeholder="Search shipments..."
-              className="pl-10 pr-4 py-2.5 w-72 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            />
-          </div>
-
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as TimeRangeKey)}
-            className="py-2.5 px-4 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
-          >
-            <option value="thisMonth">This Month</option>
-            <option value="lastMonth">Last Month</option>
-            <option value="all">All</option>
-          </select>
-        </div>
       </div>
 
       {/* KPI CARDS */}
@@ -237,102 +192,6 @@ const ShipmentPlanningDashboard: React.FC = () => {
             }
           />
         ))}
-
-        <div className="hidden lg:block rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-tight">
-            Filter
-          </p>
-          <h3 className="text-2xl font-black text-slate-800 mt-1 tracking-tight">
-            {timeRangeLabel}
-          </h3>
-          <p className="text-sm text-slate-500 mt-2">
-            {RECENT_LIMIT} latest shipments shown.
-          </p>
-        </div>
-      </div>
-
-      {/* DATA SECTION */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* RECENT SHIPMENTS */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Truck size={18} className="text-slate-500" />
-            </div>
-            <h2 className="font-bold text-slate-800 text-lg">Recent Shipments</h2>
-          </div>
-
-          {loading ? (
-            <div className="rounded-2xl bg-slate-50/50 border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-medium text-slate-400">
-              Loading shipments...
-            </div>
-          ) : recent.length === 0 ? (
-            <div className="rounded-2xl bg-slate-50/50 border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-medium text-slate-400">
-              No shipments found
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {recent.map((s) => {
-                const containersCount = Array.isArray(s.containers)
-                  ? s.containers.length
-                  : 0;
-
-                const vesselLineMissing =
-                  !String(s.vesselName || "").trim() ||
-                  !String(s.shippingLine || "").trim();
-
-                return (
-                  <div
-                    key={s._id}
-                    className="flex items-center justify-between rounded-2xl border border-slate-50 bg-slate-50/30 px-5 py-4 hover:border-blue-100 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-800 truncate">
-                        {s._id.slice(-6).toUpperCase()} • {s.customerName || "-"}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {s.destinationCountry || "-"}
-                      </p>
-                    </div>
-
-                    <div className="text-right space-y-2">
-                      <div
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${vesselLineMissing ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}
-                      >
-                        {vesselLineMissing ? "Incomplete" : "Ready"}
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        Arrival: {formatDate(s.arrivalDate)}
-                      </p>
-                      <span className="block px-4 py-1.5 rounded-xl bg-white text-sm font-bold text-blue-600 shadow-sm">
-                        {containersCount} Containers
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="mt-4 text-xs text-slate-500 flex items-start gap-2">
-            <Building2 size={14} className="mt-0.5 text-slate-400" />
-            <span>KPI cards are computed from live shipment list data.</span>
-          </div>
-        </div>
-
-        {/* EMPTY SECOND PANEL (for clean look like Clients dashboard) */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="p-2 bg-slate-50 rounded-lg">
-              <Globe size={18} className="text-slate-500" />
-            </div>
-            <h2 className="font-bold text-slate-800 text-lg">Destination Focus</h2>
-          </div>
-
-          <div className="rounded-2xl bg-slate-50/50 border border-dashed border-slate-200 px-4 py-8 text-center text-sm font-medium text-slate-400">
-            Use the search + time range above to analyze destination readiness.
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -367,5 +226,3 @@ const StatCard = ({
 );
 
 export default ShipmentPlanningDashboard;
-
-
