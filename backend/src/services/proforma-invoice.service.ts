@@ -803,14 +803,10 @@ const getDashboardMetricSet = (pis: any[], latestLCMap: Map<string, any>) => {
     (sum, pi) => sum + Number(pi.totalAmount || 0),
     0,
   );
-  const awaitingLC = pis.filter((pi) => {
-    const id = String(pi._id);
-    return (
-      (pi.status === "approved" || pi.status === "sent_to_buyer") &&
-      !latestLCMap.has(id)
-    );
-  }).length;
-  const receivedLC = latestLCMap.size;
+  // Awaiting LC = PIs with status "draft"
+  const awaitingLC = pis.filter((pi) => pi.status === "draft").length;
+  // Received LC = PIs with status "lc_received"
+  const receivedLC = pis.filter((pi) => pi.status === "lc_received").length;
   const verifiedLC = Array.from(latestLCMap.values()).filter(
     (lc) => lc.status === "verified",
   ).length;
