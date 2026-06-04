@@ -25,9 +25,7 @@ const emptyInvoiceReadiness = (): InvoiceReadiness => ({
   isComplete: false,
 });
 
-export const getInvoiceReadinessByBookingIds = async (
-  bookingIds: string[],
-) => {
+export const getInvoiceReadinessByBookingIds = async (bookingIds: string[]) => {
   const uniqueBookingIds = [...new Set(bookingIds.filter(Boolean))];
   const readiness = uniqueBookingIds.reduce<Record<string, InvoiceReadiness>>(
     (acc, bookingId) => {
@@ -67,18 +65,26 @@ export const getInvoiceReadinessByBookingIds = async (
 
   const queryConditions: any[] = [
     { vehicleBookingId: { $in: uniqueBookingIds } },
-    { vehicleId: { $in: uniqueBookingIds } }
+    { vehicleId: { $in: uniqueBookingIds } },
   ];
 
   if (chassisList.length > 0) {
-    queryConditions.push({ "dataSnapshot.vehicle.chassisNo": { $in: chassisList } });
+    queryConditions.push({
+      "dataSnapshot.vehicle.chassisNo": { $in: chassisList },
+    });
     queryConditions.push({ "manualFields.chassisNo": { $in: chassisList } });
-    queryConditions.push({ "dataSnapshot.vehicles.chassisNo": { $in: chassisList } });
+    queryConditions.push({
+      "dataSnapshot.vehicles.chassisNo": { $in: chassisList },
+    });
   }
   if (engineList.length > 0) {
-    queryConditions.push({ "dataSnapshot.vehicle.engineNo": { $in: engineList } });
+    queryConditions.push({
+      "dataSnapshot.vehicle.engineNo": { $in: engineList },
+    });
     queryConditions.push({ "manualFields.engineNo": { $in: engineList } });
-    queryConditions.push({ "dataSnapshot.vehicles.engineNo": { $in: engineList } });
+    queryConditions.push({
+      "dataSnapshot.vehicles.engineNo": { $in: engineList },
+    });
   }
 
   const invoices = await Invoice.find({
@@ -92,10 +98,16 @@ export const getInvoiceReadinessByBookingIds = async (
     // Determine which booking IDs this invoice is associated with
     const associatedBookingIds = new Set<string>();
 
-    if (invoice.vehicleBookingId && uniqueBookingIds.includes(String(invoice.vehicleBookingId))) {
+    if (
+      invoice.vehicleBookingId &&
+      uniqueBookingIds.includes(String(invoice.vehicleBookingId))
+    ) {
       associatedBookingIds.add(String(invoice.vehicleBookingId));
     }
-    if (invoice.vehicleId && uniqueBookingIds.includes(String(invoice.vehicleId))) {
+    if (
+      invoice.vehicleId &&
+      uniqueBookingIds.includes(String(invoice.vehicleId))
+    ) {
       associatedBookingIds.add(String(invoice.vehicleId));
     }
 
@@ -105,17 +117,29 @@ export const getInvoiceReadinessByBookingIds = async (
         : [];
 
       for (const vehicle of selectedVehicles) {
-        const vChassis = (vehicle?.chassisNo || vehicle?.chassisNumber || "")?.trim().toUpperCase();
-        const vEngine = (vehicle?.engineNo || vehicle?.engineNumber || "")?.trim().toUpperCase();
-        
-        const bookingIdFromChassis = vChassis ? chassisToBookingId.get(vChassis) : null;
-        const bookingIdFromEngine = vEngine ? engineToBookingId.get(vEngine) : null;
-        const bookingIdFromId = (vehicle?.vehicleBookingId || vehicle?.vehicleId) && 
-          uniqueBookingIds.includes(String(vehicle.vehicleBookingId || vehicle.vehicleId))
-          ? String(vehicle.vehicleBookingId || vehicle.vehicleId)
-          : null;
+        const vChassis = (vehicle?.chassisNo || vehicle?.chassisNumber || "")
+          ?.trim()
+          .toUpperCase();
+        const vEngine = (vehicle?.engineNo || vehicle?.engineNumber || "")
+          ?.trim()
+          .toUpperCase();
 
-        const targetBookingId = bookingIdFromChassis || bookingIdFromEngine || bookingIdFromId;
+        const bookingIdFromChassis = vChassis
+          ? chassisToBookingId.get(vChassis)
+          : null;
+        const bookingIdFromEngine = vEngine
+          ? engineToBookingId.get(vEngine)
+          : null;
+        const bookingIdFromId =
+          (vehicle?.vehicleBookingId || vehicle?.vehicleId) &&
+          uniqueBookingIds.includes(
+            String(vehicle.vehicleBookingId || vehicle.vehicleId),
+          )
+            ? String(vehicle.vehicleBookingId || vehicle.vehicleId)
+            : null;
+
+        const targetBookingId =
+          bookingIdFromChassis || bookingIdFromEngine || bookingIdFromId;
         if (targetBookingId) {
           associatedBookingIds.add(targetBookingId);
         }
@@ -127,7 +151,9 @@ export const getInvoiceReadinessByBookingIds = async (
         invoice.manualFields?.chassisNo ||
         invoice.manualFields?.chassisNumber ||
         ""
-      )?.trim().toUpperCase();
+      )
+        ?.trim()
+        .toUpperCase();
 
       const engine = (
         invoice.dataSnapshot?.vehicle?.engineNo ||
@@ -135,9 +161,13 @@ export const getInvoiceReadinessByBookingIds = async (
         invoice.manualFields?.engineNo ||
         invoice.manualFields?.engineNumber ||
         ""
-      )?.trim().toUpperCase();
+      )
+        ?.trim()
+        .toUpperCase();
 
-      const bookingIdFromChassis = chassis ? chassisToBookingId.get(chassis) : null;
+      const bookingIdFromChassis = chassis
+        ? chassisToBookingId.get(chassis)
+        : null;
       const bookingIdFromEngine = engine ? engineToBookingId.get(engine) : null;
 
       if (bookingIdFromChassis) {
@@ -191,8 +221,11 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
     typeof booking.toObject === "function" ? booking.toObject() : booking,
   );
   const bookingIds = plainBookings.map((booking: any) => String(booking._id));
-  const bookingObjectIds = bookingIds.map(id => new mongoose.Types.ObjectId(id));
-  const readinessByBookingId = await getInvoiceReadinessByBookingIds(bookingIds);
+  const bookingObjectIds = bookingIds.map(
+    (id) => new mongoose.Types.ObjectId(id),
+  );
+  const readinessByBookingId =
+    await getInvoiceReadinessByBookingIds(bookingIds);
 
   // Build chassis/engine maps for fallback matching
   const chassisToBookingId = new Map<string, string>();
@@ -213,7 +246,9 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
     { vehicleBookingIds: { $in: bookingIds } },
   ];
   if (chassisList.length > 0) {
-    piQueryConditions.push({ "vehicleDetails.chassisNo": { $in: chassisList } });
+    piQueryConditions.push({
+      "vehicleDetails.chassisNo": { $in: chassisList },
+    });
   }
   if (engineList.length > 0) {
     piQueryConditions.push({ "vehicleDetails.engineNo": { $in: engineList } });
@@ -221,14 +256,21 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
 
   const pis = await ProformaInvoice.find({
     $or: piQueryConditions,
-  }).select("_id piNumber status hblPath pdfPath vehicleBookingIds vehicleDetails");
+  }).select(
+    "_id piNumber status hblPath pdfPath vehicleBookingIds vehicleDetails",
+  );
 
   const piMapByBookingId: Record<string, any[]> = {};
   const addPiForBooking = (bIdStr: string, pi: any) => {
     if (!bookingIds.includes(bIdStr)) return;
     if (!piMapByBookingId[bIdStr]) piMapByBookingId[bIdStr] = [];
     // Avoid duplicates
-    if (piMapByBookingId[bIdStr].some((p: any) => String(p._id) === String(pi._id))) return;
+    if (
+      piMapByBookingId[bIdStr].some(
+        (p: any) => String(p._id) === String(pi._id),
+      )
+    )
+      return;
     piMapByBookingId[bIdStr].push({
       _id: pi._id,
       piNumber: pi.piNumber,
@@ -250,8 +292,12 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
       for (const vd of pi.vehicleDetails) {
         const vdChassis = (vd.chassisNo || "")?.trim().toUpperCase();
         const vdEngine = (vd.engineNo || "")?.trim().toUpperCase();
-        const matchedByChassis = vdChassis ? chassisToBookingId.get(vdChassis) : null;
-        const matchedByEngine = vdEngine ? engineToBookingId.get(vdEngine) : null;
+        const matchedByChassis = vdChassis
+          ? chassisToBookingId.get(vdChassis)
+          : null;
+        const matchedByEngine = vdEngine
+          ? engineToBookingId.get(vdEngine)
+          : null;
         if (matchedByChassis) addPiForBooking(matchedByChassis, pi);
         if (matchedByEngine) addPiForBooking(matchedByEngine, pi);
       }
@@ -265,25 +311,40 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
     { vehicleId: { $in: bookingIds } },
   ];
   if (chassisList.length > 0) {
-    invoiceQueryConditions.push({ "dataSnapshot.vehicle.chassisNo": { $in: chassisList } });
-    invoiceQueryConditions.push({ "manualFields.chassisNo": { $in: chassisList } });
+    invoiceQueryConditions.push({
+      "dataSnapshot.vehicle.chassisNo": { $in: chassisList },
+    });
+    invoiceQueryConditions.push({
+      "manualFields.chassisNo": { $in: chassisList },
+    });
   }
   if (engineList.length > 0) {
-    invoiceQueryConditions.push({ "dataSnapshot.vehicle.engineNo": { $in: engineList } });
-    invoiceQueryConditions.push({ "manualFields.engineNo": { $in: engineList } });
+    invoiceQueryConditions.push({
+      "dataSnapshot.vehicle.engineNo": { $in: engineList },
+    });
+    invoiceQueryConditions.push({
+      "manualFields.engineNo": { $in: engineList },
+    });
   }
 
   const invoices = await InvoiceModel.find({
     $or: invoiceQueryConditions,
     type: "COMMERCIAL",
-    active: true
-  }).select("_id invoiceNumber type vehicleBookingId vehicleId dataSnapshot.vehicle.chassisNo dataSnapshot.vehicle.engineNo manualFields.chassisNo manualFields.engineNo");
+    active: true,
+  }).select(
+    "_id invoiceNumber type vehicleBookingId vehicleId dataSnapshot.vehicle.chassisNo dataSnapshot.vehicle.engineNo manualFields.chassisNo manualFields.engineNo",
+  );
 
   const invoiceMapByBookingId: Record<string, any[]> = {};
   const addInvoiceForBooking = (bIdStr: string, invoice: any) => {
     if (!bookingIds.includes(bIdStr)) return;
     if (!invoiceMapByBookingId[bIdStr]) invoiceMapByBookingId[bIdStr] = [];
-    if (invoiceMapByBookingId[bIdStr].some((inv: any) => String(inv._id) === String(invoice._id))) return;
+    if (
+      invoiceMapByBookingId[bIdStr].some(
+        (inv: any) => String(inv._id) === String(invoice._id),
+      )
+    )
+      return;
     invoiceMapByBookingId[bIdStr].push({
       _id: invoice._id,
       invoiceNumber: invoice.invoiceNumber,
@@ -300,13 +361,21 @@ export const attachShipmentReadiness = async <T extends any>(bookings: T[]) => {
     // Fallback: match by chassis/engine
     const invChassis = (
       invoice.dataSnapshot?.vehicle?.chassisNo ||
-      invoice.manualFields?.chassisNo || ""
-    )?.trim().toUpperCase();
+      invoice.manualFields?.chassisNo ||
+      ""
+    )
+      ?.trim()
+      .toUpperCase();
     const invEngine = (
       invoice.dataSnapshot?.vehicle?.engineNo ||
-      invoice.manualFields?.engineNo || ""
-    )?.trim().toUpperCase();
-    const matchedByChassis = invChassis ? chassisToBookingId.get(invChassis) : null;
+      invoice.manualFields?.engineNo ||
+      ""
+    )
+      ?.trim()
+      .toUpperCase();
+    const matchedByChassis = invChassis
+      ? chassisToBookingId.get(invChassis)
+      : null;
     const matchedByEngine = invEngine ? engineToBookingId.get(invEngine) : null;
     if (matchedByChassis) addInvoiceForBooking(matchedByChassis, invoice);
     if (matchedByEngine) addInvoiceForBooking(matchedByEngine, invoice);
@@ -470,9 +539,7 @@ export const uploadQuotation = async (bookingId: string, filePath: string) => {
       "quotation_uploaded",
     ].includes(booking.status)
   ) {
-    throw new Error(
-      "Quotation can only be uploaded before approval starts",
-    );
+    throw new Error("Quotation can only be uploaded before approval starts");
   }
 
   const previousQuotation = booking.quotationFile;
@@ -544,7 +611,10 @@ export const saveQuotationDetails = async (bookingId: string, data: any) => {
   const netCost = data?.netCost || {};
   const taxAmount = data?.taxAmount || {};
 
-  booking.bookingAmount = data.bookingAmount !== undefined ? toCleanNumber(data.bookingAmount) : booking.bookingAmount;
+  booking.bookingAmount =
+    data.bookingAmount !== undefined
+      ? toCleanNumber(data.bookingAmount)
+      : booking.bookingAmount;
 
   booking.quotationDetails = {
     dealershipName: toCleanString(data.dealershipName),
@@ -641,7 +711,7 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
 
   booking.paymentAmount = amount;
   booking.status = "payment_done";
-  
+
   // Push to payments array to track in the ledger
   booking.payments = booking.payments || [];
   booking.payments.push({
@@ -660,7 +730,12 @@ export const confirmPayment = async (bookingId: string, amount: number) => {
  */
 export const addPayment = async (
   bookingId: string,
-  paymentData: { amount: number; date?: string | Date; reference?: string; remarks?: string }
+  paymentData: {
+    amount: number;
+    date?: string | Date;
+    reference?: string;
+    remarks?: string;
+  },
 ) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
@@ -674,7 +749,9 @@ export const addPayment = async (
   booking.payments.push({
     amount,
     date: paymentData.date ? new Date(paymentData.date) : new Date(),
-    reference: paymentData.reference ? String(paymentData.reference).trim() : "",
+    reference: paymentData.reference
+      ? String(paymentData.reference).trim()
+      : "",
     remarks: paymentData.remarks ? String(paymentData.remarks).trim() : "",
   });
 
@@ -708,11 +785,33 @@ export const updateChassisEngine = async (
   if (!booking) throw new Error("Booking not found");
 
   if (data.chassisNumber !== undefined) {
-    booking.chassisNumber = data.chassisNumber.trim();
+    const trimmedChassis = data.chassisNumber.trim();
+
+    // Only check for duplicates if a chassis number is actually provided
+    if (trimmedChassis) {
+      // Check if another booking already has this chassis number (case-insensitive to be safe)
+      const existingBooking = await VehicleBooking.findOne({
+        chassisNumber: { $regex: new RegExp(`^${trimmedChassis}$`, "i") },
+        _id: { $ne: bookingId }, // Exclude the current booking from the check
+      });
+
+      if (existingBooking) {
+        throw new Error(
+          "This chassis number is already assigned to another vehicle.",
+        );
+      }
+    }
+
+    // Optionally normalize to uppercase to prevent case-sensitive duplicates
+    booking.chassisNumber = trimmedChassis.toUpperCase() || undefined;
   }
+
   if (data.engineNumber !== undefined) {
-    booking.engineNumber = data.engineNumber.trim() || undefined;
+    const trimmedEngine = data.engineNumber.trim();
+    // Optionally normalize engine number as well
+    booking.engineNumber = trimmedEngine.toUpperCase() || undefined;
   }
+
   if (data.deliveryDate !== undefined) {
     booking.deliveryDate = data.deliveryDate
       ? new Date(data.deliveryDate)
@@ -766,8 +865,14 @@ export const updateChassisEngine = async (
   return getPopulatedBookingWithReadiness(saved._id);
 };
 
+// ... existing code ...
+
 /**
  * Update status manually (e.g. mark as delivered)
+ */
+
+/**
+ * Update status manually (e.g. mark as shipped, delivered)
  */
 export const updateBookingStatus = async (
   bookingId: string,
@@ -785,8 +890,36 @@ export const updateBookingStatus = async (
   const isForwardMove = targetIndex > currentIndex;
 
   if (isForwardMove && status === "shipped") {
+    // Chassis is mandatory for shipping
     if (!String(booking.chassisNumber || "").trim()) {
       throw new Error("Chassis not received");
+    }
+
+    // PI is mandatory for shipping
+    const ProformaInvoice = mongoose.model("ProformaInvoice");
+    const piMatch: any[] = [
+      { vehicleBookingIds: booking._id },
+      { vehicleBookingIds: String(booking._id) },
+    ];
+    const chassis = String(booking.chassisNumber || "")
+      .trim()
+      .toUpperCase();
+    const engine = String(booking.engineNumber || "")
+      .trim()
+      .toUpperCase();
+
+    if (chassis) {
+      piMatch.push({ "vehicleDetails.chassisNo": chassis });
+    }
+    if (engine) {
+      piMatch.push({ "vehicleDetails.engineNo": engine });
+    }
+
+    const existingPI = await ProformaInvoice.findOne({
+      $or: piMatch,
+    }).select("_id");
+    if (!existingPI) {
+      throw new Error("PI must be created before shipping");
     }
   }
 
@@ -800,8 +933,12 @@ export const updateBookingStatus = async (
       { vehicleBookingIds: booking._id },
       { vehicleBookingIds: String(booking._id) },
     ];
-    const chassis = String(booking.chassisNumber || "").trim().toUpperCase();
-    const engine = String(booking.engineNumber || "").trim().toUpperCase();
+    const chassis = String(booking.chassisNumber || "")
+      .trim()
+      .toUpperCase();
+    const engine = String(booking.engineNumber || "")
+      .trim()
+      .toUpperCase();
 
     if (chassis) {
       piMatch.push({ "vehicleDetails.chassisNo": chassis });
@@ -810,9 +947,9 @@ export const updateBookingStatus = async (
       piMatch.push({ "vehicleDetails.engineNo": engine });
     }
 
-    const existingPI = await ProformaInvoice.findOne({ $or: piMatch }).select(
-      "_id",
-    );
+    const existingPI = await ProformaInvoice.findOne({
+      $or: piMatch,
+    }).select("_id");
     if (!existingPI) {
       throw new Error("PI not created");
     }
@@ -1010,6 +1147,10 @@ export const getBookingFile = async (bookingId: string, field: string) => {
 /**
  * Get all vehicle bookings across all orders with filters & pagination
  */
+
+/**
+ * Get all vehicle bookings across all orders with filters & pagination
+ */
 export const getAllVehicleBookingsService = async (query: any) => {
   const {
     search,
@@ -1026,12 +1167,59 @@ export const getAllVehicleBookingsService = async (query: any) => {
   } = query;
 
   const match: any = {};
-  const isPiPendingFilter = status === "piPending";
+  const isMakePIFilter = status === "makePI";
+  const isApprovalFilter = status === "approvalPending";
+  const isAwaitingNumbersFilter = status === "awaitingNumbers";
 
-  if (status && status !== "All" && !isPiPendingFilter) {
+  if (
+    status &&
+    status !== "All" &&
+    !isMakePIFilter &&
+    !isApprovalFilter &&
+    !isAwaitingNumbersFilter
+  ) {
     match.status = status;
   }
 
+  // ─── Expression Helpers ─────────────────────────────────────────
+  const filledTextExpr = (field: string) => ({
+    $gt: [
+      {
+        $strLenCP: {
+          $trim: {
+            input: { $ifNull: [`$${field}`, ""] },
+          },
+        },
+      },
+      0,
+    ],
+  });
+
+  const missingEngineOrChassisExpr = {
+    $or: [
+      { $not: [filledTextExpr("engineNumber")] },
+      { $not: [filledTextExpr("chassisNumber")] },
+    ],
+  };
+
+  // Awaiting Numbers: post-booking or shipped, AND missing chassis or engine
+  const awaitingNumbersExpr = {
+    $and: [
+      { $in: ["$status", ["payment_done", "chassis_received", "shipped"]] },
+      missingEngineOrChassisExpr,
+    ],
+  };
+
+  // Make PI: has chassis + no PI + status is payment_done or chassis_received
+  const makePIExpr = {
+    $and: [
+      { $in: ["$status", ["payment_done", "chassis_received"]] },
+      filledTextExpr("chassisNumber"),
+      { $eq: ["$piGenerated", false] },
+    ],
+  };
+
+  // ─── Search ─────────────────────────────────────────────────────
   const trimmedSearch = String(search || "").trim();
 
   if (trimmedSearch) {
@@ -1097,14 +1285,11 @@ export const getAllVehicleBookingsService = async (query: any) => {
       "make pi".includes(normalizedSearch) ||
       "pi pending".includes(normalizedSearch)
     ) {
-      match.$or.push({
-        piGenerated: false,
-        engineNumber: { $exists: true, $nin: ["", null] },
-        chassisNumber: { $exists: true, $nin: ["", null] },
-      });
+      match.$or.push({ $expr: makePIExpr });
     }
   }
 
+  // ─── Extra Field Filters ────────────────────────────────────────
   const addRegexFilter = (field: string, value?: string) => {
     if (value && String(value).trim()) {
       match[field] = { $regex: String(value).trim(), $options: "i" };
@@ -1149,6 +1334,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
 
   const skip = (Number(page) - 1) * Number(limit);
 
+  // ─── Pipeline (shared base) ─────────────────────────────────────
   const pipeline: any[] = [
     {
       $lookup: {
@@ -1164,11 +1350,107 @@ export const getAllVehicleBookingsService = async (query: any) => {
         orderId: "$order",
       },
     },
+    // ─── PI LOOKUP: match by vehicleBookingIds OR chassis/engine ───
     {
       $lookup: {
         from: "proformainvoices",
-        localField: "_id",
-        foreignField: "vehicleBookingIds",
+        let: {
+          bookingId: "$_id",
+          bookingChassis: {
+            $trim: { input: { $ifNull: ["$chassisNumber", ""] } },
+          },
+          bookingEngine: {
+            $trim: { input: { $ifNull: ["$engineNumber", ""] } },
+          },
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $or: [
+                  // Match by vehicleBookingIds
+                  {
+                    $in: [
+                      "$$bookingId",
+                      { $ifNull: ["$vehicleBookingIds", []] },
+                    ],
+                  },
+                  // Match by chassis in vehicleDetails
+                  {
+                    $and: [
+                      {
+                        $gt: [
+                          {
+                            $strLenCP: {
+                              $ifNull: ["$$bookingChassis", ""],
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                      {
+                        $anyElementTrue: {
+                          $map: {
+                            input: { $ifNull: ["$vehicleDetails", []] },
+                            as: "vd",
+                            in: {
+                              $eq: [
+                                "$$bookingChassis",
+                                {
+                                  $trim: {
+                                    input: {
+                                      $ifNull: ["$$vd.chassisNo", ""],
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                  // Match by engine in vehicleDetails
+                  {
+                    $and: [
+                      {
+                        $gt: [
+                          {
+                            $strLenCP: {
+                              $ifNull: ["$$bookingEngine", ""],
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                      {
+                        $anyElementTrue: {
+                          $map: {
+                            input: { $ifNull: ["$vehicleDetails", []] },
+                            as: "vd",
+                            in: {
+                              $eq: [
+                                "$$bookingEngine",
+                                {
+                                  $trim: {
+                                    input: {
+                                      $ifNull: ["$$vd.engineNo", ""],
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $project: { _id: 1, piNumber: 1, status: 1 } },
+        ],
         as: "proformaInvoices",
       },
     },
@@ -1190,31 +1472,12 @@ export const getAllVehicleBookingsService = async (query: any) => {
     },
   ];
 
+  // ─── Stats Pipeline ─────────────────────────────────────────────
   const statsPipeline = [
     ...pipeline,
     {
       $group: {
         _id: null,
-        deliveredTotal: {
-          $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
-        },
-        piReadyTotal: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ["$piGenerated", false] },
-                  { $ne: ["$engineNumber", ""] },
-                  { $ne: ["$engineNumber", null] },
-                  { $ne: ["$chassisNumber", ""] },
-                  { $ne: ["$chassisNumber", null] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
-        },
         pendingTotal: {
           $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
         },
@@ -1232,72 +1495,48 @@ export const getAllVehicleBookingsService = async (query: any) => {
             ],
           },
         },
+        approvedTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "approved"] }, 1, 0] },
+        },
         awaitingNumbersTotal: {
-          $sum: { $cond: [{ $eq: ["$status", "payment_done"] }, 1, 0] },
-        },
-        inProgressTotal: {
-          $sum: { $cond: [{ $ne: ["$status", "delivered"] }, 1, 0] },
-        },
-        lcPendingTotal: {
           $sum: {
-            $cond: [
-              { $in: ["$status", ["approved", "quotation_uploaded"]] },
-              1,
-              0,
-            ],
+            $cond: [awaitingNumbersExpr, 1, 0],
           },
         },
-        sourcingTotal: {
+        makePiTotal: {
           $sum: {
-            $cond: [
-              {
-                $in: [
-                  "$status",
-                  [
-                    "pending",
-                    "quotation_details_pending",
-                    "quotation_uploaded",
-                    "approved",
-                    "payment_done",
-                  ],
-                ],
-              },
-              1,
-              0,
-            ],
+            $cond: [makePIExpr, 1, 0],
           },
         },
-        awaitingVinTotal: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ["$status", "delivered"] },
-                  {
-                    $or: [
-                      { $eq: ["$chassisNumber", ""] },
-                      { $eq: ["$chassisNumber", null] },
-                    ],
-                  },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
+        shippedTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "shipped"] }, 1, 0] },
+        },
+        deliveredTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
         },
         totalAll: { $sum: 1 },
       },
     },
   ];
 
-  if (isPiPendingFilter) {
+  // ─── Special Filter Stages ──────────────────────────────────────
+  if (isMakePIFilter) {
+    pipeline.push({
+      $match: { $expr: makePIExpr },
+    });
+  }
+
+  if (isApprovalFilter) {
     pipeline.push({
       $match: {
-        piGenerated: false,
-        engineNumber: { $exists: true, $nin: ["", null] },
-        chassisNumber: { $exists: true, $nin: ["", null] },
+        status: { $in: ["quotation_details_pending", "quotation_uploaded"] },
       },
+    });
+  }
+
+  if (isAwaitingNumbersFilter) {
+    pipeline.push({
+      $match: { $expr: awaitingNumbersExpr },
     });
   }
 
@@ -1305,24 +1544,14 @@ export const getAllVehicleBookingsService = async (query: any) => {
     pipeline.push({ $match: match });
   }
 
+  // ─── Execute ────────────────────────────────────────────────────
   const countPipeline = [...pipeline, { $count: "total" }];
   const [countResult, statsResult] = await Promise.all([
     VehicleBooking.aggregate(countPipeline),
     VehicleBooking.aggregate(statsPipeline),
   ]);
   const total = countResult[0]?.total || 0;
-  const stats = statsResult[0] || {
-    deliveredTotal: 0,
-    piReadyTotal: 0,
-    pendingTotal: 0,
-    approvalTotal: 0,
-    awaitingNumbersTotal: 0,
-    inProgressTotal: 0,
-    lcPendingTotal: 0,
-    sourcingTotal: 0,
-    awaitingVinTotal: 0,
-    totalAll: 0,
-  };
+  const stats = statsResult[0] || {};
 
   pipeline.push(
     { $sort: { createdAt: -1 } },
@@ -1340,15 +1569,13 @@ export const getAllVehicleBookingsService = async (query: any) => {
     page: Number(page),
     totalPages: Math.ceil(total / Number(limit)),
     stats: {
-      deliveredTotal: stats.deliveredTotal || 0,
-      piReadyTotal: stats.piReadyTotal || 0,
       pendingTotal: stats.pendingTotal || 0,
       approvalTotal: stats.approvalTotal || 0,
+      approvedTotal: stats.approvedTotal || 0,
       awaitingNumbersTotal: stats.awaitingNumbersTotal || 0,
-      inProgressTotal: stats.inProgressTotal || 0,
-      lcPendingTotal: stats.lcPendingTotal || 0,
-      sourcingTotal: stats.sourcingTotal || 0,
-      awaitingVinTotal: stats.awaitingVinTotal || 0,
+      makePiTotal: stats.makePiTotal || 0,
+      shippedTotal: stats.shippedTotal || 0,
+      deliveredTotal: stats.deliveredTotal || 0,
       totalAll: stats.totalAll || 0,
     },
   };

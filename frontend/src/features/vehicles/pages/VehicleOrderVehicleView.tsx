@@ -149,6 +149,11 @@ const VehicleOrderVehicleView = () => {
       return;
     }
 
+    if (!booking.piGenerated) {
+      toast.error("Cannot be shipped as PI not created");
+      return;
+    }
+
     try {
       setSavingStatus(true);
       const updated = await vehicleBookingApi.updateStatus(

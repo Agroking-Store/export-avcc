@@ -90,6 +90,11 @@ interface VehicleBookingItem {
   isBVUploaded?: boolean;
   isDealerInvoiceUploaded?: boolean;
   piGenerated?: boolean;
+  associatedPIs?: Array<{
+    _id: string;
+    piNumber?: string;
+    status?: string;
+  }>;
   orderId?:
     | string
     | {
@@ -273,6 +278,55 @@ const piStatusCls = (s: PIStatus) =>
     lc_received: "bg-indigo-50 text-indigo-700 border-indigo-200",
     expired: "bg-rose-50 text-rose-700 border-rose-200",
   })[s] ?? "bg-slate-50 text-slate-500 border-slate-200";
+
+// ═══════════════════════════════════════════════════════════════════
+// CLIENT CARD BUCKET HELPERS
+// ═══════════════════════════════════════════════════════════════════
+const hasGeneratedPI = (b: VehicleBookingItem): boolean =>
+  b.piGenerated ||
+  (Array.isArray((b as any).associatedPIs) &&
+    (b as any).associatedPIs.length > 0);
+
+const hasLcReceived = (b: VehicleBookingItem): boolean => {
+  const pis = Array.isArray((b as any).associatedPIs)
+    ? (b as any).associatedPIs
+    : [];
+  return pis.length > 0 && pis.some((pi: any) => pi?.status === "lc_received");
+};
+
+const getClientCards = (b: VehicleBookingItem): string[] => {
+  const cards: string[] = ["ORDERS PLACED"];
+
+  if (b.status === "delivered") {
+    cards.push("CARS DELIVERED");
+    return cards;
+  }
+
+  if (b.status === "shipped") {
+    cards.push("CARS IN TRANSIT");
+    if (!hasLcReceived(b)) {
+      cards.push("PENDING LC");
+    }
+    return cards;
+  }
+
+  if (hasLcReceived(b)) {
+    cards.push("LC RECEIVED");
+    return cards;
+  }
+
+  if (hasGeneratedPI(b)) {
+    cards.push("PENDING LC");
+    return cards;
+  }
+
+  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
+    cards.push("BOOKED");
+    return cards;
+  }
+
+  return cards;
+};
 
 /* ─── Shared UI Components ─── */
 const AnimatedNumber: React.FC<{
@@ -555,12 +609,27 @@ const Dashboard: React.FC = () => {
     return months;
   }, [data, momentumMonths]);
 
-  /* ─────────────────────── CLIENT MEMOS (ABSTRACTION) ──────────────────────────── */
+  /* ─────────────────────── CLIENT MEMOS ──────────────────────────── */
   const clientStats = useMemo(() => {
     if (!clientProfile) return null;
     const orders = clientProfile.vehicleOrders || [];
-    const hasChassis = (order: VehicleBookingItem) =>
-      !!String(order.chassisNumber || "").trim();
+
+    const cardCounts: Record<string, number> = {
+      "ORDERS PLACED": 0,
+      BOOKED: 0,
+      "PENDING LC": 0,
+      "LC RECEIVED": 0,
+      "CARS IN TRANSIT": 0,
+      "CARS DELIVERED": 0,
+    };
+
+    orders.forEach((b) => {
+      const cards = getClientCards(b);
+      cards.forEach((card) => {
+        cardCounts[card] = (cardCounts[card] || 0) + 1;
+      });
+    });
+
     const scheduledVehicles = orders
       .filter((order) => order.deliveryDate)
       .sort(
@@ -570,30 +639,18 @@ const Dashboard: React.FC = () => {
       );
     const nextEstimatedCollection = scheduledVehicles[0]?.deliveryDate;
 
-    const isPendingLC = (order: VehicleBookingItem) => {
-      const pis = (order as any).associatedPIs;
-      if (!Array.isArray(pis) || pis.length === 0) return false;
-      return !pis.some((pi: any) => pi.status === "lc_received");
-    };
-
     return {
       total: clientProfile.totalVehicleOrders,
-      ordersPlaced: orders.length,
-      booked: orders.filter(
-        (order) =>
-          !!order.assignedDealerId &&
-          !hasChassis(order) &&
-          order.status !== "delivered",
-      ).length,
+      ordersPlaced: cardCounts["ORDERS PLACED"],
+      booked: cardCounts["BOOKED"],
+      pendingLc: cardCounts["PENDING LC"],
+      lcReceived: cardCounts["LC RECEIVED"],
+      carsInTransit: cardCounts["CARS IN TRANSIT"],
+      carsDelivered: cardCounts["CARS DELIVERED"],
       estimatedCollectionDate: nextEstimatedCollection
         ? fmtDate(nextEstimatedCollection)
         : "-",
       estimatedCollectionCount: scheduledVehicles.length,
-      carsPendingLc: orders.filter(isPendingLC).length,
-      carsInTransit: orders.filter((order) => order.status === "shipped")
-        .length,
-      carsDelivered: orders.filter((order) => order.status === "delivered")
-        .length,
       scheduledVehicles,
     };
   }, [clientProfile]);
@@ -632,36 +689,43 @@ const Dashboard: React.FC = () => {
   }
 
   /* ══════════════════════════════════════════════════════════
-     CLIENT DASHBOARD VIEW (IMPROVISED & ABSTRACTED)
+     CLIENT DASHBOARD VIEW
      ══════════════════════════════════════════════════════════ */
   if (isClient && clientProfile && clientStats) {
     const clientCards = [
       {
         label: "ORDERS PLACED",
         value: clientStats.ordersPlaced,
-        detail: "Required vehicles placed by you or our team",
+        detail: "Total vehicles placed by you or our team",
         icon: <CarFront size={20} />,
         tone: "bg-blue-50 text-blue-700 border-blue-100",
       },
       {
         label: "BOOKED",
         value: clientStats.booked,
-        detail: "Dealer allotted, chassis number pending",
+        detail: "Approved/booked, PI not yet created",
         icon: <Store size={20} />,
         tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
       },
       {
-        label: "CARS PENDING LC",
-        value: clientStats.carsPendingLc,
-        detail: "PI created but LC not received",
+        label: "PENDING LC",
+        value: clientStats.pendingLc,
+        detail: "PI created, LC not yet received",
         icon: <FileText size={20} />,
         tone: "bg-amber-50 text-amber-700 border-amber-100",
       },
-
+      {
+        label: "LC RECEIVED",
+        value: clientStats.lcReceived,
+        detail: "LC received, awaiting shipment",
+        icon: <FileCheck2 size={20} />,
+        tone: "bg-green-50 text-green-700 border-green-100",
+      },
       {
         label: "CARS IN TRANSIT",
         value: clientStats.carsInTransit,
-        detail: "Shipped and on the way to Sri Lanka",
+        // value: bookingStats.carsInTransit,
+        detail: "LC received and shipped",
         icon: <Truck size={20} />,
         tone: "bg-cyan-50 text-cyan-700 border-cyan-100",
       },
@@ -754,8 +818,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* ── STAT CARDS (5 cards, without Estimated Collection Date) ── */}
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {/* ── STAT CARDS (6 cards) ── */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             {clientCards.map((card) => (
               <div
                 key={card.label}
@@ -771,9 +835,11 @@ const Dashboard: React.FC = () => {
                         ? "linear-gradient(90deg,#6366f1,#8b5cf6)"
                         : card.tone.includes("amber")
                           ? "linear-gradient(90deg,#f59e0b,#f97316)"
-                          : card.tone.includes("cyan")
-                            ? "linear-gradient(90deg,#06b6d4,#3b82f6)"
-                            : "linear-gradient(90deg,#10b981,#06b6d4)",
+                          : card.tone.includes("green")
+                            ? "linear-gradient(90deg,#10b981,#34d399)"
+                            : card.tone.includes("cyan")
+                              ? "linear-gradient(90deg,#06b6d4,#3b82f6)"
+                              : "linear-gradient(90deg,#10b981,#06b6d4)",
                   }}
                 />
                 <div className="flex items-start justify-between gap-4">
