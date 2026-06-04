@@ -655,16 +655,24 @@ const buildPIInvoiceContext = async (piId: string) => {
               .map((vehicle: any) => vehicle?.vehicleId)
               .filter(Boolean)
           : [];
+        const packingVehicleIds =
+          selectedVehicleIds.length > 0
+            ? selectedVehicleIds
+            : invoice.vehicleId && invoice.vehicleId !== "MULTI"
+              ? [invoice.vehicleId]
+              : [];
 
-        for (const selectedVehicleId of selectedVehicleIds) {
+        for (const selectedVehicleId of packingVehicleIds) {
           if (!acc[selectedVehicleId]) {
             acc[selectedVehicleId] = {};
           }
 
-          acc[selectedVehicleId].PACKING_LIST = {
-            ...invoiceSummary,
-            vehicleId: selectedVehicleId,
-          };
+          if (!acc[selectedVehicleId].PACKING_LIST) {
+            acc[selectedVehicleId].PACKING_LIST = {
+              ...invoiceSummary,
+              vehicleId: selectedVehicleId,
+            };
+          }
         }
       } else {
         if (!acc[invoice.vehicleId]) {
@@ -1451,6 +1459,7 @@ export const generatePackingList = async (req: Request, res: Response) => {
     }
 
     const baseVehicle = selectedVehicles[0];
+    const selectedVehicleIds = selectedVehicles.map((vehicle: any) => vehicle.vehicleId);
     const invoiceNumber = resolveInvoiceNumber({
       manualFields,
       vehicles: selectedVehicles,
@@ -1520,10 +1529,11 @@ export const generatePackingList = async (req: Request, res: Response) => {
       invoiceNumber,
     });
 
-    const payload = {
+    const buildPayload = (vehicle: any) => ({
       piId,
-      vehicleId: "MULTI",
-      vehicleLineIndex: -1,
+      vehicleId: vehicle.vehicleId,
+      vehicleLineIndex: vehicle.vehicleLineIndex,
+      vehicleBookingId: vehicle.vehicleBookingId || null,
       type: "PACKING_LIST",
       invoiceNumber,
       invoiceDate: new Date(resolvedManualFields.invoiceDate || Date.now()),
@@ -1536,19 +1546,39 @@ export const generatePackingList = async (req: Request, res: Response) => {
         pi: context,
         vehicles: selectedVehicles,
       },
-    };
+    });
 
-    let record: any;
+    const existingInvoices = await Invoice.find({
+      piId,
+      type: "PACKING_LIST",
+      active: true,
+      vehicleId: { $in: selectedVehicleIds },
+    });
 
-    if (replaceExisting) {
-      record = await Invoice.findOneAndUpdate(
-        { piId, type: "PACKING_LIST", active: true },
-        payload,
-        { new: true, upsert: true },
-      );
-    } else {
-      record = await Invoice.create(payload);
+    if (existingInvoices.length > 0 && !replaceExisting) {
+      return jsonError(res, 409, {
+        error: "PACKING_LIST_EXISTS",
+        existingInvoiceId: existingInvoices[0]._id,
+        message: "Packing list already exists for the selected vehicle",
+      });
     }
+
+    const records: any[] = [];
+
+    for (const vehicle of selectedVehicles) {
+      const existingInvoice = existingInvoices.find(
+        (invoice: any) => invoice.vehicleId === vehicle.vehicleId,
+      );
+
+      if (existingInvoice) {
+        existingInvoice.set(buildPayload(vehicle));
+        records.push(await existingInvoice.save());
+      } else {
+        records.push(await Invoice.create(buildPayload(vehicle)));
+      }
+    }
+
+    const record = records[0];
 
     return res.json({
       success: true,
