@@ -200,7 +200,10 @@ export const vehicleBookingApi = {
       totalAll: number;
       pendingTotal?: number;
       approvalTotal?: number;
+      approvedTotal?: number;
       awaitingNumbersTotal?: number;
+      makePiTotal?: number;
+      shippedTotal?: number;
       inProgressTotal?: number;
       lcPendingTotal?: number;
       sourcingTotal?: number;
