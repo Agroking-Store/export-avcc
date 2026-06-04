@@ -213,6 +213,7 @@ export const preparePIDataForService = (pi: any) => {
       bankName: companyForPdf?.bankDetails?.bankName || "",
       accountNo: companyForPdf?.bankDetails?.accountNo || "",
       branchIfsc: companyForPdf?.bankDetails?.branchIfsc || "",
+      swiftCode: companyForPdf?.bankDetails?.swiftCode || "",
     },
   };
 };

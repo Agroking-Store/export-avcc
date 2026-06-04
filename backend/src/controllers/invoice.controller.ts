@@ -9,22 +9,21 @@ import { renderInvoicePDF } from "../services/invoicePdf.service";
 import { numberToWordsINR, numberToWordsUSD } from "../utils/numberToWords";
 import { INVOICE_SEQUENCE_START_NUMBER } from "../config/constants";
 
+// NOTE: All exporter data is now fetched dynamically from the company linked to the PI.
+// Hardcoded fallbacks removed — ensure every PI has a valid company_id with complete details.
 const EXPORTER = {
-  companyName: "ANANYATA TRADELINK LLP",
-  addressLines: [
-    "Flat No 50, S No 27/4-27/5, Building No 7,",
-    "Hingane Khurd, Parvati, Pune - 411009, Maharashtra, India",
-  ],
-  gstin: "27ACEFA0695F1ZH",
-  iecNo: "ACEFA0695F",
-  adCode: "2010216",
-  pan: "ACEFA0695F",
-  bankName: "IDFC First Bank",
-  accountNo: "10247939579",
-  ifsc: "IDFB0041359",
-  swift: "IDFBINBBMUM",
-  stateCode: "Maharashtra - 27",
-  districtOfOrigin: "Pune - 411009",
+  companyName: "",
+  addressLines: [] as string[],
+  gstin: "",
+  iecNo: "",
+  adCode: "",
+  pan: "",
+  bankName: "",
+  accountNo: "",
+  ifsc: "",
+  swift: "",
+  stateCode: "",
+  districtOfOrigin: "",
 };
 
 const STATIC_TEXT = {
@@ -33,8 +32,8 @@ const STATIC_TEXT = {
   DBK003:
     "I declare that CENVAT credit on the inputs or input services used in the manufacture of the export goods has not been carried forward in terms of the Central Goods and Services Tax Act, 2017.",
   MEIS: "We intend to claim rewards under Merchandise Exports From India Scheme (MEIS) RoDTEP Scheme",
-  GSP_ORIGIN:
-    "The Exporter ANANYATA TRADELINK LLP, Flat No 50, S No 27/4-27/5, Building No 7, Hingane Khurd, Parvati, Pune - 411009, Maharashtra, India declares that, except where otherwise clearly indicated, these products are of Indian preferential origin according to rules of origin of the generalized system of preferences of the European Union and that the origin criterion met is 'P'.",
+  GSP_ORIGIN: (exporterName: string, exporterAddress: string) =>
+    `The Exporter ${exporterName}, ${exporterAddress} declares that, except where otherwise clearly indicated, these products are of Indian preferential origin according to rules of origin of the generalized system of preferences of the European Union and that the origin criterion met is 'P'.`,
   DECLARATION:
     "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
   ACCESSORIES:
@@ -911,7 +910,13 @@ const buildTemplateData = ({
 
   const base = {
     exporter: dynamicExporter,
-    staticText: STATIC_TEXT,
+    staticText: {
+      ...STATIC_TEXT,
+      GSP_ORIGIN: STATIC_TEXT.GSP_ORIGIN(
+        dynamicExporter.companyName,
+        dynamicExporter.addressLines.join(", "),
+      ),
+    },
     invoiceNumber: manualFields.invoiceNumber,
     invoiceDate,
     buyerOrderDate: manualFields.buyerOrderDate || "",
