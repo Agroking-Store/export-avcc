@@ -100,29 +100,24 @@ const ShipmentPlanningList = () => {
           <table className="w-full text-center">
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
-                {["Shipping Line", "Vessel Name", "Sailing Date", "Arrival Date", "Actions"].map(
-                  (head) => (
-                    <th
-                      key={head}
-                      className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
-                    >
-                      {head}
-                    </th>
-                  )
-                )}
+                {["Shipping Line", "Vessel Name", "Sailing Date", "Arrival Date", "Vehicles", "Actions"].map((head) => (
+                  <th key={head} className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
+                    {head}
+                  </th>
+                ))}
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20 text-slate-400 italic">
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
                     Loading shipping details...
                   </td>
                 </tr>
               ) : shippingDetails.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-20 text-slate-400 italic">
+                  <td colSpan={6} className="text-center py-20 text-slate-400 italic">
                     No shipping details found
                   </td>
                 </tr>
@@ -150,6 +145,9 @@ const ShipmentPlanningList = () => {
                     </td>
                     <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
                       {formatDate(detail.arrivalDate)}
+                    </td>
+<td className="px-8 py-5 text-center">
+                      {detail.containers?.reduce((sum, c) => sum + (c.vehicleBookingIds?.length || 0), 0) ?? 0}
                     </td>
                     <td className="px-8 py-5 text-center">
                       <button

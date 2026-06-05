@@ -13,6 +13,7 @@ import {
   Ship,
   User,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -22,6 +23,51 @@ import {
   ShipmentVehicleBooking,
 } from "./shipmentData";
 import { shipmentApi } from "../../../services/shipmentApi";
+
+// Types extracted from ShippedVehiclesDetails.tsx
+
+// Helper to format LC dates (DD-MM-YY)
+const formatLCDate = (dateStr?: string) => {
+  if (!dateStr || dateStr === "-") return "-";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}-${month}-${year}`;
+};
+type ShippedVehicle = {
+  _id: string;
+  vehicleIndex: number;
+  carName: string;
+  chassisNo: string;
+  piNo: string;
+  commercialInvoiceNo: string;
+  amount: number;
+  lcNo: string;
+  lcDate: string;
+};
+
+type ShippedContainer = {
+  _id: string;
+  containerNumber: string;
+  vehicles: ShippedVehicle[];
+};
+
+type ShippedDetailsResponse = {
+  shipment: {
+    _id: string;
+    customerName: string;
+    destinationCountry: string;
+    sailingDate?: string;
+    arrivalDate?: string;
+    shippingLine?: string;
+    vesselName?: string;
+    portOfLoading?: string;
+    portOfDischarge?: string;
+  };
+  containers: ShippedContainer[];
+};
 
 const ShipmentDetails = () => {
   const { shipmentId } = useParams();
@@ -36,9 +82,20 @@ const ShipmentDetails = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // State to control expanded vehicle rows
+  const [expandedVehicles, setExpandedVehicles] = useState<Record<string, boolean>>({});
+
+  const toggleVehicleExpand = (vehicleId: string) =>
+    setExpandedVehicles((prev) => ({
+      ...prev,
+      [vehicleId]: !prev[vehicleId],
+    }));
+
+  // New state for shipped vehicle details
+  const [shippedDetails, setShippedDetails] = useState<ShippedDetailsResponse | null>(null);
+
   const fetchShipment = async () => {
     if (!shipmentId) return;
-
     try {
       setLoading(true);
       const [shipmentData, vehiclesData] = await Promise.all([
@@ -54,33 +111,30 @@ const ShipmentDetails = () => {
     }
   };
 
+  // Fetch detailed shipped data (vehicles with amounts, LC, etc.)
+  const fetchShippedDetails = async () => {
+    if (!shipmentId) return;
+    try {
+      const response = await shipmentApi.getShippedDetails(shipmentId);
+      setShippedDetails(response);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load shipped vehicle details");
+    }
+  };
+
   useEffect(() => {
     fetchShipment();
+    fetchShippedDetails();
   }, [shipmentId]);
-
-  const details = shipment
-    ? [
-        { label: "Customer Name", value: shipment.customerName, icon: User, tone: "text-indigo-500" },
-        { label: "Destination", value: shipment.destinationCountry, icon: Globe, tone: "text-blue-500" },
-        { label: "Port Of Loading", value: shipment.portOfLoading, icon: Anchor, tone: "text-emerald-500" },
-        { label: "Port Of Discharge", value: shipment.portOfDischarge, icon: MapPin, tone: "text-rose-500" },
-        { label: "Shipping Line", value: shipment.shippingLine, icon: Ship, tone: "text-purple-500" },
-        { label: "Vessel Name", value: shipment.vesselName, icon: Package, tone: "text-cyan-500" },
-        { label: "Sailing Date", value: formatDate(shipment.sailingDate), icon: Calendar, tone: "text-amber-500" },
-        { label: "Arrival Date", value: formatDate(shipment.arrivalDate), icon: Calendar, tone: "text-teal-500" },
-      ]
-    : [];
 
   const handleAddContainer = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!shipmentId) return;
-
     const trimmedName = containerName.trim();
     if (!trimmedName) {
       toast.error("Container name is required");
       return;
     }
-
     try {
       setSaving(true);
       const updatedShipment = await shipmentApi.addContainer(shipmentId, trimmedName);
@@ -112,7 +166,6 @@ const ShipmentDetails = () => {
       toast.error("Select a vehicle first");
       return;
     }
-
     try {
       setSaving(true);
       const updatedShipment = await shipmentApi.addVehicleToContainer(
@@ -162,18 +215,23 @@ const ShipmentDetails = () => {
     );
   }
 
+  // Summary data derived from shippedDetails (fallback to 0)
+  const totalVehiclesCount = shippedDetails?.containers?.reduce((sum, c) => sum + (c.vehicles?.length || 0), 0) ?? 0;
+  const totalShippedAmount = shippedDetails?.containers?.reduce(
+    (sum, c) =>
+      sum + (c.vehicles?.reduce((s, v) => s + (v.amount || 0), 0) || 0),
+    0,
+  ) ?? 0;
+
   return (
     <div className="w-full animate-in fade-in duration-500">
       <div className="flex justify-between items-center mb-6">
         <div className="bg-[#1e293b] px-5 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2 group cursor-default">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-            Shipment
-          </span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Shipment</span>
           <span className="font-mono text-base font-black text-white group-hover:text-indigo-300 transition-colors">
             #{shipment._id.slice(-6).toUpperCase()}
           </span>
         </div>
-
         <button
           onClick={() => navigate("/shipment-planning/list")}
           className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md active:scale-95"
@@ -188,14 +246,35 @@ const ShipmentDetails = () => {
           <Ship size={18} className="text-gray-400" />
           <h2 className="text-lg font-bold text-[#1B2559]">Shipping Details</h2>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {details.map((detail) => (
+          {[
+            { label: "Customer Name", value: shipment.customerName, icon: User, tone: "text-indigo-500" },
+            { label: "Destination", value: shipment.destinationCountry, icon: Globe, tone: "text-blue-500" },
+            { label: "Port Of Loading", value: shipment.portOfLoading, icon: Anchor, tone: "text-emerald-500" },
+            { label: "Port Of Discharge", value: shipment.portOfDischarge, icon: MapPin, tone: "text-rose-500" },
+            { label: "Shipping Line", value: shipment.shippingLine, icon: Ship, tone: "text-purple-500" },
+            { label: "Vessel Name", value: shipment.vesselName, icon: Package, tone: "text-cyan-500" },
+            { label: "Sailing Date", value: formatDate(shipment.sailingDate), icon: Calendar, tone: "text-amber-500" },
+            { label: "Arrival Date", value: formatDate(shipment.arrivalDate), icon: Calendar, tone: "text-teal-500" },
+          ].map((detail) => (
             <InfoBox key={detail.label} {...detail} />
           ))}
         </div>
       </div>
 
+      {/* Summary Cards for Vehicles */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-md">
+          <p className="text-xs font-bold uppercase tracking-wider text-blue-100">Total Vehicles Shipped</p>
+          <p className="text-3xl font-black mt-2">{totalVehiclesCount} Units</p>
+        </div>
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-md">
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-100">Total Shipped Amount</p>
+          <p className="text-3xl font-black mt-2">${totalShippedAmount.toLocaleString()}</p>
+        </div>
+      </div>
+
+      {/* Container Management (existing UI) */}
       <div className="mt-6 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden transition-shadow hover:shadow-md">
         <div className="p-6 md:p-8 pb-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -211,80 +290,175 @@ const ShipmentDetails = () => {
               Add Container
             </button>
           </div>
-        </div>
-
-        <div className="px-6 md:px-8 pb-8">
-          {(shipment.containers || []).length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FB] p-10 text-center text-sm font-semibold text-gray-400">
-              No containers added yet
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(shipment.containers || []).map((container) => (
-                <div
-                  key={container._id}
-                  className="rounded-2xl border border-gray-100 bg-[#F8F9FB] p-5 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-md"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Container size={18} className="text-blue-500" />
-                      <h3 className="font-black text-[#1B2559] tracking-wide">
-                        {container.containerNumber}
-                      </h3>
-                    </div>
-                    <button
-                      onClick={() => openVehicleModal(container._id)}
-                      className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
-                    >
-                      <Plus size={14} strokeWidth={3} />
-                      Add Vehicle
-                    </button>
-                  </div>
-
-                  <div className="mt-6 min-h-16 rounded-xl border border-dashed border-gray-200 bg-white/70 p-4">
-                    {container.vehicleBookingIds.length === 0 ? (
-                      <p className="py-2 text-center text-[11px] font-semibold text-gray-400">
-                        Container Empty
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {container.vehicleBookingIds.map((vehicle) => (
-                          <div
-                            key={vehicle._id}
-                            className="flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3"
-                          >
-                            <div>
-                              <p className="text-sm font-bold text-[#1B2559]">
-                                {getShipmentVehicleLabel(vehicle)}
-                              </p>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
-                                {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
-                              </p>
-                            </div>
-                            <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
-                              Unit {vehicle.vehicleIndex + 1}
-                            </span>
-                          </div>
-                        ))}
+          <div className="px-6 md:px-8 pb-8">
+            {(shipment.containers || []).length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FB] p-10 text-center text-sm font-semibold text-gray-400">
+                No containers added yet
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(shipment.containers || []).map((container) => (
+                  <div
+                    key={container._id}
+                    className="rounded-2xl border border-gray-100 bg-[#F8F9FB] p-5 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Container size={18} className="text-blue-500" />
+                        <h3 className="font-black text-[#1B2559] tracking-wide">
+                          {container.containerNumber}
+                        </h3>
                       </div>
-                    )}
+                      <button
+                        onClick={() => openVehicleModal(container._id)}
+                        className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
+                      >
+                        <Plus size={14} strokeWidth={3} /> Add Vehicle
+                      </button>
+                    </div>
+                    <div className="mt-6 min-h-16 rounded-xl border border-dashed border-gray-200 bg-white/70 p-4">
+                      {container.vehicleBookingIds.length === 0 ? (
+                        <p className="py-2 text-center text-[11px] font-semibold text-gray-400">Container Empty</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {container.vehicleBookingIds.map((vehicle) => (
+                            <div
+                              key={vehicle._id}
+                              className="flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3"
+                            >
+                              <div>
+                                <p className="text-sm font-bold text-[#1B2559]">
+                                  {getShipmentVehicleLabel(vehicle)}
+                                </p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
+                                  {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
+                                </p>
+                              </div>
+                              <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
+                                Unit {vehicle.vehicleIndex + 1}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Detailed Vehicle Table (merged from ShippedVehiclesDetails) */}
+      {shippedDetails && shippedDetails.containers && shippedDetails.containers.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-bold text-[#1B2559] mb-4">Container Wise Shipped Details</h3>
+          {shippedDetails.containers.map((container) => {
+            const containerTotalAmount = container.vehicles?.reduce((sum, v) => sum + (v.amount || 0), 0) ?? 0;
+            return (
+              <div key={container._id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                <div className="bg-slate-50/60 px-6 py-5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <Container size={20} className="text-blue-500" />
+                    <h3 className="font-black text-[#1B2559] text-base tracking-wide">{container.containerNumber}</h3>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                    <span>Vehicles: <strong className="text-[#1B2559]">{container.vehicles?.length || 0}</strong></span>
+                    <div className="h-4 w-px bg-slate-300" />
+                    <span>Container Total: <strong className="text-emerald-600">${containerTotalAmount.toLocaleString()}</strong></span>
+                  </div>
+                </div>
+                <div className="p-6 md:p-8">
+                  {(!container.vehicles || container.vehicles.length === 0) ? (
+                    <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FB] p-6 text-center text-sm font-semibold text-gray-400">
+                      Container Empty
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {container.vehicles.map((vehicle, idx) => (
+                        <div key={vehicle._id} className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                          {/* Header Vehicle Row */}
+                          <div className="flex items-center justify-between bg-slate-50/20 p-4 md:px-6">
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="bg-blue-100 text-blue-700 font-bold h-8 w-8 rounded-lg flex items-center justify-center text-xs">
+                                {idx + 1}
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Car Name</p>
+                                  <p className="text-sm font-bold text-[#1B2559]">{vehicle.carName}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Commercial Invoice No</p>
+                                  <p className="text-sm font-bold text-[#1B2559]">{vehicle.commercialInvoiceNo || "-"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</p>
+                                  <p className="text-sm font-bold text-emerald-600">${vehicle.amount ? vehicle.amount.toLocaleString() : "0"}</p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleVehicleExpand(vehicle._id)}
+                                className="ml-4 p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                                title={expandedVehicles[vehicle._id] ? "Collapse details" : "Expand details"}
+                              >
+                                <ChevronDown
+                                  size={20}
+                                  className={`transition-transform duration-300 ${expandedVehicles[vehicle._id] ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          {/* Expanded Table */}
+                          {expandedVehicles[vehicle._id] && (
+                            <div className="border-t border-slate-100 bg-white p-4 md:p-6 overflow-x-auto">
+                              <table className="w-full text-center text-sm border-collapse min-w-[800px] border border-slate-200">
+                                <thead>
+                                  <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    <th className="py-2.5 px-4 border border-slate-200">SR NO</th>
+                                    <th className="py-2.5 px-4 border border-slate-200">CAR NAME</th>
+                                    <th className="py-2.5 px-4 border border-slate-200">CHASSIS NO</th>
+                                    <th className="py-2.5 px-4 border border-slate-200">PI NO</th>
+                                    <th className="py-2.5 px-4 border border-slate-200">INV NO</th>
+                                    <th className="py-2.5 px-4 border border-slate-200">LC DATE</th>
+                                    <th className="py-2.5 px-4 border border-slate-200">LC NO</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="text-slate-700 hover:bg-slate-50/30">
+                                    <td className="py-3 px-4 font-bold border border-slate-200">{idx + 1}</td>
+                                    <td className="py-3 px-4 font-bold border border-slate-200 text-left">{vehicle.carName}</td>
+                                    <td className="py-3 px-4 font-mono text-xs border border-slate-200">{vehicle.chassisNo}</td>
+                                    <td className="py-3 px-4 font-semibold border border-slate-200">{vehicle.piNo}</td>
+                                    <td className="py-3 px-4 font-semibold border border-slate-200">{vehicle.commercialInvoiceNo}</td>
+                                    <td className="py-3 px-4 border border-slate-200">{formatLCDate(vehicle.lcDate)}</td>
+                                    <td className="py-3 px-4 font-mono text-xs border border-slate-200">{vehicle.lcNo}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modals for adding container and vehicle (unchanged) */}
       {isContainerModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
               <div>
                 <h3 className="text-lg font-bold text-[#1B2559]">Add Container</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Existing containers are visible below.
-                </p>
+                <p className="mt-1 text-sm text-gray-500">Existing containers are visible below.</p>
               </div>
               <button
                 onClick={() => setIsContainerModalOpen(false)}
@@ -293,7 +467,6 @@ const ShipmentDetails = () => {
                 <X size={18} />
               </button>
             </div>
-
             <form onSubmit={handleAddContainer} className="space-y-5 p-6">
               <div>
                 <label className="mb-2 flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] uppercase tracking-wider">
@@ -306,16 +479,11 @@ const ShipmentDetails = () => {
                   placeholder="ABCD123"
                 />
               </div>
-
               <div className="rounded-2xl border border-gray-100 bg-[#F8F9FB] p-4">
-                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  Containers
-                </p>
+                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Containers</p>
                 <div className="flex flex-wrap gap-2">
                   {(shipment.containers || []).length === 0 ? (
-                    <span className="text-xs font-semibold text-gray-400">
-                      No containers yet
-                    </span>
+                    <span className="text-xs font-semibold text-gray-400">No containers yet</span>
                   ) : (
                     shipment.containers!.map((container) => (
                       <span
@@ -325,10 +493,9 @@ const ShipmentDetails = () => {
                         {container.containerNumber}
                       </span>
                     ))
-                  )}
+                 )}
                 </div>
               </div>
-
               <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
@@ -356,9 +523,7 @@ const ShipmentDetails = () => {
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
               <div>
                 <h3 className="text-lg font-bold text-[#1B2559]">Add Vehicle</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {vehicleModalContainer?.containerNumber} container
-                </p>
+                <p className="mt-1 text-sm text-gray-500">{vehicleModalContainer?.containerNumber} container</p>
               </div>
               <button
                 onClick={() => setVehicleModalContainerId(null)}
@@ -367,7 +532,6 @@ const ShipmentDetails = () => {
                 <X size={18} />
               </button>
             </div>
-
             <form onSubmit={handleAddVehicle} className="space-y-5 p-6">
               {availableVehicles.length === 0 ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5 text-sm font-semibold text-amber-700">
@@ -392,7 +556,6 @@ const ShipmentDetails = () => {
                   </select>
                 </div>
               )}
-
               <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
