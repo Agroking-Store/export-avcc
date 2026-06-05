@@ -4,7 +4,6 @@ import ShipmentPlanningDashboard from "./ShipmentPlanningDashboard";
 import ShipmentPlanningList from "./ShipmentPlanningList";
 import ShipmentDetails from "./ShipmentDetails";
 import AddShipmentDetails from "./AddShipmentDetails";
-// Removed unused Shipped Vehicles components
 import { Truck } from "lucide-react";
 import ShipmentPlanningNavbar from "./ShipmentPlanningNavbar";
 import { useAuth } from "../../../hooks/useAuth";
