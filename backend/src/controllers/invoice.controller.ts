@@ -1007,7 +1007,7 @@ const applyVehicleOverrides = (
   const textFields = [
     "make",
     "model",
-    // "variant", // removed from commercial description
+    // "variant", 
     "colour",
     "yearOfManufacture",
     "monthYearFirstReg",

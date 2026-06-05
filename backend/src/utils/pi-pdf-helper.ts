@@ -71,7 +71,6 @@ const vehicleLabel = ({
     line.model,
   );
 
-  // Remove variant from commercial description everywhere.
   return [make, model].filter(Boolean).join(" ").trim() || "N/A";
 };
 
