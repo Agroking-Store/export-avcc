@@ -320,19 +320,12 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
     return cards;
   }
 
-  if (["approved", "payment_done"].includes(b.status)) {
+  if (["payment_done", "chassis_received"].includes(b.status) && !hasGeneratedPI(b)) {
     cards.push("AWAITING VIN");
     return cards;
   }
 
-  if (b.status === "chassis_received") {
-    if (hasGeneratedPI(b)) {
-      cards.push("PENDING LC");
-    } else {
-      cards.push("AWAITING VIN");
-    }
-    return cards;
-  }
+
 
   return cards;
 };

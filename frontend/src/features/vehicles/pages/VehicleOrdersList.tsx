@@ -122,7 +122,7 @@ const rawToClientLabel: Record<string, string> = {
   pending: "All",
   quotation_details_pending: "All",
   quotation_uploaded: "All",
-  approved: "AWAITING VIN",
+  approved: "All",
   payment_done: "AWAITING VIN",
   chassis_received: "AWAITING VIN",
   shipped: "CARS IN TRANSIT",
@@ -164,7 +164,7 @@ const hasAnyPI = (b: VehicleBookingItem): boolean => {
 
 // const getClientBucket = (b: VehicleBookingItem): string => {
 //   if (b.status === "delivered") return "CARS DELIVERED";
-//   if (b.status === "shipped" && hasLcReceived(b)) return "CARS IN TRANSIT";
+//   if (b.status === "shipped") return "CARS IN TRANSIT";
 //   if (hasLcReceived(b) && b.status !== "shipped") return "LC RECEIVED";
 //   if (hasAnyPI(b) && !hasLcReceived(b)) return "PENDING LC";
 //   if (
@@ -201,19 +201,11 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
     return cards;
   }
 
-  if (["approved", "payment_done"].includes(b.status)) {
+  if (["payment_done", "chassis_received"].includes(b.status) && !hasGeneratedPI(b)) {
     cards.push("AWAITING VIN");
     return cards;
   }
 
-  if (b.status === "chassis_received") {
-    if (hasGeneratedPI(b)) {
-      cards.push("PENDING LC");
-    } else {
-      cards.push("AWAITING VIN");
-    }
-    return cards;
-  }
 
   // pending, quotation_details_pending, quotation_uploaded, rejected
   // → only in ORDERS PLACED
@@ -419,7 +411,7 @@ const getClientDisplayStatus = (
       badge: "bg-amber-100 text-amber-700 border-amber-200",
     };
   }
-  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
+  if (["payment_done", "chassis_received"].includes(b.status)) {
     return {
       label: "Awaiting VIN",
       badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
