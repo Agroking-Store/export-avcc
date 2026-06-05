@@ -233,7 +233,6 @@ const buildInitialForm = (
     igstRate: manual.igstRate || String(vehicle.igstRate || 18),
     make: manual.make || vehicle.make || "",
     model: manual.model || vehicle.model || "",
-    variant: manual.variant || vehicle.variant || "",
     colour: manual.colour || vehicle.colour || "",
     engineCapacity: vehicle.engineCapacity || "",
     fuelType: vehicle.fuelType || "",
@@ -860,13 +859,6 @@ District of Origin of Goods - Pune - 411009`}
                 value={form.model}
                 onChange={handleFieldChange}
                 placeholder="Toyota Hyryder"
-              />
-              <EditableField
-                label="Variant"
-                name="variant"
-                value={form.variant}
-                onChange={handleFieldChange}
-                placeholder="V AT / G1.0T 7DCT HTX"
               />
               {showCommercialFields && (
                 <EditableField

@@ -70,22 +70,9 @@ const vehicleLabel = ({
     orderVehicle?.modelName,
     line.model,
   );
-  const variant = firstFilled(
-    line.variant,
-    vehicleRef?.variant,
-    orderVehicle?.variant,
-  );
-  const existingModel = String(line.model || "").trim();
 
-  if (
-    existingModel &&
-    variant &&
-    existingModel.toLowerCase().includes(String(variant).toLowerCase())
-  ) {
-    return existingModel;
-  }
-
-  return [make, model, variant].filter(Boolean).join(" ").trim() || "N/A";
+  // Remove variant from commercial description everywhere.
+  return [make, model].filter(Boolean).join(" ").trim() || "N/A";
 };
 
 const formatEngineCapacity = (...values: Array<unknown>) => {
