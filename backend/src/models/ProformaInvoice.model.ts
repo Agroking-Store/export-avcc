@@ -77,6 +77,7 @@ export interface IProformaInvoice extends Document {
       bankName?: string;
       accountNo?: string;
       branchIfsc?: string;
+      swiftCode?: string;
     };
   };
   status:
@@ -228,6 +229,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
         bankName: { type: String },
         accountNo: { type: String },
         branchIfsc: { type: String },
+        swiftCode: { type: String },
       },
     },
 

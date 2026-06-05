@@ -354,6 +354,12 @@
                                 <td>Branch & IFS Code:</td>
                                 <td class="bold">{{bankDetails.branchIfsc}}</td>
                             </tr>
+                            {{#if bankDetails.swiftCode}}
+                            <tr>
+                                <td>SWIFT code:</td>
+                                <td class="bold">{{bankDetails.swiftCode}}</td>
+                            </tr>
+                            {{/if}}
                         </table>
 
                         <!-- LINE ABOVE COMPANY NAME -->

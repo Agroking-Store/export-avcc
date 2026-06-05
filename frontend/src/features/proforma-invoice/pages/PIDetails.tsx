@@ -1289,6 +1289,14 @@ const PIDetails = () => {
                       </span>
                     </p>
                   )}
+                  {(pi.company_id as any).bankDetails?.swiftCode && (
+                    <p>
+                      <span className="text-zinc-500 mr-2">SWIFT:</span>
+                      <span className="font-mono font-medium">
+                        {(pi.company_id as any).bankDetails.swiftCode}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
             )}

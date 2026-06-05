@@ -22,8 +22,10 @@ import {
   ShipmentVehicleBooking,
 } from "./shipmentData";
 import { shipmentApi } from "../../../services/shipmentApi";
+import { useAuth } from "../../../hooks/useAuth";
 
 const ShipmentDetails = () => {
+  const { isClient } = useAuth();
   const { shipmentId } = useParams();
   const navigate = useNavigate();
 
@@ -203,13 +205,15 @@ const ShipmentDetails = () => {
               <Container size={20} className="text-blue-500" />
               <h2 className="text-lg font-bold text-[#1B2559]">Container Management</h2>
             </div>
-            <button
-              onClick={() => setIsContainerModalOpen(true)}
-              className="cursor-pointer flex w-fit items-center gap-2 px-5 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all active:scale-95"
-            >
-              <Plus size={17} strokeWidth={3} />
-              Add Container
-            </button>
+            {!isClient && (
+              <button
+                onClick={() => setIsContainerModalOpen(true)}
+                className="cursor-pointer flex w-fit items-center gap-2 px-5 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all active:scale-95"
+              >
+                <Plus size={17} strokeWidth={3} />
+                Add Container
+              </button>
+            )}
           </div>
         </div>
 
@@ -232,13 +236,15 @@ const ShipmentDetails = () => {
                         {container.containerNumber}
                       </h3>
                     </div>
-                    <button
-                      onClick={() => openVehicleModal(container._id)}
-                      className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
-                    >
-                      <Plus size={14} strokeWidth={3} />
-                      Add Vehicle
-                    </button>
+                    {!isClient && (
+                      <button
+                        onClick={() => openVehicleModal(container._id)}
+                        className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
+                      >
+                        <Plus size={14} strokeWidth={3} />
+                        Add Vehicle
+                      </button>
+                    )}
                   </div>
 
                   <div className="mt-6 min-h-16 rounded-xl border border-dashed border-gray-200 bg-white/70 p-4">
@@ -276,7 +282,7 @@ const ShipmentDetails = () => {
         </div>
       </div>
 
-      {isContainerModalOpen && (
+      {!isClient && isContainerModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
@@ -289,6 +295,7 @@ const ShipmentDetails = () => {
               <button
                 onClick={() => setIsContainerModalOpen(false)}
                 className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-700"
+                aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -350,7 +357,7 @@ const ShipmentDetails = () => {
         </div>
       )}
 
-      {vehicleModalContainerId && (
+      {!isClient && vehicleModalContainerId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">

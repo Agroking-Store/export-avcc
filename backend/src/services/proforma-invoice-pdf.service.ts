@@ -107,9 +107,10 @@ const buildTemplateData = (pi: any): Record<string, any> => {
     },
 
     bankDetails: {
-      bankName:   bankDetails.bankName   || "",
-      accountNo:  bankDetails.accountNo  || "",
-      branchIfsc: bankDetails.branchIfsc || "",
+      bankName:   bankDetails.bankName   || pi.company_id?.bankDetails?.bankName   || "",
+      accountNo:  bankDetails.accountNo  || pi.company_id?.bankDetails?.accountNo  || "",
+      branchIfsc: bankDetails.branchIfsc || pi.company_id?.bankDetails?.branchIfsc || "",
+      swiftCode:  bankDetails.swiftCode  || pi.company_id?.bankDetails?.swiftCode  || "",
     },
 
     items,
