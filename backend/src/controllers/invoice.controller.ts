@@ -9,22 +9,21 @@ import { renderInvoicePDF } from "../services/invoicePdf.service";
 import { numberToWordsINR, numberToWordsUSD } from "../utils/numberToWords";
 import { INVOICE_SEQUENCE_START_NUMBER } from "../config/constants";
 
+// NOTE: All exporter data is now fetched dynamically from the company linked to the PI.
+// Hardcoded fallbacks removed — ensure every PI has a valid company_id with complete details.
 const EXPORTER = {
-  companyName: "ANANYATA TRADELINK LLP",
-  addressLines: [
-    "Flat No 50, S No 27/4-27/5, Building No 7,",
-    "Hingane Khurd, Parvati, Pune - 411009, Maharashtra, India",
-  ],
-  gstin: "27ACEFA0695F1ZH",
-  iecNo: "ACEFA0695F",
-  adCode: "2010216",
-  pan: "ACEFA0695F",
-  bankName: "IDFC First Bank",
-  accountNo: "10247939579",
-  ifsc: "IDFB0041359",
-  swift: "IDFBINBBMUM",
-  stateCode: "Maharashtra - 27",
-  districtOfOrigin: "Pune - 411009",
+  companyName: "",
+  addressLines: [] as string[],
+  gstin: "",
+  iecNo: "",
+  adCode: "",
+  pan: "",
+  bankName: "",
+  accountNo: "",
+  ifsc: "",
+  swift: "",
+  stateCode: "",
+  districtOfOrigin: "",
 };
 
 const STATIC_TEXT = {
@@ -33,8 +32,8 @@ const STATIC_TEXT = {
   DBK003:
     "I declare that CENVAT credit on the inputs or input services used in the manufacture of the export goods has not been carried forward in terms of the Central Goods and Services Tax Act, 2017.",
   MEIS: "We intend to claim rewards under Merchandise Exports From India Scheme (MEIS) RoDTEP Scheme",
-  GSP_ORIGIN:
-    "The Exporter ANANYATA TRADELINK LLP, Flat No 50, S No 27/4-27/5, Building No 7, Hingane Khurd, Parvati, Pune - 411009, Maharashtra, India declares that, except where otherwise clearly indicated, these products are of Indian preferential origin according to rules of origin of the generalized system of preferences of the European Union and that the origin criterion met is 'P'.",
+  GSP_ORIGIN: (exporterName: string, exporterAddress: string) =>
+    `The Exporter ${exporterName}, ${exporterAddress} declares that, except where otherwise clearly indicated, these products are of Indian preferential origin according to rules of origin of the generalized system of preferences of the European Union and that the origin criterion met is 'P'.`,
   DECLARATION:
     "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
   ACCESSORIES:
@@ -687,6 +686,8 @@ const buildPIInvoiceContext = async (piId: string) => {
     {},
   );
 
+  const company: any = (pi.companySnapshot || pi.company_id || {}) as any;
+
   return {
     _id: pi._id,
     piNumber: pi.piNumber,
@@ -708,6 +709,29 @@ const buildPIInvoiceContext = async (piId: string) => {
       pi.destination || buyer.address?.country || buyer.country || "",
     placeOfReceipt: "Narhe, Pune",
     termsOfDelivery: pi.termsOfDelivery || "",
+    // Company (Exporter) data — dynamic from PI's company_id
+    companyName: company.name || (pi.company_id as any)?.name || "",
+    companyGstin: company.gstNumber || (pi.company_id as any)?.gstNumber || "",
+    companyIecNo: company.iecNo || (pi.company_id as any)?.iecNo || "",
+    companyAdCode: company.adCode || (pi.company_id as any)?.adCode || "",
+    companyPan: company.pan || (pi.company_id as any)?.pan || "",
+    companyAddressLines: Array.isArray(company.address?.addressLines)
+      ? company.address.addressLines
+      : Array.isArray((pi.company_id as any)?.address?.addressLines)
+        ? (pi.company_id as any).address.addressLines
+        : [
+            company.address?.houseBuilding || (pi.company_id as any)?.address?.houseBuilding,
+            company.address?.streetArea || (pi.company_id as any)?.address?.streetArea,
+            (company.address?.cityTown || (pi.company_id as any)?.address?.cityTown) && (company.address?.state || (pi.company_id as any)?.address?.state)
+              ? `${company.address?.cityTown || (pi.company_id as any)?.address?.cityTown}, ${company.address?.state || (pi.company_id as any)?.address?.state}${company.address?.pincode || (pi.company_id as any)?.address?.pincode ? " - " + (company.address?.pincode || (pi.company_id as any)?.address?.pincode) : ""}${company.address?.country || (pi.company_id as any)?.address?.country ? ", " + (company.address?.country || (pi.company_id as any)?.address?.country) : ""}`
+              : company.address?.country || (pi.company_id as any)?.address?.country,
+          ].filter(Boolean),
+    companyBankDetails: {
+      bankName: company.bankDetails?.bankName || (pi.company_id as any)?.bankDetails?.bankName || "",
+      accountNo: company.bankDetails?.accountNo || (pi.company_id as any)?.bankDetails?.accountNo || "",
+      branchIfsc: company.bankDetails?.branchIfsc || (pi.company_id as any)?.bankDetails?.branchIfsc || "",
+      swiftCode: company.bankDetails?.swiftCode || (pi.company_id as any)?.bankDetails?.swiftCode || "",
+    },
     vehicles: vehicles.map((vehicle) => ({
       ...vehicle,
       invoices: invoiceLookup[vehicle.vehicleId] || {},
@@ -855,7 +879,7 @@ const buildTemplateData = ({
       ? vehicle.commercialHsnCode || vehicle.hsnCode || ""
       : vehicle.exportHsnCode || vehicle.hsnCode || "";
   const amountWordsUSD = numberToWordsUSD(totalUSD);
-  const amountWordsINR = numberToWordsINR(totalINR);
+  const amountWordsINR = numberToWordsINR(exShowroomINR); // 2705 Amount In (Rs.) only, excludes IGST
   const displayVehicle = { ...vehicle, hsnCode: resolvedHsnCode, srNo: 1 };
   const descriptionLines = buildVehicleDescription(
     displayVehicle,
@@ -868,9 +892,33 @@ const buildTemplateData = ({
   ];
   const commercialClauseLines = splitMultiline(manualFields.commercialClauses);
 
+  // Build dynamic exporter from PI's company data
+  const dynamicExporter = {
+    companyName: pi.companyName || EXPORTER.companyName,
+    addressLines: pi.companyAddressLines?.length
+      ? pi.companyAddressLines
+      : EXPORTER.addressLines,
+    gstin: pi.companyGstin || EXPORTER.gstin,
+    iecNo: pi.companyIecNo || EXPORTER.iecNo,
+    adCode: pi.companyAdCode || EXPORTER.adCode,
+    pan: pi.companyPan || EXPORTER.pan,
+    bankName: pi.companyBankDetails?.bankName || EXPORTER.bankName,
+    accountNo: pi.companyBankDetails?.accountNo || EXPORTER.accountNo,
+    ifsc: pi.companyBankDetails?.branchIfsc || EXPORTER.ifsc,
+    swift: pi.companyBankDetails?.swiftCode || EXPORTER.swift,
+    stateCode: EXPORTER.stateCode,
+    districtOfOrigin: EXPORTER.districtOfOrigin,
+  };
+
   const base = {
-    exporter: EXPORTER,
-    staticText: STATIC_TEXT,
+    exporter: dynamicExporter,
+    staticText: {
+      ...STATIC_TEXT,
+      GSP_ORIGIN: STATIC_TEXT.GSP_ORIGIN(
+        dynamicExporter.companyName,
+        dynamicExporter.addressLines.join(", "),
+      ),
+    },
     invoiceNumber: manualFields.invoiceNumber,
     invoiceDate,
     buyerOrderDate: manualFields.buyerOrderDate || "",
@@ -906,8 +954,8 @@ const buildTemplateData = ({
     destination:
       manualFields.destination || pi.placeOfDelivery || pi.buyerCountry || "",
     containerNo: manualFields.containerNo || "",
-    stateOfOrigin: EXPORTER.stateCode,
-    districtOfOrigin: EXPORTER.districtOfOrigin,
+    stateOfOrigin: dynamicExporter.stateCode,
+    districtOfOrigin: dynamicExporter.districtOfOrigin,
     vehicle: displayVehicle,
     descriptionLines,
     totalQty: vehicle.quantity || 1,
@@ -931,7 +979,7 @@ const buildTemplateData = ({
       endUseCode: manualFields.endUseCode || "",
       igstPaymentStatus: "YES",
       shipmentExportUnderIgstPaid: "SHIPMENT EXPORT UNDER IGST PAID",
-      placeOfSupply: manualFields.placeOfSupply || EXPORTER.stateCode,
+      placeOfSupply: manualFields.placeOfSupply || dynamicExporter.stateCode,
       termsOfDelivery: manualFields.termsOfDelivery || pi.termsOfDelivery || "",
       termsOfPayment: manualFields.termsOfPayment || "",
       typeOfVehicle: manualFields.typeOfVehicle || "SUV",

@@ -22,6 +22,7 @@ const bankDetailsSchema = Joi.object({
   bankName: Joi.string().trim().allow(""),
   accountNo: Joi.string().trim().allow(""),
   branchIfsc: Joi.string().trim().allow(""),
+  swiftCode: Joi.string().trim().allow(""),
 });
 
 const createCompanySchema = Joi.object<CreateCompanyDto>({

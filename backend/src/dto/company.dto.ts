@@ -11,6 +11,7 @@ export interface IBankDetailsDto {
   bankName?: string;
   accountNo?: string;
   branchIfsc?: string;
+  swiftCode?: string;
 }
 
 export interface CreateCompanyDto {

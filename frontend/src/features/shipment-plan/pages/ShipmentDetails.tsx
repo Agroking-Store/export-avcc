@@ -23,6 +23,7 @@ import {
   ShipmentVehicleBooking,
 } from "./shipmentData";
 import { shipmentApi } from "../../../services/shipmentApi";
+import { useAuth } from "../../../hooks/useAuth";
 
 // Types extracted from ShippedVehiclesDetails.tsx
 
@@ -70,6 +71,7 @@ type ShippedDetailsResponse = {
 };
 
 const ShipmentDetails = () => {
+  const { isClient } = useAuth();
   const { shipmentId } = useParams();
   const navigate = useNavigate();
 
@@ -282,73 +284,80 @@ const ShipmentDetails = () => {
               <Container size={20} className="text-blue-500" />
               <h2 className="text-lg font-bold text-[#1B2559]">Container Management</h2>
             </div>
-            <button
-              onClick={() => setIsContainerModalOpen(true)}
-              className="cursor-pointer flex w-fit items-center gap-2 px-5 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all active:scale-95"
-            >
-              <Plus size={17} strokeWidth={3} />
-              Add Container
-            </button>
+            {!isClient && (
+              <button
+                onClick={() => setIsContainerModalOpen(true)}
+                className="cursor-pointer flex w-fit items-center gap-2 px-5 py-2.5 bg-[#5243EF] hover:bg-[#4335d6] text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all active:scale-95"
+              >
+                <Plus size={17} strokeWidth={3} />
+                Add Container
+              </button>
+            )}
           </div>
-          <div className="px-6 md:px-8 pb-8">
-            {(shipment.containers || []).length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FB] p-10 text-center text-sm font-semibold text-gray-400">
-                No containers added yet
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(shipment.containers || []).map((container) => (
-                  <div
-                    key={container._id}
-                    className="rounded-2xl border border-gray-100 bg-[#F8F9FB] p-5 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-md"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <Container size={18} className="text-blue-500" />
-                        <h3 className="font-black text-[#1B2559] tracking-wide">
-                          {container.containerNumber}
-                        </h3>
-                      </div>
+        </div>
+
+        <div className="px-6 md:px-8 pb-8">
+          {(shipment.containers || []).length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F9FB] p-10 text-center text-sm font-semibold text-gray-400">
+              No containers added yet
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(shipment.containers || []).map((container) => (
+                <div
+                  key={container._id}
+                  className="rounded-2xl border border-gray-100 bg-[#F8F9FB] p-5 transition-all hover:bg-white hover:border-indigo-100 hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Container size={18} className="text-blue-500" />
+                      <h3 className="font-black text-[#1B2559] tracking-wide">
+                        {container.containerNumber}
+                      </h3>
+                    </div>
+                    {!isClient && (
                       <button
                         onClick={() => openVehicleModal(container._id)}
                         className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
                       >
-                        <Plus size={14} strokeWidth={3} /> Add Vehicle
+                        <Plus size={14} strokeWidth={3} />
+                        Add Vehicle
                       </button>
-                    </div>
-                    <div className="mt-6 min-h-16 rounded-xl border border-dashed border-gray-200 bg-white/70 p-4">
-                      {container.vehicleBookingIds.length === 0 ? (
-                        <p className="py-2 text-center text-[11px] font-semibold text-gray-400">Container Empty</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {container.vehicleBookingIds.map((vehicle) => (
-                            <div
-                              key={vehicle._id}
-                              className="flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3"
-                            >
-                              <div>
-                                <p className="text-sm font-bold text-[#1B2559]">
-                                  {getShipmentVehicleLabel(vehicle)}
-                                </p>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
-                                  {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
-                                </p>
-                              </div>
-                              <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
-                                Unit {vehicle.vehicleIndex + 1}
-                              </span>
+                    )}
+                  </div>
+
+                  <div className="mt-6 min-h-16 rounded-xl border border-dashed border-gray-200 bg-white/70 p-4">
+                    {container.vehicleBookingIds.length === 0 ? (
+                      <p className="py-2 text-center text-[11px] font-semibold text-gray-400">Container Empty</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {container.vehicleBookingIds.map((vehicle) => (
+                          <div
+                            key={vehicle._id}
+                            className="flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3"
+                          >
+                            <div>
+                              <p className="text-sm font-bold text-[#1B2559]">
+                                {getShipmentVehicleLabel(vehicle)}
+                              </p>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
+                                {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
+                              </p>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                            <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
+                              Unit {vehicle.vehicleIndex + 1}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </div>
-      </div>
 
       {/* Detailed Vehicle Table (merged from ShippedVehiclesDetails) */}
       {shippedDetails && shippedDetails.containers && shippedDetails.containers.length > 0 && (
@@ -452,7 +461,7 @@ const ShipmentDetails = () => {
       )}
 
       {/* Modals for adding container and vehicle (unchanged) */}
-      {isContainerModalOpen && (
+      {!isClient && isContainerModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
@@ -463,6 +472,7 @@ const ShipmentDetails = () => {
               <button
                 onClick={() => setIsContainerModalOpen(false)}
                 className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-700"
+                aria-label="Close"
               >
                 <X size={18} />
               </button>
@@ -517,7 +527,7 @@ const ShipmentDetails = () => {
         </div>
       )}
 
-      {vehicleModalContainerId && (
+      {!isClient && vehicleModalContainerId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">

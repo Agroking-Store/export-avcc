@@ -170,7 +170,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
           <div className="max-h-[70vh] overflow-y-auto p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
 
             {/* Merged PDF actions */}
-            {hasMergeableDocs && (
+            {isClient && hasMergeableDocs && (
               <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50 p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
@@ -214,35 +214,7 @@ const VehicleBookingDocumentViewModal = ({ isOpen, onClose, booking }: Props) =>
             ) : (
               <div className="space-y-3">
                 {/* Admin: Commercial Invoice */}
-                {!isClient && commercialInvoice && (
-                  <div
-                    className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:bg-white hover:border-indigo-100 hover:shadow-md transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110">
-                        <Receipt size={20} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-slate-700 leading-none mb-1">
-                          Commercial Invoice
-                        </p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                          PDF Document
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={appendToken(`${apiConfig.baseURL}/invoices/${commercialInvoice._id}/download`)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="cursor-pointer p-2 bg-white text-slate-600 border border-slate-200 rounded-lg hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all shadow-sm"
-                      >
-                        <Eye size={16} />
-                      </a>
-                    </div>
-                  </div>
-                )}
+                
 
                 {/* Admin docs */}
                 {docs.map((doc) => {

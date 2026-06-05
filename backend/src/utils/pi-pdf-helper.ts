@@ -210,9 +210,10 @@ export const preparePIDataForService = (pi: any) => {
     currency: pi.currency || "USD",
     amountInWords: pi.amountInWords || "N/A",
     bankDetails: {
-      bankName: companyForPdf?.bankDetails?.bankName || "",
-      accountNo: companyForPdf?.bankDetails?.accountNo || "",
-      branchIfsc: companyForPdf?.bankDetails?.branchIfsc || "",
+      bankName: companyForPdf?.bankDetails?.bankName || pi.company_id?.bankDetails?.bankName || "",
+      accountNo: companyForPdf?.bankDetails?.accountNo || pi.company_id?.bankDetails?.accountNo || "",
+      branchIfsc: companyForPdf?.bankDetails?.branchIfsc || pi.company_id?.bankDetails?.branchIfsc || "",
+      swiftCode: companyForPdf?.bankDetails?.swiftCode || pi.company_id?.bankDetails?.swiftCode || "",
     },
   };
 };
