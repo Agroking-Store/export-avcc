@@ -295,6 +295,7 @@ const ShipmentDetails = () => {
               <button
                 onClick={() => setIsContainerModalOpen(false)}
                 className="cursor-pointer flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-700"
+                aria-label="Close"
               >
                 <X size={18} />
               </button>
