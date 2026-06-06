@@ -85,6 +85,7 @@ export interface InvoiceManualFields {
   termsOfPayment?: string;
   dispatchedThrough?: string;
   destination?: string;
+  portOfDischarge?: string;
   commercialConsigneeName?: string;
   commercialConsigneeAddressLine1?: string;
   commercialConsigneeAddressLine2?: string;
