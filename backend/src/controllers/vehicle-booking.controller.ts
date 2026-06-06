@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { Request, Response } from "express";
+import { PDFDocument } from "pdf-lib";
+import Invoice from "../models/Invoice.model";
 import { ROLES } from "../config/constants";
 import {
   getBookingsByOrderId,
@@ -345,83 +347,67 @@ export const getClientCorrectionFileHandler = async (req: Request, res: Response
 export const getClientMergedDocumentsHandler = async (req: Request, res: Response) => {
   try {
     const booking = await getBookingById(req.params.id as string);
-    const token = typeof req.query.token === "string" ? req.query.token : "";
-    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
-    const origin = `${req.protocol}://${req.get("host")}`;
-    const apiRoot = req.baseUrl.replace(/\/vehicle-bookings$/, "");
-    const bookingBase = `${origin}${req.baseUrl}/${booking._id}`;
-    const apiBase = `${origin}${apiRoot}`;
 
-    const commercialInvoice = booking.commercialInvoices?.find(
-      (invoice: any) => invoice.type === "COMMERCIAL",
+    // Each source is either a Buffer (from MongoDB) or a file path (from disk)
+    const pdfSources: Array<{ label: string; data: Buffer }> = [];
+
+    // ── 1. Commercial Invoice — stored as binary buffer in Invoice collection ──
+    const commercialInvoiceRef = booking.commercialInvoices?.find(
+      (inv: any) => inv.type === "COMMERCIAL",
+    );
+    if (commercialInvoiceRef?._id) {
+      const invoiceDoc = await Invoice.findById(commercialInvoiceRef._id);
+      if (invoiceDoc?.invoicePdf && invoiceDoc.invoicePdf.length > 0) {
+        pdfSources.push({ label: "Commercial Invoice", data: invoiceDoc.invoicePdf });
+      }
+    }
+
+    // ── 2. Booking document files — stored on disk ──
+    const docFields = ["hblDocument", "bvCertificate", "shippingBill"] as const;
+    for (const field of docFields) {
+      const relativePath = booking.documents?.[field];
+      if (relativePath) {
+        const absPath = path.isAbsolute(relativePath)
+          ? relativePath
+          : path.join(process.cwd(), relativePath);
+        if (fs.existsSync(absPath)) {
+          pdfSources.push({ label: field, data: fs.readFileSync(absPath) });
+        }
+      }
+    }
+
+    if (pdfSources.length === 0) {
+      return res.status(404).json({ message: "No documents available to merge" });
+    }
+
+    // Merge all PDFs using pdf-lib
+    const mergedPdf = await PDFDocument.create();
+
+    for (const source of pdfSources) {
+      try {
+        const srcDoc = await PDFDocument.load(source.data, { ignoreEncryption: true });
+        const copiedPages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      } catch (err) {
+        console.warn(`Skipping "${source.label}" (not a valid PDF or unreadable):`, err);
+      }
+    }
+
+    const mergedBytes = await mergedPdf.save();
+
+    const isDownload = req.query.download === "true";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Length", mergedBytes.length);
+    res.setHeader(
+      "Content-Disposition",
+      isDownload
+        ? `attachment; filename="merged-documents-${booking._id}.pdf"`
+        : `inline; filename="merged-documents-${booking._id}.pdf"`,
     );
 
-    const docs = [
-      commercialInvoice
-        ? {
-            label: "Commercial Invoice",
-            url: `${apiBase}/invoices/${commercialInvoice._id}/download${tokenParam}`,
-          }
-        : null,
-      booking.documents?.hblDocument
-        ? {
-            label: "HBL",
-            url: `${bookingBase}/files/hblDocument${tokenParam}`,
-          }
-        : null,
-      booking.documents?.bvCertificate
-        ? {
-            label: "BV Certificate",
-            url: `${bookingBase}/files/bvCertificate${tokenParam}`,
-          }
-        : null,
-      booking.documents?.shippingBill
-        ? {
-            label: "Shipping Bill",
-            url: `${bookingBase}/files/shippingBill${tokenParam}`,
-          }
-        : null,
-    ].filter(Boolean) as Array<{ label: string; url: string }>;
-
-    const sections = docs
-      .map(
-        (doc, index) => `
-          <section>
-            <h2>${index + 1}. ${doc.label}</h2>
-            <iframe src="${doc.url}" title="${doc.label}"></iframe>
-          </section>
-        `,
-      )
-      .join("");
-
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    return res.send(`
-      <!doctype html>
-      <html>
-        <head>
-          <title>Merged Vehicle Documents</title>
-          <style>
-            body { margin: 0; background: #f8fafc; color: #0f172a; font-family: Arial, sans-serif; }
-            header { position: sticky; top: 0; background: white; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; z-index: 1; }
-            h1 { margin: 0; font-size: 18px; }
-            p { margin: 4px 0 0; color: #64748b; font-size: 12px; }
-            main { padding: 20px; display: grid; gap: 20px; }
-            section { background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
-            h2 { margin: 0; padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
-            iframe { width: 100%; height: 860px; border: 0; display: block; background: white; }
-            .empty { padding: 48px; text-align: center; color: #64748b; background: white; border: 1px dashed #cbd5e1; border-radius: 16px; }
-          </style>
-        </head>
-        <body>
-          <header>
-            <h1>Merged Vehicle Documents</h1>
-            <p>Commercial Invoice -> HBL -> BV Certificate -> Shipping Bill</p>
-          </header>
-          <main>${sections || '<div class="empty">No client-visible documents uploaded yet.</div>'}</main>
-        </body>
-      </html>
-    `);
+    return res.end(Buffer.from(mergedBytes));
   } catch (error: any) {
+    console.error("Merged PDF generation error:", error);
     res.status(500).json({ message: error.message });
   }
 };
