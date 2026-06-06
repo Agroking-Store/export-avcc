@@ -945,7 +945,7 @@ const buildTemplateData = ({
     lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
     // portOfLoading: pi.portOfLoading || "JNPT / Nhava Sheva",
     portOfLoading: manualFields.portOfLoading || pi.portOfLoading,
-    portOfDischarge: pi.portOfDischarge,
+    portOfDischarge: manualFields.portOfDischarge || pi.portOfDischarge,
     placeOfDelivery: pi.placeOfDelivery,
     placeOfReceipt: pi.placeOfReceipt || "Narhe, Pune",
     preCarriage: "Road",

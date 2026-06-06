@@ -203,6 +203,7 @@ const buildInitialForm = (
     lcSharedConfirmed: manual.lcSharedConfirmed === true,
     containerNo: manual.containerNo || "",
     portOfLoading: manual.portOfLoading || context.portOfLoading || "",
+    portOfDischarge: manual.portOfDischarge || context.portOfDischarge || "",
     buyerOrderDate: manual.buyerOrderDate || "",
     otherReference: manual.otherReference || context.piNumber || "",
     termsOfDelivery: manual.termsOfDelivery || context.termsOfDelivery || "",
@@ -561,9 +562,12 @@ export default function InvoiceFormPage() {
                 placeholder="Enter port of loading"
                 required
               />
-              <ReadOnlyField
+              <EditableField
                 label="Port of Discharge"
-                value={context.portOfDischarge}
+                name="portOfDischarge"
+                value={form.portOfDischarge}
+                onChange={handleFieldChange}
+                placeholder="e.g. COLOMBO"
               />
               <ReadOnlyField
                 label="Place of Delivery"
