@@ -93,7 +93,8 @@ router.get("/order/:orderId/chassis-reminders", authenticate, getDueRemindersHan
 router.get("/", authenticate, getAllBookingsHandler);
 router.get("/:id", authenticate, getBookingByIdHandler);
 router.get("/:id/files/:field", authenticate, getBookingFileHandler);
-router.get("/:id/client-documents/merged", authenticate, getClientMergedDocumentsHandler);
+router.get("/:id/client-documents/merged-pdf", authenticate, getClientMergedDocumentsHandler);
+router.get("/:id/client-documents/merged", authenticate, getClientMergedDocumentsHandler); // legacy alias
 router.get("/:id/client-corrections/:correctionId", authenticate, getClientCorrectionFileHandler);
 
 // Admin-only: init booking, payment, approve/reject, client allotment, status update, document upload

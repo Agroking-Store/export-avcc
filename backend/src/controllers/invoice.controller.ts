@@ -15,9 +15,9 @@ const EXPORTER = {
   companyName: "",
   addressLines: [] as string[],
   gstin: "",
-  iecNo: "",
-  adCode: "",
-  pan: "",
+  iecNo: "ACEFA0695F",
+  adCode: "2010216",
+  pan: "ACEFA0695F",
   bankName: "",
   accountNo: "",
   ifsc: "",
@@ -712,25 +712,44 @@ const buildPIInvoiceContext = async (piId: string) => {
     // Company (Exporter) data — dynamic from PI's company_id
     companyName: company.name || (pi.company_id as any)?.name || "",
     companyGstin: company.gstNumber || (pi.company_id as any)?.gstNumber || "",
-    companyIecNo: company.iecNo || (pi.company_id as any)?.iecNo || "",
-    companyAdCode: company.adCode || (pi.company_id as any)?.adCode || "",
-    companyPan: company.pan || (pi.company_id as any)?.pan || "",
+    companyIecNo:
+      company.iecNo || (pi.company_id as any)?.iecNo || "ACEFA0695F",
+    companyAdCode:
+      company.adCode || (pi.company_id as any)?.adCode || "2010216",
+    companyPan: company.pan || (pi.company_id as any)?.pan || "ACEFA0695F",
     companyAddressLines: Array.isArray(company.address?.addressLines)
       ? company.address.addressLines
       : Array.isArray((pi.company_id as any)?.address?.addressLines)
         ? (pi.company_id as any).address.addressLines
         : [
-            company.address?.houseBuilding || (pi.company_id as any)?.address?.houseBuilding,
-            company.address?.streetArea || (pi.company_id as any)?.address?.streetArea,
-            (company.address?.cityTown || (pi.company_id as any)?.address?.cityTown) && (company.address?.state || (pi.company_id as any)?.address?.state)
+            company.address?.houseBuilding ||
+              (pi.company_id as any)?.address?.houseBuilding,
+            company.address?.streetArea ||
+              (pi.company_id as any)?.address?.streetArea,
+            (company.address?.cityTown ||
+              (pi.company_id as any)?.address?.cityTown) &&
+            (company.address?.state || (pi.company_id as any)?.address?.state)
               ? `${company.address?.cityTown || (pi.company_id as any)?.address?.cityTown}, ${company.address?.state || (pi.company_id as any)?.address?.state}${company.address?.pincode || (pi.company_id as any)?.address?.pincode ? " - " + (company.address?.pincode || (pi.company_id as any)?.address?.pincode) : ""}${company.address?.country || (pi.company_id as any)?.address?.country ? ", " + (company.address?.country || (pi.company_id as any)?.address?.country) : ""}`
-              : company.address?.country || (pi.company_id as any)?.address?.country,
+              : company.address?.country ||
+                (pi.company_id as any)?.address?.country,
           ].filter(Boolean),
     companyBankDetails: {
-      bankName: company.bankDetails?.bankName || (pi.company_id as any)?.bankDetails?.bankName || "",
-      accountNo: company.bankDetails?.accountNo || (pi.company_id as any)?.bankDetails?.accountNo || "",
-      branchIfsc: company.bankDetails?.branchIfsc || (pi.company_id as any)?.bankDetails?.branchIfsc || "",
-      swiftCode: company.bankDetails?.swiftCode || (pi.company_id as any)?.bankDetails?.swiftCode || "",
+      bankName:
+        company.bankDetails?.bankName ||
+        (pi.company_id as any)?.bankDetails?.bankName ||
+        "",
+      accountNo:
+        company.bankDetails?.accountNo ||
+        (pi.company_id as any)?.bankDetails?.accountNo ||
+        "",
+      branchIfsc:
+        company.bankDetails?.branchIfsc ||
+        (pi.company_id as any)?.bankDetails?.branchIfsc ||
+        "",
+      swiftCode:
+        company.bankDetails?.swiftCode ||
+        (pi.company_id as any)?.bankDetails?.swiftCode ||
+        "",
     },
     vehicles: vehicles.map((vehicle) => ({
       ...vehicle,
@@ -899,9 +918,9 @@ const buildTemplateData = ({
       ? pi.companyAddressLines
       : EXPORTER.addressLines,
     gstin: pi.companyGstin || EXPORTER.gstin,
-    iecNo: pi.companyIecNo || EXPORTER.iecNo,
-    adCode: pi.companyAdCode || EXPORTER.adCode,
-    pan: pi.companyPan || EXPORTER.pan,
+    iecNo: pi.companyIecNo || EXPORTER.iecNo || "ACEFA0695F",
+    adCode: pi.companyAdCode || EXPORTER.adCode || "2010216",
+    pan: pi.companyPan || EXPORTER.pan || "ACEFA0695F",
     bankName: pi.companyBankDetails?.bankName || EXPORTER.bankName,
     accountNo: pi.companyBankDetails?.accountNo || EXPORTER.accountNo,
     ifsc: pi.companyBankDetails?.branchIfsc || EXPORTER.ifsc,
@@ -1507,7 +1526,9 @@ export const generatePackingList = async (req: Request, res: Response) => {
     }
 
     const baseVehicle = selectedVehicles[0];
-    const selectedVehicleIds = selectedVehicles.map((vehicle: any) => vehicle.vehicleId);
+    const selectedVehicleIds = selectedVehicles.map(
+      (vehicle: any) => vehicle.vehicleId,
+    );
     const invoiceNumber = resolveInvoiceNumber({
       manualFields,
       vehicles: selectedVehicles,
