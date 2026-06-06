@@ -73,7 +73,7 @@ const ADMIN_STATUS_OPTIONS = [
 const CLIENT_STATUS_OPTIONS = [
   "All",
   "ORDERS PLACED",
-  "BOOKED",
+  "AWAITING VIN",
   "PENDING LC",
   "LC RECEIVED",
   "CARS IN TRANSIT",
@@ -97,7 +97,7 @@ const adminFilterMap: Record<string, string> = {
 const clientFilterMap: Record<string, string> = {
   All: "All",
   "ORDERS PLACED": "orders_placed",
-  BOOKED: "BOOKED",
+  "AWAITING VIN": "AWAITING VIN",
   "PENDING LC": "PENDING LC",
   "LC RECEIVED": "LC RECEIVED",
   "CARS IN TRANSIT": "CARS IN TRANSIT",
@@ -122,9 +122,9 @@ const rawToClientLabel: Record<string, string> = {
   pending: "All",
   quotation_details_pending: "All",
   quotation_uploaded: "All",
-  approved: "BOOKED",
-  payment_done: "BOOKED",
-  chassis_received: "BOOKED",
+  approved: "All",
+  payment_done: "AWAITING VIN",
+  chassis_received: "AWAITING VIN",
   shipped: "CARS IN TRANSIT",
   delivered: "CARS DELIVERED",
 };
@@ -164,7 +164,7 @@ const hasAnyPI = (b: VehicleBookingItem): boolean => {
 
 // const getClientBucket = (b: VehicleBookingItem): string => {
 //   if (b.status === "delivered") return "CARS DELIVERED";
-//   if (b.status === "shipped" && hasLcReceived(b)) return "CARS IN TRANSIT";
+//   if (b.status === "shipped") return "CARS IN TRANSIT";
 //   if (hasLcReceived(b) && b.status !== "shipped") return "LC RECEIVED";
 //   if (hasAnyPI(b) && !hasLcReceived(b)) return "PENDING LC";
 //   if (
@@ -201,10 +201,11 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
     return cards;
   }
 
-  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
-    cards.push("BOOKED");
+  if (["payment_done", "chassis_received"].includes(b.status) && !hasGeneratedPI(b)) {
+    cards.push("AWAITING VIN");
     return cards;
   }
+
 
   // pending, quotation_details_pending, quotation_uploaded, rejected
   // → only in ORDERS PLACED
@@ -410,9 +411,9 @@ const getClientDisplayStatus = (
       badge: "bg-amber-100 text-amber-700 border-amber-200",
     };
   }
-  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
+  if (["payment_done", "chassis_received"].includes(b.status)) {
     return {
-      label: "Booked",
+      label: "Awaiting VIN",
       badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
     };
   }
@@ -460,7 +461,7 @@ const VehicleOrdersList = () => {
     deliveredTotal: 0,
     // Client stats
     ordersPlaced: 0,
-    booked: 0,
+    awaitingVin: 0,
     pendingLc: 0,
     lcReceived: 0,
     carsInTransit: 0,
@@ -519,7 +520,7 @@ const VehicleOrdersList = () => {
         // Compute card counts (multi-card: a vehicle can be in multiple cards)
         const cardCounts: Record<string, number> = {
           "ORDERS PLACED": 0,
-          BOOKED: 0,
+          "AWAITING VIN": 0,
           "PENDING LC": 0,
           "LC RECEIVED": 0,
           "CARS IN TRANSIT": 0,
@@ -591,7 +592,7 @@ const VehicleOrdersList = () => {
           shippedTotal: 0,
           deliveredTotal: 0,
           ordersPlaced: cardCounts["ORDERS PLACED"],
-          booked: cardCounts["BOOKED"],
+          awaitingVin: cardCounts["AWAITING VIN"],
           pendingLc: cardCounts["PENDING LC"],
           lcReceived: cardCounts["LC RECEIVED"],
           carsInTransit: cardCounts["CARS IN TRANSIT"],
@@ -622,7 +623,7 @@ const VehicleOrdersList = () => {
         shippedTotal: stats?.shippedTotal || 0,
         deliveredTotal: stats?.deliveredTotal || 0,
         ordersPlaced: 0,
-        booked: 0,
+        awaitingVin: 0,
         pendingLc: 0,
         lcReceived: 0,
         carsInTransit: 0,
@@ -1078,11 +1079,11 @@ const VehicleOrdersList = () => {
           tone: "bg-blue-50 text-blue-700 border-blue-100",
         },
         {
-          label: "BOOKED",
-          filterLabel: "BOOKED",
-          value: bookingStats.booked,
-          detail: "Approved/booked, PI not yet created",
-          icon: <Store size={20} />,
+          label: "AWAITING VIN",
+          filterLabel: "AWAITING VIN",
+          value: bookingStats.awaitingVin,
+          detail: "Booked, awaiting chassis/VIN number",
+          icon: <Hash size={20} />,
           tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
         },
         {

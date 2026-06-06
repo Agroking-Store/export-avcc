@@ -320,10 +320,12 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
     return cards;
   }
 
-  if (["approved", "payment_done", "chassis_received"].includes(b.status)) {
-    cards.push("BOOKED");
+  if (["payment_done", "chassis_received"].includes(b.status) && !hasGeneratedPI(b)) {
+    cards.push("AWAITING VIN");
     return cards;
   }
+
+
 
   return cards;
 };
@@ -616,7 +618,7 @@ const Dashboard: React.FC = () => {
 
     const cardCounts: Record<string, number> = {
       "ORDERS PLACED": 0,
-      BOOKED: 0,
+      "AWAITING VIN": 0,
       "PENDING LC": 0,
       "LC RECEIVED": 0,
       "CARS IN TRANSIT": 0,
@@ -642,7 +644,7 @@ const Dashboard: React.FC = () => {
     return {
       total: clientProfile.totalVehicleOrders,
       ordersPlaced: cardCounts["ORDERS PLACED"],
-      booked: cardCounts["BOOKED"],
+      awaitingVin: cardCounts["AWAITING VIN"],
       pendingLc: cardCounts["PENDING LC"],
       lcReceived: cardCounts["LC RECEIVED"],
       carsInTransit: cardCounts["CARS IN TRANSIT"],
@@ -701,10 +703,10 @@ const Dashboard: React.FC = () => {
         tone: "bg-blue-50 text-blue-700 border-blue-100",
       },
       {
-        label: "BOOKED",
-        value: clientStats.booked,
-        detail: "Approved/booked, PI not yet created",
-        icon: <Store size={20} />,
+        label: "AWAITING VIN",
+        value: clientStats.awaitingVin,
+        detail: "Booked, awaiting chassis/VIN number",
+        icon: <CarFront size={20} />,
         tone: "bg-indigo-50 text-indigo-700 border-indigo-100",
       },
       {

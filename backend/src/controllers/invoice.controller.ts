@@ -823,7 +823,7 @@ const buildVehicleDescription = (
     const prefix = manualFields?.vehicleDescriptionPrefix?.trim() || "";
     const firstLine = prefix
       ? `01 UNIT OF USED ${prefix}`
-      : `01 UNIT OF USED ${[vehicle.make, vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim()}`;
+      : `01 UNIT OF USED ${[vehicle.make, vehicle.model].filter(Boolean).join(" ").trim()}`;
 
     return [
       // `01 UNIT OF USED ${vehicle.make} ${[vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim()}`.trim(),
@@ -833,7 +833,7 @@ const buildVehicleDescription = (
       `YEAR OF MANUFACTURE: ${vehicle.yearOfManufacture || "-"}`,
       `MONTH/YEAR OF FIRST REGISTRATION: ${vehicle.monthYearFirstReg || "-"}`,
       `MAKE: ${vehicle.make || "-"}`,
-      `MODEL: ${[vehicle.model, vehicle.variant].filter(Boolean).join(" ").trim() || "-"}`,
+      `MODEL: ${vehicle.model || "-"}`,
       `TYPE OF VEHICLE: ${vehicle.typeOfVehicle || "SUV"}`,
       "COUNTRY OF ORIGIN : INDIA",
       `EXPORT INSPECTION CERTIFICATE NO: ${vehicle.exportInspCertNo || "-"}`,
@@ -1026,7 +1026,7 @@ const applyVehicleOverrides = (
   const textFields = [
     "make",
     "model",
-    "variant",
+    // "variant", 
     "colour",
     "yearOfManufacture",
     "monthYearFirstReg",
