@@ -310,20 +310,20 @@ const buildInvoiceNumber = async () => {
   }).select("invoiceNumber");
 
   const existingSequences = new Set<number>();
-  let maxSequence = 0;
 
   for (const invoice of invoices) {
     const sequence = Number(invoice.invoiceNumber.split("/").pop());
     if (Number.isFinite(sequence)) {
       existingSequences.add(sequence);
-      if (sequence > maxSequence) {
-        maxSequence = sequence;
-      }
     }
   }
 
   let nextSequence = INVOICE_SEQUENCE_START_NUMBER;
-  while (existingSequences.has(nextSequence)) {
+
+  while (
+    existingSequences.has(nextSequence) ||
+    (nextSequence >= 30 && nextSequence <= 49)
+  ) {
     nextSequence++;
   }
 
