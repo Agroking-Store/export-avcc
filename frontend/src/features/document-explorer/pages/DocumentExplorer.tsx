@@ -22,6 +22,7 @@ import {
   User,
   HardDrive,
   CheckSquare,
+  ChevronDown,
 } from "lucide-react";
 import { documentApi, UnifiedDocument } from "../../../services/documentApi";
 import { authStorage } from "../../../utils/authStorage";
@@ -39,80 +40,307 @@ const formatBytes = (bytes?: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-const getDocumentColor = (type: string) => {
-  const t = type.toLowerCase();
-  if (t.includes("invoice_usd") || t.includes("invoice_commercial")) {
-    return {
-      bg: "bg-emerald-50 dark:bg-emerald-950/30",
-      text: "text-emerald-600 dark:text-emerald-400",
-      border: "border-emerald-100 dark:border-emerald-900/50",
-      iconBg: "from-emerald-500 to-emerald-600",
-    };
+// ─── Category config ────────────────────────────────────────────────────────
+const CATEGORY_CONFIG: Record<
+  string,
+  {
+    label: string;
+    dot: string;          // Tailwind bg class for the colored dot
+    bg: string;
+    text: string;
+    border: string;
+    iconBg: string;
+    rowBg: string;        // subtle row highlight
   }
-  if (t.includes("invoice_inr")) {
-    return {
-      bg: "bg-green-50 dark:bg-green-950/30",
-      text: "text-green-600 dark:text-green-400",
-      border: "border-green-100 dark:border-green-900/50",
-      iconBg: "from-green-500 to-green-600",
-    };
-  }
-  if (t.includes("proforma")) {
-    return {
-      bg: "bg-rose-50 dark:bg-rose-950/30",
-      text: "text-rose-600 dark:text-rose-400",
-      border: "border-rose-100 dark:border-rose-900/50",
-      iconBg: "from-rose-500 to-rose-600",
-    };
-  }
-  if (t.includes("letter_of_credit") || t.includes("lc")) {
-    return {
-      bg: "bg-amber-50 dark:bg-amber-950/30",
-      text: "text-amber-600 dark:text-amber-400",
-      border: "border-amber-100 dark:border-amber-900/50",
-      iconBg: "from-amber-500 to-amber-600",
-    };
-  }
-  if (t.includes("packing_list")) {
-    return {
-      bg: "bg-teal-50 dark:bg-teal-950/30",
-      text: "text-teal-600 dark:text-teal-400",
-      border: "border-teal-100 dark:border-teal-900/50",
-      iconBg: "from-teal-500 to-teal-600",
-    };
-  }
-  if (t.includes("correction")) {
-    return {
-      bg: "bg-indigo-50 dark:bg-indigo-950/30",
-      text: "text-indigo-600 dark:text-indigo-400",
-      border: "border-indigo-100 dark:border-indigo-900/50",
-      iconBg: "from-indigo-500 to-indigo-600",
-    };
-  }
-  if (t.includes("quotation")) {
-    return {
-      bg: "bg-slate-50 dark:bg-slate-800/40",
-      text: "text-slate-600 dark:text-slate-400",
-      border: "border-slate-100 dark:border-slate-700/50",
-      iconBg: "from-slate-500 to-slate-600",
-    };
-  }
-  // Sourcing fields form20, form21, form22 etc.
-  return {
+> = {
+  invoice_commercial: {
+    label: "Commercial Invoice",
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    text: "text-emerald-700 dark:text-emerald-400",
+    border: "border-emerald-200 dark:border-emerald-900/50",
+    iconBg: "from-emerald-500 to-emerald-600",
+    rowBg: "bg-emerald-50/40 dark:bg-emerald-950/10",
+  },
+  invoice_usd: {
+    label: "USD Invoice",
+    dot: "bg-teal-500",
+    bg: "bg-teal-50 dark:bg-teal-950/30",
+    text: "text-teal-700 dark:text-teal-400",
+    border: "border-teal-200 dark:border-teal-900/50",
+    iconBg: "from-teal-500 to-teal-600",
+    rowBg: "bg-teal-50/40 dark:bg-teal-950/10",
+  },
+  invoice_inr: {
+    label: "INR Invoice",
+    dot: "bg-green-500",
+    bg: "bg-green-50 dark:bg-green-950/30",
+    text: "text-green-700 dark:text-green-400",
+    border: "border-green-200 dark:border-green-900/50",
+    iconBg: "from-green-500 to-green-600",
+    rowBg: "bg-green-50/40 dark:bg-green-950/10",
+  },
+  proforma_invoice: {
+    label: "Proforma Invoice",
+    dot: "bg-rose-500",
+    bg: "bg-rose-50 dark:bg-rose-950/30",
+    text: "text-rose-700 dark:text-rose-400",
+    border: "border-rose-200 dark:border-rose-900/50",
+    iconBg: "from-rose-500 to-rose-600",
+    rowBg: "bg-rose-50/40 dark:bg-rose-950/10",
+  },
+  letter_of_credit: {
+    label: "Letter of Credit",
+    dot: "bg-amber-500",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    text: "text-amber-700 dark:text-amber-400",
+    border: "border-amber-200 dark:border-amber-900/50",
+    iconBg: "from-amber-500 to-amber-600",
+    rowBg: "bg-amber-50/40 dark:bg-amber-950/10",
+  },
+  packing_list: {
+    label: "Packing List",
+    dot: "bg-cyan-500",
+    bg: "bg-cyan-50 dark:bg-cyan-950/30",
+    text: "text-cyan-700 dark:text-cyan-400",
+    border: "border-cyan-200 dark:border-cyan-900/50",
+    iconBg: "from-cyan-500 to-cyan-600",
+    rowBg: "bg-cyan-50/40 dark:bg-cyan-950/10",
+  },
+  hbl_document: {
+    label: "House Bill of Lading",
+    dot: "bg-violet-500",
+    bg: "bg-violet-50 dark:bg-violet-950/30",
+    text: "text-violet-700 dark:text-violet-400",
+    border: "border-violet-200 dark:border-violet-900/50",
+    iconBg: "from-violet-500 to-violet-600",
+    rowBg: "bg-violet-50/40 dark:bg-violet-950/10",
+  },
+  shippingBill: {
+    label: "Shipping Bill",
+    dot: "bg-purple-500",
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+    text: "text-purple-700 dark:text-purple-400",
+    border: "border-purple-200 dark:border-purple-900/50",
+    iconBg: "from-purple-500 to-purple-600",
+    rowBg: "bg-purple-50/40 dark:bg-purple-950/10",
+  },
+  clientCorrection: {
+    label: "Client Correction",
+    dot: "bg-indigo-500",
+    bg: "bg-indigo-50 dark:bg-indigo-950/30",
+    text: "text-indigo-700 dark:text-indigo-400",
+    border: "border-indigo-200 dark:border-indigo-900/50",
+    iconBg: "from-indigo-500 to-indigo-600",
+    rowBg: "bg-indigo-50/40 dark:bg-indigo-950/10",
+  },
+  quotation: {
+    label: "Quotation",
+    dot: "bg-slate-500",
+    bg: "bg-slate-50 dark:bg-slate-800/40",
+    text: "text-slate-600 dark:text-slate-400",
+    border: "border-slate-200 dark:border-slate-700/50",
+    iconBg: "from-slate-500 to-slate-600",
+    rowBg: "bg-slate-50/40 dark:bg-slate-800/20",
+  },
+  form20: {
+    label: "Form 20",
+    dot: "bg-blue-500",
     bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-blue-600 dark:text-blue-400",
-    border: "border-blue-100 dark:border-blue-900/50",
+    text: "text-blue-700 dark:text-blue-400",
+    border: "border-blue-200 dark:border-blue-900/50",
     iconBg: "from-blue-500 to-blue-600",
-  };
-
+    rowBg: "bg-blue-50/40 dark:bg-blue-950/10",
+  },
+  form21: {
+    label: "Form 21",
+    dot: "bg-sky-500",
+    bg: "bg-sky-50 dark:bg-sky-950/30",
+    text: "text-sky-700 dark:text-sky-400",
+    border: "border-sky-200 dark:border-sky-900/50",
+    iconBg: "from-sky-500 to-sky-600",
+    rowBg: "bg-sky-50/40 dark:bg-sky-950/10",
+  },
+  form22: {
+    label: "Form 22",
+    dot: "bg-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-950/20",
+    text: "text-blue-600 dark:text-blue-300",
+    border: "border-blue-100 dark:border-blue-900/30",
+    iconBg: "from-blue-400 to-blue-500",
+    rowBg: "bg-blue-50/30 dark:bg-blue-950/10",
+  },
+  tempRegCert: {
+    label: "Temp Registration",
+    dot: "bg-orange-500",
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+    text: "text-orange-700 dark:text-orange-400",
+    border: "border-orange-200 dark:border-orange-900/50",
+    iconBg: "from-orange-500 to-orange-600",
+    rowBg: "bg-orange-50/40 dark:bg-orange-950/10",
+  },
+  bvCertificate: {
+    label: "BV Certificate",
+    dot: "bg-lime-500",
+    bg: "bg-lime-50 dark:bg-lime-950/30",
+    text: "text-lime-700 dark:text-lime-400",
+    border: "border-lime-200 dark:border-lime-900/50",
+    iconBg: "from-lime-500 to-lime-600",
+    rowBg: "bg-lime-50/40 dark:bg-lime-950/10",
+  },
+  dealerInvoice: {
+    label: "Dealer Invoice",
+    dot: "bg-pink-500",
+    bg: "bg-pink-50 dark:bg-pink-950/30",
+    text: "text-pink-700 dark:text-pink-400",
+    border: "border-pink-200 dark:border-pink-900/50",
+    iconBg: "from-pink-500 to-pink-600",
+    rowBg: "bg-pink-50/40 dark:bg-pink-950/10",
+  },
 };
 
- // Format document display name with vehicle identifier
- const formatDisplayName = (doc: UnifiedDocument) => {
-   const name = doc.fileName.replace(/_/g, " ");
-   return doc.relatedEntity ? `${doc.relatedEntity} – ${name}` : name;
- };
+const DEFAULT_STYLE = {
+  label: "Document",
+  dot: "bg-gray-400",
+  bg: "bg-gray-50 dark:bg-gray-800/40",
+  text: "text-gray-600 dark:text-gray-400",
+  border: "border-gray-200 dark:border-gray-700/50",
+  iconBg: "from-gray-400 to-gray-500",
+  rowBg: "",
+};
 
+const getDocumentStyle = (type: string) => {
+  const t = type.toLowerCase();
+  // exact match first
+  if (CATEGORY_CONFIG[type]) return CATEGORY_CONFIG[type];
+  // partial match fallback
+  for (const [key, cfg] of Object.entries(CATEGORY_CONFIG)) {
+    if (t.includes(key.toLowerCase())) return cfg;
+  }
+  return DEFAULT_STYLE;
+};
+
+// ─── Custom Dropdown ─────────────────────────────────────────────────────────
+interface DropdownOption {
+  value: string;
+  label: string;
+  dotClass?: string;
+}
+
+interface ColorDropdownProps {
+  value: string;
+  onChange: (val: string) => void;
+  options: DropdownOption[];
+  placeholder: string;
+}
+
+const ColorDropdown: React.FC<ColorDropdownProps> = ({
+  value,
+  onChange,
+  options,
+  placeholder,
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="cursor-pointer flex items-center gap-2 bg-slate-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700 text-sm text-slate-700 dark:text-gray-300 hover:border-blue-400 transition min-w-[170px] justify-between"
+      >
+        <div className="flex items-center gap-2 truncate">
+          <Filter size={14} className="text-slate-400 flex-shrink-0" />
+          {selected ? (
+            <>
+              {selected.dotClass && (
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${selected.dotClass}`} />
+              )}
+              <span className="truncate">{selected.label}</span>
+            </>
+          ) : (
+            <span className="text-slate-400">{placeholder}</span>
+          )}
+        </div>
+        <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* backdrop */}
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.13 }}
+              className="absolute left-0 top-full mt-1.5 z-50 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden min-w-[200px] max-h-72 overflow-y-auto"
+            >
+              {options.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`cursor-pointer w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition hover:bg-slate-50 dark:hover:bg-gray-800 ${
+                    value === opt.value ? "bg-blue-50 dark:bg-blue-950/30 font-semibold" : ""
+                  }`}
+                >
+                  {opt.dotClass ? (
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${opt.dotClass}`} />
+                  ) : (
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-transparent border border-slate-300" />
+                  )}
+                  <span className="text-slate-700 dark:text-gray-300">{opt.label}</span>
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ─── Doc type options ─────────────────────────────────────────────────────────
+const DOC_TYPE_OPTIONS: DropdownOption[] = [
+  { value: "", label: "All Types" },
+  { value: "proforma_invoice", label: "Proforma Invoice", dotClass: CATEGORY_CONFIG.proforma_invoice.dot },
+  { value: "letter_of_credit", label: "Letter of Credit", dotClass: CATEGORY_CONFIG.letter_of_credit.dot },
+  { value: "hbl_document", label: "House Bill of Lading", dotClass: CATEGORY_CONFIG.hbl_document.dot },
+  { value: "form20", label: "Form 20", dotClass: CATEGORY_CONFIG.form20.dot },
+  { value: "form21", label: "Form 21", dotClass: CATEGORY_CONFIG.form21.dot },
+  { value: "form22", label: "Form 22", dotClass: CATEGORY_CONFIG.form22.dot },
+  { value: "tempRegCert", label: "Temp Registration", dotClass: CATEGORY_CONFIG.tempRegCert.dot },
+  { value: "bvCertificate", label: "BV Certificate", dotClass: CATEGORY_CONFIG.bvCertificate.dot },
+  { value: "dealerInvoice", label: "Dealer Invoice", dotClass: CATEGORY_CONFIG.dealerInvoice.dot },
+  { value: "shippingBill", label: "Shipping Bill", dotClass: CATEGORY_CONFIG.shippingBill.dot },
+  { value: "quotation", label: "Quotation", dotClass: CATEGORY_CONFIG.quotation.dot },
+  { value: "clientCorrection", label: "Client Correction", dotClass: CATEGORY_CONFIG.clientCorrection.dot },
+  { value: "invoice_usd", label: "USD Invoice", dotClass: CATEGORY_CONFIG.invoice_usd.dot },
+  { value: "invoice_inr", label: "INR Invoice", dotClass: CATEGORY_CONFIG.invoice_inr.dot },
+  { value: "invoice_commercial", label: "Commercial Invoice", dotClass: CATEGORY_CONFIG.invoice_commercial.dot },
+  { value: "packing_list", label: "Packing List", dotClass: CATEGORY_CONFIG.packing_list.dot },
+];
+
+const ENTITY_TYPE_OPTIONS: DropdownOption[] = [
+  { value: "", label: "All Entities" },
+  { value: "proforma_invoice", label: "Proforma Invoice", dotClass: "bg-rose-400" },
+  { value: "vehicle_booking", label: "Vehicle Booking", dotClass: "bg-blue-400" },
+  { value: "invoice", label: "Invoice", dotClass: "bg-emerald-400" },
+];
+
+// ─── Format display name ──────────────────────────────────────────────────────
+const formatDisplayName = (doc: UnifiedDocument) => {
+  const name = doc.fileName.replace(/_/g, " ");
+  return doc.relatedEntity ? `${doc.relatedEntity} – ${name}` : name;
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const DocumentExplorer = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<UnifiedDocument[]>([]);
@@ -128,7 +356,6 @@ const DocumentExplorer = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
-  // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -203,17 +430,12 @@ const DocumentExplorer = () => {
   const getStats = () => {
     const totalCount = totalDocs;
     const tradeCount = documents.filter((d) =>
-      ["proforma_invoice", "letter_of_credit", "invoice_usd", "invoice_inr", "invoice_commercial", "packing_list"].includes(
-        d.documentType
-      )
+      ["proforma_invoice", "letter_of_credit", "invoice_usd", "invoice_inr", "invoice_commercial", "packing_list"].includes(d.documentType)
     ).length;
     const registrationCount = documents.filter((d) =>
-      ["form20", "form21", "form22", "tempRegCert", "bvCertificate", "dealerInvoice", "shippingBill"].includes(
-        d.documentType
-      )
+      ["form20", "form21", "form22", "tempRegCert", "bvCertificate", "dealerInvoice", "shippingBill"].includes(d.documentType)
     ).length;
     const correctionCount = documents.filter((d) => d.documentType === "clientCorrection").length;
-
     return { totalCount, tradeCount, registrationCount, correctionCount };
   };
 
@@ -299,56 +521,18 @@ const DocumentExplorer = () => {
           <div className="flex flex-wrap gap-4 items-center justify-between">
             {/* Left: filters */}
             <div className="flex flex-wrap gap-3 items-center">
-              {/* Document Type Dropdown */}
-              <div className="flex items-center gap-1 bg-slate-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700">
-                <Filter size={15} className="text-slate-400" />
-                <select
-                  value={docType}
-                  onChange={(e) => {
-                    setDocType(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="bg-transparent border-none text-sm text-slate-700 dark:text-gray-300 outline-none pr-6 cursor-pointer"
-                >
-                  <option value="">All Types</option>
-                  <option value="proforma_invoice">Proforma Invoice</option>
-                  <option value="letter_of_credit">Letter of Credit</option>
-                  <option value="hbl_document">House Bill of Lading</option>
-                  <option value="form20">Form 20</option>
-                  <option value="form21">Form 21</option>
-                  <option value="form22">Form 22</option>
-                  <option value="tempRegCert">Temp Registration</option>
-                  <option value="bvCertificate">BV Certificate</option>
-                  <option value="dealerInvoice">Dealer Invoice</option>
-                  <option value="shippingBill">Shipping Bill</option>
-                  <option value="quotation">Quotation</option>
-                  <option value="clientCorrection">Client Correction</option>
-                  <option value="invoice_usd">USD Invoice</option>
-                  <option value="invoice_inr">INR Invoice</option>
-                  <option value="invoice_commercial">Commercial Invoice</option>
-                  <option value="packing_list">Packing List</option>
-                </select>
-              </div>
-
-              {/* Entity Type Dropdown */}
-              <div className="flex items-center gap-1 bg-slate-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700">
-                <Filter size={15} className="text-slate-400" />
-                <select
-                  value={entityType}
-                  onChange={(e) => {
-                    setEntityType(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="bg-transparent border-none text-sm text-slate-700 dark:text-gray-300 outline-none pr-6 cursor-pointer"
-                >
-                  <option value="">All Entities</option>
-                  <option value="proforma_invoice">Proforma Invoice</option>
-                  <option value="vehicle_booking">Vehicle Booking</option>
-                  <option value="invoice">Invoice</option>
-                </select>
-              </div>
-
-              {/* Reset button */}
+              <ColorDropdown
+                value={docType}
+                onChange={(val) => { setDocType(val); setCurrentPage(1); }}
+                options={DOC_TYPE_OPTIONS}
+                placeholder="All Types"
+              />
+              <ColorDropdown
+                value={entityType}
+                onChange={(val) => { setEntityType(val); setCurrentPage(1); }}
+                options={ENTITY_TYPE_OPTIONS}
+                placeholder="All Entities"
+              />
               {(docType || entityType || search) && (
                 <button
                   onClick={handleReset}
@@ -361,7 +545,6 @@ const DocumentExplorer = () => {
 
             {/* Right: Search, Sorting & Grid Toggle */}
             <div className="flex flex-wrap items-center gap-4">
-              {/* Search input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -373,7 +556,6 @@ const DocumentExplorer = () => {
                 />
               </div>
 
-              {/* Sorting */}
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-gray-800/50 border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-1.5">
                 <select
                   value={sortBy}
@@ -392,7 +574,6 @@ const DocumentExplorer = () => {
                 </button>
               </div>
 
-              {/* Grid/List View Toggles */}
               <div className="flex bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl p-0.5">
                 <button
                   onClick={() => setViewMode("list")}
@@ -438,7 +619,6 @@ const DocumentExplorer = () => {
             </button>
           </div>
         ) : (
-          /* MAIN CONTENT VIEW */
           <AnimatePresence mode="wait">
             {viewMode === "list" ? (
               <motion.div
@@ -474,11 +654,11 @@ const DocumentExplorer = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
                       {documents.map((doc) => {
-                        const style = getDocumentColor(doc.documentType);
+                        const style = getDocumentStyle(doc.documentType);
                         return (
                           <tr
                             key={doc.id}
-                            className="hover:bg-slate-50/50 dark:hover:bg-gray-800/40 transition duration-150"
+                            className={`transition duration-150 hover:brightness-95 dark:hover:brightness-110 ${style.rowBg}`}
                           >
                             {/* File Name */}
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -503,11 +683,12 @@ const DocumentExplorer = () => {
                               </div>
                             </td>
 
-                            {/* Type */}
+                            {/* Type Badge */}
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <span
-                                className={`px-2.5 py-1 rounded-full text-xs font-bold border ${style.bg} ${style.text} ${style.border}`}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${style.bg} ${style.text} ${style.border}`}
                               >
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
                                 {doc.documentTypeName}
                               </span>
                             </td>
@@ -516,9 +697,7 @@ const DocumentExplorer = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-gray-400">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-medium">{doc.relatedEntity}</span>
-                                {["vehicle_booking", "proforma_invoice", "invoice"].includes(
-                                  doc.relatedEntityType
-                                ) && (
+                                {["vehicle_booking", "proforma_invoice", "invoice"].includes(doc.relatedEntityType) && (
                                   <button
                                     onClick={() => handleNavigateToSource(doc)}
                                     className="cursor-pointer text-blue-500 hover:text-blue-700 transition"
@@ -548,14 +727,14 @@ const DocumentExplorer = () => {
                               <div className="flex items-center gap-2 justify-center">
                                 <button
                                   onClick={() => handleViewFile(doc)}
-                                  className="cursor-pointer p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
+                                  className="cursor-pointer p-2 text-slate-600 hover:text-blue-600 hover:bg-white/80 dark:hover:bg-slate-800 rounded-lg transition"
                                   title="View File Inline"
                                 >
                                   <Eye size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDownloadFile(doc)}
-                                  className="cursor-pointer p-2 text-slate-600 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
+                                  className="cursor-pointer p-2 text-slate-600 hover:text-emerald-600 hover:bg-white/80 dark:hover:bg-slate-800 rounded-lg transition"
                                   title="Download File"
                                 >
                                   <Download size={16} />
@@ -578,18 +757,16 @@ const DocumentExplorer = () => {
                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
               >
                 {documents.map((doc) => {
-                  const style = getDocumentColor(doc.documentType);
+                  const style = getDocumentStyle(doc.documentType);
                   return (
                     <motion.div
                       key={doc.id}
                       whileHover={{ y: -4, scale: 1.01 }}
-                      className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
+                      className={`border border-slate-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden ${style.rowBg || "bg-white dark:bg-gray-900"}`}
                     >
-                      {/* Top header decoration matching file color */}
                       <div className={`h-1.5 w-full bg-gradient-to-r ${style.iconBg} absolute top-0 left-0`} />
 
                       <div className="mt-2">
-                        {/* File details */}
                         <div className="flex items-start justify-between gap-2">
                           <div
                             className={`w-9 h-9 rounded-lg bg-gradient-to-br ${style.iconBg} flex items-center justify-center text-white shadow-sm flex-shrink-0`}
@@ -597,13 +774,13 @@ const DocumentExplorer = () => {
                             <FileText size={18} />
                           </div>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.bg} ${style.text} ${style.border}`}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.bg} ${style.text} ${style.border}`}
                           >
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
                             {doc.documentTypeName}
                           </span>
                         </div>
 
-                        {/* File Name */}
                         <h4
                           onClick={() => handleViewFile(doc)}
                           className="text-sm font-semibold text-slate-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer mt-3 leading-snug truncate"
@@ -612,14 +789,11 @@ const DocumentExplorer = () => {
                           {formatDisplayName(doc)}
                         </h4>
 
-                        {/* Meta information */}
                         <div className="space-y-1 mt-3 text-xs text-slate-500 dark:text-gray-400">
                           <div className="flex items-center gap-1.5 truncate">
                             <Info size={12} className="text-slate-400 flex-shrink-0" />
                             <span className="truncate">{doc.relatedEntity}</span>
-                            {["vehicle_booking", "proforma_invoice", "invoice"].includes(
-                              doc.relatedEntityType
-                            ) && (
+                            {["vehicle_booking", "proforma_invoice", "invoice"].includes(doc.relatedEntityType) && (
                               <button
                                 onClick={() => handleNavigateToSource(doc)}
                                 className="cursor-pointer text-blue-500 hover:text-blue-700 transition"
@@ -647,18 +821,17 @@ const DocumentExplorer = () => {
                         </div>
                       </div>
 
-                      {/* Card actions */}
                       <div className="flex gap-2 items-center justify-end border-t border-slate-100 dark:border-gray-800 mt-4 pt-3">
                         <button
                           onClick={() => handleViewFile(doc)}
-                          className="cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                          className="cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-blue-600 hover:bg-white/80 dark:hover:bg-slate-800 transition"
                         >
                           <Eye size={13} />
                           <span>View</span>
                         </button>
                         <button
                           onClick={() => handleDownloadFile(doc)}
-                          className="cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-emerald-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                          className="cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-emerald-600 hover:bg-white/80 dark:hover:bg-slate-800 transition"
                         >
                           <Download size={13} />
                           <span>Download</span>
@@ -672,7 +845,7 @@ const DocumentExplorer = () => {
           </AnimatePresence>
         )}
 
-        {/* PAGINATION PANEL */}
+        {/* PAGINATION */}
         {documents.length > 0 && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-800 p-5 mt-6 flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-500 dark:text-gray-400">
@@ -680,7 +853,6 @@ const DocumentExplorer = () => {
               <span className="text-slate-900 dark:text-white font-bold">{currentPage}</span> of{" "}
               <span className="font-bold">{totalPages}</span> ({totalDocs} documents total)
             </span>
-
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
