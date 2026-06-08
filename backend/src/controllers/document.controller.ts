@@ -223,7 +223,8 @@ export const getDocuments = async (req: Request, res: Response) => {
               fileName: `${inv.invoiceNumber}.pdf`,
               documentType: docTypeVal,
               documentTypeName: docTypeName,
-              relatedEntity: `Commercial Invoice (Number: ${inv.invoiceNumber})`,
+              // Make title unique per invoice type
+              relatedEntity: `${docTypeName} (Number: ${inv.invoiceNumber})`,
               relatedEntityId: inv._id.toString(),
               relatedEntityType: "invoice",
               uploadDate: inv.generatedAt || inv.createdAt || new Date(),
@@ -252,7 +253,7 @@ export const getDocuments = async (req: Request, res: Response) => {
               fileName: `${inv.invoiceNumber}-packing.pdf`,
               documentType: "packing_list",
               documentTypeName: "Packing List",
-              relatedEntity: `Commercial Invoice (Number: ${inv.invoiceNumber})`,
+              relatedEntity: `Packing List (Number: ${inv.invoiceNumber})`,
               relatedEntityId: inv._id.toString(),
               relatedEntityType: "invoice",
               uploadDate: inv.generatedAt || inv.createdAt || new Date(),
