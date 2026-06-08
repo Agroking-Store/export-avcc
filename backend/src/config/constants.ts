@@ -49,4 +49,4 @@ export const VERIFICATION_STATUS = {
   DISCREPANCY: "discrepancy",
 } as const;
 
-export const INVOICE_SEQUENCE_START_NUMBER = 30;
+export const INVOICE_SEQUENCE_START_NUMBER = 2;
