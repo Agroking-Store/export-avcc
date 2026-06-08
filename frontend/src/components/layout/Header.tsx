@@ -3,11 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
 import { logout } from "@/features/auth/authSlice";
-import { useTheme } from "../../context/ThemeContext";
 import {
-  Moon,
-  Sun,
-  Bell,
   User,
   LogOut,
   ChevronRight,
@@ -152,7 +148,6 @@ const resolveIdLabel = async (
 };
 
 const Header: React.FC = () => {
-  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -366,17 +361,6 @@ const Header: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-4 relative">
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-          title="Toggle Dark/Light Mode"
-        >
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-
-        <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors">
-          <Bell size={20} />
-        </button>
 
         <div ref={dropdownRef} className="relative">
           <button
