@@ -33,6 +33,7 @@ export type BankDetails = {
   bankName?: string;
   accountNo?: string;
   branchIfsc?: string;
+  swiftCode?: string;
 };
 
 export type PIForm = {

@@ -138,7 +138,7 @@ const ClientDetails = () => {
             <div className="p-6 md:p-8 pb-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <ShoppingCart size={18} className="text-gray-400" />
-                <h2 className="text-lg font-bold text-[#1B2559]">Vehicle Orders</h2>
+                <h2 className="text-lg font-bold text-[#1B2559]">Vehicles</h2>
               </div>
               <span className="bg-gray-50 text-[10px] font-bold px-3 py-1 rounded-full text-gray-400 uppercase tracking-widest">
                 {orders.length} Orders
@@ -208,7 +208,7 @@ const ClientDetails = () => {
 
           <div className="bg-[#FEE2E2] rounded-2xl p-5 border border-[#FECACA] shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:bg-[#FCA5A5]/20 group">
             <p className="text-[9px] font-bold text-red-800 uppercase tracking-widest mb-1 flex items-center gap-1.5 transition-colors group-hover:text-red-900">
-              <Package size={12} /> Total Vehicle Orders
+              <Package size={12} /> Total Vehicles
             </p>
             <h3 className="text-3xl font-black text-red-800 leading-none group-hover:scale-105 transition-transform origin-left">
               {data?.totalVehicleOrders || 0}

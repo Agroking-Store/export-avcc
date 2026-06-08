@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Button from "../../../components/common/Button";
 import Input from "../../../components/common/Input";
-import { updateProfile } from "../authSlice";
+import { updateProfile, getProfile } from "../authSlice";
 
 const Profile: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -30,13 +30,17 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        email: user.email || "",
-      });
+    if (!user) {
+      // Ensure profile loads even if user is not already in redux
+      dispatch(getProfile());
+      return;
     }
-  }, [user]);
+
+    setFormData({
+      name: user.name || "",
+      email: user.email || "",
+    });
+  }, [user, dispatch]);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role?.toLowerCase()) {

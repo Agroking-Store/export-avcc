@@ -893,7 +893,7 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               Bank Details (Optional)
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <input
               placeholder="Bank Name"
               value={displayCompany?.bankDetails?.bankName || ""}
@@ -925,6 +925,18 @@ const PIFormFields: React.FC<PIFormFieldsProps> = ({
               onChange={(e) =>
                 handleCompanySnapshotChange(
                   "bankDetails.branchIfsc",
+                  e.target.value,
+                )
+              }
+              className={isCompanyAutofilled ? lockedInputClass : inputClass}
+            />
+            <input
+              placeholder="SWIFT Code"
+              value={displayCompany?.bankDetails?.swiftCode || ""}
+              readOnly={isCompanyAutofilled}
+              onChange={(e) =>
+                handleCompanySnapshotChange(
+                  "bankDetails.swiftCode",
                   e.target.value,
                 )
               }
