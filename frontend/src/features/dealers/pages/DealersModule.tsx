@@ -33,7 +33,7 @@ const DealersModule = () => {
               Dealers 
             </h1>
             <p className="text-sm text-slate-500 dark:text-blue-200/70 mt-0.5">
-              Manage dealers and bookings
+              Manage dealers
             </p>
           </div>
         </div>

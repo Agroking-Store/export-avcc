@@ -29,7 +29,7 @@ const ClientsModule = () => {
             </h1>
             {/* Subtitle: Scaled down to text-sm */}
             <p className="text-sm text-slate-500 dark:text-blue-200/70 mt-0.5">
-              Manage clients and orders
+              Manage clients
             </p>
           </div>
         </div>

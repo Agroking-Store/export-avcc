@@ -109,7 +109,7 @@ const ClientsList = () => {
                   "Name",
                   "Country",
                   "Contact",
-                  "Vehicle Orders",
+                  "Vehicles",
                   "Last Booking",
                   "Actions",
                 ].map((head) => (
