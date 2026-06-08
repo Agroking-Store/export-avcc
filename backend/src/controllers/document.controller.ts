@@ -193,30 +193,42 @@ export const getDocuments = async (req: Request, res: Response) => {
           const piNumber = pi.piNumber || "N/A";
           const buyerName = pi.clientSnapshot?.name || pi.client_id?.name || "N/A";
 
-          if (inv.invoicePdf && inv.invoicePdf.length > 0 && inv.type !== "PACKING_LIST") {
-            let docTypeVal = "invoice_usd";
-            let docTypeName = "USD Invoice";
-            if (inv.type === "INR") {
-              docTypeVal = "invoice_inr";
-              docTypeName = "INR Invoice";
-            } else if (inv.type === "COMMERCIAL") {
-              docTypeVal = "invoice_commercial";
-              docTypeName = "Commercial Invoice";
-            }
+          // Include invoice PDFs even when buffer is empty/undefined.
+          // The download endpoints restore/generate buffers if needed.
+          if (inv.type !== "PACKING_LIST") {
+            const docTypeVal =
+              inv.type === "INR"
+                ? "invoice_inr"
+                : inv.type === "COMMERCIAL"
+                  ? "invoice_commercial"
+                  : "invoice_usd";
+
+            const docTypeName =
+              inv.type === "INR"
+                ? "INR Invoice"
+                : inv.type === "COMMERCIAL"
+                  ? "Commercial Invoice"
+                  : "USD Invoice";
 
             if (docType && docType !== "invoice" && docType !== docTypeVal) continue;
+
             const downloadUrl = `/api/v1/invoices/${inv._id}/download`;
+            const fileSize =
+              inv.invoicePdf && Buffer.isBuffer(inv.invoicePdf)
+                ? inv.invoicePdf.length
+                : undefined;
+
             list.push({
               id: `${inv._id}_invoice`,
               fileName: `${inv.invoiceNumber}.pdf`,
               documentType: docTypeVal,
-              documentTypeName,
+              documentTypeName: docTypeName,
               relatedEntity: `Commercial Invoice (Number: ${inv.invoiceNumber})`,
               relatedEntityId: inv._id.toString(),
               relatedEntityType: "invoice",
               uploadDate: inv.generatedAt || inv.createdAt || new Date(),
               uploadedBy: "System",
-              fileSize: inv.invoicePdf.length,
+              fileSize,
               downloadUrl,
               viewUrl: downloadUrl,
               buyerName,
@@ -225,9 +237,16 @@ export const getDocuments = async (req: Request, res: Response) => {
             });
           }
 
-          if (inv.packingListPdf && inv.packingListPdf.length > 0) {
+          // Packing list: include even if buffer length is 0.
+          if (inv.type === "PACKING_LIST") {
             if (docType && docType !== "invoice" && docType !== "packing_list") continue;
+
             const downloadUrl = `/api/v1/invoices/${inv._id}/download-packing`;
+            const fileSize =
+              inv.packingListPdf && Buffer.isBuffer(inv.packingListPdf)
+                ? inv.packingListPdf.length
+                : undefined;
+
             list.push({
               id: `${inv._id}_packing_list`,
               fileName: `${inv.invoiceNumber}-packing.pdf`,
@@ -238,7 +257,7 @@ export const getDocuments = async (req: Request, res: Response) => {
               relatedEntityType: "invoice",
               uploadDate: inv.generatedAt || inv.createdAt || new Date(),
               uploadedBy: "System",
-              fileSize: inv.packingListPdf.length,
+              fileSize,
               downloadUrl,
               viewUrl: downloadUrl,
               buyerName,
