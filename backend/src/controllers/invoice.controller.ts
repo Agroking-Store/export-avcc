@@ -302,40 +302,31 @@ const getFinancialYear = (value = new Date()) => {
   return `${String(year - 1).slice(2)}-${String(year).slice(2)}`;
 };
 
-// const buildInvoiceNumber = async () => {
-//   const prefix = `AN/EX/${getFinancialYear()}/`;
-//   const invoices = await Invoice.find({
-//     invoiceNumber: { $regex: `^${prefix.replace(/\//g, "\\/")}\\d+$` },
-//   }).select("invoiceNumber");
-
-//   let maxSequence = 0;
-
-//   for (const invoice of invoices) {
-//     const sequence = Number(invoice.invoiceNumber.split("/").pop());
-//     if (Number.isFinite(sequence) && sequence > maxSequence) {
-//       maxSequence = sequence;
-//     }
-//   }
-
-//   return `${prefix}${maxSequence + 1}`;
-// };
-
 const buildInvoiceNumber = async () => {
   const prefix = `AN/EX/${getFinancialYear()}/`;
   const invoices = await Invoice.find({
     invoiceNumber: { $regex: `^${prefix.replace(/\//g, "\\/")}\\d+$` },
+    active: true,
   }).select("invoiceNumber");
 
-  let maxSequence = 0;
+  const existingSequences = new Set<number>();
 
   for (const invoice of invoices) {
     const sequence = Number(invoice.invoiceNumber.split("/").pop());
-    if (Number.isFinite(sequence) && sequence > maxSequence) {
-      maxSequence = sequence;
+    if (Number.isFinite(sequence)) {
+      existingSequences.add(sequence);
     }
   }
 
-  const nextSequence = Math.max(maxSequence + 1, INVOICE_SEQUENCE_START_NUMBER);
+  let nextSequence = INVOICE_SEQUENCE_START_NUMBER;
+
+  while (
+    existingSequences.has(nextSequence) ||
+    (nextSequence >= 30 && nextSequence <= 49)
+  ) {
+    nextSequence++;
+  }
+
   return `${prefix}${nextSequence}`;
 };
 
@@ -1026,7 +1017,7 @@ const applyVehicleOverrides = (
   const textFields = [
     "make",
     "model",
-    // "variant", 
+    // "variant",
     "colour",
     "yearOfManufacture",
     "monthYearFirstReg",
