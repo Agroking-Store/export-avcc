@@ -1138,6 +1138,12 @@ export const getBookingFile = async (bookingId: string, field: string) => {
   const booking = await VehicleBooking.findById(bookingId);
   if (!booking) throw new Error("Booking not found");
 
+  if (field === "quotation" || field === "quotationFile") {
+    const filePath = booking.quotationFile;
+    if (!filePath) throw new Error("File not found");
+    return filePath;
+  }
+
   const filePath = (booking.documents as any)[field];
   if (!filePath) throw new Error("File not found");
 

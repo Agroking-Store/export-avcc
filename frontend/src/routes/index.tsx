@@ -27,6 +27,7 @@ import ShipmentPlanningModule from "../features/shipment-plan/pages/ShipmentPlan
 
 import { useAppSelector } from "../app/hooks";
 import GeneratePackingList from "@/features/proforma-invoice/pages/GeneratePackingList";
+import DocumentExplorer from "../features/document-explorer/pages/DocumentExplorer";
 const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
   const role = user?.role?.toLowerCase() || "";
@@ -201,6 +202,9 @@ const AppRoutes: React.FC = () => {
             path="/reports"
             element={<div className="p-6">Reports Page (Coming Soon)</div>}
           />
+
+          {/* Document Explorer */}
+          <Route path="/document-explorer" element={<DocumentExplorer />} />
         </Route>
       </Route>
 

@@ -80,7 +80,13 @@ const AppNavigationSidebar: React.FC = () => {
       path: "/shipment-planning/dashboard",
       activePaths: ["/shipment-planning"],
     },
-  ];
+          {
+          name: "Document Explorer",
+          icon: <FileCheck size={20} />, 
+          path: "/document-explorer",
+          activePaths: ["/document-explorer"],
+        },
+        ];
 
   let menuItems =
     role === "client"
@@ -102,6 +108,12 @@ const AppNavigationSidebar: React.FC = () => {
             icon: <Ship size={20} />,
             path: "/shipment-planning/dashboard",
             activePaths: ["/shipment-planning"],
+          },
+          {
+            name: "Document Explorer",
+            icon: <FileCheck size={20} />,
+            path: "/document-explorer",
+            activePaths: ["/document-explorer"],
           },
         ]
       : role === "accountant"
@@ -138,8 +150,8 @@ const AppNavigationSidebar: React.FC = () => {
     ? menuItems
     : isSourcingTeam
       ? menuItems.filter(
-          (item) => item.name === "Vehicles" || item.name === "Dealers",
-        )
+        (item) => item.name === "Vehicles" || item.name === "Dealers" || item.name === "Document Explorer",
+      )
       : menuItems;
 
   return (
