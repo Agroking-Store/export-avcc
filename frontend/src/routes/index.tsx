@@ -204,7 +204,10 @@ const AppRoutes: React.FC = () => {
           />
 
           {/* Document Explorer */}
-          <Route path="/document-explorer" element={<DocumentExplorer />} />
+          <Route
+            path="/document-explorer"
+            element={isClient ? <Navigate to="/dashboard" replace /> : <DocumentExplorer />}
+          />
         </Route>
       </Route>
 
