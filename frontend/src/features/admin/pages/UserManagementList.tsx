@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { userApi } from "../../../services/userApi";
 import { User, UserRole } from "../../../types/common.types";
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -84,14 +84,8 @@ const UserManagementList = () => {
 
         <hr className="border-slate-100 dark:border-gray-800" />
 
-        {/* TOOLBAR */}
+        {/* TOOLBAR - Filter Removed */}
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-xl bg-blue-50/50 hover:bg-blue-100/50 transition-colors">
-              <Filter size={16} className="text-blue-500" />
-              Filter: All Roles
-            </button>
-          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
@@ -104,12 +98,12 @@ const UserManagementList = () => {
           </div>
         </div>
 
-        {/* TABLE */}
+        {/* TABLE - SR No Added */}
         <div className="overflow-x-auto">
           <table className="w-full text-center">
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
-                {["User", "Email", "Status", "Access Level"].map((head) => (
+                {["Sr No", "User", "Email", "Status", "Access Level"].map((head) => (
                   <th
                     key={head}
                     className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
@@ -122,16 +116,21 @@ const UserManagementList = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-20 text-slate-400 italic">
+                  <td colSpan={5} className="text-center py-20 text-slate-400 italic">
                     No users found
                   </td>
                 </tr>
               ) : (
-                filtered.map((user) => (
+                filtered.map((user, index) => (
                   <tr
                     key={user._id}
                     className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40"
                   >
+                    {/* SR No */}
+                    <td className="px-8 py-5 text-center font-medium text-slate-500">
+                      {index + 1}
+                    </td>
+
                     {/* User */}
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">

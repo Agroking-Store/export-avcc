@@ -1,4 +1,4 @@
-import { Plus, Mail, Phone, User, Clock, UserCog, Eye, Pencil, Trash2, Search, Filter } from "lucide-react";
+import { Plus, Mail, Phone, User, Clock, UserCog, Eye, Pencil, Trash2, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -85,14 +85,8 @@ const Users = () => {
 
         <hr className="border-slate-100 dark:border-gray-800" />
 
-        {/* TOOLBAR */}
+        {/* TOOLBAR - Filter Removed */}
         <div className="px-8 py-5 flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-gray-900">
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-xl bg-blue-50/50 hover:bg-blue-100/50 transition-colors">
-              <Filter size={16} className="text-blue-500" />
-              Filter: All Users
-            </button>
-          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
@@ -105,12 +99,12 @@ const Users = () => {
           </div>
         </div>
 
-        {/* TABLE */}
+        {/* TABLE - SR No Added, Last Login Removed */}
         <div className="overflow-x-auto">
           <table className="w-full text-center">
             <thead className="bg-slate-50/50 dark:bg-gray-800/50 border-y border-slate-100 dark:border-gray-800">
               <tr>
-                {["Name", "Email", "Phone", "Role", "Last Login", "Actions"].map((head) => (
+                {["Sr No", "Name", "Email", "Phone", "Role", "Actions"].map((head) => (
                   <th
                     key={head}
                     className="px-8 py-4 text-center text-[11px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider"
@@ -133,6 +127,11 @@ const Users = () => {
                     key={index}
                     className="group transition-colors duration-200 hover:bg-blue-50/40 dark:hover:bg-gray-800/40"
                   >
+                    {/* SR No */}
+                    <td className="px-8 py-5 text-center font-medium text-slate-500">
+                      {index + 1}
+                    </td>
+
                     {/* Name */}
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center gap-3 justify-center">
@@ -160,11 +159,6 @@ const Users = () => {
                       <span className={`px-3 py-1 rounded-xl text-xs font-bold ${roleBadge(user.role)}`}>
                         {roleLabel(user.role)}
                       </span>
-                    </td>
-
-                    {/* Last Login */}
-                    <td className="px-8 py-5 text-center text-sm text-slate-600 dark:text-gray-300">
-                      {user.lastLogin || "-"}
                     </td>
 
                     {/* Actions */}
