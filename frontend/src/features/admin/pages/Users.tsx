@@ -1,11 +1,11 @@
-import { Plus, Eye, Pencil, Settings, Mail, Phone, User, Clock, UserCog } from "lucide-react";
-import { useState } from "react";
+import { Plus, Mail, Phone, User, Clock, UserCog, Eye, Pencil, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import axios from "axios";
 import { apiConfig } from "@/config/apiConfig";
-import { RegisterData } from "@/types/auth.types";
-import { Lock } from "lucide-react";
+import { toast } from "sonner";
+import { userApi } from "@/services/userApi";
+
 
 interface UserInterface {
     name: string;
@@ -17,6 +17,11 @@ interface UserInterface {
 
 const Users = () => {
     const [users, setUsers] = useState<UserInterface[]>([]);
+
+    const userIdFromIndex = (u: UserInterface, idx: number) => {
+        return (u as any)._id || (u as any).id || `${idx}`;
+    };
+
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -112,6 +117,13 @@ const Users = () => {
                                         Last Login
                                     </div>
                                 </th>
+
+                                <th className="px-6 py-3 text-right text-gray-500">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <UserCog size={14} className="text-gray-500" />
+                                        Actions
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
 
@@ -144,6 +156,62 @@ const Users = () => {
                                     {/* Last Login */}
                                     <td className="px-6 py-4 text-gray-600 font-medium text-right">
                                         {user.lastLogin}
+                                    </td>
+
+                                    {/* Actions */}
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                title="View User"
+                                                onClick={() => navigate(`users/${userIdFromIndex(user, index)}`)}
+                                                className="p-1.5 rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+
+                                            <button
+                                                title="Edit User"
+                                                onClick={() => navigate(`users/${userIdFromIndex(user, index)}/edit`)}
+                                                className="p-1.5 rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+
+                                            {user.role === "admin" ? (
+                                                <div title="Admin users cannot be deleted." className="opacity-60 cursor-not-allowed">
+                                                    <button
+                                                        disabled
+                                                        className="p-1.5 rounded-lg bg-gray-50 text-gray-400 border border-gray-200"
+                                                        title="Admin users cannot be deleted."
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    title="Delete User"
+                                                    onClick={async () => {
+                                                        const ok = window.confirm("Are you sure you want to delete this user?");
+                                                        if (!ok) return;
+                                                        try {
+                                                            await userApi.deleteUser(userIdFromIndex(user, index));
+                                                            toast.success("User deleted successfully");
+                                                            // Refresh
+                                                            const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+                                                            const res = await axios.get(`${apiConfig.baseURL}/users`, {
+                                                                headers: { Authorization: `Bearer ${token}` },
+                                                            });
+                                                            setUsers(res.data.data);
+                                                        } catch (e: any) {
+                                                            toast.error(e?.response?.data?.message || "Delete failed");
+                                                        }
+                                                    }}
+                                                    className="p-1.5 rounded-lg bg-gray-50 text-red-600 border border-red-100 hover:bg-red-50"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
 
                                 </tr>

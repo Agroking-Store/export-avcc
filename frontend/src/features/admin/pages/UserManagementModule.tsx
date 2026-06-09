@@ -5,6 +5,10 @@ import UserManagementList from "./UserManagementList";
 import Users from "./Users";
 import { ShieldCheck } from "lucide-react";
 import AddUser from "./AddUser";
+import UserDetails from "./UserDetails";
+import EditUser from "./EditUser";
+
+
 
 const UserManagementModule = () => {
   return (
@@ -37,6 +41,13 @@ const UserManagementModule = () => {
             <Route path="list" element={<UserManagementList />} />
             <Route path="users" element={<Users />} />
             <Route path="users/add" element={<AddUser />} />
+            <Route path="users/:id" element={<UserDetails />} />
+            <Route path="users/:id/edit" element={<EditUser />} />
+            
+
+
+
+            
           </Routes>
         </div>
       </div>
