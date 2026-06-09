@@ -163,7 +163,7 @@ const Users = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 title="View User"
-                                                onClick={() => navigate(`users/${userIdFromIndex(user, index)}`)}
+                                                onClick={() => navigate(`/user-management/users/${userIdFromIndex(user, index)}`)}
                                                 className="p-1.5 rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
                                             >
                                                 <Eye size={16} />
@@ -171,7 +171,7 @@ const Users = () => {
 
                                             <button
                                                 title="Edit User"
-                                                onClick={() => navigate(`users/${userIdFromIndex(user, index)}/edit`)}
+                                                onClick={() => navigate(`/user-management/users/${userIdFromIndex(user, index)}/edit`)}
                                                 className="p-1.5 rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
                                             >
                                                 <Pencil size={16} />
