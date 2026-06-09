@@ -45,12 +45,12 @@ const CATEGORY_CONFIG: Record<
   string,
   {
     label: string;
-    dot: string;          // Tailwind bg class for the colored dot
+    dot: string; // Tailwind bg class for the colored dot
     bg: string;
     text: string;
     border: string;
     iconBg: string;
-    rowBg: string;        // subtle row highlight
+    rowBg: string; // subtle row highlight
   }
 > = {
   invoice_commercial: {
@@ -255,7 +255,9 @@ const ColorDropdown: React.FC<ColorDropdownProps> = ({
           {selected ? (
             <>
               {selected.dotClass && (
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${selected.dotClass}`} />
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${selected.dotClass}`}
+                />
               )}
               <span className="truncate">{selected.label}</span>
             </>
@@ -263,14 +265,20 @@ const ColorDropdown: React.FC<ColorDropdownProps> = ({
             <span className="text-slate-400">{placeholder}</span>
           )}
         </div>
-        <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={14}
+          className={`flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
         {open && (
           <>
             {/* backdrop */}
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setOpen(false)}
+            />
             <motion.div
               initial={{ opacity: 0, y: -6, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -287,15 +295,21 @@ const ColorDropdown: React.FC<ColorDropdownProps> = ({
                     setOpen(false);
                   }}
                   className={`cursor-pointer w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition hover:bg-slate-50 dark:hover:bg-gray-800 ${
-                    value === opt.value ? "bg-blue-50 dark:bg-blue-950/30 font-semibold" : ""
+                    value === opt.value
+                      ? "bg-blue-50 dark:bg-blue-950/30 font-semibold"
+                      : ""
                   }`}
                 >
                   {opt.dotClass ? (
-                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${opt.dotClass}`} />
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${opt.dotClass}`}
+                    />
                   ) : (
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-transparent border border-slate-300" />
                   )}
-                  <span className="text-slate-700 dark:text-gray-300">{opt.label}</span>
+                  <span className="text-slate-700 dark:text-gray-300">
+                    {opt.label}
+                  </span>
                 </button>
               ))}
             </motion.div>
@@ -309,28 +323,88 @@ const ColorDropdown: React.FC<ColorDropdownProps> = ({
 // ─── Doc type options ─────────────────────────────────────────────────────────
 const DOC_TYPE_OPTIONS: DropdownOption[] = [
   { value: "", label: "All Types" },
-  { value: "proforma_invoice", label: "Proforma Invoice", dotClass: CATEGORY_CONFIG.proforma_invoice.dot },
-  { value: "letter_of_credit", label: "Letter of Credit", dotClass: CATEGORY_CONFIG.letter_of_credit.dot },
-  { value: "hbl_document", label: "House Bill of Lading", dotClass: CATEGORY_CONFIG.hbl_document.dot },
+  {
+    value: "proforma_invoice",
+    label: "Proforma Invoice",
+    dotClass: CATEGORY_CONFIG.proforma_invoice.dot,
+  },
+  {
+    value: "letter_of_credit",
+    label: "Letter of Credit",
+    dotClass: CATEGORY_CONFIG.letter_of_credit.dot,
+  },
+  {
+    value: "hbl_document",
+    label: "House Bill of Lading",
+    dotClass: CATEGORY_CONFIG.hbl_document.dot,
+  },
   { value: "form20", label: "Form 20", dotClass: CATEGORY_CONFIG.form20.dot },
   { value: "form21", label: "Form 21", dotClass: CATEGORY_CONFIG.form21.dot },
   { value: "form22", label: "Form 22", dotClass: CATEGORY_CONFIG.form22.dot },
-  { value: "tempRegCert", label: "Temp Registration", dotClass: CATEGORY_CONFIG.tempRegCert.dot },
-  { value: "bvCertificate", label: "BV Certificate", dotClass: CATEGORY_CONFIG.bvCertificate.dot },
-  { value: "dealerInvoice", label: "Dealer Invoice", dotClass: CATEGORY_CONFIG.dealerInvoice.dot },
-  { value: "shippingBill", label: "Shipping Bill", dotClass: CATEGORY_CONFIG.shippingBill.dot },
-  { value: "quotation", label: "Quotation", dotClass: CATEGORY_CONFIG.quotation.dot },
-  { value: "clientCorrection", label: "Client Correction", dotClass: CATEGORY_CONFIG.clientCorrection.dot },
-  { value: "invoice_usd", label: "USD Invoice", dotClass: CATEGORY_CONFIG.invoice_usd.dot },
-  { value: "invoice_inr", label: "INR Invoice", dotClass: CATEGORY_CONFIG.invoice_inr.dot },
-  { value: "invoice_commercial", label: "Commercial Invoice", dotClass: CATEGORY_CONFIG.invoice_commercial.dot },
-  { value: "packing_list", label: "Packing List", dotClass: CATEGORY_CONFIG.packing_list.dot },
+  {
+    value: "tempRegCert",
+    label: "Temp Registration",
+    dotClass: CATEGORY_CONFIG.tempRegCert.dot,
+  },
+  {
+    value: "bvCertificate",
+    label: "BV Certificate",
+    dotClass: CATEGORY_CONFIG.bvCertificate.dot,
+  },
+  {
+    value: "dealerInvoice",
+    label: "Dealer Invoice",
+    dotClass: CATEGORY_CONFIG.dealerInvoice.dot,
+  },
+  {
+    value: "shippingBill",
+    label: "Shipping Bill",
+    dotClass: CATEGORY_CONFIG.shippingBill.dot,
+  },
+  {
+    value: "quotation",
+    label: "Quotation",
+    dotClass: CATEGORY_CONFIG.quotation.dot,
+  },
+  {
+    value: "clientCorrection",
+    label: "Client Correction",
+    dotClass: CATEGORY_CONFIG.clientCorrection.dot,
+  },
+  {
+    value: "invoice_usd",
+    label: "USD Invoice",
+    dotClass: CATEGORY_CONFIG.invoice_usd.dot,
+  },
+  {
+    value: "invoice_inr",
+    label: "INR Invoice",
+    dotClass: CATEGORY_CONFIG.invoice_inr.dot,
+  },
+  {
+    value: "invoice_commercial",
+    label: "Commercial Invoice",
+    dotClass: CATEGORY_CONFIG.invoice_commercial.dot,
+  },
+  {
+    value: "packing_list",
+    label: "Packing List",
+    dotClass: CATEGORY_CONFIG.packing_list.dot,
+  },
 ];
 
 const ENTITY_TYPE_OPTIONS: DropdownOption[] = [
-  { value: "", label: "All Entities" },
-  { value: "proforma_invoice", label: "Proforma Invoice", dotClass: "bg-rose-400" },
-  { value: "vehicle_booking", label: "Vehicle Booking", dotClass: "bg-blue-400" },
+  // { value: "", label: "All Entities" },
+  {
+    value: "proforma_invoice",
+    label: "Proforma Invoice",
+    dotClass: "bg-rose-400",
+  },
+  {
+    value: "vehicle_booking",
+    label: "Vehicle Booking",
+    dotClass: "bg-blue-400",
+  },
   { value: "invoice", label: "Invoice", dotClass: "bg-emerald-400" },
 ];
 
@@ -414,13 +488,19 @@ const DocumentExplorer = () => {
   };
 
   const handleNavigateToSource = (doc: UnifiedDocument) => {
-    if (doc.relatedEntityType === "vehicle_booking" && (doc as any).bookingOrderId) {
+    if (
+      doc.relatedEntityType === "vehicle_booking" &&
+      (doc as any).bookingOrderId
+    ) {
       navigate(
         `/vehicles/orders/${(doc as any).bookingOrderId}/unit-view/${
           (doc as any).bookingVehicleIndex ?? 0
-        }`
+        }`,
       );
-    } else if (doc.relatedEntityType === "proforma_invoice" && (doc as any).piId) {
+    } else if (
+      doc.relatedEntityType === "proforma_invoice" &&
+      (doc as any).piId
+    ) {
       navigate(`/proforma-invoice/${(doc as any).piId}`);
     } else if (doc.relatedEntityType === "invoice" && (doc as any).piId) {
       navigate(`/proforma-invoice/${(doc as any).piId}`);
@@ -430,12 +510,29 @@ const DocumentExplorer = () => {
   const getStats = () => {
     const totalCount = totalDocs;
     const tradeCount = documents.filter((d) =>
-      ["proforma_invoice", "letter_of_credit", "invoice_usd", "invoice_inr", "invoice_commercial", "packing_list"].includes(d.documentType)
+      [
+        "proforma_invoice",
+        "letter_of_credit",
+        "invoice_usd",
+        "invoice_inr",
+        "invoice_commercial",
+        "packing_list",
+      ].includes(d.documentType),
     ).length;
     const registrationCount = documents.filter((d) =>
-      ["form20", "form21", "form22", "tempRegCert", "bvCertificate", "dealerInvoice", "shippingBill"].includes(d.documentType)
+      [
+        "form20",
+        "form21",
+        "form22",
+        "tempRegCert",
+        "bvCertificate",
+        "dealerInvoice",
+        "shippingBill",
+      ].includes(d.documentType),
     ).length;
-    const correctionCount = documents.filter((d) => d.documentType === "clientCorrection").length;
+    const correctionCount = documents.filter(
+      (d) => d.documentType === "clientCorrection",
+    ).length;
     return { totalCount, tradeCount, registrationCount, correctionCount };
   };
 
@@ -455,7 +552,8 @@ const DocumentExplorer = () => {
                 Document Explorer
               </h1>
               <p className="text-sm text-slate-500 dark:text-blue-200/70 mt-0.5">
-                Centralized access, search, and validation of all trade, registration, and invoicing documents.
+                Centralized access, search, and validation of all trade,
+                registration, and invoicing documents.
               </p>
             </div>
           </div>
@@ -506,10 +604,16 @@ const DocumentExplorer = () => {
                   {card.label}
                 </p>
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin text-slate-400" /> : card.val}
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                  ) : (
+                    card.val
+                  )}
                 </h3>
               </div>
-              <div className={`p-3 rounded-xl bg-gradient-to-br ${card.gradient}`}>
+              <div
+                className={`p-3 rounded-xl bg-gradient-to-br ${card.gradient}`}
+              >
                 {card.icon}
               </div>
             </div>
@@ -523,11 +627,14 @@ const DocumentExplorer = () => {
             <div className="flex flex-wrap gap-3 items-center">
               <ColorDropdown
                 value={docType}
-                onChange={(val) => { setDocType(val); setCurrentPage(1); }}
+                onChange={(val) => {
+                  setDocType(val);
+                  setCurrentPage(1);
+                }}
                 options={DOC_TYPE_OPTIONS}
                 placeholder="All Types"
               />
-              <ColorDropdown
+              {/* <ColorDropdown
                 value={entityType}
                 onChange={(val) => { setEntityType(val); setCurrentPage(1); }}
                 options={ENTITY_TYPE_OPTIONS}
@@ -540,13 +647,16 @@ const DocumentExplorer = () => {
                 >
                   Clear Filters
                 </button>
-              )}
+              )} */}
             </div>
 
             {/* Right: Search, Sorting & Grid Toggle */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={16}
+                />
                 <input
                   type="text"
                   placeholder="Search file, entity or client..."
@@ -566,7 +676,9 @@ const DocumentExplorer = () => {
                   <option value="name">Sort by Name</option>
                 </select>
                 <button
-                  onClick={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}
+                  onClick={() =>
+                    setSortOrder((o) => (o === "asc" ? "desc" : "asc"))
+                  }
                   className="cursor-pointer text-xs font-bold text-blue-600 hover:text-blue-800 transition"
                   title="Toggle order direction"
                 >
@@ -604,13 +716,19 @@ const DocumentExplorer = () => {
         {loading && documents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl">
             <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-3" />
-            <p className="text-slate-500 text-sm font-medium">Scanning trade files...</p>
+            <p className="text-slate-500 text-sm font-medium">
+              Scanning trade files...
+            </p>
           </div>
         ) : documents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl">
             <FolderOpen className="w-16 h-16 text-slate-300 dark:text-gray-700 mb-3" />
-            <h3 className="text-lg font-bold text-slate-700 dark:text-gray-300">No documents found</h3>
-            <p className="text-slate-500 text-sm mt-1">Try refining your filter criteria or search keyword.</p>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-gray-300">
+              No documents found
+            </h3>
+            <p className="text-slate-500 text-sm mt-1">
+              Try refining your filter criteria or search keyword.
+            </p>
             <button
               onClick={handleReset}
               className="cursor-pointer mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition"
@@ -644,9 +762,9 @@ const DocumentExplorer = () => {
                         <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
                           Upload Date
                         </th>
-                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
+                        {/* <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
                           Size
-                        </th>
+                        </th> */}
                         <th className="px-6 py-4 text-center text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider w-40">
                           Actions
                         </th>
@@ -688,7 +806,9 @@ const DocumentExplorer = () => {
                               <span
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${style.bg} ${style.text} ${style.border}`}
                               >
-                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`}
+                                />
                                 {doc.documentTypeName}
                               </span>
                             </td>
@@ -696,8 +816,14 @@ const DocumentExplorer = () => {
                             {/* Related Entity */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-gray-400">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-medium">{doc.relatedEntity}</span>
-                                {["vehicle_booking", "proforma_invoice", "invoice"].includes(doc.relatedEntityType) && (
+                                <span className="font-medium">
+                                  {doc.relatedEntity}
+                                </span>
+                                {[
+                                  "vehicle_booking",
+                                  "proforma_invoice",
+                                  "invoice",
+                                ].includes(doc.relatedEntityType) && (
                                   <button
                                     onClick={() => handleNavigateToSource(doc)}
                                     className="cursor-pointer text-blue-500 hover:text-blue-700 transition"
@@ -713,14 +839,18 @@ const DocumentExplorer = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-center text-xs text-slate-500 dark:text-gray-500">
                               <div className="flex items-center justify-center gap-1">
                                 <Calendar size={12} />
-                                <span>{new Date(doc.uploadDate).toLocaleDateString()}</span>
+                                <span>
+                                  {new Date(
+                                    doc.uploadDate,
+                                  ).toLocaleDateString()}
+                                </span>
                               </div>
                             </td>
 
                             {/* Size */}
-                            <td className="px-6 py-4 whitespace-nowrap text-center text-xs font-medium text-slate-600 dark:text-gray-400">
+                            {/* <td className="px-6 py-4 whitespace-nowrap text-center text-xs font-medium text-slate-600 dark:text-gray-400">
                               {formatBytes(doc.fileSize)}
-                            </td>
+                            </td> */}
 
                             {/* Actions */}
                             <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -764,7 +894,9 @@ const DocumentExplorer = () => {
                       whileHover={{ y: -4, scale: 1.01 }}
                       className={`border border-slate-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden ${style.rowBg || "bg-white dark:bg-gray-900"}`}
                     >
-                      <div className={`h-1.5 w-full bg-gradient-to-r ${style.iconBg} absolute top-0 left-0`} />
+                      <div
+                        className={`h-1.5 w-full bg-gradient-to-r ${style.iconBg} absolute top-0 left-0`}
+                      />
 
                       <div className="mt-2">
                         <div className="flex items-start justify-between gap-2">
@@ -776,7 +908,9 @@ const DocumentExplorer = () => {
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.bg} ${style.text} ${style.border}`}
                           >
-                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`}
+                            />
                             {doc.documentTypeName}
                           </span>
                         </div>
@@ -791,9 +925,18 @@ const DocumentExplorer = () => {
 
                         <div className="space-y-1 mt-3 text-xs text-slate-500 dark:text-gray-400">
                           <div className="flex items-center gap-1.5 truncate">
-                            <Info size={12} className="text-slate-400 flex-shrink-0" />
-                            <span className="truncate">{doc.relatedEntity}</span>
-                            {["vehicle_booking", "proforma_invoice", "invoice"].includes(doc.relatedEntityType) && (
+                            <Info
+                              size={12}
+                              className="text-slate-400 flex-shrink-0"
+                            />
+                            <span className="truncate">
+                              {doc.relatedEntity}
+                            </span>
+                            {[
+                              "vehicle_booking",
+                              "proforma_invoice",
+                              "invoice",
+                            ].includes(doc.relatedEntityType) && (
                               <button
                                 onClick={() => handleNavigateToSource(doc)}
                                 className="cursor-pointer text-blue-500 hover:text-blue-700 transition"
@@ -803,11 +946,19 @@ const DocumentExplorer = () => {
                             )}
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <Calendar size={12} className="text-slate-400 flex-shrink-0" />
-                            <span>{new Date(doc.uploadDate).toLocaleDateString()}</span>
+                            <Calendar
+                              size={12}
+                              className="text-slate-400 flex-shrink-0"
+                            />
+                            <span>
+                              {new Date(doc.uploadDate).toLocaleDateString()}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <User size={12} className="text-slate-400 flex-shrink-0" />
+                            <User
+                              size={12}
+                              className="text-slate-400 flex-shrink-0"
+                            />
                             <span>By: {doc.uploadedBy}</span>
                           </div>
                           <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-gray-800">
@@ -850,8 +1001,11 @@ const DocumentExplorer = () => {
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-800 p-5 mt-6 flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-500 dark:text-gray-400">
               Showing page{" "}
-              <span className="text-slate-900 dark:text-white font-bold">{currentPage}</span> of{" "}
-              <span className="font-bold">{totalPages}</span> ({totalDocs} documents total)
+              <span className="text-slate-900 dark:text-white font-bold">
+                {currentPage}
+              </span>{" "}
+              of <span className="font-bold">{totalPages}</span> ({totalDocs}{" "}
+              documents total)
             </span>
             <div className="flex gap-3">
               <button
@@ -862,7 +1016,9 @@ const DocumentExplorer = () => {
                 <ChevronLeft size={16} /> Prev
               </button>
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages || loading}
                 className="cursor-pointer inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700 text-sm font-bold text-slate-800 dark:text-gray-200 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
