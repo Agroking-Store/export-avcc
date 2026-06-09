@@ -11,6 +11,12 @@ export const userApi = {
     const response = await api.patch(`/users/${id}/role`, { role });
     return response.data;
   },
+  
+  register: async (payload: any): Promise<ApiResponse<User>> => {
+    const response = await api.post("/auth/register", payload);
+    return response.data;
+  },
+
 
   getUserDetails: async (id: string): Promise<ApiResponse<User>> => {
     const response = await api.get(`/users/${id}`);
