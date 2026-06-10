@@ -6,30 +6,17 @@ export const validateCreateCompanyForm = (
   const errors: Record<string, string> = {};
 
   if (!form.name.trim()) {
-    errors.name = "Company name is required.";
+    errors.name = "Please add company name.";
   } else if (form.name.trim().length < 2) {
-    errors.name = "Company name must be at least 2 characters long.";
+    errors.name = "Company name must be at least 2 characters.";
   } else if (form.name.trim().length > 100) {
     errors.name = "Company name cannot exceed 100 characters.";
   }
 
-  if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
-    errors.email = "Please provide a valid email address.";
-  }
-
-  if (form.phone && !/^[0-9]{10,15}$/.test(form.phone)) {
-    errors.phone = "Phone number must be 10-15 digits.";
-  }
-
-  // Validate address fields if they exist
-  if (form.address) {
-    if (form.address.country && form.address.country.trim().length < 2) {
-      errors.address_country =
-        "Country name must be at least 2 characters long.";
-    }
-    if (form.address.state && form.address.state.trim().length < 2) {
-      errors.address_state = "State name must be at least 2 characters long.";
-    }
+  if (!form.phone?.trim()) {
+    errors.phone = "Please add contact no.";
+  } else if (!/^[0-9]{10,15}$/.test(form.phone.trim())) {
+    errors.phone = "Contact no must be 10-15 digits.";
   }
 
   return {
@@ -45,29 +32,21 @@ export const validateUpdateCompanyForm = (
 
   if (form.name !== undefined) {
     if (!form.name.trim()) {
-      errors.name = "Company name cannot be empty.";
+      errors.name = "Please add company name.";
     } else if (form.name.trim().length < 2) {
-      // Corrected indentation
-      errors.name = "Company name must be at least 2 characters long.";
+      errors.name = "Company name must be at least 2 characters.";
     } else if (form.name.trim().length > 100) {
       errors.name = "Company name cannot exceed 100 characters.";
     }
   }
 
-  if (form.email !== undefined) {
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
-      errors.email = "Please provide a valid email address.";
-    }
-  }
-
   if (form.phone !== undefined) {
-    if (form.phone && !/^[0-9]{10,15}$/.test(form.phone)) {
-      errors.phone = "Phone number must be 10-15 digits.";
+    if (!form.phone.trim()) {
+      errors.phone = "Please add contact no.";
+    } else if (!/^[0-9]{10,15}$/.test(form.phone.trim())) {
+      errors.phone = "Contact no must be 10-15 digits.";
     }
   }
-
-  // For update, at least one field should be provided, but we're not strictly enforcing that here
-  // as the backend validation will catch an empty payload. Frontend focuses on format.
 
   return {
     isValid: Object.keys(errors).length === 0,

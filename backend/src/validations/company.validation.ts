@@ -32,31 +32,34 @@ const createCompanySchema = Joi.object<CreateCompanyDto>({
     "string.max": "Company name cannot exceed 100 characters",
     "any.required": "Company name is required",
   }),
-  email: Joi.string().trim().lowercase().email().messages({
-    "string.email": "Please provide a valid email address",
-  }),
+  email: Joi.string().trim().lowercase().allow(""),
   phone: Joi.string()
     .trim()
     .pattern(/^[0-9]{10,15}$/)
+    .required()
     .messages({
+      "string.empty": "Contact phone is required",
+      "any.required": "Contact phone is required",
       "string.pattern.base": "Phone number must be 10-15 digits",
-    })
-    .allow(""), // Allow empty string for phone
+    }),
   address: addressDetailsSchema,
-  gstNumber: Joi.string().trim(),
+  gstNumber: Joi.string().trim().allow("").optional(),
   bankDetails: bankDetailsSchema, // Add bankDetails to create schema
   isActive: Joi.boolean().optional(), // Allow isActive for creation
 });
 
 const updateCompanySchema = Joi.object<UpdateCompanyDto>({
   name: Joi.string().trim().min(2).max(100),
-  email: Joi.string().trim().lowercase().email(),
+  email: Joi.string().trim().lowercase().allow(""),
   phone: Joi.string()
     .trim()
     .pattern(/^[0-9]{10,15}$/)
-    .allow(""),
+    .messages({
+      "string.empty": "Contact phone is required",
+      "string.pattern.base": "Phone number must be 10-15 digits",
+    }),
   address: addressDetailsSchema,
-  gstNumber: Joi.string().trim(),
+  gstNumber: Joi.string().trim().allow("").optional(),
   bankDetails: bankDetailsSchema, // Add bankDetails to update schema
   isActive: Joi.boolean().optional(), // Allow isActive for updates
 }).min(1); // At least one field is required for update
