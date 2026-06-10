@@ -14,6 +14,16 @@ export class UserController {
     }
   }
 
+  async getUserDetails(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const user = await userService.getUserDetails(id as string);
+      return ResponseUtil.success(res, user, "User fetched successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async updateRole(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
@@ -24,4 +34,25 @@ export class UserController {
       next(error);
     }
   }
+
+  async updateUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const updated = await userService.updateUser(id as string, req.body);
+      return ResponseUtil.success(res, updated, "User updated successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await userService.deleteUser(id as string);
+      return ResponseUtil.success(res, null, "User deleted successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

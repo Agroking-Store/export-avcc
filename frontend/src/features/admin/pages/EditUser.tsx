@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { userApi } from "@/services/userApi";
 import type { RegisterData } from "@/types/auth.types";
@@ -10,14 +10,17 @@ import {
   UserCog,
   ArrowLeft,
   X,
-  PlusCircle,
+  Save,
   Lock,
   Eye,
   EyeOff,
 } from "lucide-react";
 
-const AddUser = () => {
+const EditUser = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,7 +32,6 @@ const AddUser = () => {
   });
 
   const [errors, setErrors] = useState<any>({});
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -49,6 +51,29 @@ const AddUser = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        if (!id) return;
+        const res = await userApi.getUserDetails(id);
+        setFormData({
+          name: res.data?.name || "",
+          email: res.data?.email || "",
+          password: "",
+          confirmPassword: "",
+          phone: res.data?.phone || "",
+          role: res.data?.role || "",
+        });
+      } catch (e: any) {
+        toast.error(e?.response?.data?.message || "Failed to load user");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -62,21 +87,22 @@ const AddUser = () => {
     e.preventDefault();
     if (!validate()) return;
     try {
-      setLoading(true);
-      const payload: RegisterData = {
+      setSaving(true);
+      if (!id) return;
+      const payload: any = {
         name: formData.name,
         email: formData.email.toLowerCase().trim(),
         phone: formData.phone.replace(/\D/g, ""),
         role: formData.role as RegisterData["role"],
         password: formData.password,
       };
-      await userApi.register(payload);
-      toast.success("User created successfully");
+      await userApi.updateUser(id, payload);
+      toast.success("User updated successfully");
       navigate("/user-management/users");
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to create user");
+      toast.error(e?.response?.data?.message || "Update failed");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -90,14 +116,21 @@ const AddUser = () => {
   const labelStyle =
     "flex items-center gap-2 text-[11px] font-bold text-[#8E99AF] dark:text-gray-400 uppercase tracking-wider mb-2";
 
+  if (loading)
+    return (
+      <div className="flex items-center justify-center p-20 text-slate-400 font-medium animate-pulse">
+        Loading User...
+      </div>
+    );
+
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 px-6 py-8 md:px-10 md:py-10">
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Add User</h1>
-          <p className="text-sm text-gray-500 mt-1">Create a new system user account</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Edit User</h1>
+          <p className="text-sm text-gray-500 mt-1">Modify user account details</p>
         </div>
         <button
           type="button"
@@ -114,7 +147,7 @@ const AddUser = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
             <div className="h-5 w-1 bg-indigo-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">User Details</h2>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">General Information</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -127,7 +160,7 @@ const AddUser = () => {
                 value={formData.name}
                 onChange={handleChange}
                 className={inputStyle("name")}
-                placeholder="e.g. Rahul Sharma"
+                placeholder="Enter full name"
               />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
@@ -141,7 +174,7 @@ const AddUser = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 className={inputStyle("phone")}
-                placeholder="+91 98765 43210"
+                placeholder="9876543210"
               />
               {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
@@ -181,17 +214,17 @@ const AddUser = () => {
           </div>
         </div>
 
-        {/* LOGIN CREDENTIALS */}
+        {/* RESET PASSWORD */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-50 dark:border-gray-800">
             <div className="h-5 w-1 bg-emerald-500 rounded-full"></div>
-            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Login Credentials</h2>
+            <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">Reset Password</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className={labelStyle}>
-                <Lock size={14} className="text-emerald-500" /> Password *
+                <Lock size={14} className="text-emerald-500" /> New Password *
               </label>
               <div className="relative">
                 <input
@@ -248,14 +281,14 @@ const AddUser = () => {
             onClick={() => navigate("/user-management/users")}
             className="cursor-pointer flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
-            <X size={16} /> Discard
+            <X size={16} /> Discard Changes
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={saving}
             className="cursor-pointer flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl bg-[#5243EF] hover:bg-[#4335d6] text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : <><PlusCircle size={18} /> Confirm & Save User</>}
+            {saving ? "Updating..." : <><Save size={18} /> Update User Details</>}
           </button>
         </div>
       </form>
@@ -263,4 +296,4 @@ const AddUser = () => {
   );
 };
 
-export default AddUser;
+export default EditUser;
