@@ -1,9 +1,14 @@
+import { ROLES } from "../config/constants";
 import { User } from "../models/User.model";
 import { UserRole } from "../types/common.types";
 
+const STAFF_ROLES = [ROLES.ADMIN, ROLES.SOURCING, ROLES.ACCOUNTANT];
+
 export class UserService {
   async getAllUsers() {
-    return await User.find().select("-password").sort({ createdAt: -1 });
+    return await User.find({ role: { $in: STAFF_ROLES } })
+      .select("-password")
+      .sort({ createdAt: -1 });
   }
 
   async getUserDetails(userId: string) {

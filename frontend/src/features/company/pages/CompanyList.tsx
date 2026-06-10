@@ -53,10 +53,6 @@ const CompanyList: React.FC = () => {
       bankDetails: false,
     });
 
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "inactive"
-  >("all");
-
   const generatePagination = useCallback(
     (currentPage: number, totalPages: number) => {
       if (totalPages <= 7) {
@@ -97,8 +93,7 @@ const CompanyList: React.FC = () => {
       page: number,
       limit: number,
       sortBy: string,
-      sortOrder: "asc" | "desc",
-      status: "all" | "active" | "inactive"
+      sortOrder: "asc" | "desc"
     ) => {
       setLoading(true);
 
@@ -108,8 +103,7 @@ const CompanyList: React.FC = () => {
           page,
           limit,
           sortBy,
-          sortOrder,
-          status
+          sortOrder
         );
 
         setCompanies(res.data || []);
@@ -325,8 +319,7 @@ const CompanyList: React.FC = () => {
       pagination.pageIndex + 1,
       pagination.pageSize,
       sortParam,
-      sortOrder,
-      statusFilter
+      sortOrder
     );
   }, [
     fetchCompanies,
@@ -334,7 +327,6 @@ const CompanyList: React.FC = () => {
     pagination.pageIndex,
     pagination.pageSize,
     sorting,
-    statusFilter,
   ]);
 
   useEffect(() => {
@@ -416,8 +408,6 @@ const CompanyList: React.FC = () => {
             setColumnVisibility={setColumnVisibility}
             generatePagination={generatePagination}
             piLoading={loading}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
           />
         </div>
       </div>

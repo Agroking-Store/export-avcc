@@ -3,7 +3,6 @@ import { type NavigateFunction } from "react-router-dom";
 import { flexRender, Table as ReactTableType } from "@tanstack/react-table";
 import {
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
@@ -32,14 +31,6 @@ import {
 
 import { Input } from "@/components/ui/input";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 interface CompanyTableProps {
   table: ReactTableType<Company>;
   piLoading: boolean;
@@ -57,8 +48,6 @@ interface CompanyTableProps {
     currentPage: number,
     totalPages: number
   ) => (number | string)[];
-  statusFilter: "all" | "active" | "inactive";
-  setStatusFilter: (status: "all" | "active" | "inactive") => void;
 }
 
 const CompanyTable: React.FC<CompanyTableProps> = ({
@@ -71,8 +60,6 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   setPagination,
   setColumnVisibility,
   generatePagination,
-  statusFilter,
-  setStatusFilter,
   piLoading,
 }) => {
   const MIN_COLUMNS = 4;
@@ -139,7 +126,6 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
     setSearchInput("");
     setGlobalFilter("");
     setSorting([]);
-    setStatusFilter("all");
 
     setPagination({
       pageIndex: 0,
@@ -153,7 +139,6 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
     setSearchInput,
     setGlobalFilter,
     setSorting,
-    setStatusFilter,
     setPagination,
     table,
   ]);
@@ -165,23 +150,6 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
 
   {/* LEFT SIDE */}
   <div className="flex items-center gap-4 flex-wrap">
-
-    {/* FILTER */}
-    <Select
-      value={statusFilter}
-      onValueChange={(value: any) => setStatusFilter(value)}
-    >
-      <SelectTrigger className="h-[44px] px-4 min-w-[210px] rounded-xl border border-blue-200 bg-blue-50/50 text-blue-600 text-sm font-medium shadow-none">
-        <Filter size={16} className="mr-2 text-blue-500" />
-        <SelectValue />
-      </SelectTrigger>
-
-      <SelectContent>
-        <SelectItem value="all">Filter: All Companies</SelectItem>
-        <SelectItem value="active">Filter: Active</SelectItem>
-        <SelectItem value="inactive">Filter: Inactive</SelectItem>
-      </SelectContent>
-    </Select>
 
     {/* CLEAR */}
     <button

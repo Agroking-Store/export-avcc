@@ -112,7 +112,8 @@ const CreateCompany: React.FC = () => {
 
     setErrors(validation.errors);
     if (!validation.isValid) {
-      toast.error("Please correct the form errors.");
+      const firstError = Object.values(validation.errors)[0];
+      if (firstError) toast.error(firstError);
       return;
     }
 
@@ -126,7 +127,6 @@ const CreateCompany: React.FC = () => {
           address: form.address,
           bankDetails: form.bankDetails,
           gstNumber: form.gstNumber,
-          isActive: form.isActive,
         };
       
         await companyApi.updateCompany(id, payload);
@@ -147,7 +147,22 @@ const CreateCompany: React.FC = () => {
       navigate("/companies/list");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to save company.");
+      const message = error.response?.data?.message || "";
+      const fieldErrors: Record<string, string> = {};
+
+      if (/company name|name is required|name cannot be empty/i.test(message)) {
+        fieldErrors.name = "Please add company name.";
+      }
+      if (/contact phone|phone is required|phone number/i.test(message)) {
+        fieldErrors.phone = "Please add contact no.";
+      }
+
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        toast.error(Object.values(fieldErrors)[0]);
+      } else {
+        toast.error(message || "Failed to save company.");
+      }
     } finally {
       setLoading(false);
     }
@@ -204,12 +219,11 @@ const CreateCompany: React.FC = () => {
 
             <div>
               <label className={labelStyle}><Mail size={14} className="text-blue-500"/> Email Address</label>
-              <input name="email" type="email" value={form.email} onChange={handleChange} className={inputStyle} placeholder="contact@company.com" />
-              {errors.email && <p className={errorStyle}><AlertCircle size={10}/> {errors.email}</p>}
+              <input name="email" type="text" value={form.email} onChange={handleChange} className={inputStyle} placeholder="contact@company.com" />
             </div>
 
             <div>
-              <label className={labelStyle}><Phone size={14} className="text-emerald-500"/> Contact Phone</label>
+              <label className={labelStyle}><Phone size={14} className="text-emerald-500"/> Contact Phone *</label>
               <input name="phone" value={form.phone} onChange={handleChange} className={inputStyle} placeholder="+91 ..." />
               {errors.phone && <p className={errorStyle}><AlertCircle size={10}/> {errors.phone}</p>}
             </div>
@@ -217,19 +231,6 @@ const CreateCompany: React.FC = () => {
             <div>
               <label className={labelStyle}><CreditCard size={14} className="text-amber-500"/> GST Number </label>
               <input name="gstNumber" value={form.gstNumber} onChange={handleChange} className={inputStyle} placeholder="GSTIN..." />
-            </div>
-
-            <div>
-              <label className={labelStyle}><Activity size={14} className="text-rose-500"/> Account Status *</label>
-              <select 
-                name="isActive" 
-                value={form.isActive ? "true" : "false"} 
-                onChange={handleChange} 
-                className={inputStyle}
-              >
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
             </div>
           </div>
         </div>
@@ -281,7 +282,6 @@ const CreateCompany: React.FC = () => {
                 className={inputStyle}
                 placeholder="e.g. Maharashtra"
               />
-              {errors.address_state && <p className={errorStyle}><AlertCircle size={10}/> {errors.address_state}</p>}
             </div>
             <div>
               <label className={labelStyle}><MapPin size={14} className="text-blue-500" /> Pincode</label>
@@ -294,7 +294,7 @@ const CreateCompany: React.FC = () => {
               />
             </div>
             <div>
-              <label className={labelStyle}><Globe size={14} className="text-indigo-500"/> Country *</label>
+              <label className={labelStyle}><Globe size={14} className="text-indigo-500"/> Country</label>
               <input
                 name="address.country"
                 value={address.country}
@@ -302,7 +302,6 @@ const CreateCompany: React.FC = () => {
                 className={inputStyle}
                 placeholder="e.g. India"
               />
-              {errors.address_country && <p className={errorStyle}><AlertCircle size={10}/> {errors.address_country}</p>}
             </div>
           </div>
         </div>
