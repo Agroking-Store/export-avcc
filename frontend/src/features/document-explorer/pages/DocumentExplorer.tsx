@@ -576,18 +576,7 @@ const DocumentExplorer = () => {
               icon: <HardDrive size={22} className="text-blue-500" />,
               gradient: "from-blue-500/10 to-indigo-500/10",
             },
-            {
-              label: "Trade & Invoices",
-              val: stats.tradeCount,
-              icon: <FileSpreadsheet size={22} className="text-emerald-500" />,
-              gradient: "from-emerald-500/10 to-teal-500/10",
-            },
-            {
-              label: "Registration / Custom",
-              val: stats.registrationCount,
-              icon: <CheckSquare size={22} className="text-purple-500" />,
-              gradient: "from-purple-500/10 to-pink-500/10",
-            },
+
             {
               label: "Client Corrections",
               val: stats.correctionCount,

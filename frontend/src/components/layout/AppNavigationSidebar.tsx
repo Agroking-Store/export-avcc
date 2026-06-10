@@ -80,13 +80,7 @@ const AppNavigationSidebar: React.FC = () => {
       path: "/shipment-planning/dashboard",
       activePaths: ["/shipment-planning"],
     },
-          {
-          name: "Document Explorer",
-          icon: <FileCheck size={20} />, 
-          path: "/document-explorer",
-          activePaths: ["/document-explorer"],
-        },
-        ];
+  ];
 
   let menuItems =
     role === "client"
@@ -109,33 +103,28 @@ const AppNavigationSidebar: React.FC = () => {
             path: "/shipment-planning/dashboard",
             activePaths: ["/shipment-planning"],
           },
-          {
-            name: "Document Explorer",
-            icon: <FileCheck size={20} />,
-            path: "/document-explorer",
-            activePaths: ["/document-explorer"],
-          },
+          // Document Explorer removed from client menu
         ]
       : role === "accountant"
-        ? [
-            {
-              name: "Dashboard",
-              icon: <LayoutDashboard size={20} />,
-              path: "/dashboard",
-              activePaths: ["/dashboard"],
-            },
-            {
-              name: "Proforma Invoices",
-              icon: <FileText size={20} />,
-              path: "/proforma-invoice",
-              activePaths: [
-                "/proforma-invoice",
-                "/invoices/generate",
-                "/packing-list/generate",
-              ],
-            },
-          ]
-        : [...defaultMenuItems];
+      ? [
+          {
+            name: "Dashboard",
+            icon: <LayoutDashboard size={20} />,
+            path: "/dashboard",
+            activePaths: ["/dashboard"],
+          },
+          {
+            name: "Proforma Invoices",
+            icon: <FileText size={20} />,
+            path: "/proforma-invoice",
+            activePaths: [
+              "/proforma-invoice",
+              "/invoices/generate",
+              "/packing-list/generate",
+            ],
+          },
+        ]
+      : [...defaultMenuItems];
 
   if (role === "admin") {
     menuItems.push({
@@ -144,41 +133,52 @@ const AppNavigationSidebar: React.FC = () => {
       path: "/user-management",
       activePaths: ["/user-management"],
     });
+    
+    // Add Document Explorer only for admin
+    menuItems.push({
+      name: "Document Explorer",
+      icon: <FileCheck size={20} />,
+      path: "/document-explorer",
+      activePaths: ["/document-explorer"],
+    });
   }
 
-  const visibleMenuItems = isClient
-    ? menuItems
-    : isSourcingTeam
-      ? menuItems.filter(
-        (item) => item.name === "Vehicles" || item.name === "Dealers" || item.name === "Document Explorer",
-      )
-      : menuItems;
+  // Filter menu items based on user role
+  const visibleMenuItems = (() => {
+    // For client role - Document Explorer is already removed from their menu
+    if (isClient) {
+      return menuItems;
+    }
+    
+    // For sourcing team - show only Vehicles and Dealers (no Document Explorer)
+    if (isSourcingTeam) {
+      return menuItems.filter(
+        (item) =>
+          item.name === "Vehicles" ||
+          item.name === "Dealers",
+      );
+    }
+    
+    // For other roles (admin, accountant, etc.)
+    return menuItems;
+  })();
 
   return (
     <>
       {/* Header section with logo and title, now fully styled to match previous design */}
       <SidebarHeader className="h-16 border-b-2 border-gray-200 dark:border-gray-950 shadow-md flex items-center px-6 group-data-[collapsible=icon]:px-2 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-3">
-          {" "}
-          {/* Use gap-3 as in original for consistency */}
-          <Car className="w-8 h-8 text-blue-600 mr-0 shrink-0" />{" "}
-          {/* Keep w-8 h-8, remove mr-2 if gap-3 handles it */}
+          <Car className="w-8 h-8 text-blue-600 mr-0 shrink-0" />
           <span className="font-bold text-lg truncate group-data-[collapsible=icon]:hidden">
             Vehicle Export
           </span>
         </div>
       </SidebarHeader>
+      
       {/* Main content area for navigation links */}
       <SidebarContent className="flex-1 py-4 bg-white dark:bg-gray-900">
-        {" "}
-        {/* Apply px-6 here for consistent left padding */}{" "}
-        {/* flex-1 and p-4 match original nav */}
         <SidebarGroup>
-          {" "}
-          {/* SidebarGroup has a default p-2, so p-4 on SidebarContent will handle overall padding */}
           <SidebarMenu className="flex flex-col gap-2">
-            {" "}
-            {/* gap-2 for vertical spacing between menu items */}
             {visibleMenuItems.map((item) => {
               const isActive = isPathActive(item.activePaths || [item.path]);
 
@@ -186,27 +186,24 @@ const AppNavigationSidebar: React.FC = () => {
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
                     asChild
-                    size="lg" // Make the tile bigger (h-12)
+                    size="lg"
                     isActive={isActive}
                     tooltip={item.name}
                     className={cn(
-                      // Increase padding, add smooth color transitions, and rounded border
                       "p-6 text-lg transition-colors rounded-lg",
-                      isActive // Apply darker active state styles with darker blue border
+                      isActive
                         ? "bg-blue-700 text-white dark:bg-blue-800 dark:text-blue-100 dark:border-blue-700 rounded-4xl"
-                        : "text-gray-500 hover:bg-blue-200 dark:hover:bg-blue-800 dark:border-gray-700 rounded-4xl", // Default/hover state styles
+                        : "text-gray-500 hover:bg-blue-200 dark:hover:bg-blue-800 dark:border-gray-700 rounded-4xl",
                     )}
                   >
                     <Link
                       to={item.path}
-                      // Apply responsive icon sizing and text size
                       className="flex items-center gap-3 text-base [&>svg]:size-6 group-data-[collapsible=icon]:[&>svg]:size-5"
                     >
-                      {item.icon}{" "}
+                      {item.icon}
                       <span className="group-data-[collapsible=icon]:hidden">
                         {item.name}
-                      </span>{" "}
-                      {/* Hide text on collapse */}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
