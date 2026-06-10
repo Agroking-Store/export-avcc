@@ -146,7 +146,6 @@ const EditShipmentDetails = () => {
     try {
       setSaving(true);
       await shipmentApi.update(shipmentId as string, form);
-      toast.success("Shipping details updated successfully");
       navigate("/shipment-planning/list", {
         state: { success: "Shipping details updated successfully" },
       });

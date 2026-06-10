@@ -235,7 +235,74 @@ export const addVehicleToContainer = async ({
 
   container.vehicleBookingIds.push(new mongoose.Types.ObjectId(vehicleBookingId));
   await shipment.save();
- 
+
+  return getShipmentById(shipmentId);
+};
+
+export const removeContainerFromShipment = async (
+  shipmentId: string,
+  containerId: string,
+) => {
+  if (
+    !mongoose.isValidObjectId(shipmentId) ||
+    !mongoose.isValidObjectId(containerId)
+  ) {
+    throw new Error("Invalid shipment or container");
+  }
+
+  const shipment = await Shipment.findById(shipmentId);
+  if (!shipment) {
+    throw new Error("Shipment not found");
+  }
+
+  const containerIndex = shipment.containers.findIndex(
+    (c: any) => String(c._id) === containerId,
+  );
+  if (containerIndex === -1) {
+    throw new Error("Container not found");
+  }
+
+  shipment.containers.splice(containerIndex, 1);
+  await shipment.save();
+  return getShipmentById(shipmentId);
+};
+
+export const removeVehicleFromContainer = async ({
+  shipmentId,
+  containerId,
+  vehicleBookingId,
+}: {
+  shipmentId: string;
+  containerId: string;
+  vehicleBookingId: string;
+}) => {
+  if (
+    !mongoose.isValidObjectId(shipmentId) ||
+    !mongoose.isValidObjectId(containerId) ||
+    !mongoose.isValidObjectId(vehicleBookingId)
+  ) {
+    throw new Error("Invalid shipment, container or vehicle");
+  }
+
+  const shipment = await Shipment.findById(shipmentId);
+  if (!shipment) {
+    throw new Error("Shipment not found");
+  }
+
+  const container = (shipment.containers as any).id(containerId);
+  if (!container) {
+    throw new Error("Container not found");
+  }
+
+  const vehicleIndex = container.vehicleBookingIds.findIndex(
+    (id: any) => String(id) === vehicleBookingId,
+  );
+  if (vehicleIndex === -1) {
+    throw new Error("Vehicle not found in container");
+  }
+
+  container.vehicleBookingIds.splice(vehicleIndex, 1);
+  await shipment.save();
   return getShipmentById(shipmentId);
 };
 

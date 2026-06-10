@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Edit, Eye, Filter, Plus, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Eye, FilePenLine, Filter, Plus, Search } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { formatDate, ShippingDetail } from "./shipmentData";
@@ -15,6 +15,7 @@ const ShipmentPlanningList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const lastToastMessage = useRef<string | null>(null);
 
   const limit = 5;
 
@@ -41,8 +42,12 @@ const ShipmentPlanningList = () => {
 
   useEffect(() => {
     if (location.state?.success) {
-      toast.success(location.state.success);
-      navigate(location.pathname, { replace: true, state: {} });
+      const message = location.state.success as string;
+      if (lastToastMessage.current !== message) {
+        lastToastMessage.current = message;
+        toast.success(message);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
     }
   }, [location.state, location.pathname, navigate]);
 
@@ -161,11 +166,11 @@ const ShipmentPlanningList = () => {
 
                         <button
                           onClick={() => navigate(`/shipment-planning/edit/${detail._id}`)}
-                          className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="cursor-pointer p-2.5 text-blue-600 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Edit Details"
                           disabled={isClient}
                         >
-                          <Edit size={18} />
+                          <FilePenLine size={18} />
                         </button>
                       </div>
                     </td>

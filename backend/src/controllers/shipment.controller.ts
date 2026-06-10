@@ -7,6 +7,8 @@ import {
   getShipmentById,
   listShipments,
   getShippedVehicleDetailsForShipment,
+  removeContainerFromShipment,
+  removeVehicleFromContainer,
   updateShipment,
 } from "../services/shipment.service";
 import { getCustomerNamesHandler } from "./shipmentCustomer.controller";
@@ -101,6 +103,34 @@ export const updateShipmentHandler = async (req: Request, res: Response) => {
       payload: req.body,
     });
     res.json(updated);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const removeContainerHandler = async (req: Request, res: Response) => {
+  try {
+    const shipment = await removeContainerFromShipment(
+      req.params.id as string,
+      req.params.containerId as string,
+    );
+    res.json(shipment);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const removeVehicleFromContainerHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const shipment = await removeVehicleFromContainer({
+      shipmentId: req.params.id as string,
+      containerId: req.params.containerId as string,
+      vehicleBookingId: req.params.vehicleBookingId as string,
+    });
+    res.json(shipment);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
