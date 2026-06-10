@@ -140,6 +140,47 @@ const hasGeneratedPI = (b: VehicleBookingItem): boolean =>
 const hasChassis = (b: VehicleBookingItem): boolean =>
   !!String(b.chassisNumber || "").trim();
 
+const isChassisSuffixSearch = (value: string) =>
+  /^[a-zA-Z0-9]{4}$/.test(value.trim());
+
+const bookingMatchesSearch = (
+  booking: VehicleBookingItem,
+  normalizedSearch: string,
+): boolean => {
+  if (!normalizedSearch) return true;
+
+  if (isChassisSuffixSearch(normalizedSearch)) {
+    const chassis = String(booking.chassisNumber || "").trim().toLowerCase();
+    return chassis.endsWith(normalizedSearch);
+  }
+
+  const orderData = (booking as any).orderId;
+  const vehicleSnapshot =
+    typeof orderData === "object" && orderData !== null
+      ? orderData.vehicleSnapshot
+      : null;
+
+  const searchValue = [
+    orderData?.orderNumber,
+    vehicleSnapshot?.brandName,
+    vehicleSnapshot?.modelName,
+    vehicleSnapshot?.variant,
+    vehicleSnapshot?.color,
+    booking.engineNumber,
+    booking.chassisNumber,
+    booking.assignedDealerSnapshot?.name,
+    booking.assignedClientSnapshot?.name,
+    booking.assignedClientSnapshot?.companyName,
+    getClientDisplayStatus(booking)?.label,
+    booking.status,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return searchValue.includes(normalizedSearch);
+};
+
 const hasEngine = (b: VehicleBookingItem): boolean =>
   !!String(b.engineNumber || "").trim();
 
@@ -546,34 +587,7 @@ const VehicleOrdersList = () => {
           }
           if (!statusMatches) return false;
 
-          // Search filter
-          if (!normalizedSearch) return true;
-
-          const orderData = (booking as any).orderId;
-          const vehicleSnapshot =
-            typeof orderData === "object" && orderData !== null
-              ? orderData.vehicleSnapshot
-              : null;
-
-          const searchValue = [
-            orderData?.orderNumber,
-            vehicleSnapshot?.brandName,
-            vehicleSnapshot?.modelName,
-            vehicleSnapshot?.variant,
-            vehicleSnapshot?.color,
-            booking.engineNumber,
-            booking.chassisNumber,
-            booking.assignedDealerSnapshot?.name,
-            booking.assignedClientSnapshot?.name,
-            booking.assignedClientSnapshot?.companyName,
-            getClientDisplayStatus(booking)?.label,
-            booking.status,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-          return searchValue.includes(normalizedSearch);
+          if (!bookingMatchesSearch(booking, normalizedSearch)) return false;
         });
 
         const nextTotal = filteredBookings.length;

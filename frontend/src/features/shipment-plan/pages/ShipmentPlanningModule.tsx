@@ -4,6 +4,7 @@ import ShipmentPlanningDashboard from "./ShipmentPlanningDashboard";
 import ShipmentPlanningList from "./ShipmentPlanningList";
 import ShipmentDetails from "./ShipmentDetails";
 import AddShipmentDetails from "./AddShipmentDetails";
+import EditShipmentDetails from "./EditShipmentDetails";
 import { Truck } from "lucide-react";
 import ShipmentPlanningNavbar from "./ShipmentPlanningNavbar";
 import { useAuth } from "../../../hooks/useAuth";
@@ -53,6 +54,12 @@ const ShipmentPlanningModule: React.FC = () => {
             />
 
             <Route path="view/:shipmentId" element={<ShipmentDetails />} />
+
+            <Route
+              path="edit/:shipmentId"
+              element={isClient ? <Navigate to="../list" replace /> : <EditShipmentDetails />}
+            />
+
 
             <Route
               path="details/:shipmentId"

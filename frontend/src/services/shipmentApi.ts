@@ -61,4 +61,31 @@ export const shipmentApi = {
     );
     return response.data;
   },
+
+  deleteContainer: async (
+    shipmentId: string,
+    containerId: string,
+  ): Promise<ShippingDetail> => {
+    const response = await api.delete(
+      `/shipments/${shipmentId}/containers/${containerId}`,
+    );
+    return response.data;
+  },
+
+  removeVehicleFromContainer: async (
+    shipmentId: string,
+    containerId: string,
+    vehicleBookingId: string,
+  ): Promise<ShippingDetail> => {
+    const response = await api.delete(
+      `/shipments/${shipmentId}/containers/${containerId}/vehicles/${vehicleBookingId}`,
+    );
+    return response.data;
+  },
+
+  update: async (shipmentId: string, payload: ShippingDetailForm): Promise<ShippingDetail> => {
+    const response = await api.put(`/shipments/${shipmentId}`, payload);
+    return response.data;
+  },
 };
+

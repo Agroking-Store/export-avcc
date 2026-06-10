@@ -11,6 +11,7 @@ import {
   Package,
   Plus,
   Ship,
+  Trash2,
   User,
   X,
   ChevronDown,
@@ -162,6 +163,45 @@ const ShipmentDetails = () => {
     }
   };
 
+  const handleDeleteContainer = async (containerId: string) => {
+    if (!shipmentId) return;
+    if (!window.confirm("Are you sure you want to delete this container?")) return;
+    try {
+      setSaving(true);
+      const updatedShipment = await shipmentApi.deleteContainer(shipmentId, containerId);
+      const vehicles = await shipmentApi.getAvailableVehicles();
+      setShipment(updatedShipment);
+      setAvailableVehicles(vehicles || []);
+      await fetchShippedDetails();
+      toast.success("Container deleted successfully");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete container");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveVehicle = async (containerId: string, vehicleBookingId: string) => {
+    if (!shipmentId) return;
+    try {
+      setSaving(true);
+      const updatedShipment = await shipmentApi.removeVehicleFromContainer(
+        shipmentId,
+        containerId,
+        vehicleBookingId,
+      );
+      const vehicles = await shipmentApi.getAvailableVehicles();
+      setShipment(updatedShipment);
+      setAvailableVehicles(vehicles || []);
+      await fetchShippedDetails();
+      toast.success("Vehicle removed from container");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to remove vehicle");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAddVehicle = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!shipmentId || !vehicleModalContainerId || !selectedVehicleId) {
@@ -180,6 +220,7 @@ const ShipmentDetails = () => {
       setAvailableVehicles(vehicles || []);
       setVehicleModalContainerId(null);
       setSelectedVehicleId("");
+      await fetchShippedDetails();
       toast.success("Vehicle added to container");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to add vehicle");
@@ -316,13 +357,23 @@ const ShipmentDetails = () => {
                       </h3>
                     </div>
                     {!isClient && (
-                      <button
-                        onClick={() => openVehicleModal(container._id)}
-                        className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
-                      >
-                        <Plus size={14} strokeWidth={3} />
-                        Add Vehicle
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openVehicleModal(container._id)}
+                          className="cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#5243EF] hover:text-[#4335d6]"
+                        >
+                          <Plus size={14} strokeWidth={3} />
+                          Add Vehicle
+                        </button>
+                        <button
+                          onClick={() => handleDeleteContainer(container._id)}
+                          disabled={saving}
+                          className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete container"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -344,9 +395,16 @@ const ShipmentDetails = () => {
                                 {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
                               </p>
                             </div>
-                            <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
-                              Unit {vehicle.vehicleIndex + 1}
-                            </span>
+                            {!isClient && (
+                              <button
+                                onClick={() => handleRemoveVehicle(container._id, vehicle._id)}
+                                disabled={saving}
+                                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-xl border border-rose-200 text-rose-500 transition-all hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Remove vehicle"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
