@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, Filter, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Eye, Filter, Plus, Search } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { formatDate, ShippingDetail } from "./shipmentData";
@@ -150,13 +150,24 @@ const ShipmentPlanningList = () => {
                       {detail.containers?.reduce((sum, c) => sum + (c.vehicleBookingIds?.length || 0), 0) ?? 0}
                     </td>
                     <td className="px-8 py-5 text-center">
-                      <button
-                        onClick={() => navigate(`/shipment-planning/view/${detail._id}`)}
-                        className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
-                        title="View Details"
-                      >
-                        <Eye size={18} />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => navigate(`/shipment-planning/view/${detail._id}`)}
+                          className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+
+                        <button
+                          onClick={() => navigate(`/shipment-planning/edit/${detail._id}`)}
+                          className="cursor-pointer p-2.5 text-slate-500 border border-slate-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 hover:scale-110 hover:shadow-sm transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                          title="Edit Details"
+                          disabled={isClient}
+                        >
+                          <Edit size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
