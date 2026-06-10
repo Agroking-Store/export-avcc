@@ -61,4 +61,10 @@ export const shipmentApi = {
     );
     return response.data;
   },
+
+  update: async (shipmentId: string, payload: ShippingDetailForm): Promise<ShippingDetail> => {
+    const response = await api.put(`/shipments/${shipmentId}`, payload);
+    return response.data;
+  },
 };
+

@@ -7,8 +7,10 @@ import {
   getShipmentById,
   listShipments,
   getShippedVehicleDetailsForShipment,
+  updateShipment,
 } from "../services/shipment.service";
 import { getCustomerNamesHandler } from "./shipmentCustomer.controller";
+
 
 
 export const listShipmentsHandler = async (req: Request, res: Response) => {
@@ -91,3 +93,16 @@ export const getShippedVehicleDetailsHandler = async (
     res.status(400).json({ message: error.message });
   }
 };
+
+export const updateShipmentHandler = async (req: Request, res: Response) => {
+  try {
+    const updated = await updateShipment({
+      shipmentId: req.params.id as string,
+      payload: req.body,
+    });
+    res.json(updated);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+

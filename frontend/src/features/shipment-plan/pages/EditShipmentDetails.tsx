@@ -143,9 +143,20 @@ const EditShipmentDetails = () => {
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Backend doesn't currently support update/edit for shipments.
-    toast.error("Shipment edit is not available right now (API not implemented). ");
+    try {
+      setSaving(true);
+      await shipmentApi.update(shipmentId as string, form);
+      toast.success("Shipping details updated successfully");
+      navigate("/shipment-planning/list", {
+        state: { success: "Shipping details updated successfully" },
+      });
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to update shipping details");
+    } finally {
+      setSaving(false);
+    }
   };
+
 
   if (isClient) {
     return null;
@@ -196,9 +207,9 @@ const EditShipmentDetails = () => {
             </h2>
           </div>
 
-          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-800 text-sm font-semibold">
+          {/* <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-amber-800 text-sm font-semibold">
             Edit Save ke liye backend update API abhi available nahi hai. UI prefill dikhane ke liye page create kiya gaya hai.
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {shippingFields.map((field) => {

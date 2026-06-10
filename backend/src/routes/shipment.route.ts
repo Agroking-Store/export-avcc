@@ -10,6 +10,7 @@ import {
   getShipmentHandler,
   listShipmentsHandler,
   getShippedVehicleDetailsHandler,
+  updateShipmentHandler,
 } from "../controllers/shipment.controller";
 import { getCustomerNamesHandler } from "../controllers/shipmentCustomer.controller";
 
@@ -36,4 +37,12 @@ router.post(
   addVehicleToContainerHandler,
 );
 
+router.put(
+  "/:id",
+  authenticate,
+  authorize(ROLES.ADMIN),
+  updateShipmentHandler,
+);
+
 export default router;
+

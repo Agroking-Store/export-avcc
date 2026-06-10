@@ -78,7 +78,6 @@ export const createShipment = async (payload: any) => {
   const customerName = cleanString(payload.customerName);
   const destinationCountry = cleanString(payload.destinationCountry);
 
-
   if (!customerName) {
     throw new Error("Customer name is required");
   }
@@ -98,6 +97,47 @@ export const createShipment = async (payload: any) => {
     arrivalDate: cleanDate(payload.arrivalDate),
   });
 };
+
+export const updateShipment = async ({
+  shipmentId,
+  payload,
+}: {
+  shipmentId: string;
+  payload: any;
+}) => {
+  if (!mongoose.isValidObjectId(shipmentId)) {
+    throw new Error("Shipment not found");
+  }
+
+  const customerName = cleanString(payload.customerName);
+  const destinationCountry = cleanString(payload.destinationCountry);
+
+  if (!customerName) {
+    throw new Error("Customer name is required");
+  }
+
+  if (!destinationCountry) {
+    throw new Error("Destination country is required");
+  }
+
+  const shipment = await Shipment.findById(shipmentId);
+  if (!shipment) {
+    throw new Error("Shipment not found");
+  }
+
+  shipment.customerName = customerName;
+  shipment.destinationCountry = destinationCountry;
+  shipment.portOfLoading = cleanString(payload.portOfLoading);
+  shipment.portOfDischarge = cleanString(payload.portOfDischarge);
+  shipment.shippingLine = cleanString(payload.shippingLine);
+  shipment.vesselName = cleanString(payload.vesselName);
+  shipment.sailingDate = cleanDate(payload.sailingDate);
+  shipment.arrivalDate = cleanDate(payload.arrivalDate);
+
+  await shipment.save();
+  return getShipmentById(shipmentId);
+};
+
 
 export const getShipmentById = async (shipmentId: string) => {
   if (!mongoose.isValidObjectId(shipmentId)) {
