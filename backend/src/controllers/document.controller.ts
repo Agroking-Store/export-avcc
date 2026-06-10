@@ -9,6 +9,16 @@ import Invoice from "../models/Invoice.model";
 import { Client } from "../models/Client.model";
 import { ROLES } from "../config/constants";
 
+const BOOKING_DOC_TYPE_ALIASES: Record<string, string> = {
+  hbl_document: "hblDocument",
+};
+
+const bookingDocTypeMatches = (fieldKey: string, requestedType?: string) => {
+  if (!requestedType) return true;
+  if (requestedType === fieldKey) return true;
+  return BOOKING_DOC_TYPE_ALIASES[requestedType] === fieldKey;
+};
+
 const getFileSize = (relPath: string): number | undefined => {
   try {
     if (!relPath) return undefined;
@@ -68,7 +78,7 @@ export const getDocuments = async (req: Request, res: Response) => {
     const queryInvoice = canAccessTrade && (!entityType || entityType === "invoice") && (!docType || ["invoice", "invoice_usd", "invoice_inr", "invoice_commercial", "packing_list"].includes(docType));
 
     const queryBooking = canAccessSourcing && (!entityType || entityType === "vehicle_booking") && 
-      (!docType || ["form20", "form21", "form22", "tempRegCert", "bvCertificate", "dealerInvoice", "hblDocument", "shippingBill", "quotation", "clientCorrection"].includes(docType));
+      (!docType || ["form20", "form21", "form22", "tempRegCert", "bvCertificate", "dealerInvoice", "hblDocument", "hbl_document", "shippingBill", "quotation", "clientCorrection"].includes(docType));
 
     const promises: Promise<any[]>[] = [];
 
@@ -284,14 +294,14 @@ export const getDocuments = async (req: Request, res: Response) => {
           .then((bookings: any[]) => {
             const list: any[] = [];
             const docFields = [
-              { key: "form20", name: "Form 20" },
-              { key: "form21", name: "Form 21" },
-              { key: "form22", name: "Form 22" },
-              { key: "tempRegCert", name: "Temporary Registration Certificate" },
-              { key: "bvCertificate", name: "Bureau Veritas Certificate" },
-              { key: "dealerInvoice", name: "Dealer Invoice" },
-              { key: "hblDocument", name: "House Bill of Lading" },
-              { key: "shippingBill", name: "Shipping Bill" }
+              { key: "form20", name: "Form 20", documentType: "form20" },
+              { key: "form21", name: "Form 21", documentType: "form21" },
+              { key: "form22", name: "Form 22", documentType: "form22" },
+              { key: "tempRegCert", name: "Temporary Registration Certificate", documentType: "tempRegCert" },
+              { key: "bvCertificate", name: "Bureau Veritas Certificate", documentType: "bvCertificate" },
+              { key: "dealerInvoice", name: "Dealer Invoice", documentType: "dealerInvoice" },
+              { key: "hblDocument", name: "House Bill of Lading", documentType: "hbl_document" },
+              { key: "shippingBill", name: "Shipping Bill", documentType: "shippingBill" },
             ];
 
             for (const b of bookings) {
@@ -307,12 +317,12 @@ export const getDocuments = async (req: Request, res: Response) => {
               if (b.documents) {
                 for (const field of docFields) {
                   const filePath = b.documents[field.key];
-                  if (filePath && filePath.trim() !== "" && (!docType || docType === field.key)) {
+                  if (filePath && filePath.trim() !== "" && bookingDocTypeMatches(field.key, docType)) {
                     const downloadUrl = `/api/v1/vehicle-bookings/${b._id}/files/${field.key}`;
                     list.push({
                       id: `${b._id}_booking_${field.key}`,
                       fileName: filePath.split("/").pop()?.split("\\").pop() || `${field.name}.pdf`,
-                      documentType: field.key,
+                      documentType: field.documentType,
                       documentTypeName: field.name,
                       relatedEntity,
                       relatedEntityId: b._id.toString(),
