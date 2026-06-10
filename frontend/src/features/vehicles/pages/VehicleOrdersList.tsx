@@ -150,7 +150,9 @@ const bookingMatchesSearch = (
   if (!normalizedSearch) return true;
 
   if (isChassisSuffixSearch(normalizedSearch)) {
-    const chassis = String(booking.chassisNumber || "").trim().toLowerCase();
+    const chassis = String(booking.chassisNumber || "")
+      .trim()
+      .toLowerCase();
     return chassis.endsWith(normalizedSearch);
   }
 
@@ -242,11 +244,13 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
     return cards;
   }
 
-  if (["payment_done", "chassis_received"].includes(b.status) && !hasGeneratedPI(b)) {
+  if (
+    ["payment_done", "chassis_received"].includes(b.status) &&
+    !hasGeneratedPI(b)
+  ) {
     cards.push("AWAITING VIN");
     return cards;
   }
-
 
   // pending, quotation_details_pending, quotation_uploaded, rejected
   // → only in ORDERS PLACED
@@ -588,6 +592,8 @@ const VehicleOrdersList = () => {
           if (!statusMatches) return false;
 
           if (!bookingMatchesSearch(booking, normalizedSearch)) return false;
+
+          return true;
         });
 
         const nextTotal = filteredBookings.length;
