@@ -215,10 +215,14 @@ const buildInitialForm = (
       manual.commercialConsigneeName ||
       manual.termsOfPayment ||
       "",
-    commercialConsigneeAddressLine1:
-      manual.commercialConsigneeAddressLine1 || context.buyerName || "",
-    commercialConsigneeAddressLine2:
-      manual.commercialConsigneeAddressLine2 || context.buyerAddress || "",
+    ...(invoiceType === "COMMERCIAL"
+      ? {
+          commercialConsigneeAddressLine1:
+            manual.commercialConsigneeAddressLine1 || context.buyerName || "",
+          commercialConsigneeAddressLine2:
+            manual.commercialConsigneeAddressLine2 || context.buyerAddress || "",
+        }
+      : {}),
     commercialClauses:
       manual.commercialClauses ||
       DEFAULT_COMMERCIAL_CLAUSES.replace(
@@ -796,22 +800,6 @@ District of Origin of Goods - Pune - 411009`}
                     onChange={handleFieldChange}
                     required
                     placeholder="TO THE ORDER OF SAMPATH BANK PLC"
-                  />
-                  <EditableField
-                    label="Consignee Address Line 1"
-                    name="commercialConsigneeAddressLine1"
-                    value={form.commercialConsigneeAddressLine1}
-                    onChange={handleFieldChange}
-                    required
-                    placeholder="AUTODIRECT PVT LTD"
-                  />
-                  <EditableField
-                    label="Consignee Address Line 2"
-                    name="commercialConsigneeAddressLine2"
-                    value={form.commercialConsigneeAddressLine2}
-                    onChange={handleFieldChange}
-                    required
-                    placeholder="NO: 15 PARK CIRCUS COLOMBO 05 SRI LANKA"
                   />
                 </>
               )}

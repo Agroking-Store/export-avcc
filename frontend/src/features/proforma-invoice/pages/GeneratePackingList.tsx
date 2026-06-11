@@ -82,10 +82,6 @@ const buildInitialForm = (
     destination: manual.destination || context.buyerCountry || "Sri Lanka",
     commercialConsigneeName:
       manual.commercialConsigneeName || manual.termsOfPayment || "",
-    commercialConsigneeAddressLine1:
-      manual.commercialConsigneeAddressLine1 || context.buyerName || "",
-    commercialConsigneeAddressLine2:
-      manual.commercialConsigneeAddressLine2 || context.buyerAddress || "",
     commercialClauses: manual.commercialClauses || "",
     drawbackScheme: manual.drawbackScheme || "",
     rodtepSchemeCode: manual.rodtepSchemeCode || "",
@@ -255,8 +251,6 @@ export default function GeneratePackingList() {
 
     const missingConsigneeFields = [
       !form.commercialConsigneeName?.trim() && "Consignee Name",
-      !form.commercialConsigneeAddressLine1?.trim() && "Consignee Address Line 1",
-      !form.commercialConsigneeAddressLine2?.trim() && "Consignee Address Line 2",
     ].filter(Boolean);
 
     if (missingConsigneeFields.length > 0) {
@@ -518,22 +512,6 @@ export default function GeneratePackingList() {
                 onChange={handleFieldChange}
                 required
                 placeholder="TO THE ORDER OF SAMPATH BANK PLC"
-              />
-              <EditableField
-                label="Consignee Address Line 1"
-                name="commercialConsigneeAddressLine1"
-                value={form.commercialConsigneeAddressLine1}
-                onChange={handleFieldChange}
-                required
-                placeholder="AUTODIRECT PVT LTD"
-              />
-              <EditableField
-                label="Consignee Address Line 2"
-                name="commercialConsigneeAddressLine2"
-                value={form.commercialConsigneeAddressLine2}
-                onChange={handleFieldChange}
-                required
-                placeholder="NO: 15 PARK CIRCUS COLOMBO 05 SRI LANKA"
               />
             </div>
           </div>

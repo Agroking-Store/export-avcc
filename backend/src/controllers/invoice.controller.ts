@@ -152,6 +152,14 @@ const splitAddressLinesForPdf = (value: unknown) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
+const buildAutoConsigneeAddressLines = (pi: {
+  buyerName?: string;
+  buyerAddress?: string;
+}) => ({
+  addressLine1: pi.buyerName || "",
+  addressLine2: pi.buyerAddress || "",
+});
+
 const formatPackingDate = (value?: string | Date | null) =>
   formatDisplayDate(value).replace(/\//g, "-");
 
@@ -781,8 +789,6 @@ const getMissingFields = (
       "endUseCode",
       "customExchangeRate",
       "commercialConsigneeName",
-      "commercialConsigneeAddressLine1",
-      "commercialConsigneeAddressLine2",
     ],
     USD: [
       "termsOfDelivery",
@@ -791,8 +797,6 @@ const getMissingFields = (
       "rodtepSchemeCode",
       "endUseCode",
       "commercialConsigneeName",
-      "commercialConsigneeAddressLine1",
-      "commercialConsigneeAddressLine2",
     ],
     COMMERCIAL: [
       "termsOfDelivery",
@@ -818,8 +822,6 @@ const getPackingListMissingFields = (manualFields: Record<string, any>) => {
     "lcNumber",
     "lcDate",
     "commercialConsigneeName",
-    "commercialConsigneeAddressLine1",
-    "commercialConsigneeAddressLine2",
   ];
 
   return required.filter((field) => {
@@ -965,8 +967,12 @@ const buildTemplateData = ({
     buyerCountry: pi.buyerCountry,
     commercialConsignee: {
       name: manualFields.commercialConsigneeName || "",
-      addressLine1: manualFields.commercialConsigneeAddressLine1 || "",
-      addressLine2: manualFields.commercialConsigneeAddressLine2 || "",
+      ...(type === "COMMERCIAL"
+        ? {
+            addressLine1: manualFields.commercialConsigneeAddressLine1 || "",
+            addressLine2: manualFields.commercialConsigneeAddressLine2 || "",
+          }
+        : buildAutoConsigneeAddressLines(pi)),
     },
     lcNumber: manualFields.lcNumber || pi.lcNumber,
     lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
