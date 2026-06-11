@@ -102,11 +102,9 @@
     <tr>
       <td colspan="3" class="consignee">
         <div>Consignee</div>
-        <div>{{buyerName}}</div>
-        {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
-        <div>{{buyerCountry}}</div>
-        <div>Atte :</div>
-        <div>Tel :</div>
+        <div>{{commercialConsignee.name}}</div>
+        <div>{{commercialConsignee.addressLine1}}</div>
+        <div style="white-space: nowrap;">{{commercialConsignee.addressLine2}}</div>
       </td>
       <td colspan="5" class="blank-panel">&nbsp;</td>
     </tr>

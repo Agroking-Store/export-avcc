@@ -80,9 +80,8 @@ const buildInitialForm = (
     termsOfPayment: manual.termsOfPayment || "",
     dispatchedThrough: manual.dispatchedThrough || "By Sea",
     destination: manual.destination || context.buyerCountry || "Sri Lanka",
-    commercialConsigneeName: manual.commercialConsigneeName || "",
-    commercialConsigneeAddressLine1: manual.commercialConsigneeAddressLine1 || "",
-    commercialConsigneeAddressLine2: manual.commercialConsigneeAddressLine2 || "",
+    commercialConsigneeName:
+      manual.commercialConsigneeName || manual.termsOfPayment || "",
     commercialClauses: manual.commercialClauses || "",
     drawbackScheme: manual.drawbackScheme || "",
     rodtepSchemeCode: manual.rodtepSchemeCode || "",
@@ -250,6 +249,15 @@ export default function GeneratePackingList() {
       return;
     }
 
+    const missingConsigneeFields = [
+      !form.commercialConsigneeName?.trim() && "Consignee Name",
+    ].filter(Boolean);
+
+    if (missingConsigneeFields.length > 0) {
+      toast.error(`Please add ${missingConsigneeFields.join(", ")}`);
+      return;
+    }
+
     try {
       setSubmitting(true);
       const res = await invoiceApi.generatePackingList({
@@ -265,6 +273,12 @@ export default function GeneratePackingList() {
         invoiceNumber: res.invoiceNumber,
       });
     } catch (err: any) {
+      const fields = err.response?.data?.fields;
+      if (Array.isArray(fields) && fields.length) {
+        toast.error(`Missing fields: ${fields.join(", ")}`);
+        return;
+      }
+
       toast.error(
         err.response?.data?.message || "Failed to generate Packing List",
       );
@@ -490,6 +504,14 @@ export default function GeneratePackingList() {
                 value={form.termsOfDelivery}
                 onChange={handleFieldChange}
                 placeholder="CFR any port in Sri Lanka"
+              />
+              <EditableField
+                label="Consignee Name"
+                name="commercialConsigneeName"
+                value={form.commercialConsigneeName}
+                onChange={handleFieldChange}
+                required
+                placeholder="TO THE ORDER OF SAMPATH BANK PLC"
               />
             </div>
           </div>
