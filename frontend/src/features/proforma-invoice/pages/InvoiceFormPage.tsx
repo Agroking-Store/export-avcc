@@ -212,11 +212,13 @@ const buildInitialForm = (
     dispatchedThrough: manual.dispatchedThrough || "By Sea",
     destination: manual.destination || context.buyerCountry || "Sri Lanka",
     commercialConsigneeName:
-      manual.commercialConsigneeName || manual.termsOfPayment || "",
+      manual.commercialConsigneeName ||
+      manual.termsOfPayment ||
+      "",
     commercialConsigneeAddressLine1:
-      manual.commercialConsigneeAddressLine1 || "Colombo",
+      manual.commercialConsigneeAddressLine1 || context.buyerName || "",
     commercialConsigneeAddressLine2:
-      manual.commercialConsigneeAddressLine2 || "Sri Lanka",
+      manual.commercialConsigneeAddressLine2 || context.buyerAddress || "",
     commercialClauses:
       manual.commercialClauses ||
       DEFAULT_COMMERCIAL_CLAUSES.replace(
@@ -747,7 +749,7 @@ District of Origin of Goods - Pune - 411009`}
                     value={form.commercialConsigneeName}
                     onChange={handleFieldChange}
                     required
-                    placeholder="TO THE ORDER SAMPATH BANK PLC"
+                    placeholder="TO THE ORDER OF SAMPATH BANK PLC"
                   />
                   <EditableField
                     label="Consignee Address Line 1"
@@ -755,7 +757,7 @@ District of Origin of Goods - Pune - 411009`}
                     value={form.commercialConsigneeAddressLine1}
                     onChange={handleFieldChange}
                     required
-                    placeholder="Colombo"
+                    placeholder="AUTODIRECT PVT LTD"
                   />
                   <EditableField
                     label="Consignee Address Line 2"
@@ -763,13 +765,8 @@ District of Origin of Goods - Pune - 411009`}
                     value={form.commercialConsigneeAddressLine2}
                     onChange={handleFieldChange}
                     required
-                    placeholder="Sri Lanka"
+                    placeholder="NO: 15 PARK CIRCUS COLOMBO 05 SRI LANKA"
                   />
-                </>
-              )}
-
-              {showCommercialFields && (
-                <>
                   <EditableField
                     label="Terms of Delivery"
                     name="termsOfDelivery"
@@ -787,6 +784,34 @@ District of Origin of Goods - Pune - 411009`}
                     rows={7}
                     className="md:col-span-2 xl:col-span-3"
                     placeholder="Paste Sampath / Commercial Bank / Hatton Bank clauses here"
+                  />
+                </>
+              )}
+              {(showInrFields || showUsdOnlyFields) && (
+                <>
+                  <EditableField
+                    label="Consignee Name"
+                    name="commercialConsigneeName"
+                    value={form.commercialConsigneeName}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="TO THE ORDER OF SAMPATH BANK PLC"
+                  />
+                  <EditableField
+                    label="Consignee Address Line 1"
+                    name="commercialConsigneeAddressLine1"
+                    value={form.commercialConsigneeAddressLine1}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="AUTODIRECT PVT LTD"
+                  />
+                  <EditableField
+                    label="Consignee Address Line 2"
+                    name="commercialConsigneeAddressLine2"
+                    value={form.commercialConsigneeAddressLine2}
+                    onChange={handleFieldChange}
+                    required
+                    placeholder="NO: 15 PARK CIRCUS COLOMBO 05 SRI LANKA"
                   />
                 </>
               )}

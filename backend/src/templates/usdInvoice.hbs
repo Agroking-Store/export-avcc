@@ -309,18 +309,10 @@
     <!-- CONSIGNEE & SCHEME BLOCK -->
     <tr>
       <td colspan="6" rowspan="2" class="party-box" style="height:120px;">
-        {{!-- <div class="b">Consignee</div>
-        <div class="b">{{buyerName}}</div>
-        {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
-        <div>{{buyerCountry}}</div> --}}
-        <!-- USD template consignee block -->
-        <div class="b">{{buyerName}}</div>
-        {{#if buyerAddressLines}}
-        {{#each buyerAddressLines}}<div>{{this}}</div>{{/each}}
-        {{else}}
-        <div>{{buyerAddress}}</div>
-        {{/if}}
-        <div>{{buyerCountry}}</div>
+        <div class="b">Consignee</div>
+        <div>{{commercialConsignee.name}}</div>
+        <div>{{commercialConsignee.addressLine1}}</div>
+        <div style="white-space: nowrap;">{{commercialConsignee.addressLine2}}</div>
       </td>
       <td colspan="6" class="no-line-box" style="height:100px;">
         <div class="b">DRAWBACK SHIPMENT</div>

@@ -71,6 +71,9 @@
 
     .no-line-box { line-height: 1.4; }
 
+    .consignee-line { margin-top: 2px; }
+    .consignee-address { white-space: nowrap; }
+
     /* Exporter address formatting */
     .exporter-address { text-transform: uppercase; }
     .addr-line { margin: 0; line-height: 1.3; }
@@ -120,17 +123,9 @@
   <tr>
     <td colspan="3" rowspan="2" style="height:120px;">
       <div class="b">Consignee</div>
-      <div style="margin-top:2px;">{{buyerName}}</div>
-      {{#if buyerAddressLines}}
-        {{#each buyerAddressLines}}
-          <div style="margin-top:2px;">{{this}}</div>
-        {{/each}}
-      {{else}}
-        {{buyerAddress}}
-      {{/if}}
-      <div style="margin-top:2px;">{{buyerCountry}}</div>
-      <div style="margin-top:8px;">Atte :</div>
-      <div>Tel :</div>
+      <div class="consignee-line">{{commercialConsignee.name}}</div>
+      <div class="consignee-line">{{commercialConsignee.addressLine1}}</div>
+      <div class="consignee-line consignee-address">{{commercialConsignee.addressLine2}}</div>
     </td>
     <td colspan="5" class="no-line-box" style="height:100px; border-bottom:none;">
       <div>Buyer if other than Consignee</div>

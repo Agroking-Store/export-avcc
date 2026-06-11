@@ -780,6 +780,9 @@ const getMissingFields = (
       "rodtepSchemeCode",
       "endUseCode",
       "customExchangeRate",
+      "commercialConsigneeName",
+      "commercialConsigneeAddressLine1",
+      "commercialConsigneeAddressLine2",
     ],
     USD: [
       "termsOfDelivery",
@@ -787,6 +790,9 @@ const getMissingFields = (
       "drawbackScheme",
       "rodtepSchemeCode",
       "endUseCode",
+      "commercialConsigneeName",
+      "commercialConsigneeAddressLine1",
+      "commercialConsigneeAddressLine2",
     ],
     COMMERCIAL: [
       "termsOfDelivery",
@@ -800,6 +806,23 @@ const getMissingFields = (
   };
 
   return [...common, ...requiredByType[type]].filter((field) => {
+    const value = manualFields?.[field];
+    return value === undefined || value === null || String(value).trim() === "";
+  });
+};
+
+const getPackingListMissingFields = (manualFields: Record<string, any>) => {
+  const required = [
+    "invoiceNumber",
+    "invoiceDate",
+    "lcNumber",
+    "lcDate",
+    "commercialConsigneeName",
+    "commercialConsigneeAddressLine1",
+    "commercialConsigneeAddressLine2",
+  ];
+
+  return required.filter((field) => {
     const value = manualFields?.[field];
     return value === undefined || value === null || String(value).trim() === "";
   });
@@ -941,15 +964,9 @@ const buildTemplateData = ({
     buyerCity: (pi.buyerCity || "").toUpperCase(),
     buyerCountry: pi.buyerCountry,
     commercialConsignee: {
-      name:
-        manualFields.commercialConsigneeName ||
-        manualFields.termsOfPayment ||
-        pi.buyerName,
-      addressLine1: manualFields.commercialConsigneeAddressLine1 || "Colombo",
-      addressLine2:
-        manualFields.commercialConsigneeAddressLine2 ||
-        pi.buyerCountry ||
-        "Sri Lanka",
+      name: manualFields.commercialConsigneeName || "",
+      addressLine1: manualFields.commercialConsigneeAddressLine1 || "",
+      addressLine2: manualFields.commercialConsigneeAddressLine2 || "",
     },
     lcNumber: manualFields.lcNumber || pi.lcNumber,
     lcDate: formatDisplayDate(manualFields.lcDate || pi.lcDate),
@@ -1529,6 +1546,15 @@ export const generatePackingList = async (req: Request, res: Response) => {
       ...manualFields,
       invoiceNumber,
     };
+
+    const missingFields = getPackingListMissingFields(resolvedManualFields);
+    if (missingFields.length > 0) {
+      return jsonError(res, 400, {
+        error: "MISSING_FIELDS",
+        message: "Required packing list fields are missing",
+        fields: missingFields,
+      });
+    }
 
     const { templateData } = buildTemplateData({
       pi: context,

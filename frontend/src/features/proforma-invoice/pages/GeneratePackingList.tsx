@@ -80,9 +80,12 @@ const buildInitialForm = (
     termsOfPayment: manual.termsOfPayment || "",
     dispatchedThrough: manual.dispatchedThrough || "By Sea",
     destination: manual.destination || context.buyerCountry || "Sri Lanka",
-    commercialConsigneeName: manual.commercialConsigneeName || "",
-    commercialConsigneeAddressLine1: manual.commercialConsigneeAddressLine1 || "",
-    commercialConsigneeAddressLine2: manual.commercialConsigneeAddressLine2 || "",
+    commercialConsigneeName:
+      manual.commercialConsigneeName || manual.termsOfPayment || "",
+    commercialConsigneeAddressLine1:
+      manual.commercialConsigneeAddressLine1 || context.buyerName || "",
+    commercialConsigneeAddressLine2:
+      manual.commercialConsigneeAddressLine2 || context.buyerAddress || "",
     commercialClauses: manual.commercialClauses || "",
     drawbackScheme: manual.drawbackScheme || "",
     rodtepSchemeCode: manual.rodtepSchemeCode || "",
@@ -250,6 +253,17 @@ export default function GeneratePackingList() {
       return;
     }
 
+    const missingConsigneeFields = [
+      !form.commercialConsigneeName?.trim() && "Consignee Name",
+      !form.commercialConsigneeAddressLine1?.trim() && "Consignee Address Line 1",
+      !form.commercialConsigneeAddressLine2?.trim() && "Consignee Address Line 2",
+    ].filter(Boolean);
+
+    if (missingConsigneeFields.length > 0) {
+      toast.error(`Please add ${missingConsigneeFields.join(", ")}`);
+      return;
+    }
+
     try {
       setSubmitting(true);
       const res = await invoiceApi.generatePackingList({
@@ -265,6 +279,12 @@ export default function GeneratePackingList() {
         invoiceNumber: res.invoiceNumber,
       });
     } catch (err: any) {
+      const fields = err.response?.data?.fields;
+      if (Array.isArray(fields) && fields.length) {
+        toast.error(`Missing fields: ${fields.join(", ")}`);
+        return;
+      }
+
       toast.error(
         err.response?.data?.message || "Failed to generate Packing List",
       );
@@ -490,6 +510,30 @@ export default function GeneratePackingList() {
                 value={form.termsOfDelivery}
                 onChange={handleFieldChange}
                 placeholder="CFR any port in Sri Lanka"
+              />
+              <EditableField
+                label="Consignee Name"
+                name="commercialConsigneeName"
+                value={form.commercialConsigneeName}
+                onChange={handleFieldChange}
+                required
+                placeholder="TO THE ORDER OF SAMPATH BANK PLC"
+              />
+              <EditableField
+                label="Consignee Address Line 1"
+                name="commercialConsigneeAddressLine1"
+                value={form.commercialConsigneeAddressLine1}
+                onChange={handleFieldChange}
+                required
+                placeholder="AUTODIRECT PVT LTD"
+              />
+              <EditableField
+                label="Consignee Address Line 2"
+                name="commercialConsigneeAddressLine2"
+                value={form.commercialConsigneeAddressLine2}
+                onChange={handleFieldChange}
+                required
+                placeholder="NO: 15 PARK CIRCUS COLOMBO 05 SRI LANKA"
               />
             </div>
           </div>
