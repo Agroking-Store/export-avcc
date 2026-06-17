@@ -177,7 +177,7 @@ const ShipmentPlanningDashboard: React.FC = () => {
             Shipment Dashboard
           </h1>
           <p className="text-[15px] text-slate-500 font-medium mt-1">
-            Shipment readiness & container readiness insights.
+            Shipment readiness & vehicle insights.
           </p>
         </div>
       </div>
