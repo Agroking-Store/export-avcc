@@ -17,6 +17,7 @@ import {
   updateChassisEngineHandler,
   updateStatusHandler,
   assignClientHandler,
+  setReferenceNoHandler,
   assignDealerHandler,
   getBookingByIdHandler,
   getDueRemindersHandler,
@@ -128,6 +129,14 @@ router.post(
   authorize(ROLES.ADMIN, ROLES.CLIENT),
   documentUpload.single("clientCorrection"),
   uploadClientCorrectionHandler,
+);
+
+// Client-only: assign reference number to their vehicle
+router.patch(
+  "/:id/reference-no",
+  authenticate,
+  authorize(ROLES.CLIENT),
+  setReferenceNoHandler,
 );
 
 // Admin + Sourcing Team: dealer assignment, quotation upload, chassis-engine update

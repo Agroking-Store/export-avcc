@@ -21,6 +21,7 @@ import {
   getReminderDueBookings,
   uploadBookingDocuments,
   uploadClientCorrectionDocument,
+  setVehicleReferenceNo,
   getBookingFile,
   getClientCorrectionFile,
   getAllVehicleBookingsService,
@@ -230,6 +231,29 @@ export const assignClientHandler = async (req: Request, res: Response) => {
     const booking = await assignClientToBooking(
       req.params.id as string,
       clientId,
+    );
+    res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const setReferenceNoHandler = async (req: Request, res: Response) => {
+  try {
+    const userEmail = (req as any).user?.email;
+    if (!userEmail) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { referenceNo } = req.body;
+    if (referenceNo === undefined || referenceNo === null) {
+      throw new Error("Reference number is required");
+    }
+
+    const booking = await setVehicleReferenceNo(
+      req.params.id as string,
+      String(referenceNo),
+      userEmail,
     );
     res.json(booking);
   } catch (error: any) {

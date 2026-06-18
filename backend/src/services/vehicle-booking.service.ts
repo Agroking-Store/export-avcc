@@ -1121,6 +1121,48 @@ export const uploadClientCorrectionDocument = async (
   return getPopulatedBookingWithReadiness(saved._id);
 };
 
+const REFERENCE_NO_REGEX = /^[^\s]{1,10}$/;
+
+export const setVehicleReferenceNo = async (
+  bookingId: string,
+  referenceNo: string,
+  clientEmail: string,
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const client = await Client.findOne({
+    email: clientEmail.toLowerCase().trim(),
+  });
+  if (!client) throw new Error("Client profile not found");
+
+  if (
+    !booking.assignedClientId ||
+    String(booking.assignedClientId) !== String(client._id)
+  ) {
+    throw new Error("You can only assign a reference number to your own vehicles");
+  }
+
+  const trimmed = String(referenceNo || "").trim();
+  if (!REFERENCE_NO_REGEX.test(trimmed)) {
+    throw new Error(
+      "Reference number must be 1–10 characters (letters, numbers, or symbols, no spaces)",
+    );
+  }
+
+  const existing = await VehicleBooking.findOne({
+    referenceNo: trimmed,
+    _id: { $ne: booking._id },
+  });
+  if (existing) {
+    throw new Error("This reference number is already assigned to another vehicle");
+  }
+
+  booking.referenceNo = trimmed;
+  const saved = await booking.save();
+  return getPopulatedBookingWithReadiness(saved._id);
+};
+
 export const getClientCorrectionFile = async (
   bookingId: string,
   correctionId: string,

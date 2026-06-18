@@ -96,6 +96,7 @@ export interface VehicleBookingItem {
   commercialHsnCode?: string;
   exportHsnCode?: string;
   hsnCode?: string;
+  referenceNo?: string;
   lastReminderAt?: string;
   reminderCount?: number;
   documents?: {
@@ -337,6 +338,17 @@ export const vehicleBookingApi = {
     const response = await api.post(
       `/vehicle-bookings/${bookingId}/payments`,
       payload,
+    );
+    return response.data as VehicleBookingItem;
+  },
+
+  setReferenceNo: async (
+    bookingId: string,
+    referenceNo: string,
+  ): Promise<VehicleBookingItem> => {
+    const response = await api.patch(
+      `/vehicle-bookings/${bookingId}/reference-no`,
+      { referenceNo },
     );
     return response.data as VehicleBookingItem;
   },

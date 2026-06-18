@@ -513,6 +513,7 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
         vehicleIndex: booking?.vehicleIndex ?? index,
         carName,
         chassisNo: chassis || "-",
+        referenceNo: booking?.referenceNo || "-",
         ...extra,
       };
     });

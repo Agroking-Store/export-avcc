@@ -84,6 +84,11 @@ const VehicleOrderVehicleView = () => {
   const [recordRemarks, setRecordRemarks] = useState("");
   const [recordingPayment, setRecordingPayment] = useState(false);
 
+  // Reference Number Modal States (client only)
+  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
+  const [referenceInput, setReferenceInput] = useState("");
+  const [savingReference, setSavingReference] = useState(false);
+
   const loadData = useCallback(async () => {
     if (!id || vehicleIndex === undefined) return;
 
@@ -142,6 +147,43 @@ const VehicleOrderVehicleView = () => {
     }
   };
 
+  const openReferenceModal = () => {
+    setReferenceInput(booking?.referenceNo || "");
+    setIsReferenceModalOpen(true);
+  };
+
+  const handleReferenceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!booking) return;
+
+    const trimmed = referenceInput.trim();
+    if (!trimmed || trimmed.length > 10) {
+      toast.error("Reference number must be 1–10 characters (no spaces)");
+      return;
+    }
+
+    try {
+      setSavingReference(true);
+      const updated = await vehicleBookingApi.setReferenceNo(
+        booking._id,
+        trimmed,
+      );
+      setBooking(updated);
+      toast.success(
+        booking.referenceNo
+          ? "Reference number updated"
+          : "Reference number assigned",
+      );
+      setIsReferenceModalOpen(false);
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to save reference number",
+      );
+    } finally {
+      setSavingReference(false);
+    }
+  };
+
   const handleShipVehicle = async () => {
     if (!booking) return;
     if (!String(booking.chassisNumber || "").trim()) {
@@ -192,6 +234,11 @@ const VehicleOrderVehicleView = () => {
 
   // Filtered Info Cards based on role
   const infoCards = [
+    {
+      icon: Hash,
+      label: "Reference No.",
+      value: booking.referenceNo || (isClient ? "Not assigned" : "-"),
+    },
     {
       icon: Hash,
       label: "Booking Status",
@@ -319,6 +366,16 @@ const VehicleOrderVehicleView = () => {
               <Eye size={13} />
               {isClient ? "VIEW DOCUMENTS" : "VIEW LIBRARY"}
             </button>
+
+            {isClient && (
+              <button
+                onClick={openReferenceModal}
+                className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-amber-500 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-amber-600 hover:shadow-md active:scale-95"
+              >
+                <Hash size={13} />
+                {booking.referenceNo ? "EDIT REF NO." : "ADD REF NO."}
+              </button>
+            )}
 
             {!isClient && (
               <>
@@ -706,6 +763,67 @@ const VehicleOrderVehicleView = () => {
                   className="cursor-pointer rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {recordingPayment ? "Saving..." : "Record Payment"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isReferenceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {booking?.referenceNo
+                    ? "Edit Reference Number"
+                    : "Add Reference Number"}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Unique identifier for this vehicle (max 10 characters)
+                </p>
+              </div>
+              <button
+                onClick={() => setIsReferenceModalOpen(false)}
+                className="cursor-pointer rounded-xl border border-slate-200 p-1.5 text-slate-500 transition hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleReferenceSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-500">
+                  Reference No. *
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={10}
+                  placeholder="e.g. REF-1234"
+                  value={referenceInput}
+                  onChange={(e) => setReferenceInput(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-mono outline-none focus:border-amber-500"
+                />
+                <p className="mt-1 text-[10px] text-slate-400">
+                  {referenceInput.trim().length}/10 characters
+                </p>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsReferenceModalOpen(false)}
+                  className="cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingReference}
+                  className="cursor-pointer rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {savingReference ? "Saving..." : "Save Reference"}
                 </button>
               </div>
             </form>
