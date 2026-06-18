@@ -1,14 +1,12 @@
 import { Request, Response } from "express";
 import {
-  addContainerToShipment,
-  addVehicleToContainer,
+  addVehicleToShipment,
   createShipment,
   getAvailableShipmentVehicles,
   getShipmentById,
   listShipments,
   getShippedVehicleDetailsForShipment,
-  removeContainerFromShipment,
-  removeVehicleFromContainer,
+  removeVehicleFromShipment,
   updateShipment,
 } from "../services/shipment.service";
 import { getCustomerNamesHandler } from "./shipmentCustomer.controller";
@@ -42,18 +40,6 @@ export const getShipmentHandler = async (req: Request, res: Response) => {
   }
 };
 
-export const addContainerHandler = async (req: Request, res: Response) => {
-  try {
-    const shipment = await addContainerToShipment(
-      req.params.id as string,
-      req.body.containerNumber,
-    );
-    res.status(201).json(shipment);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
 export const availableShipmentVehiclesHandler = async (
   _req: Request,
   res: Response,
@@ -66,14 +52,13 @@ export const availableShipmentVehiclesHandler = async (
   }
 };
 
-export const addVehicleToContainerHandler = async (
+export const addVehicleToShipmentHandler = async (
   req: Request,
   res: Response,
 ) => {
   try {
-    const shipment = await addVehicleToContainer({
+    const shipment = await addVehicleToShipment({
       shipmentId: req.params.id as string,
-      containerId: req.params.containerId as string,
       vehicleBookingId: req.body.vehicleBookingId,
     });
     res.json(shipment);
@@ -108,26 +93,13 @@ export const updateShipmentHandler = async (req: Request, res: Response) => {
   }
 };
 
-export const removeContainerHandler = async (req: Request, res: Response) => {
-  try {
-    const shipment = await removeContainerFromShipment(
-      req.params.id as string,
-      req.params.containerId as string,
-    );
-    res.json(shipment);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const removeVehicleFromContainerHandler = async (
+export const removeVehicleFromShipmentHandler = async (
   req: Request,
   res: Response,
 ) => {
   try {
-    const shipment = await removeVehicleFromContainer({
+    const shipment = await removeVehicleFromShipment({
       shipmentId: req.params.id as string,
-      containerId: req.params.containerId as string,
       vehicleBookingId: req.params.vehicleBookingId as string,
     });
     res.json(shipment);
@@ -135,4 +107,3 @@ export const removeVehicleFromContainerHandler = async (
     res.status(400).json({ message: error.message });
   }
 };
-

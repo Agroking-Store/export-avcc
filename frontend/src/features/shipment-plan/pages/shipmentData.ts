@@ -8,10 +8,10 @@ export type ShippingDetail = {
   vesselName?: string;
   sailingDate?: string;
   arrivalDate?: string;
-  containers?: ShipmentContainer[];
+  vehicleBookingIds?: ShipmentVehicleBooking[];
 };
 
-export type ShippingDetailForm = Omit<ShippingDetail, "_id" | "containers">;
+export type ShippingDetailForm = Omit<ShippingDetail, "_id" | "vehicleBookingIds">;
 
 export type ShipmentVehicleBooking = {
   _id: string;
@@ -35,13 +35,6 @@ export type ShipmentVehicleBooking = {
       color?: string;
     };
   };
-};
-
-export type ShipmentContainer = {
-  _id: string;
-  containerNumber: string;
-  vehicleBookingIds: ShipmentVehicleBooking[];
-  createdAt?: string;
 };
 
 export const emptyShippingDetail: ShippingDetailForm = {

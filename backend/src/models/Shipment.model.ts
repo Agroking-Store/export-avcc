@@ -1,12 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export interface IShipmentContainer {
-  _id: mongoose.Types.ObjectId;
-  containerNumber: string;
-  vehicleBookingIds: mongoose.Types.ObjectId[];
-  createdAt?: Date;
-}
-
 export interface IShipment extends Document {
   customerName: string;
   destinationCountry: string;
@@ -16,31 +9,10 @@ export interface IShipment extends Document {
   vesselName?: string;
   sailingDate?: Date;
   arrivalDate?: Date;
-  containers: IShipmentContainer[];
+  vehicleBookingIds: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
-
-const shipmentContainerSchema = new Schema<IShipmentContainer>(
-  {
-    containerNumber: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    vehicleBookingIds: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "VehicleBooking",
-      },
-    ],
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  { _id: true },
-);
 
 const shipmentSchema = new Schema<IShipment>(
   {
@@ -80,8 +52,13 @@ const shipmentSchema = new Schema<IShipment>(
     arrivalDate: {
       type: Date,
     },
-    containers: {
-      type: [shipmentContainerSchema],
+    vehicleBookingIds: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "VehicleBooking",
+        },
+      ],
       default: [],
     },
   },
@@ -98,6 +75,6 @@ const shipmentSchema = new Schema<IShipment>(
 
 shipmentSchema.index({ customerName: 1 });
 shipmentSchema.index({ destinationCountry: 1 });
-shipmentSchema.index({ "containers.vehicleBookingIds": 1 });
+shipmentSchema.index({ vehicleBookingIds: 1 });
 
 export const Shipment = mongoose.model<IShipment>("Shipment", shipmentSchema);

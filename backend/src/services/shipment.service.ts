@@ -9,7 +9,7 @@ import { Client } from "../models/Client.model";
 
 const shipmentPopulate = [
   {
-    path: "containers.vehicleBookingIds",
+    path: "vehicleBookingIds",
     populate: [
       {
         path: "vehicleId",
@@ -62,7 +62,6 @@ export const listShipments = async (query: any) => {
 };
 
 export const getCustomerNamesService = async () => {
-  // Small, lightweight list for dropdown
   const clients = await Client.find({ isActive: true })
     .select({ name: 1 })
     .sort({ createdAt: -1 })
@@ -152,34 +151,8 @@ export const getShipmentById = async (shipmentId: string) => {
   return shipment;
 };
 
-export const addContainerToShipment = async (
-  shipmentId: string,
-  containerNumber: string,
-) => {
-  const shipment = await Shipment.findById(shipmentId);
-  if (!shipment) {
-    throw new Error("Shipment not found");
-  }
-
-  const cleanedContainerNumber = cleanString(containerNumber);
-  if (!cleanedContainerNumber) {
-    throw new Error("Container name is required");
-  }
-
-  shipment.containers.push({
-    _id: new mongoose.Types.ObjectId(),
-    containerNumber: cleanedContainerNumber,
-    vehicleBookingIds: [],
-  });
-
-  await shipment.save();
-  return getShipmentById(shipmentId);
-};
-
 export const getAvailableShipmentVehicles = async () => {
-  const assignedVehicleIds = await Shipment.distinct(
-    "containers.vehicleBookingIds",
-  );
+  const assignedVehicleIds = await Shipment.distinct("vehicleBookingIds");
 
   return VehicleBooking.find({
     status: "shipped",
@@ -190,21 +163,18 @@ export const getAvailableShipmentVehicles = async () => {
     .sort({ updatedAt: -1 });
 };
 
-export const addVehicleToContainer = async ({
+export const addVehicleToShipment = async ({
   shipmentId,
-  containerId,
   vehicleBookingId,
 }: {
   shipmentId: string;
-  containerId: string;
   vehicleBookingId: string;
 }) => {
   if (
     !mongoose.isValidObjectId(shipmentId) ||
-    !mongoose.isValidObjectId(containerId) ||
     !mongoose.isValidObjectId(vehicleBookingId)
   ) {
-    throw new Error("Invalid shipment, container or vehicle");
+    throw new Error("Invalid shipment or vehicle");
   }
 
   const booking = await VehicleBooking.findById(vehicleBookingId);
@@ -213,14 +183,14 @@ export const addVehicleToContainer = async ({
   }
 
   if (booking.status !== "shipped") {
-    throw new Error("Only shipped vehicles can be added to a container");
+    throw new Error("Only shipped vehicles can be added to a shipment");
   }
 
   const alreadyAssigned = await Shipment.exists({
-    "containers.vehicleBookingIds": vehicleBookingId,
+    vehicleBookingIds: vehicleBookingId,
   });
   if (alreadyAssigned) {
-    throw new Error("This vehicle is already added to another container");
+    throw new Error("This vehicle is already added to another shipment");
   }
 
   const shipment = await Shipment.findById(shipmentId);
@@ -228,60 +198,24 @@ export const addVehicleToContainer = async ({
     throw new Error("Shipment not found");
   }
 
-  const container = (shipment.containers as any).id(containerId);
-  if (!container) {
-    throw new Error("Container not found");
-  }
-
-  container.vehicleBookingIds.push(new mongoose.Types.ObjectId(vehicleBookingId));
+  shipment.vehicleBookingIds.push(new mongoose.Types.ObjectId(vehicleBookingId));
   await shipment.save();
 
   return getShipmentById(shipmentId);
 };
 
-export const removeContainerFromShipment = async (
-  shipmentId: string,
-  containerId: string,
-) => {
-  if (
-    !mongoose.isValidObjectId(shipmentId) ||
-    !mongoose.isValidObjectId(containerId)
-  ) {
-    throw new Error("Invalid shipment or container");
-  }
-
-  const shipment = await Shipment.findById(shipmentId);
-  if (!shipment) {
-    throw new Error("Shipment not found");
-  }
-
-  const containerIndex = shipment.containers.findIndex(
-    (c: any) => String(c._id) === containerId,
-  );
-  if (containerIndex === -1) {
-    throw new Error("Container not found");
-  }
-
-  shipment.containers.splice(containerIndex, 1);
-  await shipment.save();
-  return getShipmentById(shipmentId);
-};
-
-export const removeVehicleFromContainer = async ({
+export const removeVehicleFromShipment = async ({
   shipmentId,
-  containerId,
   vehicleBookingId,
 }: {
   shipmentId: string;
-  containerId: string;
   vehicleBookingId: string;
 }) => {
   if (
     !mongoose.isValidObjectId(shipmentId) ||
-    !mongoose.isValidObjectId(containerId) ||
     !mongoose.isValidObjectId(vehicleBookingId)
   ) {
-    throw new Error("Invalid shipment, container or vehicle");
+    throw new Error("Invalid shipment or vehicle");
   }
 
   const shipment = await Shipment.findById(shipmentId);
@@ -289,19 +223,14 @@ export const removeVehicleFromContainer = async ({
     throw new Error("Shipment not found");
   }
 
-  const container = (shipment.containers as any).id(containerId);
-  if (!container) {
-    throw new Error("Container not found");
-  }
-
-  const vehicleIndex = container.vehicleBookingIds.findIndex(
-    (id: any) => String(id) === vehicleBookingId,
+  const vehicleIndex = shipment.vehicleBookingIds.findIndex(
+    (id) => String(id) === vehicleBookingId,
   );
   if (vehicleIndex === -1) {
-    throw new Error("Vehicle not found in container");
+    throw new Error("Vehicle not found in shipment");
   }
 
-  container.vehicleBookingIds.splice(vehicleIndex, 1);
+  shipment.vehicleBookingIds.splice(vehicleIndex, 1);
   await shipment.save();
   return getShipmentById(shipmentId);
 };
@@ -316,13 +245,10 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     throw new Error("Shipment not found");
   }
 
-  // Collect all vehicle booking IDs in this shipment
   const bookingIds: string[] = [];
-  for (const container of shipment.containers || []) {
-    for (const booking of container.vehicleBookingIds || []) {
-      if (booking._id) {
-        bookingIds.push(String(booking._id));
-      }
+  for (const booking of shipment.vehicleBookingIds || []) {
+    if (booking._id) {
+      bookingIds.push(String(booking._id));
     }
   }
 
@@ -339,11 +265,10 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
         portOfLoading: shipment.portOfLoading,
         portOfDischarge: shipment.portOfDischarge,
       },
-      containers: [],
+      vehicles: [],
     };
   }
 
-  // Fetch the booking details
   const bookings = await VehicleBooking.find({ _id: { $in: bookingIds } })
     .populate("vehicleId", "brandName modelName variant color")
     .populate("orderId", "orderNumber vehicleSnapshot")
@@ -357,7 +282,6 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     .map((b) => b.chassisNumber?.trim())
     .filter(Boolean);
 
-  // Fetch Proforma Invoices that mention these bookings or chassis numbers
   const pis = await ProformaInvoice.find({
     $or: [
       { vehicleBookingIds: { $in: bookingIds.map(id => new mongoose.Types.ObjectId(id)) } },
@@ -367,7 +291,6 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     .populate("company_id", "name")
     .lean();
 
-  // Fetch Letters of Credit for these PIs
   const piIds = pis.map((pi) => pi._id);
   const lcs = await LetterOfCredit.find({ pi_id: { $in: piIds } })
     .sort({ uploadedAt: -1 })
@@ -404,7 +327,6 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     }
   }
 
-  // Fetch Commercial Invoices for these bookings or chassis numbers
   const queryConditions: any[] = [
     { vehicleBookingId: { $in: bookingIds.map(id => new mongoose.Types.ObjectId(id)) }, type: "COMMERCIAL", active: true },
     { vehicleId: { $in: bookingIds }, type: "COMMERCIAL", active: true }
@@ -427,11 +349,9 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     $or: queryConditions,
   }).lean();
 
-  // Map to group invoices and PIs by booking ID / chassis number
   const resolveDetails = (bookingId: string, chassisNo?: string) => {
     const cleanChassis = chassisNo?.trim().toLowerCase();
-    
-    // Find matching Commercial Invoice
+
     const invoice = commercialInvoices.find((inv) => {
       if (inv.vehicleBookingId && String(inv.vehicleBookingId) === bookingId) return true;
       if (inv.vehicleId && String(inv.vehicleId) === bookingId) return true;
@@ -448,7 +368,6 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
       return false;
     });
 
-    // Find matching PI
     const pi = pis.find((p) => {
       if (p.vehicleBookingIds?.map(String).includes(bookingId)) return true;
       if (cleanChassis && p.vehicleDetails) {
@@ -465,7 +384,6 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     let amount = 0;
     if (invoice) {
       amount = invoice.computedFields?.totalUSD || invoice.computedFields?.totalINR || 0;
-      // Fallback: check manualFields or totalAmount
       if (!amount && invoice.dataSnapshot?.vehicle) {
         const v = invoice.dataSnapshot.vehicle;
         amount = (Number(v.fobUSD || v.fob) || 0) + (Number(v.freightUSD || v.freight) || 0);
@@ -492,36 +410,28 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
     };
   };
 
-  const populatedContainers = shipment.containers.map((container: any) => {
-    const vehicles = container.vehicleBookingIds.map((v: any, index: number) => {
-      const bId = String(v._id || v);
-      const booking = bookingMap.get(bId);
-      const vehicleSnapshot = booking?.vehicleId || booking?.orderId?.vehicleSnapshot || {};
-      const carName = [
-        vehicleSnapshot.brandName,
-        vehicleSnapshot.modelName,
-        vehicleSnapshot.variant,
-      ]
-        .filter(Boolean)
-        .join(" ") || `Vehicle ${index + 1}`;
-      
-      const chassis = booking?.chassisNumber || "";
-      const extra = resolveDetails(bId, chassis);
+  const vehicles = shipment.vehicleBookingIds.map((v: any, index: number) => {
+    const bId = String(v._id || v);
+    const booking = bookingMap.get(bId);
+    const vehicleSnapshot = booking?.vehicleId || booking?.orderId?.vehicleSnapshot || {};
+    const carName = [
+      vehicleSnapshot.brandName,
+      vehicleSnapshot.modelName,
+      vehicleSnapshot.variant,
+    ]
+      .filter(Boolean)
+      .join(" ") || `Vehicle ${index + 1}`;
 
-      return {
-        _id: bId,
-        vehicleIndex: booking?.vehicleIndex ?? index,
-        carName,
-        chassisNo: chassis || "-",
-        referenceNo: booking?.referenceNo || "-",
-        ...extra,
-      };
-    });
+    const chassis = booking?.chassisNumber || "";
+    const extra = resolveDetails(bId, chassis);
 
     return {
-      _id: container._id,
-      containerNumber: container.containerNumber,
-      vehicles,
+      _id: bId,
+      vehicleIndex: booking?.vehicleIndex ?? index,
+      carName,
+      chassisNo: chassis || "-",
+      referenceNo: booking?.referenceNo || "-",
+      ...extra,
     };
   });
 
@@ -537,6 +447,6 @@ export const getShippedVehicleDetailsForShipment = async (shipmentId: string) =>
       portOfLoading: shipment.portOfLoading,
       portOfDischarge: shipment.portOfDischarge,
     },
-    containers: populatedContainers,
+    vehicles,
   };
 };

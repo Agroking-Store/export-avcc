@@ -152,7 +152,7 @@ const ShipmentPlanningList = () => {
                       {formatDate(detail.arrivalDate)}
                     </td>
 <td className="px-8 py-5 text-center">
-                      {detail.containers?.reduce((sum, c) => sum + (c.vehicleBookingIds?.length || 0), 0) ?? 0}
+                      {detail.vehicleBookingIds?.length ?? 0}
                     </td>
                     <td className="px-8 py-5 text-center">
                       <div className="flex items-center justify-center gap-2">
