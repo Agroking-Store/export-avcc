@@ -30,16 +30,6 @@ export const shipmentApi = {
     return response.data;
   },
 
-  addContainer: async (
-    shipmentId: string,
-    containerNumber: string,
-  ): Promise<ShippingDetail> => {
-    const response = await api.post(`/shipments/${shipmentId}/containers`, {
-      containerNumber,
-    });
-    return response.data;
-  },
-
   getAvailableVehicles: async (): Promise<ShipmentVehicleBooking[]> => {
     const response = await api.get("/shipments/available-vehicles");
     return response.data;
@@ -50,35 +40,22 @@ export const shipmentApi = {
     return response.data;
   },
 
-  addVehicleToContainer: async (
+  addVehicleToShipment: async (
     shipmentId: string,
-    containerId: string,
     vehicleBookingId: string,
   ): Promise<ShippingDetail> => {
-    const response = await api.post(
-      `/shipments/${shipmentId}/containers/${containerId}/vehicles`,
-      { vehicleBookingId },
-    );
+    const response = await api.post(`/shipments/${shipmentId}/vehicles`, {
+      vehicleBookingId,
+    });
     return response.data;
   },
 
-  deleteContainer: async (
+  removeVehicleFromShipment: async (
     shipmentId: string,
-    containerId: string,
-  ): Promise<ShippingDetail> => {
-    const response = await api.delete(
-      `/shipments/${shipmentId}/containers/${containerId}`,
-    );
-    return response.data;
-  },
-
-  removeVehicleFromContainer: async (
-    shipmentId: string,
-    containerId: string,
     vehicleBookingId: string,
   ): Promise<ShippingDetail> => {
     const response = await api.delete(
-      `/shipments/${shipmentId}/containers/${containerId}/vehicles/${vehicleBookingId}`,
+      `/shipments/${shipmentId}/vehicles/${vehicleBookingId}`,
     );
     return response.data;
   },
@@ -88,4 +65,3 @@ export const shipmentApi = {
     return response.data;
   },
 };
-
