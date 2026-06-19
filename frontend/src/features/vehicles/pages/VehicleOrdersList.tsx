@@ -612,7 +612,10 @@ const VehicleOrdersList = () => {
             statusMatches = true;
           } else {
             const cards = getClientCards(booking);
-            statusMatches = cards.includes(filterValue);
+            // "cancelled" from clientFilterMap maps to "CANCELLED VEHICLES" in getClientCards
+            const normalizedFilter =
+              filterValue === "cancelled" ? "CANCELLED VEHICLES" : filterValue;
+            statusMatches = cards.includes(normalizedFilter);
           }
           if (!statusMatches) return false;
 
