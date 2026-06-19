@@ -1606,6 +1606,12 @@ const VehicleOrdersList = () => {
                                 </div>
                               )}
                             </div>
+                          ) : isCancelled ? (
+                            <div className="flex justify-center w-full">
+                              <div className="w-full max-w-[220px]">
+                                {renderPrimaryAction(booking)}
+                              </div>
+                            </div>
                           ) : (
                             <div className="ml-auto w-full max-w-[560px] space-y-2">
                               <div className="grid grid-cols-2 gap-2">
