@@ -88,6 +88,12 @@ const STATUS_META: Record<
     icon: <Package size={14} />,
     section: "completed",
   },
+  cancelled: {
+    label: "Cancelled",
+    badge: "bg-rose-100 text-rose-700 border-rose-200",
+    icon: <Ban size={14} />,
+    section: "completed",
+  },
 };
 
 const hasGeneratedPI = (booking: VehicleBookingItem) =>
@@ -205,6 +211,7 @@ const Vehicles: React.FC = () => {
       chassis_received: 0,
       shipped: 0,
       delivered: 0,
+      cancelled: 0,
     };
     bookings.forEach((b) => {
       counts[b.status]++;

@@ -25,6 +25,8 @@ import {
   getClientCorrectionFile,
   getAllVehicleBookingsService,
   deleteVehicleBooking,
+  cancelVehicleBooking,
+  resetVehicleBooking,
 } from "../services/vehicle-booking.service";
 
 export const getAllBookingsHandler = async (req: Request, res: Response) => {
@@ -409,5 +411,23 @@ export const getClientMergedDocumentsHandler = async (req: Request, res: Respons
   } catch (error: any) {
     console.error("Merged PDF generation error:", error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const cancelBookingHandler = async (req: Request, res: Response) => {
+  try {
+    const booking = await cancelVehicleBooking(req.params.id as string);
+    res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const resetBookingHandler = async (req: Request, res: Response) => {
+  try {
+    const booking = await resetVehicleBooking(req.params.id as string);
+    res.json(booking);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };

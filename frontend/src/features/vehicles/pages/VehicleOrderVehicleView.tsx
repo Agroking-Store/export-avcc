@@ -44,6 +44,7 @@ const STATUS_LABELS: Record<VehicleBookingStatus, string> = {
   chassis_received: "In Progress",
   shipped: "In Progress",
   delivered: "Delivered",
+  cancelled: "Cancelled",
 };
 
 const VehicleOrderVehicleView = () => {
@@ -67,6 +68,10 @@ const VehicleOrderVehicleView = () => {
   // Modal States
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [isDealerInvoiceModalOpen, setIsDealerInvoiceModalOpen] =
     useState(false);
   const [isDealerInvoiceViewOpen, setIsDealerInvoiceViewOpen] = useState(false);
@@ -166,6 +171,36 @@ const VehicleOrderVehicleView = () => {
       toast.error(error.response?.data?.message || "Failed to ship vehicle");
     } finally {
       setSavingStatus(false);
+    }
+  };
+
+  const handleCancelVehicle = async () => {
+    if (!booking) return;
+    try {
+      setCancelling(true);
+      const updated = await vehicleBookingApi.cancelVehicle(booking._id);
+      setBooking(updated);
+      toast.success("Vehicle cancelled successfully");
+      setIsCancelModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to cancel vehicle");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleResetVehicle = async () => {
+    if (!booking) return;
+    try {
+      setResetting(true);
+      const updated = await vehicleBookingApi.resetVehicle(booking._id);
+      setBooking(updated);
+      toast.success("Vehicle reset. Sourcing workflow restarted.");
+      setIsResetModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to reset vehicle");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -288,7 +323,7 @@ const VehicleOrderVehicleView = () => {
 
           {/* Edit + Back — always top-right */}
           <div className="flex items-center gap-2 shrink-0">
-            {canEditVehicle && (
+            {canEditVehicle && booking.status !== "cancelled" && (
               <button
                 onClick={() =>
                   navigate(`/vehicles/orders/${id}/unit-edit/${vehicleIndex}`)
@@ -297,6 +332,14 @@ const VehicleOrderVehicleView = () => {
               >
                 <Truck size={16} />
                 Edit
+              </button>
+            )}
+            {isAdmin && booking.status !== "delivered" && booking.status !== "cancelled" && (
+              <button
+                onClick={() => setIsCancelModalOpen(true)}
+                className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-100/50 hover:text-rose-700"
+              >
+                Cancel Vehicle
               </button>
             )}
             <button
@@ -311,99 +354,120 @@ const VehicleOrderVehicleView = () => {
 
         {/* Bottom row: Document upload actions */}
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-            {/* View Documents / Library — all roles */}
-            <button
-              onClick={() => setIsViewModalOpen(true)}
-              className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 active:scale-95"
-            >
-              <Eye size={13} />
-              {isClient ? "VIEW DOCUMENTS" : "VIEW LIBRARY"}
-            </button>
+          {booking.status === "cancelled" ? (
+            !isClient && (
+              <button
+                onClick={() => setIsResetModalOpen(true)}
+                disabled={resetting}
+                className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                FOUND REPLACEMENT
+              </button>
+            )
+          ) : (
+            <>
+              {/* View Documents / Library — all roles */}
+              <button
+                onClick={() => setIsViewModalOpen(true)}
+                className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 active:scale-95"
+              >
+                <Eye size={13} />
+                {isClient ? "VIEW DOCUMENTS" : "VIEW LIBRARY"}
+              </button>
 
-            {!isClient && (
-              <>
-                {/* Documents upload */}
-                <div className="flex items-center gap-1.5 bg-slate-50 px-1.5 py-1.5 rounded-2xl border border-slate-200">
-                  <button
-                    onClick={() => setIsDocModalOpen(true)}
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
-                  >
-                    <Upload size={13} />
-                    UPLOAD DOCS
-                  </button>
-                </div>
+              {!isClient && (
+                <>
+                  {/* Documents upload */}
+                  <div className="flex items-center gap-1.5 bg-slate-50 px-1.5 py-1.5 rounded-2xl border border-slate-200">
+                    <button
+                      onClick={() => setIsDocModalOpen(true)}
+                      className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-indigo-700 hover:shadow-md active:scale-95"
+                    >
+                      <Upload size={13} />
+                      UPLOAD DOCS
+                    </button>
+                  </div>
 
-                {/* Dealer Invoice */}
-                <div className="flex items-center gap-1.5 bg-purple-50 px-1.5 py-1.5 rounded-2xl border border-purple-200">
-                  <button
-                    onClick={() => setIsDealerInvoiceModalOpen(true)}
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
-                  >
-                    <Upload size={13} />
-                    DEALER INVOICE
-                  </button>
-                  <button
-                    onClick={() => setIsDealerInvoiceViewOpen(true)}
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-200 active:scale-95"
-                  >
-                    <Eye size={13} />
-                    VIEW
-                  </button>
-                </div>
+                  {/* Dealer Invoice */}
+                  <div className="flex items-center gap-1.5 bg-purple-50 px-1.5 py-1.5 rounded-2xl border border-purple-200">
+                    <button
+                      onClick={() => setIsDealerInvoiceModalOpen(true)}
+                      className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-purple-700 hover:shadow-md active:scale-95"
+                    >
+                      <Upload size={13} />
+                      DEALER INVOICE
+                    </button>
+                    <button
+                      onClick={() => setIsDealerInvoiceViewOpen(true)}
+                      className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] transition-all hover:bg-slate-50 hover:text-purple-600 hover:border-purple-200 active:scale-95"
+                    >
+                      <Eye size={13} />
+                      VIEW
+                    </button>
+                  </div>
 
-                {/* HBL Document */}
-                <div className="flex items-center gap-1.5 bg-cyan-50 px-1.5 py-1.5 rounded-2xl border border-cyan-200">
-                  <button
-                    onClick={() => setSingleDocModal("hblDocument")}
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-cyan-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-cyan-700 hover:shadow-md active:scale-95"
-                  >
-                    <Upload size={13} />
-                    HBL DOC
-                  </button>
-                </div>
+                  {/* HBL Document */}
+                  <div className="flex items-center gap-1.5 bg-cyan-50 px-1.5 py-1.5 rounded-2xl border border-cyan-200">
+                    <button
+                      onClick={() => setSingleDocModal("hblDocument")}
+                      className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-cyan-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-cyan-700 hover:shadow-md active:scale-95"
+                    >
+                      <Upload size={13} />
+                      HBL DOC
+                    </button>
+                  </div>
 
-                {booking.status !== "shipped" && booking.status !== "delivered" && (
-                  <button
-                    onClick={handleShipVehicle}
-                    disabled={savingStatus}
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-slate-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Ship size={13} />
-                    SHIP VEHICLE
-                  </button>
-                )}
+                  {booking.status !== "shipped" && booking.status !== "delivered" && (
+                    <button
+                      onClick={handleShipVehicle}
+                      disabled={savingStatus}
+                      className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-slate-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Ship size={13} />
+                      SHIP VEHICLE
+                    </button>
+                  )}
 
-                {/* Shipping Bill */}
-                <div className="flex items-center gap-1.5 bg-emerald-50 px-1.5 py-1.5 rounded-2xl border border-emerald-200">
-                  <button
-                    onClick={() => setSingleDocModal("shippingBill")}
-                    className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95"
-                  >
-                    <Upload size={13} />
-                    SHIPPING BILL
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+                  {/* Shipping Bill */}
+                  <div className="flex items-center gap-1.5 bg-emerald-50 px-1.5 py-1.5 rounded-2xl border border-emerald-200">
+                    <button
+                      onClick={() => setSingleDocModal("shippingBill")}
+                      className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-[10px] transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95"
+                    >
+                      <Upload size={13} />
+                      SHIPPING BILL
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* INFO CARDS */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {infoCards.map(({ icon: Icon, label, value }) => (
-          <div
-            key={label}
-            className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <div className="mb-3 flex items-center gap-2 text-slate-500">
-              <Icon size={16} />
-              <p className="text-xs font-semibold uppercase tracking-wide">
-                {label}
-              </p>
+        {infoCards.map(({ icon: Icon, label, value }) => {
+          const isCancelledStatus = label === "Booking Status" && booking.status === "cancelled";
+          return (
+            <div
+              key={label}
+              className={`rounded-[24px] border p-5 shadow-sm transition-colors ${
+                isCancelledStatus
+                  ? "border-rose-200 bg-rose-50/50"
+                  : "border-slate-200 bg-white"
+              }`}
+            >
+              <div className="mb-3 flex items-center gap-2 text-slate-500">
+                <Icon size={16} className={isCancelledStatus ? "text-rose-500" : ""} />
+                <p className={`text-xs font-semibold uppercase tracking-wide ${isCancelledStatus ? "text-rose-500" : ""}`}>
+                  {label}
+                </p>
+              </div>
+              <p className={`text-base font-semibold ${isCancelledStatus ? "text-rose-700" : "text-slate-900"}`}>{value}</p>
             </div>
-            <p className="text-base font-semibold text-slate-900">{value}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* FINANCIAL LEDGER - Admin Only */}
@@ -709,6 +773,88 @@ const VehicleOrderVehicleView = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4 animate-in fade-in duration-100">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Cancel Vehicle
+                </h3>
+                <p className="text-xs text-slate-500">{vehicleName}</p>
+              </div>
+              <button
+                onClick={() => setIsCancelModalOpen(false)}
+                className="cursor-pointer rounded-xl border border-slate-200 p-1.5 text-slate-500 transition hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="py-2 text-sm text-slate-600 font-medium">
+              Are you sure you want to cancel this vehicle?
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsCancelModalOpen(false)}
+                className="cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelVehicle}
+                disabled={cancelling}
+                className="cursor-pointer rounded-xl bg-rose-650 bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+              >
+                {cancelling ? "Cancelling..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4 animate-in fade-in duration-100">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Reset Sourcing Workflow
+                </h3>
+                <p className="text-xs text-slate-500">{vehicleName}</p>
+              </div>
+              <button
+                onClick={() => setIsResetModalOpen(false)}
+                className="cursor-pointer rounded-xl border border-slate-200 p-1.5 text-slate-500 transition hover:bg-slate-50"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="py-2 text-sm text-slate-600 font-medium">
+              Are you sure you want to reset this vehicle order? This will restart the sourcing workflow from Step 1 (Allot Dealer).
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsResetModalOpen(false)}
+                className="cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={handleResetVehicle}
+                disabled={resetting}
+                className="cursor-pointer rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {resetting ? "Resetting..." : "Confirm"}
+              </button>
+            </div>
           </div>
         </div>
       )}

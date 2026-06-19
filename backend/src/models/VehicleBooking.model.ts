@@ -9,7 +9,8 @@ export type VehicleBookingStatus =
   | "payment_done"
   | "chassis_received"
   | "shipped"
-  | "delivered";
+  | "delivered"
+  | "cancelled";
 
 export interface IVehicleBooking extends Document {
   orderId: mongoose.Types.ObjectId;
@@ -156,6 +157,7 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
         "chassis_received",
         "shipped",
         "delivered",
+        "cancelled",
       ],
       default: "pending",
     },

@@ -9,7 +9,8 @@ export type VehicleBookingStatus =
   | "payment_done"
   | "chassis_received"
   | "shipped"
-  | "delivered";
+  | "delivered"
+  | "cancelled";
 
 export interface VehicleBookingItem {
   _id: string;
@@ -338,6 +339,16 @@ export const vehicleBookingApi = {
       `/vehicle-bookings/${bookingId}/payments`,
       payload,
     );
+    return response.data as VehicleBookingItem;
+  },
+
+  cancelVehicle: async (bookingId: string): Promise<VehicleBookingItem> => {
+    const response = await api.post(`/vehicle-bookings/${bookingId}/cancel`);
+    return response.data as VehicleBookingItem;
+  },
+
+  resetVehicle: async (bookingId: string): Promise<VehicleBookingItem> => {
+    const response = await api.post(`/vehicle-bookings/${bookingId}/reset`);
     return response.data as VehicleBookingItem;
   },
 };

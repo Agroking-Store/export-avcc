@@ -27,6 +27,8 @@ import {
   getClientMergedDocumentsHandler,
   getAllBookingsHandler,
   deleteBookingHandler,
+  cancelBookingHandler,
+  resetBookingHandler,
 } from "../controllers/vehicle-booking.controller";
 
 // Quotation-specific multer config
@@ -106,6 +108,8 @@ router.post("/:id/payments", authenticate, authorize(ROLES.ADMIN), addPaymentHan
 router.patch("/:id/assign-client", authenticate, authorize(ROLES.ADMIN), assignClientHandler);
 router.patch("/:id/status", authenticate, authorize(ROLES.ADMIN, ROLES.SOURCING), updateStatusHandler);
 router.delete("/:id", authenticate, authorize(ROLES.ADMIN), deleteBookingHandler);
+router.post("/:id/cancel", authenticate, authorize(ROLES.ADMIN), cancelBookingHandler);
+router.post("/:id/reset", authenticate, authorize(ROLES.ADMIN), resetBookingHandler);
 router.post(
   "/:id/documents",
   authenticate,

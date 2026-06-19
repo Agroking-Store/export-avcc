@@ -68,6 +68,7 @@ const ADMIN_STATUS_OPTIONS = [
   "Make PI",
   "Shipped",
   "Delivered",
+  "Cancelled Vehicles",
 ];
 
 const CLIENT_STATUS_OPTIONS = [
@@ -78,6 +79,7 @@ const CLIENT_STATUS_OPTIONS = [
   "LC RECEIVED",
   "CARS IN TRANSIT",
   "CARS DELIVERED",
+  "CANCELLED VEHICLES",
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -92,6 +94,7 @@ const adminFilterMap: Record<string, string> = {
   "Make PI": "makePI",
   Shipped: "shipped",
   Delivered: "delivered",
+  "Cancelled Vehicles": "cancelled",
 };
 
 const clientFilterMap: Record<string, string> = {
@@ -102,6 +105,7 @@ const clientFilterMap: Record<string, string> = {
   "LC RECEIVED": "LC RECEIVED",
   "CARS IN TRANSIT": "CARS IN TRANSIT",
   "CARS DELIVERED": "CARS DELIVERED",
+  "CANCELLED VEHICLES": "cancelled",
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -116,6 +120,7 @@ const rawToAdminLabel: Record<string, string> = {
   chassis_received: "Awaiting Numbers",
   shipped: "Shipped",
   delivered: "Delivered",
+  cancelled: "Cancelled Vehicles",
 };
 
 const rawToClientLabel: Record<string, string> = {
@@ -127,6 +132,7 @@ const rawToClientLabel: Record<string, string> = {
   chassis_received: "AWAITING VIN",
   shipped: "CARS IN TRANSIT",
   delivered: "CARS DELIVERED",
+  cancelled: "CANCELLED VEHICLES",
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -219,6 +225,9 @@ const hasAnyPI = (b: VehicleBookingItem): boolean => {
 // };
 
 const getClientCards = (b: VehicleBookingItem): string[] => {
+  if (b.status === "cancelled") {
+    return ["CANCELLED VEHICLES"];
+  }
   const cards: string[] = ["ORDERS PLACED"];
 
   if (b.status === "delivered") {
@@ -272,6 +281,7 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
 //                     AND has chassis AND no PI generated
 // Shipped           = raw status === shipped
 // Delivered         = raw status === delivered
+// Cancelled Vehicles = raw status === cancelled
 //
 // Overlap examples:
 //   chassis received, no engine, no PI → ["Awaiting Numbers", "Make PI"]
@@ -280,6 +290,9 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
 //   shipped, no engine → ["Awaiting Numbers", "Shipped"]
 //
 const getAdminCards = (b: VehicleBookingItem): string[] => {
+  if (b.status === "cancelled") {
+    return ["Cancelled Vehicles"];
+  }
   const cards: string[] = [];
 
   if (b.status === "pending") cards.push("Action Required");
@@ -415,6 +428,12 @@ const getAdminDisplayStatus = (
         badge: "bg-green-100 text-green-700 border-green-200",
       };
 
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        badge: "bg-rose-100 text-rose-700 border-rose-200",
+      };
+
     default:
       return {
         label: b.status,
@@ -432,6 +451,12 @@ const getAdminDisplayStatus = (
 const getClientDisplayStatus = (
   b: VehicleBookingItem,
 ): { label: string; badge: string } => {
+  if (b.status === "cancelled") {
+    return {
+      label: "Cancelled",
+      badge: "bg-rose-100 text-rose-700 border-rose-200",
+    };
+  }
   if (b.status === "delivered") {
     return {
       label: "Delivered",
@@ -504,6 +529,7 @@ const VehicleOrdersList = () => {
     makePiTotal: 0,
     shippedTotal: 0,
     deliveredTotal: 0,
+    cancelledTotal: 0,
     // Client stats
     ordersPlaced: 0,
     awaitingVin: 0,
@@ -511,6 +537,7 @@ const VehicleOrdersList = () => {
     lcReceived: 0,
     carsInTransit: 0,
     carsDelivered: 0,
+    cancelledVehicles: 0,
   });
 
   const incomingFilter = (location.state as any)?.statusFilter;
@@ -570,6 +597,7 @@ const VehicleOrdersList = () => {
           "LC RECEIVED": 0,
           "CARS IN TRANSIT": 0,
           "CARS DELIVERED": 0,
+          "CANCELLED VEHICLES": 0,
         };
         clientBookings.forEach((b) => {
           const cards = getClientCards(b);
@@ -611,12 +639,14 @@ const VehicleOrdersList = () => {
           makePiTotal: 0,
           shippedTotal: 0,
           deliveredTotal: 0,
+          cancelledTotal: 0,
           ordersPlaced: cardCounts["ORDERS PLACED"],
           awaitingVin: cardCounts["AWAITING VIN"],
           pendingLc: cardCounts["PENDING LC"],
           lcReceived: cardCounts["LC RECEIVED"],
           carsInTransit: cardCounts["CARS IN TRANSIT"],
           carsDelivered: cardCounts["CARS DELIVERED"],
+          cancelledVehicles: cardCounts["CANCELLED VEHICLES"],
         });
         return;
       }
@@ -633,7 +663,7 @@ const VehicleOrdersList = () => {
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
 
-      const stats = res.stats;
+      const stats = res.stats as any;
       setBookingStats({
         pendingTotal: stats?.pendingTotal || 0,
         approvalTotal: stats?.approvalTotal || 0,
@@ -642,12 +672,14 @@ const VehicleOrdersList = () => {
         makePiTotal: stats?.makePiTotal || 0,
         shippedTotal: stats?.shippedTotal || 0,
         deliveredTotal: stats?.deliveredTotal || 0,
+        cancelledTotal: stats?.cancelledTotal || 0,
         ordersPlaced: 0,
         awaitingVin: 0,
         pendingLc: 0,
         lcReceived: 0,
         carsInTransit: 0,
         carsDelivered: 0,
+        cancelledVehicles: 0,
       });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
@@ -1079,6 +1111,20 @@ const VehicleOrdersList = () => {
           </button>
         );
 
+      case "cancelled":
+        return (
+          <button
+            onClick={() =>
+              navigate(
+                `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
+              )
+            }
+            className={`${cls} bg-indigo-600 hover:bg-indigo-700`}
+          >
+            Found Replacement
+          </button>
+        );
+
       default:
         return null;
     }
@@ -1138,10 +1184,18 @@ const VehicleOrdersList = () => {
           icon: <PackageCheck size={20} />,
           tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
         },
+        {
+          label: "CANCELLED VEHICLES",
+          filterLabel: "CANCELLED VEHICLES",
+          value: bookingStats.cancelledVehicles,
+          detail: "Cancelled vehicles",
+          icon: <AlertCircle size={20} />,
+          tone: "bg-rose-50 text-rose-700 border-rose-100",
+        },
       ];
     }
 
-    // ADMIN CARDS (7 cards)
+    // ADMIN CARDS (8 cards)
     return [
       {
         label: "Action Required",
@@ -1198,6 +1252,14 @@ const VehicleOrdersList = () => {
         detail: "Vehicle delivered to client",
         icon: <PackageCheck size={20} />,
         tone: "bg-green-100 text-green-800 border-green-200",
+      },
+      {
+        label: "Cancelled Vehicles",
+        filterLabel: "Cancelled Vehicles",
+        value: bookingStats.cancelledTotal,
+        detail: "Cancelled vehicles",
+        icon: <AlertCircle size={20} />,
+        tone: "bg-rose-100 text-rose-800 border-rose-200",
       },
     ];
   }, [bookingStats, isClient]);
@@ -1295,7 +1357,7 @@ const VehicleOrdersList = () => {
         {/* ─── SUMMARY CARDS ─── */}
         <div className="px-8 pb-4">
           <div
-            className={`grid gap-4 grid-cols-2 md:grid-cols-3 ${isClient ? "xl:grid-cols-6" : "lg:grid-cols-4 xl:grid-cols-7"}`}
+            className={`grid gap-4 grid-cols-2 md:grid-cols-3 ${isClient ? "xl:grid-cols-7" : "lg:grid-cols-4 xl:grid-cols-8"}`}
           >
             {summaryCards.map((card: any) => (
               <button
@@ -1403,10 +1465,15 @@ const VehicleOrdersList = () => {
                     const vehicleId = `VEH${String(vehicleSerial).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
+                    const isCancelled = booking.status === "cancelled";
                     return (
                       <tr
                         key={booking._id}
-                        className="align-middle transition-colors duration-200 hover:bg-blue-50/30"
+                        className={`align-middle transition-colors duration-200 ${
+                          isCancelled
+                            ? "bg-rose-50/30 hover:bg-rose-100/40 text-rose-950 dark:bg-rose-950/10 dark:hover:bg-rose-900/20"
+                            : "hover:bg-blue-50/30"
+                        }`}
                       >
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <div className="font-bold text-[#0f172a] text-[15px]">
