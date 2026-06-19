@@ -87,6 +87,7 @@ const VehicleOrderVehicleView = () => {
   const [recordRemarks, setRecordRemarks] = useState("");
   const [recordingPayment, setRecordingPayment] = useState(false);
 
+
   const loadData = useCallback(async () => {
     if (!id || vehicleIndex === undefined) return;
 
@@ -144,6 +145,7 @@ const VehicleOrderVehicleView = () => {
       setRecordingPayment(false);
     }
   };
+
 
   const handleShipVehicle = async () => {
     if (!booking) return;
@@ -212,6 +214,11 @@ const VehicleOrderVehicleView = () => {
 
   // Filtered Info Cards based on role
   const infoCards = [
+    {
+      icon: Hash,
+      label: "Reference No.",
+      value: booking.referenceNo || (isClient ? "Not assigned" : "-"),
+    },
     {
       icon: Hash,
       label: "Booking Status",
@@ -348,6 +355,7 @@ const VehicleOrderVehicleView = () => {
               <Eye size={13} />
               {isClient ? "VIEW DOCUMENTS" : "VIEW LIBRARY"}
             </button>
+
 
             {!isClient && (
               <>
@@ -782,7 +790,7 @@ const VehicleOrderVehicleView = () => {
                 type="button"
                 onClick={handleCancelVehicle}
                 disabled={cancelling}
-                className="cursor-pointer rounded-xl bg-rose-650 bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                className="cursor-pointer rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
               >
                 {cancelling ? "Cancelling..." : "Confirm"}
               </button>

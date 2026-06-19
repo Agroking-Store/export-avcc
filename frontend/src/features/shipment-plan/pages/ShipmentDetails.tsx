@@ -40,6 +40,7 @@ type ShippedVehicle = {
   vehicleIndex: number;
   carName: string;
   chassisNo: string;
+  referenceNo: string;
   piNo: string;
   commercialInvoiceNo: string;
   amount: number;
@@ -291,6 +292,11 @@ const ShipmentDetails = () => {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
                       {vehicle.chassisNumber || "-"} / {vehicle.engineNumber || "-"}
                     </p>
+                    {vehicle.referenceNo && (
+                      <p className="text-[10px] font-semibold font-mono text-amber-700 mt-0.5">
+                        Ref: {vehicle.referenceNo}
+                      </p>
+                    )}
                   </div>
                   {!isClient && (
                     <button
@@ -328,10 +334,14 @@ const ShipmentDetails = () => {
                       <div className="bg-blue-100 text-blue-700 font-bold h-8 w-8 rounded-lg flex items-center justify-center text-xs">
                         {idx + 1}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Car Name</p>
                           <p className="text-sm font-bold text-[#1B2559]">{vehicle.carName}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reference No.</p>
+                          <p className="text-sm font-bold font-mono text-amber-700">{vehicle.referenceNo || "-"}</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Commercial Invoice No</p>
@@ -357,11 +367,12 @@ const ShipmentDetails = () => {
                   </div>
                   {expandedVehicles[vehicle._id] && (
                     <div className="border-t border-slate-100 bg-white p-4 md:p-6 overflow-x-auto">
-                      <table className="w-full text-center text-sm border-collapse min-w-[800px] border border-slate-200">
+                      <table className="w-full text-center text-sm border-collapse min-w-[900px] border border-slate-200">
                         <thead>
                           <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                             <th className="py-2.5 px-4 border border-slate-200">SR NO</th>
                             <th className="py-2.5 px-4 border border-slate-200">CAR NAME</th>
+                            <th className="py-2.5 px-4 border border-slate-200">REF NO</th>
                             <th className="py-2.5 px-4 border border-slate-200">CHASSIS NO</th>
                             <th className="py-2.5 px-4 border border-slate-200">PI NO</th>
                             <th className="py-2.5 px-4 border border-slate-200">INV NO</th>
@@ -373,6 +384,7 @@ const ShipmentDetails = () => {
                           <tr className="text-slate-700 hover:bg-slate-50/30">
                             <td className="py-3 px-4 font-bold border border-slate-200">{idx + 1}</td>
                             <td className="py-3 px-4 font-bold border border-slate-200 text-left">{vehicle.carName}</td>
+                            <td className="py-3 px-4 font-mono text-xs font-semibold text-amber-700 border border-slate-200">{vehicle.referenceNo || "-"}</td>
                             <td className="py-3 px-4 font-mono text-xs border border-slate-200">{vehicle.chassisNo}</td>
                             <td className="py-3 px-4 font-semibold border border-slate-200">{vehicle.piNo}</td>
                             <td className="py-3 px-4 font-semibold border border-slate-200">{vehicle.commercialInvoiceNo}</td>

@@ -104,6 +104,8 @@ export interface IVehicleBooking extends Document {
   commercialHsnCode?: string;
   exportHsnCode?: string;
   hsnCode?: string;
+  /** Client-assigned reference number, unique per vehicle (max 10 chars) */
+  referenceNo?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -282,6 +284,18 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
     commercialHsnCode: { type: String, default: "", trim: true },
     exportHsnCode: { type: String, default: "", trim: true },
     hsnCode: { type: String, default: "", trim: true },
+    referenceNo: {
+      type: String,
+      trim: true,
+      maxlength: 10,
+      index: {
+        unique: true,
+        partialFilterExpression: {
+          referenceNo: { $type: "string", $ne: "" },
+        },
+      },
+      set: (v: string | undefined) => (v === "" ? undefined : v),
+    },
   },
   {
     timestamps: true,
