@@ -505,7 +505,7 @@ interface ClientOrdersResponse {
   };
 }
 
-type ConfirmationAction = "deliver";
+type ConfirmationAction = "deliver" | "reset";
 
 // ═══════════════════════════════════════════════════════════════════
 // COMPONENT
@@ -829,9 +829,28 @@ const VehicleOrdersList = () => {
 
   const handleConfirmAction = async () => {
     if (!confirmation) return;
-    const { booking } = confirmation;
+    const { action, booking } = confirmation;
     setConfirmation(null);
-    await handleMarkDelivered(booking);
+    if (action === "deliver") {
+      await handleMarkDelivered(booking);
+    } else if (action === "reset") {
+      await handleResetVehicle(booking);
+    }
+  };
+
+  const openResetConfirmation = (booking: VehicleBookingItem) => {
+    setConfirmation({ action: "reset", booking });
+  };
+
+  const handleResetVehicle = async (booking: VehicleBookingItem) => {
+    try {
+      const updated = await vehicleBookingApi.resetVehicle(booking._id);
+      syncBooking(updated);
+      toast.success("Vehicle reset successfully");
+      fetchBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to reset vehicle");
+    }
   };
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
@@ -1114,11 +1133,7 @@ const VehicleOrdersList = () => {
       case "cancelled":
         return (
           <button
-            onClick={() =>
-              navigate(
-                `/vehicles/orders/${orderId}/unit-view/${booking.vehicleIndex}`,
-              )
-            }
+            onClick={() => openResetConfirmation(booking)}
             className={`${cls} bg-indigo-600 hover:bg-indigo-700`}
           >
             Found Replacement
@@ -1357,38 +1372,42 @@ const VehicleOrdersList = () => {
         {/* ─── SUMMARY CARDS ─── */}
         <div className="px-8 pb-4">
           <div
-            className={`grid gap-4 grid-cols-2 md:grid-cols-3 ${isClient ? "xl:grid-cols-7" : "lg:grid-cols-4 xl:grid-cols-8"}`}
+            className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
           >
             {summaryCards.map((card: any) => (
               <button
                 key={card.label}
                 type="button"
                 onClick={() => setStatusLabel(card.filterLabel)}
-                className={`cursor-pointer rounded-[24px] border p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                className={`cursor-pointer rounded-[20px] border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md flex items-center justify-between gap-3 min-h-[90px] ${
                   statusLabel === card.filterLabel
                     ? "border-blue-300 bg-blue-50/70 ring-2 ring-blue-100"
-                    : "border-slate-200 bg-white"
+                    : "border-slate-200 bg-white dark:bg-gray-900 dark:border-gray-800"
                 }`}
               >
-                {card.icon && (
-                  <div
-                    className={`rounded-xl p-2.5 mb-3 inline-flex ${card.tone}`}
-                  >
-                    {card.icon}
+                <div className="flex items-center gap-3 min-w-0">
+                  {card.icon && (
+                    <div
+                      className={`rounded-xl p-2.5 inline-flex shrink-0 ${card.tone}`}
+                    >
+                      {card.icon}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200 truncate">
+                      {card.label}
+                    </p>
+                    {card.detail && (
+                      <p className="text-[10px] text-slate-400 dark:text-gray-400 line-clamp-2 mt-0.5 leading-snug">
+                        {card.detail}
+                      </p>
+                    )}
                   </div>
-                )}
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {card.label}
-                </p>
-                {card.detail && (
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    {card.detail}
-                  </p>
-                )}
+                </div>
                 <div
-                  className={`mt-3 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${card.tone}`}
+                  className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${card.tone}`}
                 >
-                  {card.value} vehicles
+                  {card.value}
                 </div>
               </button>
             ))}
@@ -1675,7 +1694,7 @@ const VehicleOrdersList = () => {
         />
       )}
 
-      {/* ─── DELIVERED CONFIRMATION ─── */}
+      {/* ─── DELIVERED / RESET CONFIRMATION ─── */}
       <AlertDialog
         open={!!confirmation}
         onOpenChange={(open) => {
@@ -1684,14 +1703,30 @@ const VehicleOrdersList = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogMedia className="bg-blue-50 text-blue-700">
-              <Truck size={22} />
+            <AlertDialogMedia
+              className={
+                confirmation?.action === "reset"
+                  ? "bg-rose-50 text-rose-700"
+                  : "bg-blue-50 text-blue-700"
+              }
+            >
+              {confirmation?.action === "reset" ? (
+                <AlertCircle size={22} />
+              ) : (
+                <Truck size={22} />
+              )}
             </AlertDialogMedia>
-            <AlertDialogTitle>Mark as delivered?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmation?.action === "reset"
+                ? "Reset Sourcing Workflow?"
+                : "Mark as delivered?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmationMissingInvoices
-                ? "Invoices aren't created for this vehicle. Are you sure you want to mark it as delivered?"
-                : "Are you sure you want to mark this vehicle as delivered?"}
+              {confirmation?.action === "reset"
+                ? "Are you sure you want to reset this vehicle order? This will restart the sourcing workflow from Step 1 (Allot Dealer)."
+                : confirmationMissingInvoices
+                  ? "Invoices aren't created for this vehicle. Are you sure you want to mark it as delivered?"
+                  : "Are you sure you want to mark this vehicle as delivered?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
