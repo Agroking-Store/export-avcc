@@ -28,8 +28,6 @@ const emptyInvoiceReadiness = (): InvoiceReadiness => ({
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const isChassisSuffixSearch = (value: string) =>
-  /^[a-zA-Z0-9]{4}$/.test(value.trim());
 
 export const getInvoiceReadinessByBookingIds = async (bookingIds: string[]) => {
   const uniqueBookingIds = [...new Set(bookingIds.filter(Boolean))];
@@ -1281,13 +1279,6 @@ export const getAllVehicleBookingsService = async (query: any) => {
     const matchingStatuses: VehicleBookingStatus[] = [];
     const searchRegex = { $regex: trimmedSearch, $options: "i" };
 
-    if (isChassisSuffixSearch(trimmedSearch)) {
-      match.chassisNumber = {
-        $regex: `${escapeRegex(trimmedSearch)}$`,
-        $options: "i",
-      };
-    }
-
     if ("pending".includes(normalizedSearch)) {
       matchingStatuses.push("pending");
     }
@@ -1319,37 +1310,35 @@ export const getAllVehicleBookingsService = async (query: any) => {
       matchingStatuses.push("delivered");
     }
 
-    if (!isChassisSuffixSearch(trimmedSearch)) {
-      match.$or = [
-        {
-          "orderId.vehicleSnapshot.brandName": searchRegex,
-        },
-        {
-          "orderId.vehicleSnapshot.modelName": searchRegex,
-        },
-        { "orderId.vehicleSnapshot.variant": searchRegex },
-        { "orderId.vehicleSnapshot.color": searchRegex },
-        { "orderId.orderNumber": searchRegex },
-        { engineNumber: searchRegex },
-        { chassisNumber: searchRegex },
-        { referenceNo: searchRegex },
-        { "assignedDealerSnapshot.name": searchRegex },
-        { "assignedClientSnapshot.name": searchRegex },
-        { "assignedClientSnapshot.companyName": searchRegex },
-        { "assignedClientSnapshot.clientCode": searchRegex },
-        { paymentReference: searchRegex },
-        { status: searchRegex },
-      ];
+    match.$or = [
+      {
+        "orderId.vehicleSnapshot.brandName": searchRegex,
+      },
+      {
+        "orderId.vehicleSnapshot.modelName": searchRegex,
+      },
+      { "orderId.vehicleSnapshot.variant": searchRegex },
+      { "orderId.vehicleSnapshot.color": searchRegex },
+      { "orderId.orderNumber": searchRegex },
+      { engineNumber: searchRegex },
+      { chassisNumber: searchRegex },
+      { referenceNo: searchRegex },
+      { "assignedDealerSnapshot.name": searchRegex },
+      { "assignedClientSnapshot.name": searchRegex },
+      { "assignedClientSnapshot.companyName": searchRegex },
+      { "assignedClientSnapshot.clientCode": searchRegex },
+      { paymentReference: searchRegex },
+      { status: searchRegex },
+    ];
 
-      if (matchingStatuses.length > 0) {
-        match.$or.push({ status: { $in: [...new Set(matchingStatuses)] } });
-      }
-      if (
-        "make pi".includes(normalizedSearch) ||
-        "pi pending".includes(normalizedSearch)
-      ) {
-        match.$or.push({ $expr: makePIExpr });
-      }
+    if (matchingStatuses.length > 0) {
+      match.$or.push({ status: { $in: [...new Set(matchingStatuses)] } });
+    }
+    if (
+      "make pi".includes(normalizedSearch) ||
+      "pi pending".includes(normalizedSearch)
+    ) {
+      match.$or.push({ $expr: makePIExpr });
     }
   }
 
@@ -1364,15 +1353,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
   addRegexFilter("orderId.vehicleSnapshot.color", color);
   addRegexFilter("engineNumber", engineNumber);
   if (chassisNumber && String(chassisNumber).trim()) {
-    const value = String(chassisNumber).trim();
-    if (isChassisSuffixSearch(value)) {
-      match.chassisNumber = {
-        $regex: `${escapeRegex(value)}$`,
-        $options: "i",
-      };
-    } else {
-      addRegexFilter("chassisNumber", value);
-    }
+    addRegexFilter("chassisNumber", String(chassisNumber).trim());
   }
   addRegexFilter("assignedDealerSnapshot.name", dealer);
   addRegexFilter("assignedClientSnapshot.name", client);

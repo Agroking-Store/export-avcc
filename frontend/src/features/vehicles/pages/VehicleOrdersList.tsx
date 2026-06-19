@@ -141,21 +141,11 @@ const hasGeneratedPI = (b: VehicleBookingItem): boolean =>
 const hasChassis = (b: VehicleBookingItem): boolean =>
   !!String(b.chassisNumber || "").trim();
 
-const isChassisSuffixSearch = (value: string) =>
-  /^[a-zA-Z0-9]{4}$/.test(value.trim());
-
 const bookingMatchesSearch = (
   booking: VehicleBookingItem,
   normalizedSearch: string,
 ): boolean => {
   if (!normalizedSearch) return true;
-
-  if (isChassisSuffixSearch(normalizedSearch)) {
-    const chassis = String(booking.chassisNumber || "")
-      .trim()
-      .toLowerCase();
-    return chassis.endsWith(normalizedSearch);
-  }
 
   const orderData = (booking as any).orderId;
   const vehicleSnapshot =
