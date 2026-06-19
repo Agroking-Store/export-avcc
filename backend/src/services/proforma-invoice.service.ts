@@ -1518,6 +1518,7 @@ export const getPIsService = async (query: any) => {
             { "client_id.name": { $regex: search, $options: "i" } },
             { "client_id.clientCode": { $regex: search, $options: "i" } },
             { "company_id.name": { $regex: search, $options: "i" } },
+            { "vehicleDetails.chassisNo": { $regex: search, $options: "i" } },
           ],
         },
       },
@@ -1591,6 +1592,7 @@ export const getPIsService = async (query: any) => {
             { status: { $regex: search, $options: "i" } },
             { "client_id.name": { $regex: search, $options: "i" } },
             { "company_id.name": { $regex: search, $options: "i" } },
+            { "vehicleDetails.chassisNo": { $regex: search, $options: "i" } },
           ],
         },
       });
