@@ -1332,6 +1332,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
         { "orderId.orderNumber": searchRegex },
         { engineNumber: searchRegex },
         { chassisNumber: searchRegex },
+        { referenceNo: searchRegex },
         { "assignedDealerSnapshot.name": searchRegex },
         { "assignedClientSnapshot.name": searchRegex },
         { "assignedClientSnapshot.companyName": searchRegex },
