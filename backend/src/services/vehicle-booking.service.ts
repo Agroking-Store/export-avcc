@@ -28,8 +28,6 @@ const emptyInvoiceReadiness = (): InvoiceReadiness => ({
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const isChassisSuffixSearch = (value: string) =>
-  /^[a-zA-Z0-9]{4}$/.test(value.trim());
 
 export const getInvoiceReadinessByBookingIds = async (bookingIds: string[]) => {
   const uniqueBookingIds = [...new Set(bookingIds.filter(Boolean))];
@@ -1121,6 +1119,48 @@ export const uploadClientCorrectionDocument = async (
   return getPopulatedBookingWithReadiness(saved._id);
 };
 
+const REFERENCE_NO_REGEX = /^[^\s]{1,10}$/;
+
+export const setVehicleReferenceNo = async (
+  bookingId: string,
+  referenceNo: string,
+  clientEmail: string,
+) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  const client = await Client.findOne({
+    email: clientEmail.toLowerCase().trim(),
+  });
+  if (!client) throw new Error("Client profile not found");
+
+  if (
+    !booking.assignedClientId ||
+    String(booking.assignedClientId) !== String(client._id)
+  ) {
+    throw new Error("You can only assign a reference number to your own vehicles");
+  }
+
+  const trimmed = String(referenceNo || "").trim();
+  if (!REFERENCE_NO_REGEX.test(trimmed)) {
+    throw new Error(
+      "Reference number must be 1–10 characters (letters, numbers, or symbols, no spaces)",
+    );
+  }
+
+  const existing = await VehicleBooking.findOne({
+    referenceNo: trimmed,
+    _id: { $ne: booking._id },
+  });
+  if (existing) {
+    throw new Error("This reference number is already assigned to another vehicle");
+  }
+
+  booking.referenceNo = trimmed;
+  const saved = await booking.save();
+  return getPopulatedBookingWithReadiness(saved._id);
+};
+
 export const getClientCorrectionFile = async (
   bookingId: string,
   correctionId: string,
@@ -1239,13 +1279,6 @@ export const getAllVehicleBookingsService = async (query: any) => {
     const matchingStatuses: VehicleBookingStatus[] = [];
     const searchRegex = { $regex: trimmedSearch, $options: "i" };
 
-    if (isChassisSuffixSearch(trimmedSearch)) {
-      match.chassisNumber = {
-        $regex: `${escapeRegex(trimmedSearch)}$`,
-        $options: "i",
-      };
-    }
-
     if ("pending".includes(normalizedSearch)) {
       matchingStatuses.push("pending");
     }
@@ -1277,36 +1310,35 @@ export const getAllVehicleBookingsService = async (query: any) => {
       matchingStatuses.push("delivered");
     }
 
-    if (!isChassisSuffixSearch(trimmedSearch)) {
-      match.$or = [
-        {
-          "orderId.vehicleSnapshot.brandName": searchRegex,
-        },
-        {
-          "orderId.vehicleSnapshot.modelName": searchRegex,
-        },
-        { "orderId.vehicleSnapshot.variant": searchRegex },
-        { "orderId.vehicleSnapshot.color": searchRegex },
-        { "orderId.orderNumber": searchRegex },
-        { engineNumber: searchRegex },
-        { chassisNumber: searchRegex },
-        { "assignedDealerSnapshot.name": searchRegex },
-        { "assignedClientSnapshot.name": searchRegex },
-        { "assignedClientSnapshot.companyName": searchRegex },
-        { "assignedClientSnapshot.clientCode": searchRegex },
-        { paymentReference: searchRegex },
-        { status: searchRegex },
-      ];
+    match.$or = [
+      {
+        "orderId.vehicleSnapshot.brandName": searchRegex,
+      },
+      {
+        "orderId.vehicleSnapshot.modelName": searchRegex,
+      },
+      { "orderId.vehicleSnapshot.variant": searchRegex },
+      { "orderId.vehicleSnapshot.color": searchRegex },
+      { "orderId.orderNumber": searchRegex },
+      { engineNumber: searchRegex },
+      { chassisNumber: searchRegex },
+      { referenceNo: searchRegex },
+      { "assignedDealerSnapshot.name": searchRegex },
+      { "assignedClientSnapshot.name": searchRegex },
+      { "assignedClientSnapshot.companyName": searchRegex },
+      { "assignedClientSnapshot.clientCode": searchRegex },
+      { paymentReference: searchRegex },
+      { status: searchRegex },
+    ];
 
-      if (matchingStatuses.length > 0) {
-        match.$or.push({ status: { $in: [...new Set(matchingStatuses)] } });
-      }
-      if (
-        "make pi".includes(normalizedSearch) ||
-        "pi pending".includes(normalizedSearch)
-      ) {
-        match.$or.push({ $expr: makePIExpr });
-      }
+    if (matchingStatuses.length > 0) {
+      match.$or.push({ status: { $in: [...new Set(matchingStatuses)] } });
+    }
+    if (
+      "make pi".includes(normalizedSearch) ||
+      "pi pending".includes(normalizedSearch)
+    ) {
+      match.$or.push({ $expr: makePIExpr });
     }
   }
 
@@ -1321,15 +1353,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
   addRegexFilter("orderId.vehicleSnapshot.color", color);
   addRegexFilter("engineNumber", engineNumber);
   if (chassisNumber && String(chassisNumber).trim()) {
-    const value = String(chassisNumber).trim();
-    if (isChassisSuffixSearch(value)) {
-      match.chassisNumber = {
-        $regex: `${escapeRegex(value)}$`,
-        $options: "i",
-      };
-    } else {
-      addRegexFilter("chassisNumber", value);
-    }
+    addRegexFilter("chassisNumber", String(chassisNumber).trim());
   }
   addRegexFilter("assignedDealerSnapshot.name", dealer);
   addRegexFilter("assignedClientSnapshot.name", client);

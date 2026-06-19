@@ -18,6 +18,7 @@ export type ShipmentVehicleBooking = {
   vehicleIndex: number;
   engineNumber?: string;
   chassisNumber?: string;
+  referenceNo?: string;
   status: string;
   vehicleId?: {
     brandName?: string;

@@ -84,6 +84,7 @@ const VehicleOrderVehicleView = () => {
   const [recordRemarks, setRecordRemarks] = useState("");
   const [recordingPayment, setRecordingPayment] = useState(false);
 
+
   const loadData = useCallback(async () => {
     if (!id || vehicleIndex === undefined) return;
 
@@ -142,6 +143,7 @@ const VehicleOrderVehicleView = () => {
     }
   };
 
+
   const handleShipVehicle = async () => {
     if (!booking) return;
     if (!String(booking.chassisNumber || "").trim()) {
@@ -192,6 +194,11 @@ const VehicleOrderVehicleView = () => {
 
   // Filtered Info Cards based on role
   const infoCards = [
+    {
+      icon: Hash,
+      label: "Reference No.",
+      value: booking.referenceNo || (isClient ? "Not assigned" : "-"),
+    },
     {
       icon: Hash,
       label: "Booking Status",
@@ -319,6 +326,7 @@ const VehicleOrderVehicleView = () => {
               <Eye size={13} />
               {isClient ? "VIEW DOCUMENTS" : "VIEW LIBRARY"}
             </button>
+
 
             {!isClient && (
               <>
@@ -712,6 +720,8 @@ const VehicleOrderVehicleView = () => {
           </div>
         </div>
       )}
+
+
     </div>
   );
 };
