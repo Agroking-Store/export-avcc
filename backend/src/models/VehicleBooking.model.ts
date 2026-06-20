@@ -106,6 +106,8 @@ export interface IVehicleBooking extends Document {
   hsnCode?: string;
   /** Client-assigned reference number, unique per vehicle (max 10 chars) */
   referenceNo?: string;
+  /** True when this vehicle was reset via "Found Replacement" after cancellation */
+  isReplacement?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -295,6 +297,10 @@ const vehicleBookingSchema = new Schema<IVehicleBooking>(
         },
       },
       set: (v: string | undefined) => (v === "" ? undefined : v),
+    },
+    isReplacement: {
+      type: Boolean,
+      default: false,
     },
   },
   {

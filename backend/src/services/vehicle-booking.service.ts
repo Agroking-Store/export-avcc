@@ -1720,6 +1720,7 @@ export const resetVehicleBooking = async (bookingId: string) => {
 
   // Clear fields to reset to initial stage
   booking.status = "pending";
+  booking.isReplacement = true;
   booking.assignedDealerId = null;
   booking.assignedDealerSnapshot = { name: "", contact: "", gstNumber: "" };
   booking.quotationFile = "";

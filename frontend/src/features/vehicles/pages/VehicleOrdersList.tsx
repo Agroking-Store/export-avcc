@@ -1536,6 +1536,11 @@ const VehicleOrdersList = () => {
                           <div className="font-bold text-[#0f172a] text-[15px]">
                             {vehicleId}
                           </div>
+                          {(booking as any).isReplacement && (
+                            <span className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                              replaced
+                            </span>
+                          )}
                         </td>
                         <td className="border-b border-slate-100 px-5 py-5 align-middle text-left">
                           <p className="truncate max-w-[180px] font-semibold text-slate-900">
