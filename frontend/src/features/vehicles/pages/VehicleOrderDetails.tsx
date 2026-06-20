@@ -90,6 +90,10 @@ const STATUS_META: Record<
     label: "Delivered",
     badge: "bg-green-100 text-green-700 border-green-200",
   },
+  cancelled: {
+    label: "Cancelled",
+    badge: "bg-rose-100 text-rose-700 border-rose-200",
+  },
 };
 
 const getQuotationUrl = (filePath?: string) =>

@@ -69,6 +69,7 @@ const ADMIN_STATUS_OPTIONS = [
   "Make PI",
   "Shipped",
   "Delivered",
+  "Cancelled Vehicles",
 ];
 
 const CLIENT_STATUS_OPTIONS = [
@@ -79,6 +80,7 @@ const CLIENT_STATUS_OPTIONS = [
   "LC RECEIVED",
   "CARS IN TRANSIT",
   "CARS DELIVERED",
+  "CANCELLED VEHICLES",
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -93,6 +95,7 @@ const adminFilterMap: Record<string, string> = {
   "Make PI": "makePI",
   Shipped: "shipped",
   Delivered: "delivered",
+  "Cancelled Vehicles": "cancelled",
 };
 
 const clientFilterMap: Record<string, string> = {
@@ -103,6 +106,7 @@ const clientFilterMap: Record<string, string> = {
   "LC RECEIVED": "LC RECEIVED",
   "CARS IN TRANSIT": "CARS IN TRANSIT",
   "CARS DELIVERED": "CARS DELIVERED",
+  "CANCELLED VEHICLES": "cancelled",
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -117,6 +121,7 @@ const rawToAdminLabel: Record<string, string> = {
   chassis_received: "Awaiting Numbers",
   shipped: "Shipped",
   delivered: "Delivered",
+  cancelled: "Cancelled Vehicles",
 };
 
 const rawToClientLabel: Record<string, string> = {
@@ -128,6 +133,7 @@ const rawToClientLabel: Record<string, string> = {
   chassis_received: "AWAITING VIN",
   shipped: "CARS IN TRANSIT",
   delivered: "CARS DELIVERED",
+  cancelled: "CANCELLED VEHICLES",
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -211,6 +217,9 @@ const hasAnyPI = (b: VehicleBookingItem): boolean => {
 // };
 
 const getClientCards = (b: VehicleBookingItem): string[] => {
+  if (b.status === "cancelled") {
+    return ["CANCELLED VEHICLES"];
+  }
   const cards: string[] = ["ORDERS PLACED"];
 
   if (b.status === "delivered") {
@@ -264,6 +273,7 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
 //                     AND has chassis AND no PI generated
 // Shipped           = raw status === shipped
 // Delivered         = raw status === delivered
+// Cancelled Vehicles = raw status === cancelled
 //
 // Overlap examples:
 //   chassis received, no engine, no PI → ["Awaiting Numbers", "Make PI"]
@@ -272,6 +282,9 @@ const getClientCards = (b: VehicleBookingItem): string[] => {
 //   shipped, no engine → ["Awaiting Numbers", "Shipped"]
 //
 const getAdminCards = (b: VehicleBookingItem): string[] => {
+  if (b.status === "cancelled") {
+    return ["Cancelled Vehicles"];
+  }
   const cards: string[] = [];
 
   if (b.status === "pending") cards.push("Action Required");
@@ -407,6 +420,12 @@ const getAdminDisplayStatus = (
         badge: "bg-green-100 text-green-700 border-green-200",
       };
 
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        badge: "bg-rose-100 text-rose-700 border-rose-200",
+      };
+
     default:
       return {
         label: b.status,
@@ -424,6 +443,12 @@ const getAdminDisplayStatus = (
 const getClientDisplayStatus = (
   b: VehicleBookingItem,
 ): { label: string; badge: string } => {
+  if (b.status === "cancelled") {
+    return {
+      label: "Cancelled",
+      badge: "bg-rose-100 text-rose-700 border-rose-200",
+    };
+  }
   if (b.status === "delivered") {
     return {
       label: "Delivered",
@@ -472,7 +497,7 @@ interface ClientOrdersResponse {
   };
 }
 
-type ConfirmationAction = "deliver";
+type ConfirmationAction = "deliver" | "reset";
 
 // ═══════════════════════════════════════════════════════════════════
 // COMPONENT
@@ -496,6 +521,7 @@ const VehicleOrdersList = () => {
     makePiTotal: 0,
     shippedTotal: 0,
     deliveredTotal: 0,
+    cancelledTotal: 0,
     // Client stats
     ordersPlaced: 0,
     awaitingVin: 0,
@@ -503,6 +529,7 @@ const VehicleOrdersList = () => {
     lcReceived: 0,
     carsInTransit: 0,
     carsDelivered: 0,
+    cancelledVehicles: 0,
   });
 
   const incomingFilter = (location.state as any)?.statusFilter;
@@ -567,6 +594,7 @@ const VehicleOrdersList = () => {
           "LC RECEIVED": 0,
           "CARS IN TRANSIT": 0,
           "CARS DELIVERED": 0,
+          "CANCELLED VEHICLES": 0,
         };
         clientBookings.forEach((b) => {
           const cards = getClientCards(b);
@@ -584,7 +612,10 @@ const VehicleOrdersList = () => {
             statusMatches = true;
           } else {
             const cards = getClientCards(booking);
-            statusMatches = cards.includes(filterValue);
+            // "cancelled" from clientFilterMap maps to "CANCELLED VEHICLES" in getClientCards
+            const normalizedFilter =
+              filterValue === "cancelled" ? "CANCELLED VEHICLES" : filterValue;
+            statusMatches = cards.includes(normalizedFilter);
           }
           if (!statusMatches) return false;
 
@@ -608,12 +639,14 @@ const VehicleOrdersList = () => {
           makePiTotal: 0,
           shippedTotal: 0,
           deliveredTotal: 0,
+          cancelledTotal: 0,
           ordersPlaced: cardCounts["ORDERS PLACED"],
           awaitingVin: cardCounts["AWAITING VIN"],
           pendingLc: cardCounts["PENDING LC"],
           lcReceived: cardCounts["LC RECEIVED"],
           carsInTransit: cardCounts["CARS IN TRANSIT"],
           carsDelivered: cardCounts["CARS DELIVERED"],
+          cancelledVehicles: cardCounts["CANCELLED VEHICLES"],
         });
         return;
       }
@@ -630,7 +663,7 @@ const VehicleOrdersList = () => {
       setTotalPages(res.totalPages || 1);
       setTotal(res.total || 0);
 
-      const stats = res.stats;
+      const stats = res.stats as any;
       setBookingStats({
         pendingTotal: stats?.pendingTotal || 0,
         approvalTotal: stats?.approvalTotal || 0,
@@ -639,12 +672,14 @@ const VehicleOrdersList = () => {
         makePiTotal: stats?.makePiTotal || 0,
         shippedTotal: stats?.shippedTotal || 0,
         deliveredTotal: stats?.deliveredTotal || 0,
+        cancelledTotal: stats?.cancelledTotal || 0,
         ordersPlaced: 0,
         awaitingVin: 0,
         pendingLc: 0,
         lcReceived: 0,
         carsInTransit: 0,
         carsDelivered: 0,
+        cancelledVehicles: 0,
       });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch vehicles");
@@ -832,9 +867,28 @@ const VehicleOrdersList = () => {
 
   const handleConfirmAction = async () => {
     if (!confirmation) return;
-    const { booking } = confirmation;
+    const { action, booking } = confirmation;
     setConfirmation(null);
-    await handleMarkDelivered(booking);
+    if (action === "deliver") {
+      await handleMarkDelivered(booking);
+    } else if (action === "reset") {
+      await handleResetVehicle(booking);
+    }
+  };
+
+  const openResetConfirmation = (booking: VehicleBookingItem) => {
+    setConfirmation({ action: "reset", booking });
+  };
+
+  const handleResetVehicle = async (booking: VehicleBookingItem) => {
+    try {
+      const updated = await vehicleBookingApi.resetVehicle(booking._id);
+      syncBooking(updated);
+      toast.success("Vehicle reset successfully");
+      fetchBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to reset vehicle");
+    }
   };
 
   const handleMarkDelivered = async (booking: VehicleBookingItem) => {
@@ -1114,6 +1168,16 @@ const VehicleOrdersList = () => {
           </button>
         );
 
+      case "cancelled":
+        return (
+          <button
+            onClick={() => openResetConfirmation(booking)}
+            className={`${cls} bg-indigo-600 hover:bg-indigo-700`}
+          >
+            Found Replacement
+          </button>
+        );
+
       default:
         return null;
     }
@@ -1173,10 +1237,18 @@ const VehicleOrdersList = () => {
           icon: <PackageCheck size={20} />,
           tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
         },
+        {
+          label: "CANCELLED VEHICLES",
+          filterLabel: "CANCELLED VEHICLES",
+          value: bookingStats.cancelledVehicles,
+          detail: "Cancelled vehicles",
+          icon: <AlertCircle size={20} />,
+          tone: "bg-rose-50 text-rose-700 border-rose-100",
+        },
       ];
     }
 
-    // ADMIN CARDS (7 cards)
+    // ADMIN CARDS (8 cards)
     return [
       {
         label: "Action Required",
@@ -1233,6 +1305,14 @@ const VehicleOrdersList = () => {
         detail: "Vehicle delivered to client",
         icon: <PackageCheck size={20} />,
         tone: "bg-green-100 text-green-800 border-green-200",
+      },
+      {
+        label: "Cancelled Vehicles",
+        filterLabel: "Cancelled Vehicles",
+        value: bookingStats.cancelledTotal,
+        detail: "Cancelled vehicles",
+        icon: <AlertCircle size={20} />,
+        tone: "bg-rose-100 text-rose-800 border-rose-200",
       },
     ];
   }, [bookingStats, isClient]);
@@ -1330,38 +1410,42 @@ const VehicleOrdersList = () => {
         {/* ─── SUMMARY CARDS ─── */}
         <div className="px-8 pb-4">
           <div
-            className={`grid gap-4 grid-cols-2 md:grid-cols-3 ${isClient ? "xl:grid-cols-6" : "lg:grid-cols-4 xl:grid-cols-7"}`}
+            className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
           >
             {summaryCards.map((card: any) => (
               <button
                 key={card.label}
                 type="button"
                 onClick={() => setStatusLabel(card.filterLabel)}
-                className={`cursor-pointer rounded-[24px] border p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                className={`cursor-pointer rounded-[20px] border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md flex items-center justify-between gap-3 min-h-[90px] ${
                   statusLabel === card.filterLabel
                     ? "border-blue-300 bg-blue-50/70 ring-2 ring-blue-100"
-                    : "border-slate-200 bg-white"
+                    : "border-slate-200 bg-white dark:bg-gray-900 dark:border-gray-800"
                 }`}
               >
-                {card.icon && (
-                  <div
-                    className={`rounded-xl p-2.5 mb-3 inline-flex ${card.tone}`}
-                  >
-                    {card.icon}
+                <div className="flex items-center gap-3 min-w-0">
+                  {card.icon && (
+                    <div
+                      className={`rounded-xl p-2.5 inline-flex shrink-0 ${card.tone}`}
+                    >
+                      {card.icon}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200 truncate">
+                      {card.label}
+                    </p>
+                    {card.detail && (
+                      <p className="text-[10px] text-slate-400 dark:text-gray-400 line-clamp-2 mt-0.5 leading-snug">
+                        {card.detail}
+                      </p>
+                    )}
                   </div>
-                )}
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {card.label}
-                </p>
-                {card.detail && (
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    {card.detail}
-                  </p>
-                )}
+                </div>
                 <div
-                  className={`mt-3 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${card.tone}`}
+                  className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${card.tone}`}
                 >
-                  {card.value} vehicles
+                  {card.value}
                 </div>
               </button>
             ))}
@@ -1438,15 +1522,25 @@ const VehicleOrdersList = () => {
                     const vehicleId = `VEH${String(vehicleSerial).padStart(3, "0")}`;
                     const orderId = getOrderId(booking);
 
+                    const isCancelled = booking.status === "cancelled";
                     return (
                       <tr
                         key={booking._id}
-                        className="align-middle transition-colors duration-200 hover:bg-blue-50/30"
+                        className={`align-middle transition-colors duration-200 ${
+                          isCancelled
+                            ? "bg-rose-50/30 hover:bg-rose-100/40 text-rose-950 dark:bg-rose-950/10 dark:hover:bg-rose-900/20"
+                            : "hover:bg-blue-50/30"
+                        }`}
                       >
                         <td className="border-b border-slate-100 px-5 py-5 align-middle">
                           <div className="font-bold text-[#0f172a] text-[15px]">
                             {vehicleId}
                           </div>
+                          {(booking as any).isReplacement && (
+                            <span className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                              replaced
+                            </span>
+                          )}
                         </td>
                         <td className="border-b border-slate-100 px-5 py-5 align-middle text-left">
                           <p className="truncate max-w-[180px] font-semibold text-slate-900">
@@ -1519,6 +1613,12 @@ const VehicleOrdersList = () => {
                                   </button>
                                 </div>
                               )}
+                            </div>
+                          ) : isCancelled ? (
+                            <div className="flex justify-center w-full">
+                              <div className="w-full max-w-[220px]">
+                                {renderPrimaryAction(booking)}
+                              </div>
                             </div>
                           ) : (
                             <div className="ml-auto w-full max-w-[560px] space-y-2">
@@ -1667,7 +1767,7 @@ const VehicleOrdersList = () => {
         />
       )}
 
-      {/* ─── DELIVERED CONFIRMATION ─── */}
+      {/* ─── DELIVERED / RESET CONFIRMATION ─── */}
       <AlertDialog
         open={!!confirmation}
         onOpenChange={(open) => {
@@ -1676,14 +1776,30 @@ const VehicleOrdersList = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogMedia className="bg-blue-50 text-blue-700">
-              <Truck size={22} />
+            <AlertDialogMedia
+              className={
+                confirmation?.action === "reset"
+                  ? "bg-rose-50 text-rose-700"
+                  : "bg-blue-50 text-blue-700"
+              }
+            >
+              {confirmation?.action === "reset" ? (
+                <AlertCircle size={22} />
+              ) : (
+                <Truck size={22} />
+              )}
             </AlertDialogMedia>
-            <AlertDialogTitle>Mark as delivered?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmation?.action === "reset"
+                ? "Reset Sourcing Workflow?"
+                : "Mark as delivered?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmationMissingInvoices
-                ? "Invoices aren't created for this vehicle. Are you sure you want to mark it as delivered?"
-                : "Are you sure you want to mark this vehicle as delivered?"}
+              {confirmation?.action === "reset"
+                ? "Are you sure you want to reset this vehicle order? This will restart the sourcing workflow from Step 1 (Allot Dealer)."
+                : confirmationMissingInvoices
+                  ? "Invoices aren't created for this vehicle. Are you sure you want to mark it as delivered?"
+                  : "Are you sure you want to mark this vehicle as delivered?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

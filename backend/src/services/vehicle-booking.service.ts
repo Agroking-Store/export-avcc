@@ -869,12 +869,6 @@ export const updateChassisEngine = async (
   return getPopulatedBookingWithReadiness(saved._id);
 };
 
-// ... existing code ...
-
-/**
- * Update status manually (e.g. mark as delivered)
- */
-
 /**
  * Update status manually (e.g. mark as shipped, delivered)
  */
@@ -1195,10 +1189,6 @@ export const getBookingFile = async (bookingId: string, field: string) => {
 
   return filePath;
 };
-
-/**
- * Get all vehicle bookings across all orders with filters & pagination
- */
 
 /**
  * Get all vehicle bookings across all orders with filters & pagination
@@ -1569,6 +1559,9 @@ export const getAllVehicleBookingsService = async (query: any) => {
         deliveredTotal: {
           $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
         },
+        cancelledTotal: {
+          $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
+        },
         totalAll: { $sum: 1 },
       },
     },
@@ -1631,6 +1624,7 @@ export const getAllVehicleBookingsService = async (query: any) => {
       makePiTotal: stats.makePiTotal || 0,
       shippedTotal: stats.shippedTotal || 0,
       deliveredTotal: stats.deliveredTotal || 0,
+      cancelledTotal: stats.cancelledTotal || 0,
       totalAll: stats.totalAll || 0,
     },
   };
@@ -1672,4 +1666,95 @@ export const getReminderDueBookings = async (
   }
 
   return due;
+};
+
+const deleteFileSafe = (relativePath?: string) => {
+  if (!relativePath) return;
+  const absPath = path.isAbsolute(relativePath)
+    ? relativePath
+    : path.join(process.cwd(), relativePath.replace(/^\/+/, ""));
+  try {
+    if (fs.existsSync(absPath)) {
+      fs.unlinkSync(absPath);
+    }
+  } catch (err) {
+    console.error(`Failed to delete file ${absPath}:`, err);
+  }
+};
+
+export const cancelVehicleBooking = async (bookingId: string) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  if (booking.status === "delivered") {
+    throw new Error("Delivered vehicles cannot be cancelled");
+  }
+
+  booking.status = "cancelled";
+  const saved = await booking.save();
+  return getPopulatedBookingWithReadiness(saved._id);
+};
+
+export const resetVehicleBooking = async (bookingId: string) => {
+  const booking = await VehicleBooking.findById(bookingId);
+  if (!booking) throw new Error("Booking not found");
+
+  if (booking.status !== "cancelled") {
+    throw new Error("Only cancelled vehicles can be replaced");
+  }
+
+  // Clean up and delete any uploaded files
+  deleteFileSafe(booking.quotationFile);
+  if (booking.documents) {
+    Object.values(booking.documents).forEach((docPath) => {
+      if (typeof docPath === "string") {
+        deleteFileSafe(docPath);
+      }
+    });
+  }
+  if (booking.clientCorrections) {
+    booking.clientCorrections.forEach((correction) => {
+      deleteFileSafe(correction.filePath);
+    });
+  }
+
+  // Clear fields to reset to initial stage
+  booking.status = "pending";
+  booking.isReplacement = true;
+  booking.assignedDealerId = null;
+  booking.assignedDealerSnapshot = { name: "", contact: "", gstNumber: "" };
+  booking.quotationFile = "";
+  booking.quotationDetails = undefined;
+  booking.rejectionReason = "";
+  booking.bookingAmount = 0;
+  booking.paymentAmount = 0;
+  booking.paymentReference = "";
+  booking.payments = [];
+  booking.engineNumber = undefined;
+  booking.chassisNumber = "";
+  booking.deliveryDate = undefined;
+  booking.isCRTMUploaded = false;
+  booking.isBVUploaded = false;
+  booking.isDealerInvoiceUploaded = false;
+  booking.engineCapacity = "";
+  booking.fuelType = "";
+  booking.countryOfOrigin = "";
+  booking.yom = "";
+  booking.commercialHsnCode = "";
+  booking.exportHsnCode = "";
+  booking.hsnCode = "";
+  booking.documents = {
+    form20: "",
+    form21: "",
+    form22: "",
+    tempRegCert: "",
+    bvCertificate: "",
+    dealerInvoice: "",
+    hblDocument: "",
+    shippingBill: "",
+  };
+  booking.clientCorrections = [];
+
+  const saved = await booking.save();
+  return getPopulatedBookingWithReadiness(saved._id);
 };
