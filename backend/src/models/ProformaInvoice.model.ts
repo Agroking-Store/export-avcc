@@ -247,6 +247,7 @@ const proformaInvoiceSchema = new Schema<IProformaInvoice>(
     },
     pdfPath: { type: String },
     hblPath: { type: String },
+    lcPath: { type: String },
   },
   {
     timestamps: true,

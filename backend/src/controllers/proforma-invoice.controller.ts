@@ -491,14 +491,25 @@ export const getLCFile = async (req: Request, res: Response) => {
     }
 
     // 3. Resolve absolute path
-    // We clean the path to ensure no double slashes or leading slash issues
-    const cleanPath = lcPath.startsWith("/") ? lcPath.substring(1) : lcPath;
-    const absolutePath = path.resolve(process.cwd(), cleanPath);
+    // Handle multiple path formats:
+    //   - Absolute path like "C:\...\uploads\lcs\lc-xxx.pdf"
+    //   - Relative with leading slash: "/uploads/lcs/lc-xxx.pdf"
+    //   - Relative without leading slash: "uploads/lcs/lc-xxx.pdf"
+    let absolutePath: string;
+    
+    if (path.isAbsolute(lcPath)) {
+      // Already absolute (e.g., from req.file.path)
+      absolutePath = lcPath;
+    } else {
+      // Relative path - resolve against cwd
+      const cleanPath = lcPath.startsWith("/") ? lcPath.substring(1) : lcPath;
+      absolutePath = path.resolve(process.cwd(), cleanPath);
+    }
 
-    console.log("Looking for file at:", absolutePath);
+    console.log("[getLCFile] Looking for file at:", absolutePath);
 
     if (!fs.existsSync(absolutePath)) {
-      console.error("File missing at path:", absolutePath);
+      console.error("[getLCFile] File missing at path:", absolutePath);
       return res.status(404).json({ message: "File missing on server disk" });
     }
 
@@ -506,6 +517,7 @@ export const getLCFile = async (req: Request, res: Response) => {
     res.setHeader("Content-Disposition", "inline; filename=lc.pdf");
     res.sendFile(absolutePath);
   } catch (error: any) {
+    console.error("[getLCFile] Error:", error);
     res.status(500).json({ message: "Server error retrieving file" });
   }
 };
