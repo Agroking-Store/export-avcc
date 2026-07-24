@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
+import api from "../../../services/api";
 import {
   Search,
   BrushCleaning,
@@ -126,21 +126,7 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
       const sortOrder =
         sorting.length > 0 ? (sorting[0].desc ? "desc" : "asc") : undefined;
 
-      let token =
-        localStorage.getItem("token") || localStorage.getItem("accessToken");
-
-      if (!token && localStorage.getItem("user")) {
-        try {
-          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-          token = userObj.token || userObj.accessToken;
-        } catch (e) {}
-      }
-
-      if (token && token.startsWith('"') && token.endsWith('"')) {
-        token = token.slice(1, -1);
-      }
-
-      const res = await axios.get(`${apiConfig.baseURL}/proforma-invoices`, {
+      const res = await api.get("/proforma-invoices", {
         params: {
           search: globalFilter,
           page: pagination.pageIndex + 1,
@@ -149,7 +135,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
           sortOrder: sortOrder,
           status: statusFilter,
         },
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       setPiData(res.data.data);
@@ -189,19 +174,6 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
-  // const handlePiPdfAction = (
-  //   id: string,
-  //   _piNumber: string,
-  //   action: "view" | "download",
-  // ) => {
-  //   const url = piApi.getPIViewUrl(id, action === "download");
-
-  //   if (action === "view") {
-  //     window.open(url, "_blank");
-  //   } else {
-  //     window.location.href = url;
-  //   }
-  // };
 
   const handlePiPdfAction = async (
     id: string,
@@ -981,3 +953,4 @@ const PITablePage: React.FC<PITablePageProps> = ({ generatePagination }) => {
 };
 
 export default PITablePage;
+
