@@ -6,9 +6,6 @@ import { toast } from "react-toastify";
 const api = axios.create({
   baseURL: apiConfig.baseURL,
   timeout: apiConfig.timeout,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // Request interceptor
