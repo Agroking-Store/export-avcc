@@ -1642,7 +1642,7 @@ export const generatePackingList = async (req: Request, res: Response) => {
 
     const existingInvoices = await Invoice.find({
       piId,
-      type: "PACKING_LIST",
+      type: "PACKING_LIST" as const,
       active: true,
       vehicleId: { $in: selectedVehicleIds },
     });
@@ -1666,7 +1666,7 @@ export const generatePackingList = async (req: Request, res: Response) => {
         existingInvoice.set(buildPayload(vehicle));
         records.push(await existingInvoice.save());
       } else {
-        records.push(await Invoice.create(buildPayload(vehicle)));
+        records.push(await Invoice.create(buildPayload(vehicle) as any));
       }
     }
 
