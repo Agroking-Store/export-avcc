@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiConfig } from "../../../config/apiConfig";
+import api from "../../../services/api";
 import { toast } from "react-toastify";
 import {
   Download,
@@ -533,11 +533,8 @@ const PIDetails = () => {
   const fetchPI = async () => {
     try {
       setLoading(true);
-      const token = getToken();
       const [piRes, invoiceRes] = await Promise.all([
-        axios.get(`${apiConfig.baseURL}/proforma-invoices/${id}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }),
+        api.get(`/proforma-invoices/${id}`),
         invoiceApi.getPIContext(id || ""),
       ]);
       setData(piRes.data);
@@ -552,20 +549,6 @@ const PIDetails = () => {
   useEffect(() => {
     if (id) fetchPI();
   }, [id]);
-
-  const getToken = () => {
-    let token =
-      localStorage.getItem("token") || localStorage.getItem("accessToken");
-    if (!token && localStorage.getItem("user")) {
-      try {
-        const u = JSON.parse(localStorage.getItem("user") || "{}");
-        token = u.token || u.accessToken;
-      } catch {}
-    }
-    if (token?.startsWith('"') && token?.endsWith('"'))
-      token = token.slice(1, -1);
-    return token;
-  };
 
   // const handleViewLC = async () => {
   //   if (!id) return;
@@ -650,15 +633,10 @@ const PIDetails = () => {
 
     try {
       setViewingLC(true);
-      const token = getToken();
 
-      const response = await axios.get(
-        `${apiConfig.baseURL}/proforma-invoices/${id}/lc/view`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          responseType: "blob",
-        },
-      );
+      const response = await api.get(`/proforma-invoices/${id}/lc/view`, {
+        responseType: "blob",
+      });
 
       if (response.data.type === "application/json") {
         const text = await response.data.text();
