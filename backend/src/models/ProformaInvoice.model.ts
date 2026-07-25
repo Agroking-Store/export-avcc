@@ -29,6 +29,7 @@ export interface IProformaInvoice extends Document {
 
   totalAmount: number;
   amountInWords?: string;
+  lcPath?: string;
 
   currency: string; // USD
   paymentTerms?: string;
