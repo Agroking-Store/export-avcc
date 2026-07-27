@@ -92,9 +92,9 @@ export const renderInvoicePDF = async ({
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
+      "--disable-gpu",
     ],
   });
-  const page = await browser.newPage();
 
   try {
     const template = getTemplate(templateName);
@@ -117,6 +117,6 @@ export const renderInvoicePDF = async ({
 
     return Buffer.from(pdf);
   } finally {
-    await page.close();
+    await browser.close().catch(() => {});
   }
 };
