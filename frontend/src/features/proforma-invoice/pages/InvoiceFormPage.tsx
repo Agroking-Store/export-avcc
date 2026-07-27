@@ -191,10 +191,9 @@ const buildInitialForm = (
 
   return {
     invoiceNumber:
-      getSharedVehicleInvoiceNumber(vehicle) ||
       manual.invoiceNumber ||
       existingInvoice?.invoiceNumber ||
-      context.suggestedInvoiceNumber,
+      getSharedVehicleInvoiceNumber(vehicle) || "",
     invoiceDate:
       toDateInputValue(manual.invoiceDate) ||
       new Date().toISOString().slice(0, 10),
@@ -458,6 +457,8 @@ export default function InvoiceFormPage() {
       return;
     }
 
+    const isReplacing = replaceExisting || !!existingInvoice;
+
     try {
       setSubmitting(true);
       const response = await invoiceApi.generateInvoice({
@@ -465,10 +466,14 @@ export default function InvoiceFormPage() {
         vehicleId,
         type: invoiceType,
         manualFields: form,
-        replaceExisting,
+        replaceExisting: isReplacing,
       });
 
-      toast.success(`${invoiceType} invoice generated successfully`);
+      toast.success(
+        existingInvoice
+          ? `${invoiceType} invoice updated successfully`
+          : `${invoiceType} invoice generated successfully`,
+      );
       setSuccessData({
         invoiceId: response.invoiceId,
         invoiceNumber: response.invoiceNumber,
@@ -1065,13 +1070,15 @@ District of Origin of Goods - Pune - 411009`}
             <Button
               className="mt-5 h-11 w-full bg-blue-600 text-white hover:bg-blue-700"
               disabled={submitting}
-              onClick={() => submit(false)}
+              onClick={() => submit(!!existingInvoice)}
             >
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating Invoice...
+                  {existingInvoice ? "Updating Invoice..." : "Generating Invoice..."}
                 </>
+              ) : existingInvoice ? (
+                "Update & Replace Invoice"
               ) : (
                 "Generate Invoice"
               )}
