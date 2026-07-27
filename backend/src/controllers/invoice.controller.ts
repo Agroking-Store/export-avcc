@@ -763,7 +763,7 @@ const buildPIInvoiceContext = async (piId: string) => {
       manualFields: invoice.manualFields || {},
       hasPackingList: !!invoice.packingListPdf,
     })),
-    suggestedInvoiceNumber: await buildInvoiceNumber(),
+    suggestedInvoiceNumber: "",
   };
 };
 
