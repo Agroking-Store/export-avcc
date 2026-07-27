@@ -366,13 +366,13 @@ const resolveInvoiceNumber = ({
   vehicles: any[];
   fallbackInvoiceNumber?: string;
 }) => {
+  const manualInvoiceNumber = String(manualFields.invoiceNumber || "").trim();
   const sharedInvoiceNumber =
     vehicles.map(getSharedVehicleInvoiceNumber).find(Boolean) || "";
-  const manualInvoiceNumber = String(manualFields.invoiceNumber || "").trim();
 
   return (
-    sharedInvoiceNumber ||
     manualInvoiceNumber ||
+    sharedInvoiceNumber ||
     String(fallbackInvoiceNumber || "").trim()
   );
 };
@@ -1387,6 +1387,43 @@ export const generateInvoice = async (req: Request, res: Response) => {
       invoiceRecord = await existingInvoice.save();
     } else {
       invoiceRecord = await Invoice.create(payload);
+    }
+
+    if (resolvedInvoiceNumber) {
+      const otherInvoices = await Invoice.find({
+        vehicleId,
+        active: true,
+        _id: { $ne: invoiceRecord._id },
+      });
+      for (const otherInv of otherInvoices) {
+        otherInv.invoiceNumber = resolvedInvoiceNumber;
+        if (otherInv.manualFields) {
+          otherInv.manualFields = {
+            ...otherInv.manualFields,
+            invoiceNumber: resolvedInvoiceNumber,
+          };
+        }
+        if (otherInv.dataSnapshot?.templateData) {
+          otherInv.dataSnapshot.templateData.invoiceNumber = resolvedInvoiceNumber;
+          let templateName: "inrInvoice" | "usdInvoice" | "commercialInvoice" | null = null;
+          if (otherInv.type === "INR") templateName = "inrInvoice";
+          else if (otherInv.type === "USD") templateName = "usdInvoice";
+          else if (otherInv.type === "COMMERCIAL") templateName = "commercialInvoice";
+
+          if (templateName) {
+            try {
+              otherInv.invoicePdf = await renderInvoicePDF({
+                templateName,
+                data: otherInv.dataSnapshot.templateData,
+                invoiceNumber: resolvedInvoiceNumber,
+              });
+            } catch (err) {
+              console.error("Failed to re-render PDF for related invoice:", err);
+            }
+          }
+        }
+        await otherInv.save();
+      }
     }
 
     return res.json({

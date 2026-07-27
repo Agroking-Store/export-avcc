@@ -191,9 +191,9 @@ const buildInitialForm = (
 
   return {
     invoiceNumber:
-      getSharedVehicleInvoiceNumber(vehicle) ||
       manual.invoiceNumber ||
-      existingInvoice?.invoiceNumber || "",
+      existingInvoice?.invoiceNumber ||
+      getSharedVehicleInvoiceNumber(vehicle) || "",
     invoiceDate:
       toDateInputValue(manual.invoiceDate) ||
       new Date().toISOString().slice(0, 10),
