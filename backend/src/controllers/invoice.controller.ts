@@ -846,6 +846,7 @@ const buildVehicleDescription = (
       firstLine,
       `CHASSIS NO: ${vehicle.chassisNo || "-"}`,
       `ENGINE NO: ${vehicle.engineNo || "-"}`,
+      `COLOUR: ${vehicle.colour || "-"}`,
       `YEAR OF MANUFACTURE: ${vehicle.yearOfManufacture || "-"}`,
       `MONTH/YEAR OF FIRST REGISTRATION: ${vehicle.monthYearFirstReg || "-"}`,
       `MAKE: ${vehicle.make || "-"}`,
@@ -1409,11 +1410,17 @@ export const generateInvoice = async (req: Request, res: Response) => {
           });
           for (const otherInv of otherInvoices) {
             if (otherInv.dataSnapshot?.templateData) {
-              otherInv.dataSnapshot.templateData.invoiceNumber = resolvedInvoiceNumber;
-              let templateName: "inrInvoice" | "usdInvoice" | "commercialInvoice" | null = null;
+              otherInv.dataSnapshot.templateData.invoiceNumber =
+                resolvedInvoiceNumber;
+              let templateName:
+                | "inrInvoice"
+                | "usdInvoice"
+                | "commercialInvoice"
+                | null = null;
               if (otherInv.type === "INR") templateName = "inrInvoice";
               else if (otherInv.type === "USD") templateName = "usdInvoice";
-              else if (otherInv.type === "COMMERCIAL") templateName = "commercialInvoice";
+              else if (otherInv.type === "COMMERCIAL")
+                templateName = "commercialInvoice";
 
               if (templateName) {
                 try {
@@ -1424,7 +1431,10 @@ export const generateInvoice = async (req: Request, res: Response) => {
                   });
                   await otherInv.save();
                 } catch (err) {
-                  console.error("Failed to re-render PDF for related invoice:", err);
+                  console.error(
+                    "Failed to re-render PDF for related invoice:",
+                    err,
+                  );
                 }
               }
             }

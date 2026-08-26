@@ -193,7 +193,8 @@ const buildInitialForm = (
     invoiceNumber:
       manual.invoiceNumber ||
       existingInvoice?.invoiceNumber ||
-      getSharedVehicleInvoiceNumber(vehicle) || "",
+      getSharedVehicleInvoiceNumber(vehicle) ||
+      "",
     invoiceDate:
       toDateInputValue(manual.invoiceDate) ||
       new Date().toISOString().slice(0, 10),
@@ -211,15 +212,15 @@ const buildInitialForm = (
     dispatchedThrough: manual.dispatchedThrough || "By Sea",
     destination: manual.destination || context.buyerCountry || "Sri Lanka",
     commercialConsigneeName:
-      manual.commercialConsigneeName ||
-      manual.termsOfPayment ||
-      "",
+      manual.commercialConsigneeName || manual.termsOfPayment || "",
     ...(invoiceType === "COMMERCIAL"
       ? {
           commercialConsigneeAddressLine1:
             manual.commercialConsigneeAddressLine1 || context.buyerName || "",
           commercialConsigneeAddressLine2:
-            manual.commercialConsigneeAddressLine2 || context.buyerAddress || "",
+            manual.commercialConsigneeAddressLine2 ||
+            context.buyerAddress ||
+            "",
         }
       : {}),
     commercialClauses:
@@ -928,6 +929,14 @@ District of Origin of Goods - Pune - 411009`}
               {showCommercialFields && (
                 <>
                   <EditableField
+                    label="Colour"
+                    name="colour"
+                    value={form.colour}
+                    onChange={handleFieldChange}
+                    placeholder="Gaming Grey"
+                  />
+
+                  <EditableField
                     label="Year of Manufacture"
                     name="yearOfManufacture"
                     value={form.yearOfManufacture}
@@ -1075,7 +1084,9 @@ District of Origin of Goods - Pune - 411009`}
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {existingInvoice ? "Updating Invoice..." : "Generating Invoice..."}
+                  {existingInvoice
+                    ? "Updating Invoice..."
+                    : "Generating Invoice..."}
                 </>
               ) : existingInvoice ? (
                 "Update & Replace Invoice"
